@@ -8,8 +8,13 @@ let initialized = false;
 
 function getPool() {
   if (!pool) {
-    const connectionString = config.database.connectionString;
+    let connectionString = config.database.connectionString;
     const useSsl = connectionString.includes("supabase") || connectionString.includes("render") || connectionString.includes("elephantsql");
+    
+    if (useSsl) {
+      // Remove o parametro sslmode para evitar que o pg ignore rejectUnauthorized: false
+      connectionString = connectionString.replace(/[?&]sslmode=[^&]+/g, "");
+    }
     
     pool = new Pool({
       connectionString,
