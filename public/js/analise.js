@@ -1,0 +1,912 @@
+﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   analise.js â€“ MÃ³dulo de AnÃ¡lise de ProduÃ§Ã£o
+   HR NÃ¡utica PCP
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+'use strict';
+
+function normalizeKey(str) {
+  if (!str) return '';
+  return str.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function excelDateToISO(excelDate) {
+  if (!excelDate) return new Date().toISOString();
+  if (typeof excelDate === 'string') {
+    const parts = excelDate.split('/');
+    if (parts.length === 3) {
+      const d = new Date(parts[2], parts[1] - 1, parts[0]);
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+    const d = new Date(excelDate);
+    if (!isNaN(d.getTime())) return d.toISOString();
+    return new Date().toISOString();
+  }
+  const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
+  return date.toISOString();
+}
+
+const ANALISE_STATE = {
+  coberturaData: safeGetJSON('hrn_analise_cobertura_data', []),
+  coberturaAlvo: Number(RemoteStorage.getItem('hrn_analise_cobertura_alvo')) || 3,
+  loaded: !!RemoteStorage.getItem('hrn_analise_cobertura_data'),
+  filterType: 'all', // 'all' | 'critical' | 'warning' | 'ok'
+  searchText: '',
+  sortColumn: 'prio2',
+  sortDirection: 'asc'
+};
+
+// Formata cobertura em meses (comportamento similar ao vini.js)
+function fmtAnaliseCob(valor) {
+  if (!isFinite(valor) || valor === Infinity || valor === null || valor === undefined) return 'Sem Giro';
+  return `${Number(valor).toFixed(1)} ${valor === 1 ? 'mÃªs' : 'meses'}`;
+}
+
+function excelRoundDown(val, decimals) {
+  if (val === null || val === undefined || isNaN(val)) return null;
+  const factor = Math.pow(10, decimals);
+  const eps = 1e-9;
+  const sign = Math.sign(val);
+  const absVal = Math.abs(val) + eps;
+  return sign * Math.floor(absVal * factor) / factor;
+}
+
+// ObtÃ©m a classificaÃ§Ã£o de criticidade de um item com base na prioridade fÃ­sica (prio2)
+function getAnaliseItemStatus(item, targetCoverage) {
+  if (item.prio2 === null || item.prio2 === undefined || isNaN(Number(item.prio2))) {
+    return 'ok';
+  }
+
+  const prioNum = Number(item.prio2);
+  if (prioNum <= targetCoverage) {
+    return 'critical';
+  } else if (prioNum > targetCoverage && prioNum <= targetCoverage + 1.0) {
+    return 'warning';
+  } else {
+    return 'ok';
+  }
+}
+
+// Sincroniza as peÃ§as em Rastreio de OperaÃ§Ãµes a partir da aba correspondente da Planilha
+function syncRastreioPecas(wb) {
+  try {
+    // 1. Encontra a aba de Rastreio de PeÃ§as
+    let sheetName = wb.SheetNames.find(name => {
+      const n = name.toLowerCase();
+      return n.includes('rastreio') || n.includes('producao') || n.includes('produÃ§Ã£o') || n.includes('peÃ§as') || n.includes('pecas') || n.includes('fluxo') || n.includes('lote');
+    });
+    
+    if (!sheetName) {
+      console.warn('[RASTREIO] Nenhuma aba de Rastreio/ProduÃ§Ã£o localizada na planilha.');
+      return;
+    }
+    
+    console.log(`[RASTREIO] Sincronizando aba de Rastreio: "${sheetName}"`);
+    
+    const ws = wb.Sheets[sheetName];
+    // sheet_to_json a partir da linha 0
+    const rowsJson = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    
+    if (!rowsJson || rowsJson.length === 0) {
+      console.warn('[RASTREIO] Aba de Rastreio vazia.');
+      return;
+    }
+    
+    let pecasLocais = DB.getPecas();
+    let opsLocais = DB.getOps();
+    let hasChanges = false;
+    let opsChanged = false;
+    let pecasMovidas = 0;
+    let pecasAdicionadas = 0;
+    
+    // NormalizaÃ§Ã£o das localizaÃ§Ãµes para cÃ³digos de operaÃ§Ã£o
+    const locToOp = (loc) => {
+      if (!loc) return '01';
+      const l = loc.toLowerCase().replace(/\r?\n/g, ' ').trim();
+      if (l.includes('fundid') || l.includes('fundindo') || l.includes('produzindo fund')) return '01';
+      if (l.includes('vulcaniz')) return '02';
+      if (l.includes('polimento')) return '03';
+      if (l.includes('estoque bruto') || l.includes('codan)')) return '03';
+      if (l.includes('usinagem')) return '04';
+      if (l.includes('estoque usinado')) return '04';
+      if (l.includes('pintura')) return '05';
+      if (l.includes('embuchamento')) return '06';
+      if (l.includes('grava')) return '07';
+      if (l.includes('entrada')) return '07';
+      return '01';
+    };
+    
+    const opToEtapa = {
+      '01': 'InjeÃ§Ã£o/FundiÃ§Ã£o',
+      '02': 'Pintura/Polimento',
+      '03': 'Pintura/Polimento',
+      '04': 'Usinagem',
+      '05': 'Pintura/Polimento',
+      '06': 'Em ProduÃ§Ã£o',
+      '07': 'Em ProduÃ§Ã£o',
+    };
+    
+    // Mapa para criar OPs temporÃ¡rias se necessÃ¡rio
+    const opMap = {};
+    opsLocais.forEach(op => {
+      const key = `${op.modelo}|${op.etapa}`;
+      opMap[key] = { id: op.id, numero: op.numero };
+    });
+    
+    const now = new Date().toISOString();
+    
+    rowsJson.forEach((row, idx) => {
+      const nome = String(row['DescriÃ§Ã£o'] || row['descricao'] || row['Modelo'] || row['Produto'] || row['nome'] || '').trim();
+      const sku = String(row['CÃ³digo (SKU)'] || row['Codigo (SKU)'] || row['SKU'] || row['CÃ³digo'] || '').trim().toUpperCase();
+      const bruto = String(row['Bruto'] || row['bruto'] || row['Bruto/Coquilha'] || '').trim();
+      const localizacao = String(row['LocalizaÃ§Ã£o'] || row['Localizacao'] || row['Etapa'] || row['OperaÃ§Ã£o'] || '').trim();
+      const qty = parseInt(row['Acompanhamento de PeÃ§as (qty)'] || row['Acompanhamento de Pecas (qty)'] || row['qty'] || row['Qtd'] || row['Quantidade'] || '0', 10);
+      
+      if (!nome || !sku || qty === 0) return;
+      
+      const opCode = locToOp(localizacao);
+      const etapa = opToEtapa[opCode] || 'Em ProduÃ§Ã£o';
+      const loteNum = `${sku}-L${String(idx + 1).padStart(3, '0')}`;
+      
+      // Procura se a peÃ§a jÃ¡ existe localmente
+      const pecaExistente = pecasLocais.find(p => p.numero === loteNum);
+      
+      if (pecaExistente) {
+        let mudouOp = false;
+        let oldOp = pecaExistente.operacaoAtual;
+        
+        if (pecaExistente.operacaoAtual !== opCode) {
+          mudouOp = true;
+          pecaExistente.operacaoAtual = opCode;
+          pecaExistente.atualizadoEm = now;
+          if (!pecaExistente.historico) pecaExistente.historico = [];
+          
+          pecaExistente.historico.push({
+            op: opCode,
+            data: now,
+            obs: `Atualizado via Planilha (de ${oldOp} para ${opCode})`
+          });
+          
+          console.log(`[RASTREIO] PeÃ§a ${loteNum} movida para Op. ${opCode}`);
+          pecasMovidas++;
+          hasChanges = true;
+        }
+        
+        if (pecaExistente.qty !== qty) {
+          pecaExistente.qty = qty;
+          hasChanges = true;
+        }
+        
+        // Se a operaÃ§Ã£o mudou e tem OP vinculada, move a OP no Kanban
+        if (mudouOp && pecaExistente.opNumero) {
+          const op = opsLocais.find(o => o.numero === pecaExistente.opNumero);
+          if (op && op.etapa !== etapa) {
+            op.etapa = etapa;
+            opsChanged = true;
+            DB.addAtividade(`OP ${op.numero} movida para ${etapa} (Sincronizado via Planilha)`, 'teal');
+          }
+        }
+      } else {
+        // Se a peÃ§a nÃ£o existe, cria a OP e a peÃ§a correspondente
+        const mapKey = `${nome}|${etapa}`;
+        let opId = opMap[mapKey]?.id;
+        let opNumero = opMap[mapKey]?.numero;
+        
+        if (!opId) {
+          const novaOp = DB.addOp({
+            modelo: nome,
+            qty: qty,
+            cliente: 'Estoque Interno',
+            prazo: '',
+            etapa,
+            prioridade: 'Normal',
+            obs: `Criada via Planilha. Bruto: ${bruto}. Loc: ${localizacao}`,
+          });
+          opId = novaOp.id;
+          opNumero = novaOp.numero;
+          opMap[mapKey] = { id: opId, numero: opNumero };
+          // Recarrega do banco local para incluir a nova OP no array
+          opsLocais = DB.getOps();
+          opsChanged = true;
+        }
+        
+        const novaPeca = {
+          id: DB._id(),
+          numero: loteNum,
+          modelo: nome,
+          tipoFundicao: bruto,
+          qty: qty,
+          operacaoAtual: opCode,
+          opId: opId,
+          opNumero: opNumero,
+          obs: `Sincronizada via Planilha. Loc: ${localizacao} | Bruto: ${bruto}`,
+          historico: [{ op: opCode, data: now, obs: `Importada via Planilha â€“ ${localizacao}` }],
+          criadoEm: now,
+          atualizadoEm: now
+        };
+        
+        pecasLocais.push(novaPeca);
+        console.log(`[RASTREIO] Nova peÃ§a ${loteNum} cadastrada da planilha.`);
+        pecasAdicionadas++;
+        hasChanges = true;
+      }
+    });
+    
+    if (hasChanges) {
+      DB.savePecas(pecasLocais);
+    }
+    if (opsChanged) {
+      DB.saveOps(opsLocais);
+    }
+    
+    if (pecasMovidas > 0 || pecasAdicionadas > 0) {
+      DB.addAtividade(`SincronizaÃ§Ã£o de Rastreio: ${pecasMovidas} peÃ§as movidas, ${pecasAdicionadas} novas peÃ§as criadas.`, 'teal');
+    }
+    
+  } catch (err) {
+    console.error('[RASTREIO] Erro ao sincronizar peÃ§as da Planilha:', err);
+  }
+}
+
+// Processa o arquivo Excel e extrai os dados
+function processAnaliseExcel(arrayBuffer) {
+  try {
+    const wb = XLSX.read(arrayBuffer, { type: 'array' });
+    
+    // Trata como a planilha padrÃ£o de Cobertura (3-Cobertura)
+    let sheetName = '3-Cobertura';
+    if (!wb.SheetNames.includes(sheetName)) {
+      sheetName = wb.SheetNames.find(name => name.toLowerCase().includes('cobertura')) || wb.SheetNames[0];
+    }
+
+    if (!wb.SheetNames.includes(sheetName)) {
+      throw new Error('Aba de Cobertura nÃ£o localizada na planilha.');
+    }
+
+    const ws = wb.Sheets[sheetName];
+    // sheet_to_json a partir da linha 5 (range: 5) para capturar os cabeÃ§alhos corretos
+    const rowsJson = XLSX.utils.sheet_to_json(ws, { range: 5, defval: '' });
+
+    if (!rowsJson || rowsJson.length === 0) {
+      throw new Error('Nenhum dado encontrado na aba de Cobertura.');
+    }
+
+    const parsedData = rowsJson.map(row => {
+      const produto = String(row['Produto'] || '').trim();
+      const sku = String(row['CÃ³digo (SKU)'] || row['SKU'] || '').trim().toUpperCase();
+      const codigoBruto = String(row['CÃ³digo Bruto'] || '').trim();
+      
+      const entradasPrevistas = parseFloat(row['Entradas previstas (em ProduÃ§Ã£o)']) || 0;
+      const saidasPrevistas = parseFloat(row['SaÃ­das previstas (Vendido)']) || 0;
+      const estoqueFisico = parseFloat(row['Estoque fÃ­sico']) || 0;
+      const estoque1 = parseFloat(row['Estoque 1']) || 0;
+      const estoqueVirtual = parseFloat(row['Estoque virtual']) || 0;
+      const mediaMensal = parseFloat(row['MÃ©dia mensal']) || 0;
+      
+      const prioVal = row['Prio2'] !== undefined && row['Prio2'] !== '' ? parseFloat(row['Prio2']) : null;
+      const coberturaVirtual = parseFloat(row['Cobertura Est. Virtual']) || 0;
+      const localizacao = String(row['LocalizaÃ§Ã£o'] || '-').trim();
+      const bucha = String(row['bucha'] || '-').trim();
+
+      return {
+        prioridadeGeral: String(row['Prioridade GERAL'] || '').trim(),
+        produto,
+        sku,
+        codigoBruto,
+        entradasPrevistas,
+        saidasPrevistas,
+        estoqueFisico,
+        estoque1,
+        estoqueVirtual,
+        mediaMensal,
+        prio2: prioVal,
+        coberturaVirtual,
+        localizacao,
+        bucha
+      };
+    }).filter(item => item.produto && item.produto !== 'undefined' && item.prioridadeGeral);
+
+    ANALISE_STATE.coberturaData = parsedData;
+    ANALISE_STATE.loaded = true;
+
+    RemoteStorage.setItem('hrn_analise_cobertura_data', JSON.stringify(parsedData));
+
+    // Sincroniza tambÃ©m as peÃ§as em Rastreio (se houver a aba correspondente no mesmo arquivo)
+    syncRastreioPecas(wb);
+
+    return true;
+  } catch (err) {
+    console.error('[ANALISE] Erro ao processar planilha de cobertura:', err);
+    throw err;
+  }
+}
+
+// Carrega dados da planilha via Fetch automaticamente no inÃ­cio
+async function loadAnaliseExcelData() {
+  if (ANALISE_STATE.loaded && ANALISE_STATE.coberturaData?.length > 0) {
+    renderAnaliseTable();
+    return true;
+  }
+  const tbody = document.getElementById('analise-body');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="14" class="empty-cell">Nenhum dado de cobertura no Access. Use "Sincronizar Cobertura" para importar uma planilha pela aplicação.</td></tr>';
+  }
+  return false;
+}
+
+// Renderiza a tabela de analise de producao
+function renderAnaliseTable() {
+  const tbody = document.getElementById('analise-body');
+  if (!tbody) return;
+
+  if (!ANALISE_STATE.loaded) {
+    return;
+  }
+
+  // Atualiza o estoque fÃ­sico e recÃ¡lculos na AnÃ¡lise de ProduÃ§Ã£o
+  ANALISE_STATE.coberturaData.forEach(item => {
+    const skuNorm = String(item.sku || '').trim().toUpperCase();
+    if (window.EARV) {
+      if (EARV.estoqueLoaded && EARV.estoqueMap) {
+        item.estoqueFisico = EARV.estoqueMap[skuNorm] !== undefined ? EARV.estoqueMap[skuNorm] : item.estoqueFisico;
+      }
+      if (EARV.saidasPrevistasLoaded && EARV.saidasPrevistasMap) {
+        item.saidasPrevistas = EARV.saidasPrevistasMap[skuNorm] !== undefined ? EARV.saidasPrevistasMap[skuNorm] : item.saidasPrevistas;
+      }
+    }
+    
+    item.estoqueVirtual = item.estoqueFisico + (item.entradasPrevistas || 0) - (item.saidasPrevistas || 0);
+    item.coberturaVirtual = item.mediaMensal > 0 ? item.estoqueVirtual / item.mediaMensal : Infinity;
+    
+    // Recalcula prio2 utilizando a fÃ³rmula fÃ­sica baseada no Excel
+    const estoque1 = item.estoqueFisico - item.saidasPrevistas;
+    if (estoque1 < 0) {
+      item.prio2 = -1.0;
+    } else {
+      const hasMax = /max\./i.test(item.produto);
+      if (hasMax) {
+        item.prio2 = null;
+      } else {
+        const mediaMensal = Number(item.mediaMensal) || 0;
+        let rawVal;
+        if (item.estoqueVirtual < 0) {
+          rawVal = mediaMensal > 0 ? (item.estoqueVirtual / mediaMensal) : 0;
+        } else {
+          if (mediaMensal < 2) {
+            rawVal = 5.0;
+          } else {
+            rawVal = estoque1 / mediaMensal;
+          }
+        }
+        item.prio2 = excelRoundDown(rawVal, 1);
+      }
+    }
+  });
+
+  // 1. Calcula contadores rÃ¡pidos de KPIs
+  let countTotal = 0;
+  let countCritical = 0;
+  let countWarning = 0;
+  let countOk = 0;
+
+  ANALISE_STATE.coberturaData.forEach(item => {
+    countTotal++;
+    const status = getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo);
+    if (status === 'critical') {
+      countCritical++;
+    } else if (status === 'warning') {
+      countWarning++;
+    } else {
+      countOk++;
+    }
+  });
+
+  // Atualiza as badges no HTML
+  const elTotal = document.getElementById('analise-kpi-total');
+  const elCritical = document.getElementById('analise-kpi-critical');
+  const elWarning = document.getElementById('analise-kpi-warning');
+  const elOk = document.getElementById('analise-kpi-ok');
+
+  if (elTotal) elTotal.textContent = countTotal;
+  if (elCritical) elCritical.textContent = countCritical;
+  if (elWarning) elWarning.textContent = countWarning;
+  if (elOk) elOk.textContent = countOk;
+
+  // 2. Aplica filtros
+  let filtered = ANALISE_STATE.coberturaData;
+
+  // Filtro de pesquisa de texto
+  if (ANALISE_STATE.searchText) {
+    const search = ANALISE_STATE.searchText.toLowerCase();
+    filtered = filtered.filter(item =>
+      item.produto.toLowerCase().includes(search) ||
+      item.sku.toLowerCase().includes(search)
+    );
+  }
+
+  // Filtro de KPIs rÃ¡pidos
+  if (ANALISE_STATE.filterType === 'critical') {
+    filtered = filtered.filter(item => getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo) === 'critical');
+  } else if (ANALISE_STATE.filterType === 'warning') {
+    filtered = filtered.filter(item => getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo) === 'warning');
+  } else if (ANALISE_STATE.filterType === 'ok') {
+    filtered = filtered.filter(item => getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo) === 'ok');
+  }
+
+  // 3. Aplica ordenaÃ§Ã£o
+  filtered = [...filtered].sort((a, b) => {
+    let valA, valB;
+    
+    // Calcula valores recomendados dinamicamente para comparaÃ§Ã£o, caso ordene por "Qtd Produzir"
+    const diffA = a.estoqueVirtual - (a.mediaMensal * ANALISE_STATE.coberturaAlvo);
+    const colocarOpA = diffA < 0 ? Math.ceil(Math.abs(diffA) / 10) * 10 : 0;
+    const diffB = b.estoqueVirtual - (b.mediaMensal * ANALISE_STATE.coberturaAlvo);
+    const colocarOpB = diffB < 0 ? Math.ceil(Math.abs(diffB) / 10) * 10 : 0;
+
+    switch (ANALISE_STATE.sortColumn) {
+      case 'prioridadeGeral':
+        valA = parseInt(a.prioridadeGeral) || 999;
+        valB = parseInt(b.prioridadeGeral) || 999;
+        break;
+      case 'produto':
+        return ANALISE_STATE.sortDirection === 'asc'
+          ? a.produto.localeCompare(b.produto, 'pt-BR')
+          : b.produto.localeCompare(a.produto, 'pt-BR');
+      case 'sku':
+        return ANALISE_STATE.sortDirection === 'asc'
+          ? a.sku.localeCompare(b.sku, 'pt-BR')
+          : b.sku.localeCompare(a.sku, 'pt-BR');
+      case 'codigoBruto':
+        return ANALISE_STATE.sortDirection === 'asc'
+          ? a.codigoBruto.localeCompare(b.codigoBruto, 'pt-BR')
+          : b.codigoBruto.localeCompare(a.codigoBruto, 'pt-BR');
+      case 'entradasPrevistas':
+        valA = a.entradasPrevistas;
+        valB = b.entradasPrevistas;
+        break;
+      case 'saidasPrevistas':
+        valA = a.saidasPrevistas;
+        valB = b.saidasPrevistas;
+        break;
+      case 'estoqueFisico':
+        valA = a.estoqueFisico;
+        valB = b.estoqueFisico;
+        break;
+      case 'estoqueVirtual':
+        valA = a.estoqueVirtual;
+        valB = b.estoqueVirtual;
+        break;
+      case 'mediaMensal':
+        valA = a.mediaMensal;
+        valB = b.mediaMensal;
+        break;
+      case 'cobertura':
+        valA = a.coberturaVirtual;
+        valB = b.coberturaVirtual;
+        break;
+      case 'prio2':
+        // Nulls (Sem prio) vÃ£o para o final
+        valA = a.prio2 === null ? 9999 : Number(a.prio2);
+        valB = b.prio2 === null ? 9999 : Number(b.prio2);
+        break;
+      case 'colocarOp':
+        valA = colocarOpA;
+        valB = colocarOpB;
+        break;
+      case 'localizacao':
+        return ANALISE_STATE.sortDirection === 'asc'
+          ? a.localizacao.localeCompare(b.localizacao, 'pt-BR')
+          : b.localizacao.localeCompare(a.localizacao, 'pt-BR');
+      default:
+        valA = a.prioridadeGeral;
+        valB = b.prioridadeGeral;
+    }
+
+    if (valA === valB) return 0;
+    if (ANALISE_STATE.sortDirection === 'asc') {
+      return valA > valB ? 1 : -1;
+    } else {
+      return valA < valB ? 1 : -1;
+    }
+  });
+
+  // Atualiza setas visuais no cabeÃ§alho
+  document.querySelectorAll('#analise-table thead th.sortable-th').forEach(th => {
+    const col = th.dataset.column;
+    const iconSpan = th.querySelector('.sort-icon');
+    if (iconSpan) {
+      if (col === ANALISE_STATE.sortColumn) {
+        th.classList.add('active-sort');
+        iconSpan.textContent = ANALISE_STATE.sortDirection === 'asc' ? 'â–²' : 'â–¼';
+      } else {
+        th.classList.remove('active-sort');
+        iconSpan.textContent = 'â‡…';
+      }
+    }
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="14" class="empty-cell">Nenhum produto encontrado correspondente aos filtros.</td></tr>';
+    return;
+  }
+
+  // Renderiza as linhas
+  tbody.innerHTML = filtered.map(item => {
+    // CÃ¡lculo dinÃ¢mico com base na meta de cobertura
+    const diff = item.estoqueVirtual - (item.mediaMensal * ANALISE_STATE.coberturaAlvo);
+    const need = diff < 0 ? Math.ceil(Math.abs(diff) / 10) * 10 : 0;
+
+    const status = getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo);
+    
+    let trClass = '';
+    let statusBadge = '';
+    if (status === 'critical') {
+      trClass = 'tr-critical-stock';
+      statusBadge = '<span class="chip chip--red" style="font-size:0.65rem">CrÃ­tico</span>';
+    } else if (status === 'warning') {
+      trClass = 'tr-warning-stock';
+      statusBadge = '<span class="chip chip--orange" style="font-size:0.65rem">AtenÃ§Ã£o</span>';
+    } else {
+      statusBadge = '<span class="chip chip--green" style="font-size:0.65rem">EstÃ¡vel</span>';
+    }
+
+    // BotÃ£o de aÃ§Ã£o
+    let actionBtn = '';
+    if (need > 0) {
+      actionBtn = `<button class="btn-primary" style="padding:4px 8px;font-size:0.7rem;height:auto" onclick="abrirNovaOPPreenchida('${escapeJSString(item.produto)}', ${need}, ${item.prio2})">Criar OP</button>`;
+    } else {
+      actionBtn = `<span style="color:var(--text-muted);font-size:0.7rem;font-weight:600">âœ“ OK</span>`;
+    }
+
+    const formattedPrio = item.prio2 !== null ? item.prio2.toFixed(1) : 'â€”';
+    const formattedNeed = need > 0 ? `<strong>${need}</strong>` : '0';
+
+    return `<tr class="${trClass}">
+      <td><span style="color:var(--text-muted);font-weight:700">${item.prioridadeGeral || 'â€”'}</span></td>
+      <td style="text-align:left !important;color:var(--text-primary);font-weight:500">${item.produto}</td>
+      <td><span class="chip chip--blue" style="font-size:0.68rem;font-family:monospace;font-weight:700">${item.sku}</span></td>
+      <td><span style="color:var(--text-secondary);font-size:0.72rem">${item.codigoBruto || 'â€”'}</span></td>
+      <td>${item.estoqueFisico}</td>
+      <td>${item.entradasPrevistas}</td>
+      <td>${item.saidasPrevistas}</td>
+      <td><strong style="color:${item.estoqueVirtual < 0 ? 'var(--accent-red)' : 'var(--text-primary)'}">${item.estoqueVirtual}</strong></td>
+      <td>${item.mediaMensal.toFixed(1)}</td>
+      <td>${fmtAnaliseCob(item.coberturaVirtual)}</td>
+      <td><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><strong>${formattedPrio}</strong> ${statusBadge}</div></td>
+      <td style="color:${need > 0 ? 'var(--accent-red)' : 'var(--text-primary)'}">${formattedNeed}</td>
+      <td style="font-size:0.7rem">${item.localizacao}</td>
+      <td>${actionBtn}</td>
+    </tr>`;
+  }).join('');
+
+  // 4. Configura barra de rolagem dupla (superior e inferior)
+  setTimeout(() => {
+    const tableWrap = document.getElementById('analise-table-wrap');
+    const doubleScroll = document.getElementById('analise-double-scroll');
+    const doubleScrollChild = document.getElementById('analise-double-scroll-child');
+
+    if (tableWrap && doubleScroll && doubleScrollChild) {
+      doubleScrollChild.style.width = tableWrap.scrollWidth + 'px';
+
+      doubleScroll.onscroll = function() {
+        if (tableWrap.scrollLeft !== doubleScroll.scrollLeft) {
+          tableWrap.scrollLeft = doubleScroll.scrollLeft;
+        }
+      };
+      tableWrap.onscroll = function() {
+        if (doubleScroll.scrollLeft !== tableWrap.scrollLeft) {
+          doubleScroll.scrollLeft = tableWrap.scrollLeft;
+        }
+      };
+    }
+  }, 50);
+}
+
+// Prefills and opens the Create OP Modal from a recommendation
+function abrirNovaOPPreenchida(produto, qty, prio2) {
+  // Chamamos o preenchimento padrÃ£o
+  if (typeof openNovaOp === 'function') {
+    openNovaOp();
+  }
+
+  // Preenchemos os campos especÃ­ficos
+  const modeloSelect = document.getElementById('op-modelo');
+  if (modeloSelect) {
+    // Tenta encontrar a opÃ§Ã£o correspondente ao produto
+    let found = false;
+    for (let i = 0; i < modeloSelect.options.length; i++) {
+      if (modeloSelect.options[i].value === produto) {
+        modeloSelect.selectedIndex = i;
+        found = true;
+        break;
+      }
+    }
+    
+    // Se nÃ£o encontrou pelo nome completo, tenta correspondÃªncia parcial
+    if (!found) {
+      for (let i = 0; i < modeloSelect.options.length; i++) {
+        if (produto.toLowerCase().includes(modeloSelect.options[i].value.toLowerCase()) ||
+            modeloSelect.options[i].value.toLowerCase().includes(produto.toLowerCase())) {
+          modeloSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+  }
+
+  const qtyInput = document.getElementById('op-qty');
+  if (qtyInput) {
+    qtyInput.value = qty;
+  }
+
+  const clienteInput = document.getElementById('op-cliente');
+  if (clienteInput) {
+    clienteInput.value = 'Estoque Interno';
+  }
+
+  const prioridadeSelect = document.getElementById('op-prioridade');
+  if (prioridadeSelect) {
+    if (prio2 !== null && prio2 <= 1.0) {
+      prioridadeSelect.value = 'Alta';
+    } else {
+      prioridadeSelect.value = 'Normal';
+    }
+  }
+
+  const obsInput = document.getElementById('op-obs');
+  if (obsInput) {
+    obsInput.value = 'Ordem de produÃ§Ã£o planejada automaticamente com base na anÃ¡lise de criticidade.';
+  }
+
+  // Seta um prazo de entrega padrÃ£o para hoje + 7 dias
+  const prazoInput = document.getElementById('op-prazo');
+  if (prazoInput) {
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 7);
+    prazoInput.value = defaultDate.toISOString().split('T')[0];
+  }
+
+  // Atualiza a prÃ©-visualizaÃ§Ã£o de insumos do modal de OP
+  if (typeof updateOpInsumosPreview === 'function') {
+    updateOpInsumosPreview();
+  }
+}
+window.abrirNovaOPPreenchida = abrirNovaOPPreenchida;
+
+// Exporta a lista de peÃ§as com necessidade de produÃ§Ã£o (Qtd a Produzir > 0) para CSV compatÃ­vel com Excel
+function exportAnaliseToExcel() {
+  if (!ANALISE_STATE.loaded || !ANALISE_STATE.coberturaData.length) {
+    showToast('Nenhum dado disponÃ­vel para exportar.', 'error');
+    return;
+  }
+
+  const targetCoverage = ANALISE_STATE.coberturaAlvo;
+  const itemsToProduce = ANALISE_STATE.coberturaData.map(item => {
+    const diff = item.estoqueVirtual - (item.mediaMensal * targetCoverage);
+    const need = diff < 0 ? Math.ceil(Math.abs(diff) / 10) * 10 : 0;
+    return { ...item, need };
+  }).filter(item => item.need > 0);
+
+  if (itemsToProduce.length === 0) {
+    showToast('Nenhuma peÃ§a precisa ser produzida com a meta de cobertura atual.', 'info');
+    return;
+  }
+
+  const headers = [
+    'Geral (Rank)',
+    'Produto',
+    'SKU',
+    'CÃ³digo Bruto',
+    'Estoque FÃ­sico',
+    'Entradas Previstas',
+    'SaÃ­das Previstas',
+    'Estoque Virtual',
+    'MÃ©dia Mensal',
+    'Cobertura (meses)',
+    'Prioridade (Prio2)',
+    'Qtd a Produzir',
+    'LocalizaÃ§Ã£o',
+    'Bucha'
+  ];
+
+  const rows = itemsToProduce.map(item => [
+    item.prioridadeGeral,
+    item.produto,
+    item.sku,
+    item.codigoBruto,
+    item.estoqueFisico,
+    item.entradasPrevistas,
+    item.saidasPrevistas,
+    item.estoqueVirtual,
+    item.mediaMensal.toFixed(2),
+    item.coberturaVirtual.toFixed(2),
+    item.prio2 !== null ? item.prio2.toFixed(2) : 'â€”',
+    item.need,
+    item.localizacao,
+    item.bucha
+  ]);
+
+  const csvContent = "\uFEFF" + [
+    headers.join(';'),
+    ...rows.map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(';'))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `Necessidades_Producao_PCP_Cobertura_${targetCoverage}_meses.csv`);
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  showToast(`Lista de ${itemsToProduce.length} peÃ§as a produzir exportada com sucesso!`);
+}
+window.exportAnaliseToExcel = exportAnaliseToExcel;
+
+// InicializaÃ§Ã£o de Listeners do mÃ³dulo de AnÃ¡lise de ProduÃ§Ã£o
+function initAnaliseListeners() {
+  // 1. Slider de cobertura
+  const slider = document.getElementById('analise-months-slider');
+  const badge = document.getElementById('analise-months-value');
+  if (slider && badge) {
+    slider.value = ANALISE_STATE.coberturaAlvo;
+    badge.textContent = `${ANALISE_STATE.coberturaAlvo} ${ANALISE_STATE.coberturaAlvo === 1 ? 'mÃªs' : 'meses'}`;
+
+    slider.addEventListener('input', debounce((e) => {
+      const val = Number(e.target.value);
+      ANALISE_STATE.coberturaAlvo = val;
+      badge.textContent = `${val} ${val === 1 ? 'mÃªs' : 'meses'}`;
+      RemoteStorage.setItem('hrn_analise_cobertura_alvo', val);
+      renderAnaliseTable();
+    }, 150));
+  }
+
+  // 2. Campo de busca de texto
+  const searchInput = document.getElementById('analise-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', debounce((e) => {
+      ANALISE_STATE.searchText = e.target.value.trim();
+      renderAnaliseTable();
+    }, 200));
+  }
+
+  // 3. Abas de filtros rÃ¡pidos (KPIs)
+  const filterTabs = {
+    'analise-filter-all': 'all',
+    'analise-filter-critical-tab': 'critical',
+    'analise-filter-warning-tab': 'warning',
+    'analise-filter-ok': 'ok'
+  };
+
+  Object.entries(filterTabs).forEach(([id, type]) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        ANALISE_STATE.filterType = type;
+        
+        // Remove class active de todos
+        Object.keys(filterTabs).forEach(keyId => {
+          document.getElementById(keyId)?.classList.remove('active');
+        });
+        
+        // Adiciona active no clicado
+        el.classList.add('active');
+        renderAnaliseTable();
+      });
+    }
+  });
+
+  // 4. OrdenaÃ§Ã£o nas colunas de cabeÃ§alho
+  document.querySelectorAll('#analise-table thead th.sortable-th').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.column;
+      if (ANALISE_STATE.sortColumn === col) {
+        // Inverte direÃ§Ã£o
+        ANALISE_STATE.sortDirection = ANALISE_STATE.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        ANALISE_STATE.sortColumn = col;
+        ANALISE_STATE.sortDirection = 'asc';
+      }
+      renderAnaliseTable();
+    });
+  });
+
+  // 5. BotÃ£o de exportaÃ§Ã£o para Excel
+  const btnExportExcel = document.getElementById('btn-analise-export-excel');
+  if (btnExportExcel) {
+    btnExportExcel.addEventListener('click', (e) => {
+      e.preventDefault();
+      exportAnaliseToExcel();
+    });
+  }
+
+  // 6. BotÃ£o de sincronizaÃ§Ã£o de planilha (Abre seletor de arquivos para importaÃ§Ã£o manual)
+  const btnSync = document.getElementById('btn-analise-sync');
+  const inpFile = document.getElementById('input-analise-excel');
+
+  if (btnSync && inpFile) {
+    btnSync.addEventListener('click', (e) => {
+      e.preventDefault();
+      inpFile.click();
+    });
+
+    inpFile.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      showToast('Lendo e processando planilha local...', 'info');
+
+      btnSync.disabled = true;
+      const originalHTML = btnSync.innerHTML;
+      btnSync.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Sincronizando...`;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          processAnaliseExcel(data.buffer);
+          showToast('Planilha de Cobertura importada e salva localmente!', 'success');
+          renderAnaliseTable();
+          if (typeof STATE !== 'undefined') {
+            if (STATE.currentPage === 'fluxo' && typeof renderFluxo === 'function') {
+              renderFluxo();
+            } else if (STATE.currentPage === 'relatorios' && typeof renderRelatorios === 'function') {
+              renderRelatorios();
+            }
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('Erro ao ler a planilha. Certifique-se de que Ã© a planilha CODAN atualizada.', 'error');
+        } finally {
+          btnSync.disabled = false;
+          btnSync.innerHTML = originalHTML;
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      e.target.value = '';
+    });
+  }
+
+  // 7. BotÃ£o de ajuda / explicaÃ§Ã£o da aba
+  const btnAjuda = document.getElementById('btn-analise-ajuda');
+  const modalAjuda = document.getElementById('modal-ajuda-analise');
+  const btnAjudaClose = document.getElementById('modal-ajuda-analise-close');
+  const btnAjudaFechar = document.getElementById('btn-ajuda-analise-fechar');
+
+  if (btnAjuda && modalAjuda) {
+    btnAjuda.addEventListener('click', (e) => {
+      e.preventDefault();
+      modalAjuda.classList.remove('hidden');
+    });
+    
+    const fechar = (e) => {
+      e.preventDefault();
+      modalAjuda.classList.add('hidden');
+    };
+    
+    if (btnAjudaClose) btnAjudaClose.addEventListener('click', fechar);
+    if (btnAjudaFechar) btnAjudaFechar.addEventListener('click', fechar);
+  }
+
+  // 8. Listener de redimensionamento para ajustar largura da rolagem superior
+  window.addEventListener('resize', debounce(() => {
+    const tableWrap = document.getElementById('analise-table-wrap');
+    const doubleScrollChild = document.getElementById('analise-double-scroll-child');
+    if (tableWrap && doubleScrollChild) {
+      doubleScrollChild.style.width = tableWrap.scrollWidth + 'px';
+    }
+  }, 100));
+  // 9. Agendar atualizaÃ§Ã£o automÃ¡tica a cada 5 minutos do Google Sheets em background (Removido para evitar sobrescrever a planilha selecionada manualmente)
+}
+
+// ExpÃµe inicializadores globalmente para app.js
+window.loadAnaliseExcelData = loadAnaliseExcelData;
+window.renderAnaliseTable = renderAnaliseTable;
+window.initAnaliseListeners = initAnaliseListeners;
+
+
+
+
