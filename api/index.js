@@ -39,7 +39,11 @@ app.use((error, _req, res, _next) => {
     ok: false,
     error: dbError
       ? "Banco de dados indisponivel."
-      : "Erro interno. Nenhuma transacao parcial foi mantida."
+      : "Erro interno. Nenhuma transacao parcial foi mantida.",
+    debugMessage: error.message,
+    debugStack: error.stack,
+    debugCode: error.code,
+    envDatabaseUrlExists: !!process.env.DATABASE_URL
   });
 });
 
