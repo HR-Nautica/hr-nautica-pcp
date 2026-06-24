@@ -8,18 +8,32 @@ let initialized = false;
 
 function getPool() {
   if (!pool) {
-    let connectionString = config.database.connectionString;
+    const connectionString = config.database.connectionString;
     const useSsl = connectionString.includes("supabase") || connectionString.includes("render") || connectionString.includes("elephantsql");
     
-    if (useSsl) {
-      // Remove o parametro sslmode para evitar que o pg ignore rejectUnauthorized: false
-      connectionString = connectionString.replace(/[?&]sslmode=[^&]+/g, "");
+    if (connectionString) {
+      try {
+        const params = new URL(connectionString);
+        pool = new Pool({
+          user: params.username ? decodeURIComponent(params.username) : undefined,
+          password: params.password ? decodeURIComponent(params.password) : undefined,
+          host: params.hostname,
+          port: params.port ? Number(params.port) : 5432,
+          database: params.pathname ? params.pathname.split("/")[1] : undefined,
+          ssl: useSsl ? { rejectUnauthorized: false } : false
+        });
+      } catch (err) {
+        pool = new Pool({
+          connectionString,
+          ssl: useSsl ? { rejectUnauthorized: false } : false
+        });
+      }
+    } else {
+      pool = new Pool({
+        connectionString,
+        ssl: useSsl ? { rejectUnauthorized: false } : false
+      });
     }
-    
-    pool = new Pool({
-      connectionString,
-      ssl: useSsl ? { rejectUnauthorized: false } : false
-    });
   }
   return pool;
 }
