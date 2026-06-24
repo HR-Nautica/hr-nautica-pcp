@@ -1,6 +1,7 @@
 # HR Nautica PCP - Git Ignore
 .env
 Login-API_KEY.txt
+github-recovery-codes.txt
 .agent/
 .agents/
 tmp_gsd/
