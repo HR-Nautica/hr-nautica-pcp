@@ -1,0 +1,24 @@
+# HR Nautica PCP - Git Ignore
+.env
+Login-API_KEY.txt
+.agent/
+.agents/
+tmp_gsd/
+tmp_node/
+node_modules/
+.gemini/
+.system_generated/
+*.log
+
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+dist/
+legacy_import/
+tmp_arquivos/
+dados_pcp.json
+cache_pedidos.json
+*.xls
+*.xlsx
