@@ -1,12 +1,12 @@
-﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   app.js â€“ LÃ³gica principal & roteamento
-   HR NÃ¡utica PCP
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   app.js â€“ Lógica principal & roteamento
+   HR Náutica PCP
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 'use strict';
 
 // â”€â”€ Seed inicial (Gerenciado pelo SyncManager de forma condicional) â”€â”€
-// O seed agora sÃ³ roda se o banco local e de rede estiverem totalmente vazios.
+// O seed agora só roda se o banco local e de rede estiverem totalmente vazios.
 
 // â”€â”€ Estado global â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STATE = {
@@ -79,7 +79,7 @@ function diasAtraso(prazoISO) {
 function etapaChip(etapa) {
   const map = {
     'Fila de Espera':    'chip--gray',
-    'InjeÃ§Ã£o/FundiÃ§Ã£o':  'chip--orange',
+    'Injeção/Fundição':  'chip--orange',
     'Usinagem':          'chip--blue',
     'Balanceamento':     'chip--teal',
     'Pintura/Polimento': 'chip--purple',
@@ -98,8 +98,8 @@ function statusPedidoChip(s) {
   const map = {
     'Aguardando':   'chip--gray',
     'Planejado':    'chip--blue',
-    'Em ProduÃ§Ã£o':  'chip--orange',
-    'ConcluÃ­do':    'chip--green',
+    'Em Produção':  'chip--orange',
+    'Concluído':    'chip--green',
     'Entregue':     'chip--teal',
   };
   return `<span class="chip ${map[s] || 'chip--gray'}">${s}</span>`;
@@ -111,7 +111,7 @@ function corDot(cor) {
 }
 
 function etapaIndex(etapa) {
-  return ['Fila de Espera','InjeÃ§Ã£o/FundiÃ§Ã£o','Usinagem','Balanceamento','Pintura/Polimento','Qualidade','Pronto/Entregue'].indexOf(etapa);
+  return ['Fila de Espera','Injeção/Fundição','Usinagem','Balanceamento','Pintura/Polimento','Qualidade','Pronto/Entregue'].indexOf(etapa);
 }
 
 // â”€â”€ Preenche selects de modelo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -150,12 +150,12 @@ function populateOpSelectMov() {
 // NAVEGAÃ‡ÃƒO
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function navigate(page) {
-  // Oculta todas as pÃ¡ginas
+  // Oculta todas as páginas
   document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
   // Remove active de todos os nav items
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
-  // Mostra pÃ¡gina e ativa nav
+  // Mostra página e ativa nav
   const pageEl = $(`page-${page}`);
   if (pageEl) pageEl.classList.remove('hidden');
   const navEl = $(`nav-${page}`);
@@ -163,7 +163,7 @@ function navigate(page) {
 
   STATE.currentPage = page;
 
-  // Renderiza a pÃ¡gina
+  // Renderiza a página
   switch (page) {
     case 'dashboard':   renderDashboard();   break;
     case 'ordens':
@@ -202,23 +202,23 @@ function renderDashboard() {
   $('kpi-ops-ativas').textContent = ativas;
   $('kpi-prontas').textContent    = prontas;
   $('kpi-meta').textContent       = pct + '%';
-  $('kpi-meta-sub').textContent   = `${prontas} de ${meta} hÃ©lices`;
+  $('kpi-meta-sub').textContent   = `${prontas} de ${meta} hélices`;
   $('kpi-modelos').textContent    = modelos.length;
 
-  // OPs recentes (Ãºltimas 5)
+  // OPs recentes (últimas 5)
   renderOpsRecentesTable(ops.slice(-5).reverse());
 
   // Atividades
   renderAtividades();
 
-  // GrÃ¡fico
+  // Gráfico
   renderFluxoChart(ops);
 }
 
 function renderOpsRecentesTable(ops) {
   const tbody = $('ops-recentes-body');
   if (!ops.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">Nenhuma ordem de produÃ§Ã£o cadastrada.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">Nenhuma ordem de produção cadastrada.</td></tr>';
     return;
   }
   tbody.innerHTML = ops.map(op => {
@@ -256,7 +256,7 @@ function renderAtividades() {
 }
 
 function renderFluxoChart(ops) {
-  const etapas = ['Fila de Espera','InjeÃ§Ã£o/FundiÃ§Ã£o','Usinagem','Balanceamento','Pintura/Polimento','Qualidade','Pronto/Entregue'];
+  const etapas = ['Fila de Espera','Injeção/Fundição','Usinagem','Balanceamento','Pintura/Polimento','Qualidade','Pronto/Entregue'];
   const counts = etapas.map(e => ops.filter(o => o.etapa === e).length);
 
   const canvas = $('fluxo-chart');
@@ -322,7 +322,7 @@ function renderFluxoChart(ops) {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // ORDENS DE PRODUÃ‡ÃƒO â€“ KANBAN
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-const ETAPAS = ['Fila de Espera','InjeÃ§Ã£o/FundiÃ§Ã£o','Usinagem','Balanceamento','Pintura/Polimento','Qualidade','Pronto/Entregue'];
+const ETAPAS = ['Fila de Espera','Injeção/Fundição','Usinagem','Balanceamento','Pintura/Polimento','Qualidade','Pronto/Entregue'];
 
 function renderOrdens() {
   if (typeof renderAnaliseTable === 'function') renderAnaliseTable();
@@ -371,11 +371,11 @@ function kanbanCard(op) {
 }
 
 function deleteOp(id) {
-  if (!confirm('Excluir esta Ordem de ProduÃ§Ã£o?')) return;
+  if (!confirm('Excluir esta Ordem de Produção?')) return;
   DB.deleteOp(id);
   renderOrdens();
   if (STATE.currentPage === 'dashboard') renderDashboard();
-  showToast('Ordem de produÃ§Ã£o excluÃ­da.', 'error');
+  showToast('Ordem de produção excluída.', 'error');
 }
 window.deleteOp = deleteOp;
 
@@ -411,7 +411,7 @@ function updateOpInsumosPreview() {
     const badgeText = b.insuficiente ? `Falta ${b.falta} un` : 'Estoque OK';
     const statusText = b.insuficiente 
       ? `<span style="color:var(--accent-red);font-weight:600;font-size:0.72rem">âš  Produzir Bucha</span>`
-      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">âœ“ Estoque DisponÃ­vel</span>`;
+      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">âœ“ Estoque Disponível</span>`;
       
     listDiv.innerHTML += `
       <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;display:flex;flex-direction:column;gap:4px">
@@ -439,7 +439,7 @@ function updateOpInsumosPreview() {
     const badgeText = c.insuficiente ? `Falta ${c.falta} un` : 'Estoque OK';
     const statusText = c.insuficiente 
       ? `<span style="color:var(--accent-red);font-weight:600;font-size:0.72rem">âš  Comprar Caixa</span>`
-      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">âœ“ Estoque DisponÃ­vel</span>`;
+      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">âœ“ Estoque Disponível</span>`;
       
     listDiv.innerHTML += `
       <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;display:flex;flex-direction:column;gap:4px">
@@ -463,7 +463,7 @@ function updateOpInsumosPreview() {
 
 function openNovaOp() {
   STATE.editingOpId = null;
-  $('modal-op-title').textContent = 'Nova Ordem de ProduÃ§Ã£o';
+  $('modal-op-title').textContent = 'Nova Ordem de Produção';
   $('op-edit-id').value = '';
   $('op-modelo').value = '';
   $('op-qty').value = 1;
@@ -500,7 +500,7 @@ function closeModalOp() { $('modal-op').classList.add('hidden'); }
 function saveOp() {
   const modelo = $('op-modelo').value.trim();
   const prazo  = $('op-prazo').value;
-  if (!modelo) { showToast('Selecione um modelo de hÃ©lice.', 'error'); return; }
+  if (!modelo) { showToast('Selecione um modelo de hélice.', 'error'); return; }
   if (!prazo)  { showToast('Informe o prazo de entrega.', 'error'); return; }
 
   const data = {
@@ -515,10 +515,10 @@ function saveOp() {
 
   if (STATE.editingOpId) {
     DB.updateOp(STATE.editingOpId, data);
-    showToast('Ordem de produÃ§Ã£o atualizada!');
+    showToast('Ordem de produção atualizada!');
   } else {
     DB.addOp(data);
-    showToast('Ordem de produÃ§Ã£o criada!');
+    showToast('Ordem de produção criada!');
   }
 
   closeModalOp();
@@ -544,7 +544,7 @@ function handleExcelUpload(e) {
       
       const sheetName = 'MATRIZ';
       if (!workbook.SheetNames.includes(sheetName)) {
-        showToast(`Planilha invÃ¡lida! Aba "${sheetName}" nÃ£o encontrada.`, 'error');
+        showToast(`Planilha inválida! Aba "${sheetName}" não encontrada.`, 'error');
         return;
       }
       
@@ -561,7 +561,7 @@ function handleExcelUpload(e) {
       const modelos = DB.getModelos();
 
       rows.forEach(r => {
-        const desc = r["DescriÃ§Ã£o"] || "";
+        const desc = r["Descrição"] || "";
         if (!desc) return;
 
         // Extract diameter and pitch
@@ -575,8 +575,8 @@ function handleExcelUpload(e) {
 
         // Components description
         const extraDesc = [];
-        if (r["DiÃ¢metro Tubo Anel"] && r["DiÃ¢metro Tubo Anel"] !== "N/A" && r["DiÃ¢metro Tubo Anel"] !== "N/T") {
-          extraDesc.push(`Tubo: ${r["DiÃ¢metro Tubo Anel"]}`);
+        if (r["Diâmetro Tubo Anel"] && r["Diâmetro Tubo Anel"] !== "N/A" && r["Diâmetro Tubo Anel"] !== "N/T") {
+          extraDesc.push(`Tubo: ${r["Diâmetro Tubo Anel"]}`);
         }
         if (r["Bucha"] && r["Bucha"] !== "N/A") {
           extraDesc.push(`Bucha: ${r["Bucha"]}`);
@@ -584,28 +584,28 @@ function handleExcelUpload(e) {
         if (r["Estria"] && r["Estria"] !== "N/A" && r["Estria"] !== 0 && r["Estria"] !== "0") {
           extraDesc.push(`Estria: ${r["Estria"]}`);
         }
-        if (r["DescriÃ§Ã£o Caixa"] && r["DescriÃ§Ã£o Caixa"] !== "N/A") {
-          extraDesc.push(`Caixa: ${r["DescriÃ§Ã£o Caixa"]}`);
+        if (r["Descrição Caixa"] && r["Descrição Caixa"] !== "N/A") {
+          extraDesc.push(`Caixa: ${r["Descrição Caixa"]}`);
         }
 
         const modelData = {
           nome:          desc,
           pas:           "3",
-          material:      "AlumÃ­nio",
+          material:      "Alumínio",
           diametro:      diametro,
           passo:         passo,
           peso:          "",
           desc:          extraDesc.join(" | "),
           
-          sku:           r["CÃ³digo (SKU)"] || "",
-          codigoBruto:   r["CÃ³digo Bruto"] || "",
-          gravacaoBruto: r["GravaÃ§Ã£o Bruto"] || "",
-          tuboAnel:      r["DiÃ¢metro Tubo Anel"] || "",
+          sku:           r["Código (SKU)"] || "",
+          codigoBruto:   r["Código Bruto"] || "",
+          gravacaoBruto: r["Gravação Bruto"] || "",
+          tuboAnel:      r["Diâmetro Tubo Anel"] || "",
           bucha:         r["Bucha"] || "",
           cor:           (r["Cor"] || "").trim(),
           estria:        (r["Estria"] === 0 || r["Estria"] === "0") ? "" : (r["Estria"] || ""),
-          caixa:         r["DescriÃ§Ã£o Caixa"] || "",
-          skuCaixa:      r["CÃ³digo SKU Caixa"] || "",
+          caixa:         r["Descrição Caixa"] || "",
+          skuCaixa:      r["Código SKU Caixa"] || "",
           buchaModelo:   r["Modelo Bucha"] || ""
         };
 
@@ -671,7 +671,7 @@ function renderModelos() {
       : '';
 
     const specsHtml = [
-      `<span class="spec-tag">âš™ ${m.pas} pÃ¡s</span>`,
+      `<span class="spec-tag">âš™ ${m.pas} pás</span>`,
       `<span class="spec-tag">â¬¡ ${m.material}</span>`,
       m.diametro ? `<span class="spec-tag">âŒ€ ${m.diametro}</span>` : '',
       m.passo    ? `<span class="spec-tag">â†” ${m.passo}</span>` : '',
@@ -685,7 +685,7 @@ function renderModelos() {
         <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:4px">
           ${m.codigoBruto ? `<div><strong>Bruto / Coquilha:</strong> <span style="color:var(--accent-orange)">${m.codigoBruto} ${m.gravacaoBruto ? `(${m.gravacaoBruto})` : ''}</span></div>` : ''}
           ${m.tuboAnel && m.tuboAnel !== 'N/A' && m.tuboAnel !== 'N/T' ? `<div><strong>Tubo Al.:</strong> ${m.tuboAnel}</div>` : ''}
-          ${m.bucha && m.bucha !== 'N/A' ? `<div><strong>Bucha LatÃ£o:</strong> ${m.bucha}</div>` : ''}
+          ${m.bucha && m.bucha !== 'N/A' ? `<div><strong>Bucha Latão:</strong> ${m.bucha}</div>` : ''}
           ${m.estria && m.estria !== 'N/A' ? `<div><strong>Estria:</strong> ${m.estria}</div>` : ''}
           ${m.caixa && m.caixa !== 'N/A' ? `<div><strong>Caixa:</strong> ${m.caixa}</div>` : ''}
         </div>
@@ -719,7 +719,7 @@ function renderModelos() {
             ${specsHtml}
             ${colorDotHtml}
           </div>
-          <div class="modelo-card-desc" style="font-size:0.76rem;color:var(--text-muted)">${m.desc || 'Sem descriÃ§Ã£o.'}</div>
+          <div class="modelo-card-desc" style="font-size:0.76rem;color:var(--text-muted)">${m.desc || 'Sem descrição.'}</div>
           ${rawMaterialsHtml}
         </div>
       </div>
@@ -729,11 +729,11 @@ function renderModelos() {
 
 function openNovoModelo() {
   STATE.editingModeloId = null;
-  $('modal-modelo-title').textContent = 'Novo Modelo de HÃ©lice';
+  $('modal-modelo-title').textContent = 'Novo Modelo de Hélice';
   $('modelo-edit-id').value = '';
   ['modelo-nome','modelo-diametro','modelo-passo','modelo-peso','modelo-desc'].forEach(id => { $(id).value = ''; });
   $('modelo-pas').value = '3';
-  $('modelo-material').value = 'AlumÃ­nio';
+  $('modelo-material').value = 'Alumínio';
   $('modal-modelo').classList.remove('hidden');
 }
 
@@ -781,10 +781,10 @@ function saveModelo() {
 }
 
 function deleteModelo(id) {
-  if (!confirm('Excluir este modelo de hÃ©lice?')) return;
+  if (!confirm('Excluir este modelo de hélice?')) return;
   DB.deleteModelo(id);
   renderModelos();
-  showToast('Modelo excluÃ­do.', 'error');
+  showToast('Modelo excluído.', 'error');
 }
 window.deleteModelo = deleteModelo;
 
@@ -803,11 +803,11 @@ function renderEstoque() {
   alertsEl.innerHTML = [
     ...criticos.map(m => `<div class="alert-banner alert-banner--red">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Estoque crÃ­tico: <strong>${m.nome}</strong> â€” saldo atual: ${m.saldo} ${m.unidade} (mÃ­nimo: ${m.minimo})
+      Estoque crítico: <strong>${m.nome}</strong> â€” saldo atual: ${m.saldo} ${m.unidade} (mínimo: ${m.minimo})
     </div>`),
     ...baixos.map(m => `<div class="alert-banner alert-banner--orange">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      AtenÃ§Ã£o: <strong>${m.nome}</strong> estÃ¡ prÃ³ximo do mÃ­nimo â€” saldo: ${m.saldo} ${m.unidade}
+      Atenção: <strong>${m.nome}</strong> está próximo do mínimo â€” saldo: ${m.saldo} ${m.unidade}
     </div>`)
   ].join('');
 
@@ -820,7 +820,7 @@ function renderEstoque() {
       const critico = m.saldo < m.minimo;
       const baixo   = !critico && m.saldo < m.minimo * 1.2;
       const statusChip = critico
-        ? `<span class="chip chip--red">CrÃ­tico</span>`
+        ? `<span class="chip chip--red">Crítico</span>`
         : baixo
           ? `<span class="chip chip--orange">Baixo</span>`
           : `<span class="chip chip--green">Normal</span>`;
@@ -842,18 +842,18 @@ function renderEstoque() {
     }).join('');
   }
 
-  // HistÃ³rico de movimentaÃ§Ãµes
+  // Histórico de movimentações
   const movs = DB.getMovimentos().slice().reverse();
   const movBody = $('mov-body');
   if (!movs.length) {
-    movBody.innerHTML = '<tr><td colspan="6" class="empty-cell">Sem movimentaÃ§Ãµes registradas.</td></tr>';
+    movBody.innerHTML = '<tr><td colspan="6" class="empty-cell">Sem movimentações registradas.</td></tr>';
   } else {
     movBody.innerHTML = movs.map(mv => `<tr>
       <td>${formatDateTime(mv.data)}</td>
       <td style="color:var(--text-primary)">${mv.materialNome}</td>
       <td>${mv.tipo === 'Entrada'
         ? `<span class="chip chip--green">Entrada</span>`
-        : `<span class="chip chip--red">SaÃ­da</span>`}</td>
+        : `<span class="chip chip--red">Saída</span>`}</td>
       <td style="font-weight:600">${mv.qty}</td>
       <td>${mv.opNumero || 'â€”'}</td>
       <td style="color:var(--text-muted)">${mv.obs || 'â€”'}</td>
@@ -880,7 +880,7 @@ function deleteMaterial(id) {
   if (!confirm('Excluir este material do estoque?')) return;
   DB.deleteMaterial(id);
   renderEstoque();
-  showToast('Material excluÃ­do.', 'error');
+  showToast('Material excluído.', 'error');
 }
 window.deleteMaterial = deleteMaterial;
 
@@ -901,7 +901,7 @@ function saveMaterial() {
   const saldo  = parseFloat($('material-saldo').value);
   const minimo = parseFloat($('material-minimo').value);
   if (isNaN(saldo)) { showToast('Informe o saldo atual.', 'error'); return; }
-  if (isNaN(minimo)) { showToast('Informe o estoque mÃ­nimo.', 'error'); return; }
+  if (isNaN(minimo)) { showToast('Informe o estoque mínimo.', 'error'); return; }
   const data = {
     nome, saldo, minimo,
     unidade:    $('material-unidade').value,
@@ -918,7 +918,7 @@ function saveMaterial() {
   renderEstoque();
 }
 
-// Modal MovimentaÃ§Ã£o
+// Modal Movimentação
 function openModalMov() {
   populateMaterialSelect();
   populateOpSelectMov();
@@ -934,13 +934,13 @@ function saveMov() {
   const qty   = parseFloat($('mov-qty').value);
   const tipo  = $('mov-tipo').value;
   if (!matId) { showToast('Selecione um material.', 'error'); return; }
-  if (!qty || qty <= 0) { showToast('Informe uma quantidade vÃ¡lida.', 'error'); return; }
+  if (!qty || qty <= 0) { showToast('Informe uma quantidade válida.', 'error'); return; }
 
   const mat = DB.getMaterialById(matId);
   if (!mat) return;
 
-  if (tipo === 'SaÃ­da' && qty > mat.saldo) {
-    showToast(`Saldo insuficiente! DisponÃ­vel: ${mat.saldo} ${mat.unidade}`, 'error');
+  if (tipo === 'Saída' && qty > mat.saldo) {
+    showToast(`Saldo insuficiente! Disponível: ${mat.saldo} ${mat.unidade}`, 'error');
     return;
   }
 
@@ -954,7 +954,7 @@ function saveMov() {
     opNumero:op?.numero || '',
     obs:     $('mov-obs').value.trim(),
   });
-  showToast(`MovimentaÃ§Ã£o registrada: ${tipo} de ${qty} ${mat.unidade}`);
+  showToast(`Movimentação registrada: ${tipo} de ${qty} ${mat.unidade}`);
   closeModalMov();
   renderEstoque();
 }
@@ -966,7 +966,7 @@ function statusFundicaoChip(s) {
   const map = {
     'Agendado':     'chip--blue',
     'Em Andamento': 'chip--orange',
-    'ConcluÃ­do':    'chip--green',
+    'Concluído':    'chip--green',
     'Cancelado':    'chip--gray',
   };
   return `<span class="chip ${map[s] || 'chip--gray'}">${s}</span>`;
@@ -992,7 +992,7 @@ function renderFundicao() {
   $('kpi-fund-agendadas').textContent  = all.filter(f => f.status === 'Agendado').length;
   $('kpi-fund-andamento').textContent  = all.filter(f => f.status === 'Em Andamento').length;
   $('kpi-fund-concluidas').textContent = all.filter(f => {
-    if (f.status !== 'ConcluÃ­do') return false;
+    if (f.status !== 'Concluído') return false;
     const d = new Date(f.criadoEm);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   }).length;
@@ -1001,7 +1001,7 @@ function renderFundicao() {
   // Tabela
   const tbody = $('fundicao-body');
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty-cell">Nenhuma programaÃ§Ã£o de fundiÃ§Ã£o cadastrada.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-cell">Nenhuma programação de fundição cadastrada.</td></tr>';
     return;
   }
   tbody.innerHTML = list.slice().reverse().map(f => `<tr>
@@ -1012,7 +1012,7 @@ function renderFundicao() {
     <td>${f.peso > 0 ? f.peso + ' kg' : 'â€”'}</td>
     <td>${formatDate(f.data)}</td>
     <td>${f.forno || 'â€”'}</td>
-    <td>${f.temp ? f.temp + 'Â°C' : 'â€”'}</td>
+    <td>${f.temp ? f.temp + '°C' : 'â€”'}</td>
     <td>${statusFundicaoChip(f.status)}</td>
     <td><div class="td-actions">
       <button class="btn-icon" onclick="openEditFundicao('${f.id}')" title="Editar">
@@ -1036,7 +1036,7 @@ function populateFundicaoModeloSelect() {
 
 function openNovaFundicao() {
   STATE.editingFundicaoId = null;
-  $('modal-fundicao-title').textContent = 'Nova ProgramaÃ§Ã£o de FundiÃ§Ã£o';
+  $('modal-fundicao-title').textContent = 'Nova Programação de Fundição';
   $('fundicao-edit-id').value = '';
   $('fundicao-qty').value = 1;
   $('fundicao-peso').value = '';
@@ -1045,7 +1045,7 @@ function openNovaFundicao() {
   $('fundicao-temp').value = '';
   $('fundicao-obs').value = '';
   $('fundicao-status').value = 'Agendado';
-  $('fundicao-material').value = 'AlumÃ­nio Liga 356';
+  $('fundicao-material').value = 'Alumínio Liga 356';
   populateFundicaoModeloSelect();
   $('modal-fundicao').classList.remove('hidden');
 }
@@ -1054,7 +1054,7 @@ function openEditFundicao(id) {
   const f = DB.getFundicoes().find(x => x.id === id);
   if (!f) return;
   STATE.editingFundicaoId = id;
-  $('modal-fundicao-title').textContent = `Editar ProgramaÃ§Ã£o â€“ ${f.numero}`;
+  $('modal-fundicao-title').textContent = `Editar Programação â€“ ${f.numero}`;
   $('fundicao-edit-id').value  = id;
   populateFundicaoModeloSelect();
   $('fundicao-modelo').value   = f.modelo;
@@ -1075,7 +1075,7 @@ function closeModalFundicao() { $('modal-fundicao').classList.add('hidden'); }
 function saveFundicao() {
   const modelo = $('fundicao-modelo').value;
   const dataVal = $('fundicao-data').value;
-  if (!modelo)  { showToast('Selecione um modelo de hÃ©lice.', 'error'); return; }
+  if (!modelo)  { showToast('Selecione um modelo de hélice.', 'error'); return; }
   if (!dataVal) { showToast('Informe a data programada.', 'error'); return; }
   const data = {
     modelo,
@@ -1090,20 +1090,20 @@ function saveFundicao() {
   };
   if (STATE.editingFundicaoId) {
     DB.updateFundicao(STATE.editingFundicaoId, data);
-    showToast('ProgramaÃ§Ã£o de fundiÃ§Ã£o atualizada!');
+    showToast('Programação de fundição atualizada!');
   } else {
     DB.addFundicao(data);
-    showToast('ProgramaÃ§Ã£o de fundiÃ§Ã£o criada!');
+    showToast('Programação de fundição criada!');
   }
   closeModalFundicao();
   renderFundicao();
 }
 
 function deleteFundicao(id) {
-  if (!confirm('Excluir esta programaÃ§Ã£o de fundiÃ§Ã£o?')) return;
+  if (!confirm('Excluir esta programação de fundição?')) return;
   DB.deleteFundicao(id);
   renderFundicao();
-  showToast('ProgramaÃ§Ã£o excluÃ­da.', 'error');
+  showToast('Programação excluída.', 'error');
 }
 window.deleteFundicao = deleteFundicao;
 
@@ -1113,8 +1113,8 @@ window.deleteFundicao = deleteFundicao;
 
 function statusMntChip(s) {
   const map = {
-    'Em ManutenÃ§Ã£o':  'chip--orange',
-    'Aguardando PeÃ§a': 'chip--blue',
+    'Em Manutenção':  'chip--orange',
+    'Aguardando Peça': 'chip--blue',
     'Interditada':      'chip--red',
     'Liberada':         'chip--green',
   };
@@ -1137,9 +1137,9 @@ function renderManutencao() {
   const elInt  = $('kpi-mnt-interditadas');
   const elAgu  = $('kpi-mnt-aguardando');
   const elLib  = $('kpi-mnt-liberadas');
-  if (elAnd)  elAnd.textContent  = all.filter(m => m.status === 'Em ManutenÃ§Ã£o').length;
+  if (elAnd)  elAnd.textContent  = all.filter(m => m.status === 'Em Manutenção').length;
   if (elInt)  elInt.textContent  = all.filter(m => m.status === 'Interditada').length;
-  if (elAgu)  elAgu.textContent  = all.filter(m => m.status === 'Aguardando PeÃ§a').length;
+  if (elAgu)  elAgu.textContent  = all.filter(m => m.status === 'Aguardando Peça').length;
   if (elLib)  elLib.textContent  = all.filter(m => m.status === 'Liberada').length;
 
   // Filtragem
@@ -1158,18 +1158,18 @@ function renderManutencao() {
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="10" class="empty-cell">${
       all.length === 0
-        ? 'Nenhuma ferramenta em manutenÃ§Ã£o. Clique em "Interditar Ferramenta" para registrar.'
+        ? 'Nenhuma ferramenta em manutenção. Clique em "Interditar Ferramenta" para registrar.'
         : 'Nenhum registro encontrado para os filtros aplicados.'
     }</td></tr>`;
     return;
   }
 
   tbody.innerHTML = list.slice().reverse().map(m => {
-    // Calcula dias em manutenÃ§Ã£o
+    // Calcula dias em manutenção
     const diasStr = m.dataEntrada
       ? (() => { const d = Math.floor((Date.now() - new Date(m.dataEntrada).getTime()) / 86400000); return d + 'd'; })()
       : 'â€”';
-    // Verifica atraso na previsÃ£o
+    // Verifica atraso na previsão
     const atrasado = m.dataPrevisao && m.status !== 'Liberada' && new Date(m.dataPrevisao) < new Date();
     return `<tr>
       <td><span style="color:var(--accent-orange);font-weight:700">${m.numero}</span></td>
@@ -1217,7 +1217,7 @@ function openNovaManutencao() {
   $('mnt-motivo').value     = '';
   $('mnt-responsavel').value= '';
   $('mnt-prioridade').value = 'Normal';
-  $('mnt-status').value     = 'Em ManutenÃ§Ã£o';
+  $('mnt-status').value     = 'Em Manutenção';
   $('mnt-obs').value        = '';
   $('mnt-data-entrada').value   = new Date().toISOString().split('T')[0];
   $('mnt-data-previsao').value  = '';
@@ -1228,7 +1228,7 @@ function openEditManutencao(id) {
   const m = DB.getManutencoes().find(x => x.id === id);
   if (!m) return;
   STATE.editingMntId = id;
-  $('modal-mnt-title').textContent  = `Editar ManutenÃ§Ã£o â€“ ${m.numero}`;
+  $('modal-mnt-title').textContent  = `Editar Manutenção â€“ ${m.numero}`;
   $('mnt-edit-id').value     = id;
   
   resetMntFerramentaOptions();
@@ -1267,7 +1267,7 @@ function saveManutencao() {
   const ferramenta = $('mnt-ferramenta').value.trim();
   const motivo     = $('mnt-motivo').value.trim();
   if (!ferramenta) { showToast('Informe o nome da ferramenta/coquilha.', 'error'); return; }
-  if (!motivo)     { showToast('Informe o motivo da interdiÃ§Ã£o.', 'error'); return; }
+  if (!motivo)     { showToast('Informe o motivo da interdição.', 'error'); return; }
   const data = {
     ferramenta,
     tipo:         $('mnt-tipo').value,
@@ -1281,7 +1281,7 @@ function saveManutencao() {
   };
   if (STATE.editingMntId) {
     DB.updateManutencao(STATE.editingMntId, data);
-    showToast('Registro de manutenÃ§Ã£o atualizado!');
+    showToast('Registro de manutenção atualizado!');
   } else {
     DB.addManutencao(data);
     showToast('Ferramenta interditada e registrada!');
@@ -1299,7 +1299,7 @@ function liberarManutencao(id) {
 window.liberarManutencao = liberarManutencao;
 
 function deleteManutencao(id) {
-  if (!confirm('Excluir este registro de manutenÃ§Ã£o?')) return;
+  if (!confirm('Excluir este registro de manutenção?')) return;
   DB.deleteManutencao(id);
   renderManutencao();
   showToast('Registro removido.', 'error');
@@ -1312,16 +1312,16 @@ window.deleteManutencao = deleteManutencao;
 
 // â”€â”€ OPERAÃ‡Ã•ES DO FLUXO PRODUTIVO (7 etapas) â”€â”€
 const OPERACOES = [
-  { codigo: '01', nome: 'FundiÃ§Ã£o',      cor: '#f97316', icon: 'ðŸ”¥' },
-  { codigo: '02', nome: 'VulcanizaÃ§Ã£o',  cor: '#e11d48', icon: 'â™¨ï¸' },
+  { codigo: '01', nome: 'Fundição',      cor: '#f97316', icon: 'ðŸ”¥' },
+  { codigo: '02', nome: 'Vulcanização',  cor: '#e11d48', icon: 'â™¨ï¸' },
   { codigo: '03', nome: 'Polimento',     cor: '#a855f7', icon: 'âœ¨' },
   { codigo: '04', nome: 'Usinagem',      cor: '#3b82f6', icon: 'âš™ï¸' },
   { codigo: '05', nome: 'Pintura',       cor: '#ec4899', icon: 'ðŸŽ¨' },
   { codigo: '06', nome: 'Embuchamento',  cor: '#f59e0b', icon: 'ðŸ› ï¸' },
-  { codigo: '07', nome: 'GravaÃ§Ã£o',      cor: '#14b8a6', icon: 'âœï¸' },
+  { codigo: '07', nome: 'Gravação',      cor: '#14b8a6', icon: 'âœï¸' },
 ];
 
-const ULTIMA_OP = '07'; // Ãšltima operaÃ§Ã£o do fluxo
+const ULTIMA_OP = '07'; // Ãšltima operação do fluxo
 
 function getOpLabel(codigo) {
   const op = OPERACOES.find(o => o.codigo === codigo);
@@ -1333,7 +1333,7 @@ function getOpCor(codigo) {
   return op ? op.cor : '#888';
 }
 
-// â”€â”€ Calcula o status visual de uma peÃ§a baseado no tempo na op â”€â”€
+// â”€â”€ Calcula o status visual de uma peça baseado no tempo na op â”€â”€
 function calcularStatus(p) {
   if (p.status === 'bloqueado') return 'bloqueado';
   if (p.operacaoAtual === ULTIMA_OP) return 'concluido';
@@ -1346,11 +1346,11 @@ function calcularStatus(p) {
 
 function statusBadge(status) {
   const map = {
-    'em-producao': ['status-em-producao', 'Em ProduÃ§Ã£o'],
-    'atencao':     ['status-atencao',     'AtenÃ§Ã£o'],
+    'em-producao': ['status-em-producao', 'Em Produção'],
+    'atencao':     ['status-atencao',     'Atenção'],
     'atrasado':    ['status-atrasado',    'Atrasado'],
     'bloqueado':   ['status-bloqueado',   'Bloqueado'],
-    'concluido':   ['status-concluido',   'ConcluÃ­do'],
+    'concluido':   ['status-concluido',   'Concluído'],
   };
   const [cls, label] = map[status] || map['em-producao'];
   return `<span class="status-badge ${cls}">${label}</span>`;
@@ -1382,7 +1382,7 @@ function renderFluxoKPIs(pecas) {
   if (el('fkpi-bloqueadas')) el('fkpi-bloqueadas').textContent = bloqueadas;
   if (el('fkpi-concluidas')) el('fkpi-concluidas').textContent = concluidas;
   const lbl = el('fluxo-count-label');
-  if (lbl) lbl.textContent = `${total} peÃ§a${total !== 1 ? 's' : ''}`;
+  if (lbl) lbl.textContent = `${total} peça${total !== 1 ? 's' : ''}`;
 }
 
 // â”€â”€ Pipeline visual com micro-indicadores â”€â”€
@@ -1391,7 +1391,7 @@ function renderPipeline() {
   if (!pipeline) return;
   const pecas = DB.getPecas();
 
-  // Contagens e soma de qty por operaÃ§Ã£o
+  // Contagens e soma de qty por operação
   const contagens   = {};
   const totalQty    = {};
   const atrasadas   = {};
@@ -1426,7 +1426,7 @@ function renderPipeline() {
             ${count} lote${count !== 1 ? 's' : ''}
           </div>
           <div class="pipeline-qty-total" style="color:${isActive ? op.cor : 'var(--text-muted)'}; opacity:0.85; font-size:0.72rem; font-weight:700; margin-top:2px;">
-            ${qty.toLocaleString('pt-BR')} peÃ§as
+            ${qty.toLocaleString('pt-BR')} peças
           </div>
           <div class="pipeline-indicators">
             <div class="pipeline-ind">
@@ -1467,8 +1467,8 @@ function renderFluxo() {
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="10" class="empty-cell">${
       allPecas.length === 0
-        ? 'Nenhuma peÃ§a em rastreio. Clique em "Nova PeÃ§a" para comeÃ§ar.'
-        : 'Nenhuma peÃ§a encontrada para os filtros aplicados.'
+        ? 'Nenhuma peça em rastreio. Clique em "Nova Peça" para começar.'
+        : 'Nenhuma peça encontrada para os filtros aplicados.'
     }</td></tr>`;
     return;
   }
@@ -1480,10 +1480,10 @@ function renderFluxo() {
     const pct      = calcularPorcentagem(p);
     const tempoNaOp = tempoDecorrido(p.atualizadoEm);
     const opLink = p.opNumero
-      ? `<span style="color:var(--accent-blue);font-weight:700;cursor:pointer;font-size:0.76rem" onclick="navigate('ordens')" title="Ver na aba Ordens de ProduÃ§Ã£o">${p.opNumero}</span>`
+      ? `<span style="color:var(--accent-blue);font-weight:700;cursor:pointer;font-size:0.76rem" onclick="navigate('ordens')" title="Ver na aba Ordens de Produção">${p.opNumero}</span>`
       : '<span style="color:var(--text-muted);font-size:0.76rem">â€”</span>';
     return `<tr>
-      <td><span style="color:var(--accent-purple);font-weight:700;cursor:pointer" onclick="openHistorico('${p.id}')" title="Ver histÃ³rico">${p.numero}</span></td>
+      <td><span style="color:var(--accent-purple);font-weight:700;cursor:pointer" onclick="openHistorico('${p.id}')" title="Ver histórico">${p.numero}</span></td>
       <td style="color:var(--text-primary);font-weight:500">${p.modelo || 'â€”'}</td>
       <td>${p.qty}</td>
       <td>${opLink}</td>
@@ -1493,12 +1493,12 @@ function renderFluxo() {
       <td>${statusBadge(status)}</td>
       <td>${progressBar(pct, status)}</td>
       <td><div class="td-actions">
-        <button class="btn-icon" onclick="openHistorico('${p.id}')" title="Ver histÃ³rico completo">
+        <button class="btn-icon" onclick="openHistorico('${p.id}')" title="Ver histórico completo">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </button>
-        ${!isUltima ? `<button class="btn-icon success" onclick="avancarOp('${p.id}')" title="AvanÃ§ar operaÃ§Ã£o">
+        ${!isUltima ? `<button class="btn-icon success" onclick="avancarOp('${p.id}')" title="Avançar operação">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>` : `<span title="Entrada em Estoque â€“ ConcluÃ­do" style="color:var(--accent-green);font-size:0.72rem;font-weight:700">âœ“ Est.</span>`}
+        </button>` : `<span title="Entrada em Estoque â€“ Concluído" style="color:var(--accent-green);font-size:0.72rem;font-weight:700">âœ“ Est.</span>`}
         <button class="btn-icon" onclick="openEditPeca('${p.id}')" title="Editar">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
@@ -1522,7 +1522,7 @@ function tempoDecorrido(isoStr) {
   return `${mins}m`;
 }
 
-// â”€â”€ Modal de HistÃ³rico da PeÃ§a â”€â”€
+// â”€â”€ Modal de Histórico da Peça â”€â”€
 function openHistorico(id) {
   const p = DB.getPecas().find(x => x.id === id);
   if (!p) return;
@@ -1531,9 +1531,9 @@ function openHistorico(id) {
   const pct    = calcularPorcentagem(p);
   const hist   = p.historico || [];
 
-  $('modal-historico-title').textContent = `HistÃ³rico â€“ ${p.numero}`;
+  $('modal-historico-title').textContent = `Histórico â€“ ${p.numero}`;
 
-  // Calcula tempo total (desde criaÃ§Ã£o)
+  // Calcula tempo total (desde criação)
   const tempoTotal = tempoDecorrido(p.criadoEm);
 
   $('modal-historico-body').innerHTML = `
@@ -1548,7 +1548,7 @@ function openHistorico(id) {
       </div>
       <div class="peca-info-item">
         <div class="peca-info-label">Quantidade</div>
-        <div class="peca-info-value">${p.qty} peÃ§a${p.qty !== 1 ? 's' : ''}</div>
+        <div class="peca-info-value">${p.qty} peça${p.qty !== 1 ? 's' : ''}</div>
       </div>
       <div class="peca-info-item">
         <div class="peca-info-label">OP Atual</div>
@@ -1572,13 +1572,13 @@ function openHistorico(id) {
         <div class="${status === 'concluido' ? 'progress-fill progress-fill--done' : 'progress-fill'}" style="width:${pct}%"></div>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:4px">
-        <span style="font-size:0.65rem;color:var(--text-muted)">FundiÃ§Ã£o</span>
+        <span style="font-size:0.65rem;color:var(--text-muted)">Fundição</span>
         <span style="font-size:0.65rem;color:var(--accent-teal)">Entrada em Estoque</span>
       </div>
     </div>
-    <div style="font-size:0.78rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.75rem">HistÃ³rico de OperaÃ§Ãµes</div>
+    <div style="font-size:0.78rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.75rem">Histórico de Operações</div>
     ${hist.length === 0
-      ? `<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:1.5rem">Nenhum registro de movimentaÃ§Ã£o.</div>`
+      ? `<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:1.5rem">Nenhum registro de movimentação.</div>`
       : `<div class="historico-timeline">${hist.map((h, i) => {
           const hopData = OPERACOES.find(o => o.codigo === h.op);
           const isLast = i === hist.length - 1;
@@ -1590,7 +1590,7 @@ function openHistorico(id) {
         }).join('')}</div>`
     }
     ${p.obs ? `<div style="margin-top:1rem;padding:0.75rem;background:var(--bg-elevated);border-radius:var(--radius);border:1px solid var(--border)">
-      <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.35rem">ObservaÃ§Ãµes</div>
+      <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.35rem">Observações</div>
       <div style="font-size:0.83rem;color:var(--text-secondary)">${p.obs}</div>
     </div>` : ''}
   `;
@@ -1603,7 +1603,7 @@ function closeModalHistorico() { $('modal-historico').classList.add('hidden'); }
 
 function openNovaPeca() {
   STATE.editingPecaId = null;
-  $('modal-peca-title').textContent = 'Nova PeÃ§a em Rastreio';
+  $('modal-peca-title').textContent = 'Nova Peça em Rastreio';
   $('peca-edit-id').value = '';
   $('peca-numero').value = '';
   $('peca-qty').value = 1;
@@ -1619,7 +1619,7 @@ function openEditPeca(id) {
   const p = DB.getPecas().find(x => x.id === id);
   if (!p) return;
   STATE.editingPecaId = id;
-  $('modal-peca-title').textContent = `Editar PeÃ§a â€“ ${p.numero}`;
+  $('modal-peca-title').textContent = `Editar Peça â€“ ${p.numero}`;
   $('peca-edit-id').value = id;
   populateModeloSelects();
   $('peca-numero').value        = p.numero;
@@ -1639,7 +1639,7 @@ function closeModalPeca() { $('modal-peca').classList.add('hidden'); }
 function savePeca() {
   const numero = $('peca-numero').value.trim();
   const modelo = $('peca-modelo').value;
-  if (!numero) { showToast('Informe o nÃºmero/lote da peÃ§a.', 'error'); return; }
+  if (!numero) { showToast('Informe o número/lote da peça.', 'error'); return; }
   if (!modelo) { showToast('Selecione um modelo.', 'error'); return; }
   const statusEl = $('peca-status-inicial');
   const data = {
@@ -1656,10 +1656,10 @@ function savePeca() {
       data.obsMovimento = `Atualizado manualmente para Op. ${data.operacaoAtual}`;
     }
     DB.updatePeca(STATE.editingPecaId, data);
-    showToast('PeÃ§a atualizada!');
+    showToast('Peça atualizada!');
   } else {
     DB.addPeca({ ...data, numero });
-    showToast('PeÃ§a cadastrada no rastreio!');
+    showToast('Peça cadastrada no rastreio!');
   }
   closeModalPeca();
   renderFluxo();
@@ -1673,18 +1673,18 @@ function avancarOp(id) {
   const proxOp = OPERACOES[idx + 1];
   DB.updatePeca(id, {
     operacaoAtual: proxOp.codigo,
-    obsMovimento: `AvanÃ§ado para Op. ${proxOp.codigo} â€“ ${proxOp.nome}`,
+    obsMovimento: `Avançado para Op. ${proxOp.codigo} â€“ ${proxOp.nome}`,
   });
-  showToast(`âœ… PeÃ§a avanÃ§ada â†’ ${proxOp.codigo} â€“ ${proxOp.nome}`);
+  showToast(`âœ… Peça avançada â†’ ${proxOp.codigo} â€“ ${proxOp.nome}`);
   renderFluxo();
 }
 window.avancarOp = avancarOp;
 
 function deletePeca(id) {
-  if (!confirm('Excluir esta peÃ§a do rastreio?')) return;
+  if (!confirm('Excluir esta peça do rastreio?')) return;
   DB.deletePeca(id);
   renderFluxo();
-  showToast('PeÃ§a removida.', 'error');
+  showToast('Peça removida.', 'error');
 }
 window.deletePeca = deletePeca;
 
@@ -1737,7 +1737,7 @@ function renderExpedicao() {
     }
   }
 
-  // Render HistÃ³rico de Vendas
+  // Render Histórico de Vendas
   const tbodyPedidos = $('expedicao-pedidos-body');
   if (tbodyPedidos) {
     if (!list.length) {
@@ -1846,7 +1846,7 @@ window.deleteVenda = deleteVenda;
 function renderRelatorios() {
   const ops = DB.getOps();
 
-  // Chart 1 â€“ ProduÃ§Ã£o por mÃªs (Ãºltimos 6 meses)
+  // Chart 1 â€“ Produção por mês (últimos 6 meses)
   const meses = [];
   const counts = [];
   for (let i = 5; i >= 0; i--) {
@@ -1971,7 +1971,7 @@ function tooltipStyle() {
 function exportCSV() {
   const ops = DB.getOps();
   if (!ops.length) { showToast('Sem dados para exportar.', 'error'); return; }
-  const header = 'NÃºmero,Modelo,Cliente,Quantidade,Etapa,Prioridade,Prazo,Criado em';
+  const header = 'Número,Modelo,Cliente,Quantidade,Etapa,Prioridade,Prazo,Criado em';
   const rows = ops.map(o =>
     `"${o.numero}","${o.modelo}","${o.cliente}","${o.qty}","${o.etapa}","${o.prioridade}","${formatDate(o.prazo)}","${formatDate(o.criadoEm)}"`
   );
@@ -1990,7 +1990,7 @@ function exportCSV() {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 document.addEventListener('DOMContentLoaded', () => {
 
-  // â”€â”€ NavegaÃ§Ã£o â”€â”€
+  // â”€â”€ Navegação â”€â”€
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -2006,7 +2006,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // â”€â”€ BotÃµes Nova OP â”€â”€
+  // â”€â”€ Botões Nova OP â”€â”€
   $('btn-nova-op-dashboard').addEventListener('click', () => { populateModeloSelects(); openNovaOp(); });
   const btnNovaOp = $('btn-nova-op');
   if (btnNovaOp) {
@@ -2042,35 +2042,35 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-cancel-material').addEventListener('click', closeModalMaterial);
   $('btn-save-material').addEventListener('click', saveMaterial);
 
-  // â”€â”€ Modal MovimentaÃ§Ã£o â”€â”€
+  // â”€â”€ Modal Movimentação â”€â”€
   $('btn-mov-estoque').addEventListener('click', openModalMov);
   $('modal-mov-close').addEventListener('click', closeModalMov);
   $('btn-cancel-mov').addEventListener('click', closeModalMov);
   $('btn-save-mov').addEventListener('click', saveMov);
 
-  // â”€â”€ Modal PeÃ§a (Rastreio) â”€â”€
+  // â”€â”€ Modal Peça (Rastreio) â”€â”€
   $('btn-nova-peca').addEventListener('click', openNovaPeca);
   $('modal-peca-close').addEventListener('click', closeModalPeca);
   $('btn-cancel-peca').addEventListener('click', closeModalPeca);
   $('btn-save-peca').addEventListener('click', savePeca);
 
-  // â”€â”€ Modal HistÃ³rico â”€â”€
+  // â”€â”€ Modal Histórico â”€â”€
   $('modal-historico-close').addEventListener('click', closeModalHistorico);
   $('btn-close-historico').addEventListener('click', closeModalHistorico);
 
-  // â”€â”€ Modal FundiÃ§Ã£o â”€â”€
+  // â”€â”€ Modal Fundição â”€â”€
   $('btn-nova-fundicao').addEventListener('click', openNovaFundicao);
   $('modal-fundicao-close').addEventListener('click', closeModalFundicao);
   $('btn-cancel-fundicao').addEventListener('click', closeModalFundicao);
   $('btn-save-fundicao').addEventListener('click', saveFundicao);
 
-  // â”€â”€ Modal ManutenÃ§Ã£o â”€â”€
+  // â”€â”€ Modal Manutenção â”€â”€
   $('btn-nova-manutencao').addEventListener('click', openNovaManutencao);
   $('modal-mnt-close').addEventListener('click', closeModalManutencao);
   $('btn-cancel-mnt').addEventListener('click', closeModalManutencao);
   $('btn-save-mnt').addEventListener('click', saveManutencao);
 
-  // â”€â”€ Modal Venda (ExpediÃ§Ã£o) â”€â”€
+  // â”€â”€ Modal Venda (Expedição) â”€â”€
   $('btn-nova-venda').addEventListener('click', openNovaVenda);
   $('modal-venda-close').addEventListener('click', closeModalVenda);
   $('btn-cancel-venda').addEventListener('click', closeModalVenda);
@@ -2110,7 +2110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // â”€â”€ InicializaÃ§Ã£o do MÃ³dulo de AnÃ¡lise de ProduÃ§Ã£o â”€â”€
+  // â”€â”€ Inicialização do Módulo de Análise de Produção â”€â”€
   if (typeof initAnaliseListeners === 'function') {
     initAnaliseListeners();
   }
@@ -2118,11 +2118,11 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAnaliseExcelData();
   }
 
-  // â”€â”€ InicializaÃ§Ã£o do SyncManager (SincronizaÃ§Ã£o em Rede) â”€â”€
+  // â”€â”€ Inicialização do SyncManager (Sincronização em Rede) â”€â”€
   if (typeof SyncManager !== 'undefined') {
     SyncManager.init(() => {
       // Callback executado quando o polling encontra dados novos no servidor
-      // Verifica se hÃ¡ algum modal aberto. Se houver, adia a re-renderizaÃ§Ã£o da tela para nÃ£o atrapalhar
+      // Verifica se há algum modal aberto. Se houver, adia a re-renderização da tela para não atrapalhar
       const algumModalAberto = !!document.querySelector('.modal-overlay:not(.hidden)');
       
       if (algumModalAberto) {
