@@ -1,8 +1,8 @@
-﻿// Seed data importado de itens_em_produÃ§Ã£o.xlsx
+// Seed data importado de itens_em_produção.xlsx
 // Gerado automaticamente em 2026-06-08
-// Colunas originais: DescriÃ§Ã£o | CÃ³digo (SKU) | Bruto | LocalizaÃ§Ã£o | Acompanhamento de PeÃ§as (qty)
+// Colunas originais: Descrição | Código (SKU) | Bruto | Localização | Acompanhamento de Peças (qty)
 
-// Mapa de localizaÃ§Ã£o da planilha â†’ cÃ³digo de operaÃ§Ã£o do sistema
+// Mapa de localização da planilha â†’ código de operação do sistema
 const LOC_MAP = {
   '1 - produzindo fundido': '01',
   '2 - polimento':          '03',
@@ -12,7 +12,7 @@ const LOC_MAP = {
   '5 - estoque usinado':    '04',
   '6 - pintura':            '05',
   '7 - embuchamento':       '06',
-  '8 - gravaÃ§Ã£o':           '07',
+  '8 - gravação':           '07',
   '9 - entrada em estoque': '07',
 };
 
@@ -39,7 +39,7 @@ function mapLocToOp(loc) {
 }
 
 const ITENS_PRODUCAO = [
-  // Coquilhas (matÃ©ria-prima / processo de fundiÃ§Ã£o)
+  // Coquilhas (matéria-prima / processo de fundição)
   { nome: 'COQUILHA 02', sku: 'COQUILHA 02', bruto: 'COQUILHA 02', localizacao: '1 - Produzindo Fundido', qty: 0 },
   { nome: 'COQUILHA 03', sku: 'COQUILHA 03', bruto: 'COQUILHA 03', localizacao: '1 - Produzindo Fundido', qty: 400 },
   { nome: 'COQUILHA 04', sku: 'COQUILHA 04', bruto: 'COQUILHA 04', localizacao: '1 - Produzindo Fundido', qty: 500 },
@@ -52,7 +52,7 @@ const ITENS_PRODUCAO = [
   { nome: 'COQUILHA 14', sku: 'COQUILHA 14', bruto: 'COQUILHA 14', localizacao: '1 - Produzindo Fundido', qty: 0 },
   { nome: 'COQUILHA 16', sku: 'COQUILHA 16', bruto: 'COQUILHA 16', localizacao: '1 - Produzindo Fundido', qty: 300 },
   { nome: 'COQUILHA 21', sku: 'COQUILHA 21', bruto: 'COQUILHA 21', localizacao: '1 - Produzindo Fundido', qty: 171 },
-  // HÃ©lices em produÃ§Ã£o
+  // Hélices em produção
   { nome: 'HÃ‰LICE MERCURY 40 SUPER 10 3/8 X 13', sku: 'HR HM 010', bruto: 'COQUILHA 14', localizacao: '4 - CODAN  Usinagem', qty: 301 },
   { nome: 'HÃ‰LICE MERCURY 40/50 HP SUPER 10 1/2 X 13', sku: 'HR HM 037', bruto: 'COQUILHA 12', localizacao: '4 - CODAN  Usinagem', qty: 115 },
   { nome: 'HÃ‰LICE YAMAHA 15 HP 9 1/4 X 11', sku: 'HR HY 012', bruto: 'COQUILHA 02', localizacao: '2 - Polimento', qty: 294 },
@@ -65,25 +65,25 @@ const ITENS_PRODUCAO = [
   { nome: 'HÃ‰LICE MERCURY 15 SUPER 9 1/4 X 10', sku: 'HR HM 005', bruto: 'COQUILHA 06', localizacao: '6 - Pintura', qty: 141 },
   { nome: 'HÃ‰LICE HIDEA 15 HP 9 1/4 X 11', sku: 'HR HHI 001', bruto: 'COQUILHA 02', localizacao: '3 -Estoque Bruto (CODAN)', qty: 167 },
   { nome: 'HÃ‰LICE YAMAHA 60 / 140 HP 13 3/4 X 15', sku: 'HR HY 029', bruto: 'nr 32', localizacao: '7 - Embuchamento', qty: 43 },
-  { nome: 'HÃ‰LICE YAMAHA 15 HP 9 1/4 X 10 1/2', sku: 'HR HY 008', bruto: 'INJETADA', localizacao: '8 - GravaÃ§Ã£o', qty: 581 },
+  { nome: 'HÃ‰LICE YAMAHA 15 HP 9 1/4 X 10 1/2', sku: 'HR HY 008', bruto: 'INJETADA', localizacao: '8 - Gravação', qty: 581 },
   { nome: 'HÃ‰LICE J/E 25/35 HP 10 X 13 STD', sku: 'HR HJ 006', bruto: 'nr 03', localizacao: '5 - Estoque Usinado', qty: 73 },
   { nome: 'HÃ‰LICE J/E 25/35 HP 10 X 15', sku: 'HR HJ 014', bruto: 'nr 04', localizacao: '5 - Estoque Usinado', qty: 196 },
   { nome: 'HÃ‰LICE MERCURY 15 SUPER 9 1/4 X 9', sku: 'HR HM 004', bruto: 'COQUILHA 11', localizacao: '7 - Embuchamento', qty: 249 },
   { nome: 'HÃ‰LICE MERCURY 150/250 HP 14 X 19', sku: 'HR HR 024', bruto: 'nr 55', localizacao: '4 - CODAN  Usinagem', qty: 25 },
-  { nome: 'HÃ‰LICE MERCURY 150/250 HP V6 14 1/2 X 19', sku: 'HR HM 036', bruto: 'COQUILHA 08', localizacao: '8 - GravaÃ§Ã£o', qty: 4 },
+  { nome: 'HÃ‰LICE MERCURY 150/250 HP V6 14 1/2 X 19', sku: 'HR HM 036', bruto: 'COQUILHA 08', localizacao: '8 - Gravação', qty: 4 },
   { nome: 'HÃ‰LICE MERCURY 150/250 HP V6 14 1/2 X 19', sku: 'HR HM 036', bruto: 'COQUILHA 08', localizacao: '4 - CODAN  Usinagem', qty: 126 },
   { nome: 'HÃ‰LICE MERCURY 25/30 HP SEA-PRO 9.6  X 13', sku: 'HR HM 021', bruto: 'COQUILHA 21', localizacao: '7 - Embuchamento', qty: 189 },
   { nome: 'HÃ‰LICE MERCURY 25/30 SEA-PRO 9 7/8 X 13', sku: 'HR HM 008', bruto: 'COQUILHA 05', localizacao: '6 - Pintura', qty: 28 },
-  { nome: 'HÃ‰LICE YAMAHA 15 HP 9 1/4 X 9', sku: 'HR HY 009', bruto: 'COQUILHA 19', localizacao: '8 - GravaÃ§Ã£o', qty: 10 },
+  { nome: 'HÃ‰LICE YAMAHA 15 HP 9 1/4 X 9', sku: 'HR HY 009', bruto: 'COQUILHA 19', localizacao: '8 - Gravação', qty: 10 },
   { nome: 'HÃ‰LICE YAMAHA 15 HP 9 1/4 X 10 1/2', sku: 'HR HY 008', bruto: 'INJETADA', localizacao: '7 - Embuchamento', qty: 423 },
   { nome: 'HÃ‰LICE SUZUKI 15 HP 9 1/4 X 10', sku: 'HR HS 002', bruto: 'COQUILHA 09', localizacao: '7 - Embuchamento', qty: 282 },
-  { nome: 'HÃ‰LICE YAMAHA 40/55 HP 11 1/8 X 12', sku: 'HR HY 023', bruto: 'COQUILHA 04', localizacao: '8 - GravaÃ§Ã£o', qty: 40 },
+  { nome: 'HÃ‰LICE YAMAHA 40/55 HP 11 1/8 X 12', sku: 'HR HY 023', bruto: 'COQUILHA 04', localizacao: '8 - Gravação', qty: 40 },
   { nome: 'HÃ‰LICE YAMAHA 40/55 HP 11 1/8 X 12', sku: 'HR HY 023', bruto: 'COQUILHA 04', localizacao: '7 - Embuchamento', qty: 87 },
-  { nome: 'HÃ‰LICE MERCURY 75/125 HP 13 X 19', sku: 'HR HM 013', bruto: 'nr 44', localizacao: '8 - GravaÃ§Ã£o', qty: 22 },
+  { nome: 'HÃ‰LICE MERCURY 75/125 HP 13 X 19', sku: 'HR HM 013', bruto: 'nr 44', localizacao: '8 - Gravação', qty: 22 },
   { nome: 'HÃ‰LICE MERCURY 75/125 HP 13 X 19', sku: 'HR HM 013', bruto: 'nr 44', localizacao: '6 - Pintura', qty: 50 },
-  { nome: 'HÃ‰LICE YAMAHA 40 / 55 HP 11 1/8 X 13', sku: 'HR HY 022', bruto: 'COQUILHA 04', localizacao: '8 - GravaÃ§Ã£o', qty: 260 },
+  { nome: 'HÃ‰LICE YAMAHA 40 / 55 HP 11 1/8 X 13', sku: 'HR HY 022', bruto: 'COQUILHA 04', localizacao: '8 - Gravação', qty: 260 },
   { nome: 'HÃ‰LICE YAMAHA 40 / 55 HP 11 1/8 X 13', sku: 'HR HY 022', bruto: 'COQUILHA 04', localizacao: '7 - Embuchamento', qty: 24 },
-  { nome: 'HÃ‰LICE SUZUKI 25/30 HP 10 1/4 X 12', sku: 'HR HS 012', bruto: 'nr 22', localizacao: '8 - GravaÃ§Ã£o', qty: 6 },
+  { nome: 'HÃ‰LICE SUZUKI 25/30 HP 10 1/4 X 12', sku: 'HR HS 012', bruto: 'nr 22', localizacao: '8 - Gravação', qty: 6 },
   { nome: 'HÃ‰LICE YAMAHA 60/140 HP 13 1/4 X 17', sku: 'HR HY 030', bruto: 'COQUILHA 22', localizacao: '7 - Embuchamento', qty: 41 },
   { nome: 'HÃ‰LICE YAMAHA 60/140 HP 13 1/4 X 17', sku: 'HR HY 030', bruto: 'COQUILHA 22', localizacao: '7 - Embuchamento', qty: 24 },
   { nome: 'HÃ‰LICE MERCURY 75/125 HP 13 1/4 X 17', sku: 'HR HM 012', bruto: 'nr 43', localizacao: '7 - Embuchamento', qty: 29 },
@@ -91,7 +91,7 @@ const ITENS_PRODUCAO = [
   { nome: 'HÃ‰LICE YAMAHA 8 HP 8 1/2 X 8 1/2', sku: 'HR HY 037', bruto: 'nr 06', localizacao: '7 - Embuchamento', qty: 7 },
   { nome: 'HÃ‰LICE YAMAHA 8 HP 8 1/2 X 8 1/2', sku: 'HR HY 037', bruto: 'nr 06', localizacao: '7 - Embuchamento', qty: 41 },
   { nome: 'HÃ‰LICE MERCURY 40 SUPER 10 3/8 X 13', sku: 'HR HM 010', bruto: 'COQUILHA 14', localizacao: '7 - Embuchamento', qty: 80 },
-  { nome: 'HÃ‰LICE SUZUKI DF 75/140 HP 14 X 19', sku: 'HR HS 014', bruto: 'nr 33', localizacao: '8 - GravaÃ§Ã£o', qty: 6 },
+  { nome: 'HÃ‰LICE SUZUKI DF 75/140 HP 14 X 19', sku: 'HR HS 014', bruto: 'nr 33', localizacao: '8 - Gravação', qty: 6 },
   { nome: 'HÃ‰LICE MERCURY 40 SUPER 10 3/8 X 13', sku: 'HR HM 010', bruto: 'COQUILHA 14', localizacao: '7 - Embuchamento', qty: 82 },
   { nome: 'HÃ‰LICE MERCURY 30/60 HP 10 3/8 X 13', sku: 'HR HM 015', bruto: 'nr 45', localizacao: '7 - Embuchamento', qty: 76 },
   { nome: 'HÃ‰LICE YAMAHA 40/55 HP 11 1/2 X 13', sku: 'HR HY 025', bruto: 'COQUILHA 04', localizacao: '7 - Embuchamento', qty: 41 },
@@ -114,7 +114,7 @@ const ITENS_PRODUCAO = [
   { nome: 'HÃ‰LICE YAMAHA 25/30 HP 9 7/8 X 12', sku: 'HR HY 033', bruto: 'COQUILHA 18', localizacao: '7 - Embuchamento', qty: 290 },
   { nome: 'HÃ‰LICE YAMAHA 60/140 HP 12 5/8 X 21', sku: 'HR HY 032', bruto: 'COQUILHA 22', localizacao: '6 - Pintura', qty: 51 },
   { nome: 'HÃ‰LICE YAMAHA 60/140 HP 13 1/4 X 17', sku: 'HR HY 030', bruto: 'COQUILHA 22', localizacao: '4 - CODAN  Usinagem', qty: 63 },
-  { nome: 'HÃ‰LICE YAMAHA 60/140 HP 13 1/4 X 17', sku: 'HR HY 030', bruto: 'COQUILHA 22', localizacao: '8 - GravaÃ§Ã£o', qty: 12 },
+  { nome: 'HÃ‰LICE YAMAHA 60/140 HP 13 1/4 X 17', sku: 'HR HY 030', bruto: 'COQUILHA 22', localizacao: '8 - Gravação', qty: 12 },
   { nome: 'HÃ‰LICE YAMAHA 25/30 HP 9 7/8 X 12', sku: 'HR HY 033', bruto: 'COQUILHA 18', localizacao: '7 - Embuchamento', qty: 188 },
   { nome: 'HÃ‰LICE SUZUKI 25/30 HP 10 1/4 X 13 STD', sku: 'HR HS 003', bruto: 'COQUILHA 20', localizacao: '7 - Embuchamento', qty: 126 },
   { nome: 'HÃ‰LICE SUZUKI 25/30 HP 10 1/4 X 13 STD', sku: 'HR HS 003', bruto: 'COQUILHA 20', localizacao: '7 - Embuchamento', qty: 199 },
