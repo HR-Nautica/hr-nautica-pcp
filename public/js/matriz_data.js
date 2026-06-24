@@ -1,9 +1,9 @@
-﻿// Seed data imported from matriz_dados.xlsx
+// Seed data imported from matriz_dados.xlsx
 const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 75/125 HP 13 3/4 X 15",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 3/4",
     "passo": "15",
     "peso": "",
@@ -22,7 +22,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 75/125 HP 13 1/4 X 17",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 1/4",
     "passo": "17",
     "peso": "",
@@ -41,7 +41,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 75/125 HP 13 X 19",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13",
     "passo": "19",
     "peso": "",
@@ -60,7 +60,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 150/250 HP 14 1/2 X 17",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "14 1/2",
     "passo": "17",
     "peso": "",
@@ -79,7 +79,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 150/250 HP 13 1/2 X 23",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 1/2",
     "passo": "23",
     "peso": "",
@@ -98,7 +98,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 4 / 5 HP 7 1/4 X 6 1/2 PINADO",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "7 1/4",
     "passo": "6 1/2",
     "peso": "",
@@ -117,7 +117,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40 / 55 HP 11 1/8 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 1/8",
     "passo": "13",
     "peso": "",
@@ -136,7 +136,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 1/2 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 1/2",
     "passo": "13",
     "peso": "",
@@ -155,7 +155,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 1/8 X 12",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 1/8",
     "passo": "12",
     "peso": "",
@@ -174,7 +174,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 1/4 X 14",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 1/4",
     "passo": "14",
     "peso": "",
@@ -193,7 +193,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 1/4 X 14 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 1/4",
     "passo": "14",
     "peso": "",
@@ -212,7 +212,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 1/4 X 14",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 1/4",
     "passo": "14",
     "peso": "",
@@ -231,7 +231,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 3/8 X 14",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "14",
     "peso": "",
@@ -250,7 +250,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 3/8 X 14",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "14",
     "peso": "",
@@ -269,7 +269,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 1/2 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 1/2",
     "passo": "13",
     "peso": "",
@@ -288,7 +288,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 1/2 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 1/2",
     "passo": "13",
     "peso": "",
@@ -307,7 +307,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 40/55/60/65 HP 11 1/2 X 11",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 1/2",
     "passo": "11",
     "peso": "",
@@ -326,7 +326,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 40/55/60/65 HP 11 1/2 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 1/2",
     "passo": "13",
     "peso": "",
@@ -345,7 +345,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 40/55/60/65 HP 11 1/4 X 15",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 1/4",
     "passo": "15",
     "peso": "",
@@ -364,7 +364,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 40/55/60/65 HP 11 3/8 X 14",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 3/8",
     "passo": "14",
     "peso": "",
@@ -383,7 +383,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 40 SUPER 10 3/8 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "13",
     "peso": "",
@@ -402,7 +402,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 3/8 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "13",
     "peso": "",
@@ -421,7 +421,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HELICE YAMAHA 40 HP 2T/ F60 4T 11 3/8 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11 3/8",
     "passo": "13",
     "peso": "",
@@ -440,7 +440,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 X 15",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "11",
     "passo": "15",
     "peso": "",
@@ -459,7 +459,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40 HP 3 CIL. 10 3/8 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "13",
     "peso": "",
@@ -478,7 +478,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40 HP 10 1/8 X 15 3 CIL",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 1/8",
     "passo": "15",
     "peso": "",
@@ -497,7 +497,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 30/60 HP 10 3/8 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "13",
     "peso": "",
@@ -516,7 +516,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 30/60 HP 10 3/8 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "13",
     "peso": "",
@@ -535,7 +535,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HELICE JOHNSON / OMC 4 HP 8 X 7 1/2 CONTRA ROTANTE",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "8",
     "passo": "7 1/2",
     "peso": "",
@@ -554,7 +554,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HELICE JOHNSON / MERCURY 3.3 HP 7 1/2 X 6",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "7 1/2",
     "passo": "6",
     "peso": "",
@@ -573,7 +573,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 150/250 HP V6 14 1/2 X 19",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "14 1/2",
     "passo": "19",
     "peso": "",
@@ -592,7 +592,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 60/140 HP 13 1/4 X 17",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 1/4",
     "passo": "17",
     "peso": "",
@@ -611,7 +611,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 75/85/115/140 HP 13 X 19",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13",
     "passo": "19",
     "peso": "",
@@ -630,7 +630,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 60/140 HP 13 X 19",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13",
     "passo": "19",
     "peso": "",
@@ -649,7 +649,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 75/85/115/140 HP 12 1/4 x 15",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "12 1/4",
     "passo": "15",
     "peso": "",
@@ -668,7 +668,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 60 / 140 HP 13 3/4 X 15",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 3/4",
     "passo": "15",
     "peso": "",
@@ -687,7 +687,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI DF 75/140 HP 14 X 19",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "14",
     "passo": "19",
     "peso": "",
@@ -706,7 +706,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 150/250 HP 14 X 19",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "14",
     "passo": "19",
     "peso": "",
@@ -725,7 +725,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 60/140 HP 12 5/8 X 21",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "12 5/8",
     "passo": "21",
     "peso": "",
@@ -744,7 +744,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 75/85/115/140 HP 13 1/4 X 17",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 1/4",
     "passo": "17",
     "peso": "",
@@ -763,7 +763,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI DF 75/140 HP 13 1/4 X 17",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 1/4",
     "passo": "17",
     "peso": "",
@@ -782,7 +782,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 150/250 HP 14 X 19",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "14",
     "passo": "19",
     "peso": "",
@@ -801,7 +801,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 150/250 HP 13 3/4 x 21",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 3/4",
     "passo": "21",
     "peso": "",
@@ -820,7 +820,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 150/250 HP 14 1/2 X 17",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "14 1/2",
     "passo": "17",
     "peso": "",
@@ -839,7 +839,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 4/5 HP 7 1/4 X 7 ESTRIADO",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "7 1/4",
     "passo": "7",
     "peso": "",
@@ -858,7 +858,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE J/E 25/35 HP 10 X 13 STD",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10",
     "passo": "13",
     "peso": "",
@@ -877,7 +877,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE J/E 25/35 HP 10 X 15",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10",
     "passo": "15",
     "peso": "",
@@ -896,7 +896,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 15 HP 9 1/4 X 10",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "10",
     "peso": "",
@@ -915,7 +915,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 15 HP 9 1/4 X 11",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "11",
     "peso": "",
@@ -934,7 +934,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI F. 15 HP 9 1/4 X 11",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "11",
     "peso": "",
@@ -953,7 +953,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE J/E 15 HP 9 1/2 X 10",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/2",
     "passo": "10",
     "peso": "",
@@ -972,7 +972,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE J/E 15 HP 9 X 11",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9",
     "passo": "11",
     "peso": "",
@@ -991,7 +991,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 75/125 HP 13 3/4 X 15",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 3/4",
     "passo": "15",
     "peso": "",
@@ -1010,7 +1010,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 75/125 HP 13 1/4 X 17",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13 1/4",
     "passo": "17",
     "peso": "",
@@ -1029,7 +1029,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 75/125 HP 13 X 19",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "13",
     "passo": "19",
     "peso": "",
@@ -1048,7 +1048,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 6 /15 HP 9 X 10 1/2 USA",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9",
     "passo": "10 1/2",
     "peso": "",
@@ -1067,7 +1067,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 6 /15 HP 9 X 9",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9",
     "passo": "9",
     "peso": "",
@@ -1086,7 +1086,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 8 HP 8 1/2 X 8 1/2",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "8 1/2",
     "passo": "8 1/2",
     "peso": "",
@@ -1105,7 +1105,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE HIDEA 15 HP 9 1/4 X 11",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "11",
     "peso": "",
@@ -1124,7 +1124,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 15 HP 9 1/4 X 11",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "11",
     "peso": "",
@@ -1143,7 +1143,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HELICE YAMAHA 15 HP 9 1/4 X 12",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "12",
     "peso": "",
@@ -1162,7 +1162,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 15 HP 9 1/4 X 9",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "9",
     "peso": "",
@@ -1181,7 +1181,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 15 HP 9 1/4 X 10 1/2",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "10 1/2",
     "peso": "",
@@ -1200,7 +1200,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE HONDA 15 HP 9 1/4 X 10",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "10",
     "peso": "",
@@ -1219,7 +1219,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 25/30 HP 9 7/8 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 7/8",
     "passo": "13",
     "peso": "",
@@ -1236,9 +1236,9 @@ const MATRIZ_DATA = [
     "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÃ‰LICE YAMAHA 25 HP"
   },
   {
-    "nome": "HÃ‰LICE HIDEA 20/25 HP 9 1/4 X 11 GeraÃ§Ã£o 1",
+    "nome": "HÃ‰LICE HIDEA 20/25 HP 9 1/4 X 11 Geração 1",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "11",
     "peso": "",
@@ -1257,7 +1257,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 25/30 HP 9 7/8 X 12",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 7/8",
     "passo": "12",
     "peso": "",
@@ -1276,7 +1276,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 25/30 HP 9 7/8 X 10 1/2",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 7/8",
     "passo": "10 1/2",
     "peso": "",
@@ -1295,7 +1295,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE HIDEA 30 HP 9 7/8 X 12",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 7/8",
     "passo": "12",
     "peso": "",
@@ -1314,7 +1314,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 25/30 SEA-PRO 9 7/8 X 12",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 7/8",
     "passo": "12",
     "peso": "",
@@ -1333,7 +1333,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 25/30 SEA-PRO 9 7/8 X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 7/8",
     "passo": "13",
     "peso": "",
@@ -1352,7 +1352,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 25/30 HP SEA-PRO 9.6  X 13",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "6",
     "passo": "13",
     "peso": "",
@@ -1371,7 +1371,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 25/30 HP SEA-PRO 9.9  X 13 MT1763",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9",
     "passo": "13",
     "peso": "",
@@ -1390,7 +1390,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 15 SUPER 9 1/4 X 10",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "10",
     "peso": "",
@@ -1409,7 +1409,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 15 SUPER 9 1/4 X 9",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "9",
     "peso": "",
@@ -1428,7 +1428,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 25/30 HP 10 1/4 X 13 STD",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 1/4",
     "passo": "13",
     "peso": "",
@@ -1447,7 +1447,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE SUZUKI 25/30 HP 10 1/4 X 12",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 1/4",
     "passo": "12",
     "peso": "",
@@ -1466,7 +1466,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 150/250 HP V6 14 1/2 X 19 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "14 1/2",
     "passo": "19",
     "peso": "",
@@ -1485,7 +1485,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 3/8 X 14 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "14",
     "peso": "",
@@ -1504,7 +1504,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 3/8 X 14 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "14",
     "peso": "",
@@ -1523,7 +1523,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 15 SUPER 9 1/4 X 9 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "9",
     "peso": "",
@@ -1542,7 +1542,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 1/2 X 13 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 1/2",
     "passo": "13",
     "peso": "",
@@ -1561,7 +1561,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 1/2 X 13 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 1/2",
     "passo": "13",
     "peso": "",
@@ -1580,7 +1580,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE MERCURY 40 SUPER 10 3/8 X 13 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "13",
     "peso": "",
@@ -1599,7 +1599,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 3/8 X 13 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "10 3/8",
     "passo": "13",
     "peso": "",
@@ -1618,7 +1618,7 @@ const MATRIZ_DATA = [
   {
     "nome": "HÃ‰LICE YAMAHA 15 HP 9 1/4 X 10 1/2 MAX TORK",
     "pas": "3",
-    "material": "AlumÃ­nio",
+    "material": "Alumínio",
     "diametro": "9 1/4",
     "passo": "10 1/2",
     "peso": "",
