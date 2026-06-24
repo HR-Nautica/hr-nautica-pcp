@@ -1,6 +1,9 @@
 import pg from "pg";
 import { config } from "./config.js";
 
+// Forca o driver pg a ignorar validacoes de certificado (essencial para o Vercel Serverless conectar no Supabase)
+process.env.PGSSLMODE = "no-verify";
+
 const { Pool } = pg;
 
 let pool;
@@ -9,7 +12,6 @@ let initialized = false;
 function getPool() {
   if (!pool) {
     const connectionString = config.database.connectionString;
-    const useSsl = connectionString.includes("supabase") || connectionString.includes("render") || connectionString.includes("elephantsql");
     
     if (connectionString) {
       try {
@@ -20,18 +22,18 @@ function getPool() {
           host: params.hostname,
           port: params.port ? Number(params.port) : 5432,
           database: params.pathname ? params.pathname.split("/")[1] : undefined,
-          ssl: useSsl ? { rejectUnauthorized: false } : false
+          ssl: { rejectUnauthorized: false }
         });
       } catch (err) {
         pool = new Pool({
           connectionString,
-          ssl: useSsl ? { rejectUnauthorized: false } : false
+          ssl: { rejectUnauthorized: false }
         });
       }
     } else {
       pool = new Pool({
         connectionString,
-        ssl: useSsl ? { rejectUnauthorized: false } : false
+        ssl: { rejectUnauthorized: false }
       });
     }
   }
