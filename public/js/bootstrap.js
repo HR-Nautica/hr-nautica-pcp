@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 const applicationScripts = [
   "/js/db.js",
