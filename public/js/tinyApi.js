@@ -1,14 +1,14 @@
-﻿/**
+/**
  * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
- *  tinyApi.js â€” MÃ³dulo de integraÃ§Ã£o com o servidor proxy local
+ *  tinyApi.js â€” Módulo de integração com o servidor proxy local
  *
  *  Como funciona:
- *  - Ao carregar, testa se o servidor local estÃ¡ ativo em localhost:3001
+ *  - Ao carregar, testa se o servidor local está ativo em localhost:3001
  *  - Se estiver ativo: usa a API Tiny (dados em tempo real)
- *  - Se nÃ£o estiver: sistema continua funcionando normalmente
+ *  - Se não estiver: sistema continua funcionando normalmente
  *    com as planilhas sincronizadas manualmente (comportamento atual)
  *
- *  NÃ£o Ã© necessÃ¡rio alterar este arquivo para ativar a integraÃ§Ã£o.
+ *  Não é necessário alterar este arquivo para ativar a integração.
  *  Basta rodar "node server.js" na pasta do projeto.
  * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
  */
@@ -17,18 +17,18 @@
 
 const TINY_PROXY_BASE = 'http://localhost:3001';
 
-// Estado da integraÃ§Ã£o
+// Estado da integração
 const TinyAPI = {
-  disponivel:       false,   // true quando o servidor proxy estÃ¡ rodando
-  tokenConfigurado: false,   // true quando o token Tiny estÃ¡ definido no .env
+  disponivel:       false,   // true quando o servidor proxy está rodando
+  tokenConfigurado: false,   // true quando o token Tiny está definido no .env
   ultimaVerificacao: null,
   ultimoErro:        null,
 };
 
-// â”€â”€â”€ VerificaÃ§Ã£o de disponibilidade â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€ Verificação de disponibilidade â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
- * Testa se o servidor proxy local estÃ¡ rodando.
+ * Testa se o servidor proxy local está rodando.
  * Chamado automaticamente ao iniciar o sistema.
  * @returns {Promise<boolean>}
  */
@@ -37,7 +37,7 @@ async function verificarServidorProxy() {
     const res = await fetch(`${TINY_PROXY_BASE}/api/status`, {
       method:  'GET',
       headers: { 'Accept': 'application/json' },
-      // Timeout curto â€” se o servidor nÃ£o responder em 1s, nÃ£o estÃ¡ ativo
+      // Timeout curto â€” se o servidor não responder em 1s, não está ativo
       signal:  AbortSignal.timeout(1500),
     });
 
@@ -52,22 +52,22 @@ async function verificarServidorProxy() {
     TinyAPI.ultimaVerificacao = new Date();
     TinyAPI.ultimoErro        = null;
 
-    console.log(`[TinyAPI] Servidor proxy ativo. Token: ${TinyAPI.tokenConfigurado ? 'âœ… configurado' : 'âš ï¸ nÃ£o configurado'}`);
+    console.log(`[TinyAPI] Servidor proxy ativo. Token: ${TinyAPI.tokenConfigurado ? 'âœ… configurado' : 'âš ï¸ não configurado'}`);
     return true;
 
   } catch (err) {
-    // Servidor nÃ£o estÃ¡ rodando â€” comportamento normal, sem erro visÃ­vel
+    // Servidor não está rodando â€” comportamento normal, sem erro visível
     TinyAPI.disponivel  = false;
     TinyAPI.ultimoErro  = err.message;
-    console.info('[TinyAPI] Servidor proxy nÃ£o detectado. Usando modo offline (planilhas manuais).');
+    console.info('[TinyAPI] Servidor proxy não detectado. Usando modo offline (planilhas manuais).');
     return false;
   }
 }
 
-// â”€â”€â”€ FunÃ§Ãµes de busca de dados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€ Funções de busca de dados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
- * Busca o estoque fÃ­sico atual de todos os produtos via API Tiny.
+ * Busca o estoque físico atual de todos os produtos via API Tiny.
  * Retorna um mapa { SKU: estoqueAtual } para substituir os dados da planilha.
  * @returns {Promise<Object>}  ex: { 'HR CNS 007': 42, 'UN2131': 8 }
  */
@@ -121,8 +121,8 @@ async function buscarEntradasPrevistas() {
 }
 
 /**
- * Busca saÃ­das do perÃ­odo (Ãºltimos N dias) para cÃ¡lculo de mÃ©dia mensal.
- * @param {number} dias  NÃºmero de dias retroativos (padrÃ£o: 90)
+ * Busca saídas do período (últimos N dias) para cálculo de média mensal.
+ * @param {number} dias  Número de dias retroativos (padrão: 90)
  * @returns {Promise<Array>}
  */
 async function buscarSaidasPeriodo(dias = 90) {
@@ -134,23 +134,23 @@ async function buscarSaidasPeriodo(dias = 90) {
 
     if (!data.ok) throw new Error(data.erro || 'Erro desconhecido');
 
-    console.log(`[TinyAPI] SaÃ­das: ${data.total} notas fiscais dos Ãºltimos ${dias} dias`);
+    console.log(`[TinyAPI] Saídas: ${data.total} notas fiscais dos últimos ${dias} dias`);
     return data.notas || [];
 
   } catch (err) {
-    console.error('[TinyAPI] Erro ao buscar saÃ­das:', err.message);
+    console.error('[TinyAPI] Erro ao buscar saídas:', err.message);
     return null;
   }
 }
 
-// â”€â”€â”€ SincronizaÃ§Ã£o automÃ¡tica com o VINI_STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€ Sincronização automática com o VINI_STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Se o servidor proxy estiver ativo e com token configurado,
  * atualiza os dados de estoque do VINI_STATE com dados em tempo real do Tiny.
  *
- * Chamada futura: integrar ao botÃ£o "Sync PCP" ou a um timer automÃ¡tico.
- * Por enquanto Ã© apenas um stub â€” nÃ£o quebra nada se o servidor nÃ£o estiver ativo.
+ * Chamada futura: integrar ao botão "Sync PCP" ou a um timer automático.
+ * Por enquanto é apenas um stub â€” não quebra nada se o servidor não estiver ativo.
  *
  * @returns {Promise<{atualizado: boolean, mensagem: string}>}
  */
@@ -160,14 +160,14 @@ async function sincronizarComTiny(skus = []) {
   if (!servidorAtivo) {
     return {
       ok: false,
-      mensagem:   'Servidor proxy local (server.js) nÃ£o estÃ¡ ativo na porta 3001.'
+      mensagem:   'Servidor proxy local (server.js) não está ativo na porta 3001.'
     };
   }
 
   if (!TinyAPI.tokenConfigurado) {
     return {
       ok: false,
-      mensagem:   'Token Tiny nÃ£o configurado no arquivo .env.'
+      mensagem:   'Token Tiny não configurado no arquivo .env.'
     };
   }
 
@@ -194,19 +194,19 @@ async function sincronizarComTiny(skus = []) {
       ok: true,
       status: data.status,
       progresso: data.progresso,
-      mensagem: 'SincronizaÃ§Ã£o iniciada com sucesso!'
+      mensagem: 'Sincronização iniciada com sucesso!'
     };
   } catch (err) {
     console.error('[TinyAPI] Falha ao sincronizar com Tiny:', err.message);
     return {
       ok: false,
-      mensagem: `Falha na conexÃ£o: ${err.message}`
+      mensagem: `Falha na conexão: ${err.message}`
     };
   }
 }
 
 /**
- * Consulta o status atual do processo de sincronizaÃ§Ã£o em background.
+ * Consulta o status atual do processo de sincronização em background.
  * @returns {Promise<Object>}
  */
 async function obterStatusSincronizacao() {
@@ -223,25 +223,25 @@ async function obterStatusSincronizacao() {
     
     return await res.json();
   } catch (err) {
-    console.error('[TinyAPI] Erro ao obter status da sincronizaÃ§Ã£o:', err.message);
+    console.error('[TinyAPI] Erro ao obter status da sincronização:', err.message);
     return null;
   }
 }
 
-// â”€â”€â”€ InicializaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€ Inicialização â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Verifica automaticamente ao carregar o script (nÃ£o bloqueia nada)
+// Verifica automaticamente ao carregar o script (não bloqueia nada)
 verificarServidorProxy().then(ativo => {
   if (ativo && typeof window !== 'undefined') {
-    // Aqui pode-se exibir um indicador visual no sistema de que a API estÃ¡ ativa
-    // (implementar no index.html quando necessÃ¡rio)
+    // Aqui pode-se exibir um indicador visual no sistema de que a API está ativa
+    // (implementar no index.html quando necessário)
     document.dispatchEvent(new CustomEvent('tinyapi:disponivel', {
       detail: { tokenConfigurado: TinyAPI.tokenConfigurado }
     }));
   }
 });
 
-// Exporta para uso em outros mÃ³dulos
+// Exporta para uso em outros módulos
 if (typeof module !== 'undefined') {
   module.exports = { TinyAPI, verificarServidorProxy, buscarEstoqueTiny, buscarEntradasPrevistas, buscarSaidasPeriodo, sincronizarComTiny, obterStatusSincronizacao };
 }
