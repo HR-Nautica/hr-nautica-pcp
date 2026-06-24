@@ -1,52 +1,22 @@
-﻿import { spawn } from "node:child_process";
-import fs from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import odbc from "odbc";
+import pg from "pg";
 import { config } from "./config.js";
 
-let poolPromise;
+const { Pool } = pg;
+
+let pool;
 let initialized = false;
 
-async function fileExists(file) {
-  try { await fs.access(file); return true; } catch { return false; }
-}
-
-function runPowerShell(script, args) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(
-      "powershell.exe",
-      ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, ...args],
-      { stdio: ["ignore", "pipe", "pipe"] }
-    );
-    let stderr = "";
-    child.stderr.on("data", (chunk) => { stderr += chunk; });
-    child.on("error", reject);
-    child.on("close", (code) => {
-      code === 0 ? resolve() : reject(new Error(stderr || `PowerShell saiu com codigo ${code}`));
-    });
-  });
-}
-
-async function ensureAccessFile() {
-  if (config.database.connectionString || await fileExists(config.database.file)) return;
-  const script = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    "..",
-    "scripts",
-    "create-access-db.ps1"
-  );
-  await runPowerShell(script, [config.database.file]);
-}
-
-function connectionString() {
-  if (config.database.connectionString) return config.database.connectionString;
-  return `Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=${config.database.file};`;
-}
-
 function getPool() {
-  if (!poolPromise) poolPromise = odbc.pool(connectionString());
-  return poolPromise;
+  if (!pool) {
+    const connectionString = config.database.connectionString;
+    const useSsl = connectionString.includes("supabase") || connectionString.includes("render") || connectionString.includes("elephantsql");
+    
+    pool = new Pool({
+      connectionString,
+      ssl: useSsl ? { rejectUnauthorized: false } : false
+    });
+  }
+  return pool;
 }
 
 function firstValue(row, names, fallback = undefined) {
@@ -69,95 +39,100 @@ function serializeValue(value) {
 }
 
 async function withConnection(callback) {
-  await ensureAccessFile();
-  const pool = await getPool();
-  const connection = await pool.connect();
+  const p = getPool();
+  const client = await p.connect();
   try {
-    return await callback(connection);
+    return await callback(client);
   } finally {
-    await connection.close();
+    client.release();
   }
-}
-
-async function tableExists(connection, tableName) {
-  try {
-    await connection.query(`SELECT * FROM ${tableName} WHERE 1 = 0`);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function ensureTable(connection, tableName, createSql) {
-  if (!(await tableExists(connection, tableName))) await connection.query(createSql);
 }
 
 export async function initializeDatabase() {
   if (initialized) return;
-  await withConnection(async (connection) => {
-    await ensureTable(
-      connection,
-      "app_revision",
-      "CREATE TABLE app_revision (singleton TEXT(16) CONSTRAINT pk_app_revision PRIMARY KEY, revision INTEGER NOT NULL, updated_at DATETIME NOT NULL)"
-    );
-    await ensureTable(
-      connection,
-      "app_state",
-      "CREATE TABLE app_state ([key] TEXT(100) CONSTRAINT pk_app_state PRIMARY KEY, value LONGTEXT NOT NULL, version INTEGER NOT NULL, updated_at DATETIME NOT NULL)"
-    );
-    await ensureTable(
-      connection,
-      "audit_log",
-      "CREATE TABLE audit_log (id AUTOINCREMENT CONSTRAINT pk_audit_log PRIMARY KEY, state_key TEXT(100) NOT NULL, action TEXT(16) NOT NULL, version INTEGER NOT NULL, payload LONGTEXT, actor TEXT(100), created_at DATETIME NOT NULL)"
-    );
+  
+  await withConnection(async (client) => {
+    // Create tables if they do not exist
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS app_revision (
+        singleton VARCHAR(16) PRIMARY KEY,
+        revision INTEGER NOT NULL,
+        updated_at TIMESTAMP NOT NULL
+      )
+    `);
+    
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS app_state (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL,
+        version INTEGER NOT NULL,
+        updated_at TIMESTAMP NOT NULL
+      )
+    `);
+    
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id SERIAL PRIMARY KEY,
+        state_key VARCHAR(100) NOT NULL,
+        action VARCHAR(16) NOT NULL,
+        version INTEGER NOT NULL,
+        payload TEXT,
+        actor VARCHAR(100),
+        created_at TIMESTAMP NOT NULL
+      )
+    `);
 
-    const revisionRows = await connection.query("SELECT revision FROM app_revision WHERE singleton = ?", ["main"]);
-    if (!revisionRows.length) {
-      await connection.query(
-        "INSERT INTO app_revision (singleton, revision, updated_at) VALUES (?, ?, ?)",
+    // Check if main revision exists
+    const revisionRows = await client.query("SELECT revision FROM app_revision WHERE singleton = $1", ["main"]);
+    if (!revisionRows.rows.length) {
+      await client.query(
+        "INSERT INTO app_revision (singleton, revision, updated_at) VALUES ($1, $2, $3)",
         ["main", 0, new Date()]
       );
     }
   });
+  
   initialized = true;
 }
 
 export async function transaction(callback) {
   await initializeDatabase();
-  return withConnection(async (connection) => {
-    await connection.beginTransaction();
-    try {
-      const result = await callback(connection);
-      await connection.commit();
-      return result;
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    }
-  });
+  const p = getPool();
+  const client = await p.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await callback(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function databaseHealth() {
   await initializeDatabase();
-  return withConnection(async (connection) => {
-    const rows = await connection.query("SELECT revision, updated_at FROM app_revision WHERE singleton = ?", ["main"]);
-    return firstValue(rows[0], ["updated_at"], new Date());
+  return withConnection(async (client) => {
+    const rows = await client.query("SELECT revision, updated_at FROM app_revision WHERE singleton = $1", ["main"]);
+    return firstValue(rows.rows[0], ["updated_at"], new Date());
   });
 }
 
 export async function getStateSnapshot(requestedRevision = 0) {
   await initializeDatabase();
-  return withConnection(async (connection) => {
-    const revisionRows = await connection.query("SELECT revision FROM app_revision WHERE singleton = ?", ["main"]);
-    const revision = Number(firstValue(revisionRows[0], ["revision"], 0));
+  return withConnection(async (client) => {
+    const revisionRows = await client.query("SELECT revision FROM app_revision WHERE singleton = $1", ["main"]);
+    const revision = Number(firstValue(revisionRows.rows[0], ["revision"], 0));
     if (requestedRevision && requestedRevision === revision) {
       return { modified: false, revision };
     }
 
-    const rows = await connection.query("SELECT [key], value, version FROM app_state ORDER BY [key]");
+    const rows = await client.query("SELECT key, value, version FROM app_state ORDER BY key");
     const data = {};
     const versions = {};
-    for (const row of rows) {
+    for (const row of rows.rows) {
       const key = firstValue(row, ["key"]);
       data[key] = parseStoredValue(firstValue(row, ["value"]));
       versions[key] = Number(firstValue(row, ["version"], 0));
@@ -166,16 +141,16 @@ export async function getStateSnapshot(requestedRevision = 0) {
   });
 }
 
-async function incrementRevision(connection) {
+async function incrementRevision(client) {
   const now = new Date();
-  await connection.query("UPDATE app_revision SET revision = revision + 1, updated_at = ? WHERE singleton = ?", [now, "main"]);
-  const rows = await connection.query("SELECT revision FROM app_revision WHERE singleton = ?", ["main"]);
-  return Number(firstValue(rows[0], ["revision"], 0));
+  await client.query("UPDATE app_revision SET revision = revision + 1, updated_at = $1 WHERE singleton = $2", [now, "main"]);
+  const rows = await client.query("SELECT revision FROM app_revision WHERE singleton = $1", ["main"]);
+  return Number(firstValue(rows.rows[0], ["revision"], 0));
 }
 
-async function currentVersion(connection, key) {
-  const rows = await connection.query("SELECT version FROM app_state WHERE [key] = ?", [key]);
-  return Number(firstValue(rows[0], ["version"], 0));
+async function currentVersion(client, key) {
+  const rows = await client.query("SELECT version FROM app_state WHERE key = $1", [key]);
+  return Number(firstValue(rows.rows[0], ["version"], 0));
 }
 
 function versionConflict(current) {
@@ -186,28 +161,28 @@ function versionConflict(current) {
 }
 
 export async function upsertState(key, value, expectedVersion, actor = "") {
-  return transaction(async (connection) => {
-    const current = await currentVersion(connection, key);
+  return transaction(async (client) => {
+    const current = await currentVersion(client, key);
     if (current !== expectedVersion) throw versionConflict(current);
 
     const nextVersion = current + 1;
     const now = new Date();
     const payload = serializeValue(value);
     if (current === 0) {
-      await connection.query(
-        "INSERT INTO app_state ([key], value, version, updated_at) VALUES (?, ?, ?, ?)",
+      await client.query(
+        "INSERT INTO app_state (key, value, version, updated_at) VALUES ($1, $2, $3, $4)",
         [key, payload, nextVersion, now]
       );
     } else {
-      await connection.query(
-        "UPDATE app_state SET value = ?, version = ?, updated_at = ? WHERE [key] = ?",
+      await client.query(
+        "UPDATE app_state SET value = $1, version = $2, updated_at = $3 WHERE key = $4",
         [payload, nextVersion, now, key]
       );
     }
 
-    const revision = await incrementRevision(connection);
-    await connection.query(
-      "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+    const revision = await incrementRevision(client);
+    await client.query(
+      "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
       [key, "UPSERT", nextVersion, payload, actor, now]
     );
     return { version: nextVersion, revision };
@@ -215,15 +190,15 @@ export async function upsertState(key, value, expectedVersion, actor = "") {
 }
 
 export async function deleteState(key, expectedVersion, actor = "") {
-  return transaction(async (connection) => {
-    const current = await currentVersion(connection, key);
+  return transaction(async (client) => {
+    const current = await currentVersion(client, key);
     if (current !== expectedVersion) throw versionConflict(current);
 
     const now = new Date();
-    await connection.query("DELETE FROM app_state WHERE [key] = ?", [key]);
-    const revision = await incrementRevision(connection);
-    await connection.query(
-      "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES (?, ?, ?, ?, ?)",
+    await client.query("DELETE FROM app_state WHERE key = $1", [key]);
+    const revision = await incrementRevision(client);
+    await client.query(
+      "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
       [key, "DELETE", current + 1, actor, now]
     );
     return { revision };
@@ -231,36 +206,35 @@ export async function deleteState(key, expectedVersion, actor = "") {
 }
 
 export async function importState(entries, actor = "IMPORT") {
-  return transaction(async (connection) => {
+  return transaction(async (client) => {
     const now = new Date();
     for (const [key, value] of entries) {
-      const current = await currentVersion(connection, key);
+      const current = await currentVersion(client, key);
       const nextVersion = current + 1;
       const payload = serializeValue(value);
       if (current === 0) {
-        await connection.query(
-          "INSERT INTO app_state ([key], value, version, updated_at) VALUES (?, ?, ?, ?)",
+        await client.query(
+          "INSERT INTO app_state (key, value, version, updated_at) VALUES ($1, $2, $3, $4)",
           [key, payload, nextVersion, now]
         );
       } else {
-        await connection.query(
-          "UPDATE app_state SET value = ?, version = ?, updated_at = ? WHERE [key] = ?",
+        await client.query(
+          "UPDATE app_state SET value = $1, version = $2, updated_at = $3 WHERE key = $4",
           [payload, nextVersion, now, key]
         );
       }
-      await connection.query(
-        "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      await client.query(
+        "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
         [key, "IMPORT", nextVersion, payload, actor, now]
       );
     }
-    return { revision: await incrementRevision(connection) };
+    return { revision: await incrementRevision(client) };
   });
 }
 
 export async function closeDatabase() {
-  if (!poolPromise) return;
-  const pool = await poolPromise;
-  await pool.close();
-  poolPromise = undefined;
+  if (!pool) return;
+  await pool.end();
+  pool = undefined;
   initialized = false;
 }
