@@ -25,8 +25,10 @@ function getPool() {
           ssl: { rejectUnauthorized: false }
         });
       } catch (err) {
+        let cleanedString = connectionString || "";
+        cleanedString = cleanedString.replace(/[?&]sslmode=[^&]+/g, "");
         pool = new Pool({
-          connectionString,
+          connectionString: cleanedString,
           ssl: { rejectUnauthorized: false }
         });
       }
