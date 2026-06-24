@@ -1112,7 +1112,7 @@ body {
   white-space: nowrap;
 }
 
-/* Tipo fundiÃ§Ã£o badge */
+/* Tipo fundição badge */
 .badge-tipo {
   display: inline-flex;
   align-items: center;
@@ -1257,7 +1257,7 @@ body {
   user-select: none;
 }
 
-/* â”€â”€ VisualizaÃ§Ã£o de Cards V.I.N.I â”€â”€ */
+/* â”€â”€ Visualização de Cards V.I.N.I â”€â”€ */
 .vini-cards-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -1286,7 +1286,7 @@ body {
   border-color: var(--border-hover);
 }
 
-/* Estado CrÃ­tico */
+/* Estado Crítico */
 .vini-card-item--critical {
   border-left-color: var(--accent-red);
 }
@@ -1388,7 +1388,7 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* Painel de detalhes expandÃ­vel */
+/* Painel de detalhes expandível */
 .vini-card-details-trigger {
   width: 100%;
   background: var(--bg-elevated);
@@ -1452,7 +1452,7 @@ body {
   font-weight: 600;
 }
 
-/* Banner de InformaÃ§Ã£o */
+/* Banner de Informação */
 .vini-info-banner {
   background: rgba(96,165,250,0.05);
   border: 1px solid rgba(96,165,250,0.12);
@@ -1482,7 +1482,7 @@ body {
   color: var(--text-primary);
 }
 
-/* Alternador de VisualizaÃ§Ã£o */
+/* Alternador de Visualização */
 .view-toggle-buttons {
   display: inline-flex;
   background: var(--bg-elevated);
@@ -1517,7 +1517,7 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
-/* Abas de filtro rÃ¡pido com KPI */
+/* Abas de filtro rápido com KPI */
 .filter-tabs {
   display: flex;
   gap: 0.75rem;
@@ -1554,14 +1554,14 @@ body {
   box-shadow: 0 0 14px rgba(96,165,250,0.18);
 }
 
-/* Ativo: CrÃ­ticos â†’ vermelho */
+/* Ativo: Críticos â†’ vermelho */
 #vini-filter-critical-tab.active {
   background: rgba(248,113,113,0.08);
   border-color: var(--accent-red);
   box-shadow: 0 0 14px rgba(248,113,113,0.18);
 }
 
-/* Ativo: AtenÃ§Ã£o â†’ laranja */
+/* Ativo: Atenção â†’ laranja */
 #vini-filter-warning-tab.active {
   background: rgba(251,146,60,0.08);
   border-color: var(--accent-orange);
@@ -1595,7 +1595,7 @@ body {
   line-height: 1;
 }
 
-/* â”€â”€ Barra de OrdenaÃ§Ã£o â”€â”€ */
+/* â”€â”€ Barra de Ordenação â”€â”€ */
 .vini-sort-bar {
   display: flex;
   align-items: center;
@@ -1667,7 +1667,7 @@ body {
   color: var(--text-secondary);
 }
 
-/* AnimaÃ§Ãµes e ajustes de exportaÃ§Ã£o */
+/* Animações e ajustes de exportação */
 .btn-export {
   padding: 0.55rem 0.9rem;
   font-size: 0.8rem;
@@ -1676,7 +1676,7 @@ body {
   gap: 6px;
 }
 
-/* â”€â”€ BotÃµes de sincronizaÃ§Ã£o individuais â”€â”€ */
+/* â”€â”€ Botões de sincronização individuais â”€â”€ */
 .btn-sync-pcp {
   font-size: 0.78rem !important;
   padding: 0.45rem 0.75rem !important;
@@ -1712,7 +1712,7 @@ body {
   cursor: pointer;
 }
 
-/* â”€â”€ CabeÃ§alhos de Tabela OrdenÃ¡veis (V.I.N.I) â”€â”€ */
+/* â”€â”€ Cabeçalhos de Tabela Ordenáveis (V.I.N.I) â”€â”€ */
 .sortable-th {
   cursor: pointer;
   user-select: none;
@@ -1792,7 +1792,7 @@ body {
   flex-wrap: wrap;
 }
 
-/* OtimizaÃ§Ã£o do Slider de Cobertura Alvo */
+/* Otimização do Slider de Cobertura Alvo */
 .vini-slider-wrapper {
   display: flex;
   align-items: center;
@@ -2011,7 +2011,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-right: 20px; /* DÃ¡ espaÃ§o para as aÃ§Ãµes */
+  padding-right: 20px; /* Dá espaço para as ações */
 }
 
 .vini-mini-card-title {
@@ -2076,7 +2076,7 @@ body {
   background: rgba(74, 222, 128, 0.12);
 }
 
-/* EstatÃ­sticas chaves no mini-card */
+/* Estatísticas chaves no mini-card */
 .vini-mini-card-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2101,7 +2101,7 @@ body {
   color: var(--text-primary);
 }
 
-/* Badge crÃ­tico para compra/produÃ§Ã£o */
+/* Badge crítico para compra/produção */
 .vini-mini-card-buy-badge {
   background: var(--accent-red-bg);
   border: 1px solid rgba(248, 113, 113, 0.2);
@@ -2140,12 +2140,12 @@ body {
   background: rgba(255, 255, 255, 0.01);
 }
 
-/* Esconder cabeÃ§alho de KPIs nas abas inativas do modo cards/kanban */
+/* Esconder cabeçalho de KPIs nas abas inativas do modo cards/kanban */
 .vini-hide-controls {
   display: none !important;
 }
 
-/* Ajustes finos no select de inativaÃ§Ã£o e tabela */
+/* Ajustes finos no select de inativação e tabela */
 .data-table td .btn-table-action {
   padding: 3px 6px;
   font-size: 0.72rem;
@@ -2173,7 +2173,7 @@ body {
 #vini-table {
   font-size: 0.82rem;
   width: 100%;
-  table-layout: fixed; /* ForÃ§a o navegador a respeitar as larguras definidas e otimiza o rendering */
+  table-layout: fixed; /* Força o navegador a respeitar as larguras definidas e otimiza o rendering */
 }
 
 #vini-table th {
@@ -2181,7 +2181,7 @@ body {
   font-size: 0.76rem !important;
   text-align: center !important;
   letter-spacing: 0.01em !important;
-  white-space: normal !important; /* Permite quebrar texto no cabeÃ§alho */
+  white-space: normal !important; /* Permite quebrar texto no cabeçalho */
   vertical-align: middle !important;
   line-height: 1.15;
 }
@@ -2217,10 +2217,10 @@ body {
   opacity: 0.7;
 }
 
-/* Definindo proporÃ§Ãµes de larguras ideais para visualizaÃ§Ã£o Ãºnica (Desktop >= 1024px) */
+/* Definindo proporções de larguras ideais para visualização única (Desktop >= 1024px) */
 #vini-table th[data-column="produto"],
 #vini-table td:nth-child(1) {
-  width: 22%; /* Produto ganha a maior parte do espaÃ§o e pode quebrar linhas */
+  width: 22%; /* Produto ganha a maior parte do espaço e pode quebrar linhas */
   min-width: 130px;
 }
 #vini-table th[data-column="sku"],
@@ -2284,7 +2284,7 @@ body {
   min-width: 40px;
 }
 
-/* ReduÃ§Ã£o dos paddings da Ã¡rea de conteÃºdo principal em telas menores e monitores pequenos */
+/* Redução dos paddings da área de conteúdo principal em telas menores e monitores pequenos */
 @media (max-width: 1366px) {
   .main-content {
     padding: 1rem 1.25rem;
@@ -2385,11 +2385,11 @@ body {
   flex-shrink: 0;
 }
 
-/* â”€â”€ Ãrvore ColapsÃ¡vel do V.I.N.I (Componentes e Materiais) â”€â”€ */
+/* â”€â”€ Ãrvore Colapsável do V.I.N.I (Componentes e Materiais) â”€â”€ */
 .tr-component td {
   background: #141b29 !important;
   font-size: 0.78rem !important;
-  color: #93c5fd !important; /* Azul suave nÃ­tido */
+  color: #93c5fd !important; /* Azul suave nítido */
   font-weight: 500;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
@@ -2397,7 +2397,7 @@ body {
 .tr-material td {
   background: #192233 !important;
   font-size: 0.76rem !important;
-  color: #cbd5e1 !important; /* Cinza claro nÃ­tido */
+  color: #cbd5e1 !important; /* Cinza claro nítido */
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -2617,7 +2617,7 @@ body {
   margin-top: 1px;
 }
 
-/* â”€â”€ Estilos da AnÃ¡lise de ProduÃ§Ã£o â”€â”€ */
+/* â”€â”€ Estilos da Análise de Produção â”€â”€ */
 .tr-warning-stock {
   background: rgba(251, 146, 60, 0.02) !important;
 }
@@ -2633,8 +2633,8 @@ body {
 
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   EARV â€“ ESTOQUE ÃRVORE  |  Design acessÃ­vel para usuÃ¡rio 60+
-   Cores intuitivas Â· Fonte grande Â· Ãrvore expansÃ­vel Â· Estoque
+   EARV â€“ ESTOQUE ÃRVORE  |  Design acessível para usuário 60+
+   Cores intuitivas Â· Fonte grande Â· Ãrvore expansível Â· Estoque
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* â”€â”€ Layout rows da toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -2667,7 +2667,7 @@ body {
   box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
 }
 
-/* â”€â”€ BotÃµes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ Botões â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-btn {
   display: inline-flex;
   align-items: center;
@@ -2816,7 +2816,7 @@ body {
 .earv-th--sorted { color: var(--accent-blue) !important; }
 .earv-sort-icon  { margin-left: 4px; font-size: 0.8rem; opacity: 0.6; }
 
-/* Colunas de operaÃ§Ã£o coloridas no header */
+/* Colunas de operação coloridas no header */
 .earv-th--op   { border-top: 3px solid transparent; }
 .earv-th--op01 { border-top-color: #fb923c; color: #fb923c; }
 .earv-th--op02 { border-top-color: #22d3ee; color: #22d3ee; }
@@ -2831,7 +2831,7 @@ body {
   color: #4ade80;
 }
 
-/* â”€â”€ CÃ©lulas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ Células â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-td {
   padding: 0.6rem 0.85rem;
   border-bottom: 1px solid var(--border);
@@ -2842,7 +2842,7 @@ body {
 .earv-td--desc { text-align: left; }
 .earv-td--num  { font-weight: 600; font-variant-numeric: tabular-nums; }
 
-/* â”€â”€ LINHAS nÃ­vel 00 â€“ Item Final â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ LINHAS nível 00 â€“ Item Final â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-row-00 {
   background: rgba(59, 130, 246, 0.06);
   border-left: 4px solid rgba(59, 130, 246, 0.5);
@@ -2851,7 +2851,7 @@ body {
 .earv-row-00 .earv-td { border-bottom-color: rgba(59, 130, 246, 0.15); }
 .earv-row-00.earv-expanded { border-left-color: #3b82f6; }
 
-/* â”€â”€ LINHAS nÃ­vel 01 â€“ Componente â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ LINHAS nível 01 â€“ Componente â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-row-01 {
   background: rgba(251, 146, 60, 0.03);
   border-left: 4px solid rgba(251, 146, 60, 0.35);
@@ -2859,7 +2859,7 @@ body {
 .earv-row-01:hover { background: rgba(251, 146, 60, 0.08); }
 .earv-row-01 .earv-td { border-bottom-color: rgba(251, 146, 60, 0.1); }
 
-/* â”€â”€ LINHAS nÃ­vel 02 â€“ Material â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ LINHAS nível 02 â€“ Material â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-row-02 {
   background: rgba(100, 116, 139, 0.04);
   border-left: 4px solid rgba(100, 116, 139, 0.2);
@@ -2867,7 +2867,7 @@ body {
 .earv-row-02:hover { background: rgba(100, 116, 139, 0.09); }
 .earv-row-02 .earv-td { border-bottom-color: rgba(100, 116, 139, 0.1); font-size: 0.82rem; }
 
-/* â”€â”€ DescriÃ§Ã£o e indentaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ Descrição e indentação â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-desc-wrap {
   display: flex;
   align-items: center;
@@ -2885,7 +2885,7 @@ body {
 .earv-arrow         { color: rgba(251,146,60,0.6); font-size: 0.9rem; flex-shrink: 0; }
 .earv-arrow--muted  { color: rgba(100,116,139,0.5); font-size: 0.8rem; }
 
-/* â”€â”€ BotÃµes de toggle (â–¶ / â–¼) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ Botões de toggle (â–¶ / â–¼) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-toggle-btn {
   display: inline-flex;
   align-items: center;
@@ -2915,7 +2915,7 @@ body {
 .earv-sku--01 { color: var(--text-secondary); font-size: 0.82rem; font-family: monospace; }
 .earv-sku--02 { color: var(--text-muted); font-size: 0.78rem; font-family: monospace; }
 
-/* â”€â”€ Badges de nÃ­vel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ Badges de nível â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-nivel-badge {
   display: inline-block;
   font-size: 0.7rem;
@@ -2941,7 +2941,7 @@ body {
   border: 1px solid rgba(100,116,139,.25);
 }
 
-/* â”€â”€ Badges de operaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ Badges de operação â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-op-badge {
   display: inline-block;
   font-size: 0.78rem;
