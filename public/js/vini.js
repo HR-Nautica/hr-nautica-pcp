@@ -658,10 +658,10 @@ function renderViniTable() {
     if (iconSpan) {
       if (col === VINI_STATE.sortColumn) {
         th.classList.add('active-sort');
-        iconSpan.textContent = VINI_STATE.sortDirection === 'asc' ? 'â–²' : 'â–¼';
+        iconSpan.textContent = VINI_STATE.sortDirection === 'asc' ? '▲' : '▼';
       } else {
         th.classList.remove('active-sort');
-        iconSpan.textContent = 'â‡…';
+        iconSpan.textContent = '⇅';
       }
     }
   });
@@ -732,7 +732,7 @@ function renderViniTable() {
         <td>${item.prio2 === '—' ? '—' : fmtNum(item.prio2)}</td>
         <td style="color: ${item.coberturaFisica === Infinity ? 'var(--text-secondary)' : item.coberturaFisica < VINI_STATE.coberturaAlvo ? 'var(--accent-red)' : 'var(--accent-green)'}">${fmtCob(item.coberturaFisica)}</td>
         <td style="font-weight:600; color: ${coberturaVirtualTotal === Infinity ? 'var(--text-secondary)' : coberturaVirtualTotal < VINI_STATE.coberturaAlvo ? 'var(--accent-red)' : 'var(--accent-green)'}">${fmtCob(coberturaVirtualTotal)}</td>
-        <td class="${highlightBuyClass}">${isInactive ? '—' : comprarTotal > 0 ? fmtNum(comprarTotal) : 'âœ“ OK'}</td>
+        <td class="${highlightBuyClass}">${isInactive ? '—' : comprarTotal > 0 ? fmtNum(comprarTotal) : '✓ OK'}</td>
         <td style="text-align: center;">${actionBtn}</td>
       </tr>
     `);

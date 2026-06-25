@@ -205,7 +205,7 @@ function prodComp_createOP(sku, qty, descOverride) {
   prodComp_save();
 
   if (typeof showToast === 'function') {
-    showToast(`âœ… OP de Componente ${id} criada com sucesso!`, 'success');
+    showToast(`✅ OP de Componente ${id} criada com sucesso!`, 'success');
   }
 
   prodComp_render();
@@ -251,7 +251,7 @@ function prodComp_toggleOpStatus(opId, itemSku, opKey) {
     // Verifica bloqueio de sub-itens
     if (prodComp_isItemBlocked(op, item)) {
       if (typeof showToast === 'function') {
-        showToast('âš  Bloqueado: conclua primeiro todas as etapas de compras/fabricação dos sub-itens!', 'warning');
+        showToast('⚠ Bloqueado: conclua primeiro todas as etapas de compras/fabricação dos sub-itens!', 'warning');
       } else {
         alert('Bloqueado: conclua primeiro todas as etapas de compras/fabricação dos sub-itens!');
       }
@@ -259,7 +259,7 @@ function prodComp_toggleOpStatus(opId, itemSku, opKey) {
     }
     opInfo.status = 'OK';
     if (typeof showToast === 'function') {
-      showToast(`âœ… Etapa "${opInfo.label}" de ${item.sku} concluída!`, 'success');
+      showToast(`✅ Etapa "${opInfo.label}" de ${item.sku} concluída!`, 'success');
     }
   } else if (opInfo.status === 'OK') {
     // Permite reverter
@@ -289,7 +289,7 @@ function prodComp_finalizarOP(opId) {
 
   if (temPendentes) {
     if (typeof showToast === 'function') {
-      showToast('âš  Não é possível concluir a OP: ainda existem operações pendentes no conjunto!', 'warning');
+      showToast('⚠ Não é possível concluir a OP: ainda existem operações pendentes no conjunto!', 'warning');
     } else {
       alert('Não é possível concluir a OP: ainda existem operações pendentes no conjunto!');
     }
@@ -415,8 +415,8 @@ function prodComp_render() {
     // Cabeçalho da OP
     const isOPConcluida = op.status === 'Concluído';
     const statusText = isOPConcluida 
-      ? `<span class="earv-op-badge earv-op-badge--op06" style="padding: 0.25rem 0.6rem; font-weight: 700;">âœ“ CONCLUÍDA</span>`
-      : `<span class="earv-op-badge earv-op-badge--op02" style="padding: 0.25rem 0.6rem; font-weight: 700;">âš™ EM PRODUÇÃO</span>`;
+      ? `<span class="earv-op-badge earv-op-badge--op06" style="padding: 0.25rem 0.6rem; font-weight: 700;">✓ CONCLUÍDA</span>`
+      : `<span class="earv-op-badge earv-op-badge--op02" style="padding: 0.25rem 0.6rem; font-weight: 700;">⚙ EM PRODUÇÃO</span>`;
 
     let actionsHtml = '';
     if (!isOPConcluida) {
@@ -436,7 +436,7 @@ function prodComp_render() {
         </button>
       `;
     } else {
-      actionsHtml = `<span style="color: var(--accent-green); font-size: 0.85rem; font-weight: 700; margin-right: 10px;">âœ“ Concluída e Integrada</span>`;
+      actionsHtml = `<span style="color: var(--accent-green); font-size: 0.85rem; font-weight: 700; margin-right: 10px;">✓ Concluída e Integrada</span>`;
     }
 
     rowsHtmlArray.push(`
@@ -505,7 +505,7 @@ function prodComp_render() {
 
       // Saldo após a operação:
       // - Nível 00 (item final): a OP PRODUZ → saldo = estoque físico + quantidade produzida
-      // - Nível 01/02 (componentes): CONSUMIDOS → saldo = estoque disponível âˆ’ quantidade necessária
+      // - Nível 01/02 (componentes): CONSUMIDOS → saldo = estoque disponível - quantidade necessária
       const saldo = item.nivel === '00'
         ? estFisico + item.quantidadeTotal  // Produção soma ao estoque físico
         : est - item.quantidadeTotal;       // Consumo subtrai do estoque disponível real
@@ -544,7 +544,7 @@ function prodComp_render() {
             <td class="earv-td" style="padding: 4px !important; text-align: center;">
               <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
                 <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
-                <button class="earv-op-btn op-btn--ok" style="${cursorStyle};width:100%;" ${clickAction} title="Clique para reverter">âœ“ OK${responsavel ? ` Â· ${responsavel}` : ''}</button>
+                <button class="earv-op-btn op-btn--ok" style="${cursorStyle};width:100%;" ${clickAction} title="Clique para reverter">✓ OK${responsavel ? ` Â· ${responsavel}` : ''}</button>
               </div>
             </td>
           `;
@@ -569,7 +569,7 @@ function prodComp_render() {
                   <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
                     <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
                     <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" title="Bloqueado: conclua os sub-itens primeiro" onclick="event.stopPropagation()" style="width:100%;">
-                      🌱”’ ${responsavel ? `<span style="font-weight:700;">${responsavel}</span>` : opLabel}
+                      🔒 ${responsavel ? `<span style="font-weight:700;">${responsavel}</span>` : opLabel}
                     </button>
                   </div>
                 </td>
@@ -591,7 +591,7 @@ function prodComp_render() {
                     <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
                       <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
                       <span class="op-btn--em-estoque" title="Estoque suficiente — saldo pós-consumo: +${saldoFormatado}">
-                        <span style="display:block;font-size:0.78rem;font-weight:800;line-height:1.2;">âœ“ Em estoque</span>
+                        <span style="display:block;font-size:0.78rem;font-weight:800;line-height:1.2;">✓ Em estoque</span>
                         <span style="display:block;font-size:0.63rem;opacity:0.8;line-height:1;">saldo: +${saldoFormatado}</span>
                       </span>
                     </div>
@@ -626,7 +626,7 @@ function prodComp_render() {
         rowClass = 'earv-row-00';
         descHtml = `
           <div class="earv-desc-wrap">
-            <span class="earv-toggle-btn earv-toggle-invisible">â–¶</span>
+            <span class="earv-toggle-btn earv-toggle-invisible">▶</span>
             <span class="earv-desc-text earv-desc--00">${item.descricao}</span>
           </div>
         `;
@@ -634,7 +634,7 @@ function prodComp_render() {
         rowClass = 'earv-row-01';
         descHtml = `
           <div class="earv-desc-wrap earv-indent-01">
-            <span class="earv-arrow">â†³</span>
+            <span class="earv-arrow">↳</span>
             <span class="earv-desc-text earv-desc--01">${item.descricao}</span>
           </div>
         `;
@@ -642,7 +642,7 @@ function prodComp_render() {
         rowClass = 'earv-row-02';
         descHtml = `
           <div class="earv-desc-wrap earv-indent-02">
-            <span class="earv-arrow earv-arrow--muted">â†³</span>
+            <span class="earv-arrow earv-arrow--muted">↳</span>
             <span class="earv-desc-text earv-desc--02">${item.descricao}</span>
           </div>
         `;
@@ -834,7 +834,7 @@ function prodComp_exportTarefas() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  if (typeof showToast === 'function') showToast('âœ… Relatório de tarefas exportado!', 'success');
+  if (typeof showToast === 'function') showToast('✅ Relatório de tarefas exportado!', 'success');
 }
 window.prodComp_exportTarefas = prodComp_exportTarefas;
 

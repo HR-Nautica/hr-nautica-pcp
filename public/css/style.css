@@ -2220,68 +2220,68 @@ body {
 /* Definindo proporções de larguras ideais para visualização única (Desktop >= 1024px) */
 #vini-table th[data-column="produto"],
 #vini-table td:nth-child(1) {
-  width: 22%; /* Produto ganha a maior parte do espaço e pode quebrar linhas */
-  min-width: 130px;
+  width: 18%;
+  min-width: 140px;
 }
 #vini-table th[data-column="sku"],
 #vini-table td:nth-child(2) {
-  width: 9%;
-  min-width: 75px;
+  width: 8%;
+  min-width: 85px;
 }
 #vini-table th[data-column="entradasPrevistas"],
 #vini-table td:nth-child(3) {
-  width: 6.5%;
-  min-width: 50px;
+  width: 6%;
+  min-width: 60px;
 }
 #vini-table th[data-column="saidasPrevistas"],
 #vini-table td:nth-child(4) {
-  width: 6.5%;
-  min-width: 50px;
+  width: 6%;
+  min-width: 60px;
 }
 #vini-table th[data-column="estoqueFisico"],
 #vini-table td:nth-child(5) {
-  width: 6.5%;
-  min-width: 50px;
+  width: 6%;
+  min-width: 60px;
 }
 #vini-table th[data-column="estoqueVirtual"],
 #vini-table td:nth-child(6) {
-  width: 6.5%;
-  min-width: 50px;
+  width: 6%;
+  min-width: 60px;
 }
 #vini-table th[data-column="saidasPeriodo"],
 #vini-table td:nth-child(7) {
-  width: 7.5%;
-  min-width: 55px;
+  width: 6%;
+  min-width: 65px;
 }
 #vini-table th[data-column="mediaMensal"],
 #vini-table td:nth-child(8) {
-  width: 6.5%;
-  min-width: 50px;
+  width: 6%;
+  min-width: 60px;
 }
 #vini-table th[data-column="prio2"],
 #vini-table td:nth-child(9) {
-  width: 5.5%;
-  min-width: 45px;
+  width: 5%;
+  min-width: 50px;
 }
 #vini-table th[data-column="coberturaFisica"],
 #vini-table td:nth-child(10) {
-  width: 7.5%;
-  min-width: 58px;
+  width: 8%;
+  min-width: 85px;
 }
 #vini-table th[data-column="coberturaVirtual"],
 #vini-table td:nth-child(11) {
-  width: 7.5%;
-  min-width: 58px;
+  width: 8%;
+  min-width: 85px;
 }
 #vini-table th[data-column="comprar"],
 #vini-table td:nth-child(12) {
-  width: 7.5%;
-  min-width: 58px;
+  width: 7%;
+  min-width: 75px;
 }
 #vini-table th:nth-child(13),
 #vini-table td:nth-child(13) {
-  width: 4%;
-  min-width: 40px;
+  width: 15%;
+  min-width: 120px;
 }
 
 /* Redução dos paddings da área de conteúdo principal em telas menores e monitores pequenos */
@@ -2302,6 +2302,9 @@ body {
   #vini-table-container .table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+  .earv-table {
+    table-layout: auto;
   }
   #vini-table {
     table-layout: auto; /* Permite dimensionar dinamicamente no mobile */
@@ -2632,10 +2635,10 @@ body {
 }
 
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   EARV â€“ ESTOQUE ÃRVORE  |  Design acessível para usuário 60+
-   Cores intuitivas Â· Fonte grande Â· Ãrvore expansível Â· Estoque
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
+   EARV â€“ ESTOQUE Ã RVORE  |  Design acessível para usuário 60+
+   Cores intuitivas Â· Fonte grande Â· Ã rvore expansível Â· Estoque
+   â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â•  */
 
 /* â”€â”€ Layout rows da toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-row {
@@ -2794,6 +2797,7 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.93rem;
+  table-layout: fixed;
 }
 
 /* â”€â”€ Headers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -2810,7 +2814,19 @@ body {
   white-space: nowrap;
   user-select: none;
 }
-.earv-th--desc { text-align: left; min-width: 280px; }
+.earv-th--desc { text-align: left; }
+.earv-table th:nth-child(1), .earv-table td:nth-child(1) { width: 20%; min-width: 220px; text-align: left; }
+.earv-table th:nth-child(2), .earv-table td:nth-child(2) { width: 8%; min-width: 90px; }
+.earv-table th:nth-child(3), .earv-table td:nth-child(3) { width: 6%; min-width: 80px; }
+.earv-table th:nth-child(4), .earv-table td:nth-child(4) { width: 7%; min-width: 85px; }
+.earv-table th:nth-child(5), .earv-table td:nth-child(5) { width: 7%; min-width: 85px; }
+.earv-table th:nth-child(6), .earv-table td:nth-child(6) { width: 7%; min-width: 85px; }
+.earv-table th:nth-child(7), .earv-table td:nth-child(7) { width: 7.5%; min-width: 95px; }
+.earv-table th:nth-child(8), .earv-table td:nth-child(8) { width: 7.5%; min-width: 95px; }
+.earv-table th:nth-child(9), .earv-table td:nth-child(9) { width: 7.5%; min-width: 95px; }
+.earv-table th:nth-child(10), .earv-table td:nth-child(10) { width: 7.5%; min-width: 95px; }
+.earv-table th:nth-child(11), .earv-table td:nth-child(11) { width: 7.5%; min-width: 95px; }
+.earv-table th:nth-child(12), .earv-table td:nth-child(12) { width: 7.5%; min-width: 95px; }
 .earv-th small  { font-size: 0.65rem; font-weight: 500; display: block; opacity: 0.75; text-transform: none; letter-spacing: 0; }
 .earv-th.earv-sortable:hover { color: var(--text-primary); background: var(--bg-card); }
 .earv-th--sorted { color: var(--accent-blue) !important; }

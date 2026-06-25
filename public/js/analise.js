@@ -517,10 +517,10 @@ function renderAnaliseTable() {
     if (iconSpan) {
       if (col === ANALISE_STATE.sortColumn) {
         th.classList.add('active-sort');
-        iconSpan.textContent = ANALISE_STATE.sortDirection === 'asc' ? 'â–²' : 'â–¼';
+        iconSpan.textContent = ANALISE_STATE.sortDirection === 'asc' ? '▲' : '▼';
       } else {
         th.classList.remove('active-sort');
-        iconSpan.textContent = 'â‡…';
+        iconSpan.textContent = '⇅';
       }
     }
   });
@@ -555,7 +555,7 @@ function renderAnaliseTable() {
     if (need > 0) {
       actionBtn = `<button class="btn-primary" style="padding:4px 8px;font-size:0.7rem;height:auto" onclick="abrirNovaOPPreenchida('${escapeJSString(item.produto)}', ${need}, ${item.prio2})">Criar OP</button>`;
     } else {
-      actionBtn = `<span style="color:var(--text-muted);font-size:0.7rem;font-weight:600">âœ“ OK</span>`;
+      actionBtn = `<span style="color:var(--text-muted);font-size:0.7rem;font-weight:600">✓ OK</span>`;
     }
 
     const formattedPrio = item.prio2 !== null ? item.prio2.toFixed(1) : '—';

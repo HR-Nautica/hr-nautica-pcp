@@ -228,7 +228,7 @@ function renderOpsRecentesTable(ops) {
       <td style="color:var(--text-primary);font-weight:500">${op.modelo}</td>
       <td>${op.cliente || '—'}</td>
       <td>${etapaChip(op.etapa)}</td>
-      <td class="${atrasado ? 'priority-urgente' : ''}">${formatDate(op.prazo)}${atrasado ? ' âš ' : ''}</td>
+      <td class="${atrasado ? 'priority-urgente' : ''}">${formatDate(op.prazo)}${atrasado ? ' ' + '⚠' : ''}</td>
       <td>${etapaChip(op.etapa)}</td>
     </tr>`;
   }).join('');
@@ -341,9 +341,9 @@ function kanbanCard(op) {
       const buchaFalta = reqs.bucha ? reqs.bucha.insuficiente : false;
       const caixaFalta = reqs.caixa ? reqs.caixa.insuficiente : false;
       if (buchaFalta || caixaFalta) {
-        estoqueBadge = `<span class="chip chip--red" style="font-size:0.65rem;padding:2px 6px" title="Falta de insumos no estoque">âš  Falta Insumos</span>`;
+        estoqueBadge = `<span class="chip chip--red" style="font-size:0.65rem;padding:2px 6px" title="Falta de insumos no estoque">⚠ Falta Insumos</span>`;
       } else {
-        estoqueBadge = `<span class="chip chip--green" style="font-size:0.65rem;padding:2px 6px" title="Estoque de insumos OK">âœ“ Estoque OK</span>`;
+        estoqueBadge = `<span class="chip chip--green" style="font-size:0.65rem;padding:2px 6px" title="Estoque de insumos OK">✓ Estoque OK</span>`;
       }
     }
   }
@@ -361,7 +361,7 @@ function kanbanCard(op) {
     <div class="kanban-card-footer">
       <span class="kanban-card-prazo ${atrasado ? 'atrasado' : ''}">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        ${atrasado ? 'âš  ' : ''}${formatDate(op.prazo)}
+        ${atrasado ? '⚠' + ' ' : ''}${formatDate(op.prazo)}
       </span>
       <button class="btn-icon danger" onclick="event.stopPropagation(); deleteOp('${op.id}')" title="Excluir OP">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
@@ -410,12 +410,12 @@ function updateOpInsumosPreview() {
     const badgeClass = b.insuficiente ? 'chip--red' : 'chip--green';
     const badgeText = b.insuficiente ? `Falta ${b.falta} un` : 'Estoque OK';
     const statusText = b.insuficiente 
-      ? `<span style="color:var(--accent-red);font-weight:600;font-size:0.72rem">âš  Produzir Bucha</span>`
-      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">âœ“ Estoque Disponível</span>`;
+      ? `<span style="color:var(--accent-red);font-weight:600;font-size:0.72rem">⚠ Produzir Bucha</span>`
+      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">✓ Estoque Disponível</span>`;
       
     listDiv.innerHTML += `
       <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;display:flex;flex-direction:column;gap:4px">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${b.nome}">âš™ Bucha</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${b.nome}">⚙ Bucha</div>
         <div style="font-size:0.68rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${b.nome}">${b.nome}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
           <span style="font-size:0.72rem;color:var(--text-muted)">Qtd: <strong>${qty}</strong> | Saldo: <strong>${b.saldo}</strong></span>
@@ -438,8 +438,8 @@ function updateOpInsumosPreview() {
     const badgeClass = c.insuficiente ? 'chip--red' : 'chip--green';
     const badgeText = c.insuficiente ? `Falta ${c.falta} un` : 'Estoque OK';
     const statusText = c.insuficiente 
-      ? `<span style="color:var(--accent-red);font-weight:600;font-size:0.72rem">âš  Comprar Caixa</span>`
-      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">âœ“ Estoque Disponível</span>`;
+      ? `<span style="color:var(--accent-red);font-weight:600;font-size:0.72rem">⚠ Comprar Caixa</span>`
+      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">✓ Estoque Disponível</span>`;
       
     listDiv.innerHTML += `
       <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;display:flex;flex-direction:column;gap:4px">
@@ -1178,7 +1178,7 @@ function renderManutencao() {
       <td style="color:var(--text-secondary);font-size:0.76rem">${m.motivo || '—'}</td>
       <td style="color:var(--text-muted);font-size:0.76rem">${m.responsavel || '—'}</td>
       <td style="color:var(--text-muted);font-size:0.76rem">${m.dataEntrada ? (formatDate(m.dataEntrada) + ' <span style="color:var(--text-muted);font-size:0.68rem">('+diasStr+')</span>') : '—'}</td>
-      <td style="color:${atrasado ? 'var(--accent-red)' : 'var(--text-muted)'};font-size:0.76rem;font-weight:${atrasado ? '700' : '400'}">${m.dataPrevisao ? formatDate(m.dataPrevisao) + (atrasado ? ' âš ï¸' : '') : '—'}</td>
+      <td style="color:${atrasado ? 'var(--accent-red)' : 'var(--text-muted)'};font-size:0.76rem;font-weight:${atrasado ? '700' : '400'}">${m.dataPrevisao ? formatDate(m.dataPrevisao) + (atrasado ? ' ⚠' : '') : '—'}</td>
       <td>${prioridadeMntChip(m.prioridade)}</td>
       <td>${statusMntChip(m.status)}</td>
       <td><div class="td-actions">
@@ -1293,7 +1293,7 @@ function saveManutencao() {
 function liberarManutencao(id) {
   if (!confirm('Liberar esta ferramenta para uso?')) return;
   DB.updateManutencao(id, { status: 'Liberada' });
-  showToast('âœ… Ferramenta liberada para uso!');
+  showToast('✅ Ferramenta liberada para uso!');
   renderManutencao();
 }
 window.liberarManutencao = liberarManutencao;
@@ -1313,9 +1313,9 @@ window.deleteManutencao = deleteManutencao;
 // ── OPERAÇÕES DO FLUXO PRODUTIVO (7 etapas) ──
 const OPERACOES = [
   { codigo: '01', nome: 'Fundição',      cor: '#f97316', icon: '🌱”¥' },
-  { codigo: '02', nome: 'Vulcanização',  cor: '#e11d48', icon: 'â™¨ï¸' },
-  { codigo: '03', nome: 'Polimento',     cor: '#a855f7', icon: 'âœ¨' },
-  { codigo: '04', nome: 'Usinagem',      cor: '#3b82f6', icon: 'âš™ï¸' },
+  { codigo: '02', nome: 'Vulcanização',  cor: '#e11d48', icon: '♨️' },
+  { codigo: '03', nome: 'Polimento',     cor: '#a855f7', icon: '✨' },
+  { codigo: '04', nome: 'Usinagem',      cor: '#3b82f6', icon: '⚙️' },
   { codigo: '05', nome: 'Pintura',       cor: '#ec4899', icon: '🌱Ž¨' },
   { codigo: '06', nome: 'Embuchamento',  cor: '#f59e0b', icon: '🌱› ï¸' },
   { codigo: '07', nome: 'Gravação',      cor: '#14b8a6', icon: 'âœï¸' },
@@ -1498,7 +1498,7 @@ function renderFluxo() {
         </button>
         ${!isUltima ? `<button class="btn-icon success" onclick="avancarOp('${p.id}')" title="Avançar operação">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>` : `<span title="Entrada em Estoque – Concluído" style="color:var(--accent-green);font-size:0.72rem;font-weight:700">âœ“ Est.</span>`}
+        </button>` : `<span title="Entrada em Estoque – Concluído" style="color:var(--accent-green);font-size:0.72rem;font-weight:700">✓ Est.</span>`}
         <button class="btn-icon" onclick="openEditPeca('${p.id}')" title="Editar">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
@@ -1675,7 +1675,7 @@ function avancarOp(id) {
     operacaoAtual: proxOp.codigo,
     obsMovimento: `Avançado para Op. ${proxOp.codigo} – ${proxOp.nome}`,
   });
-  showToast(`âœ… Peça avançada → ${proxOp.codigo} – ${proxOp.nome}`);
+  showToast(`✅ Peça avançada → ${proxOp.codigo} – ${proxOp.nome}`);
   renderFluxo();
 }
 window.avancarOp = avancarOp;
