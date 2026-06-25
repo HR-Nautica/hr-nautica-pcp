@@ -1,11 +1,11 @@
-﻿/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-   vini.js Ã¢â‚¬â€œ MÃ³dulo V.I.N.I & Entradas Previstas
-   HR NÃ¡utica PCP Ã¢â‚¬â€œ Refatorado com Kanban e InativaÃ§Ã£o
-   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* ═══════════════════════════════════════════
+   vini.js – Módulo V.I.N.I & Entradas Previstas
+   HR Náutica PCP – Refatorado com Kanban e Inativação
+   ═══════════════════════════════════════════ */
 
 'use strict';
 
-// FunÃ§Ãµes utilitÃ¡rias de seguranÃ§a para ler e fazer o parse do RemoteStorage de forma robusta
+// Funções utilitárias de segurança para ler e fazer o parse do RemoteStorage de forma robusta
 function safeGetJSON(key, defaultVal) {
   try {
     const val = RemoteStorage.getItem(key);
@@ -49,12 +49,12 @@ const VINI_STATE = {
   loaded: !!RemoteStorage.getItem('hrn_vini_necessidades'),
   viewType: 'table', // consolidado apenas em formato de tabela
   filterType: 'all', // 'all' | 'critical' | 'warning' | 'ok' | 'noDemand' | 'inactive' (usados na Tabela)
-  prio2Filter: 'all', // 'all' | 'has-prio' | 'no-prio' | valor numÃ©rico
+  prio2Filter: 'all', // 'all' | 'has-prio' | 'no-prio' | valor numérico
   sortColumn: 'produto',
   sortDirection: 'asc'
 };
 
-// FunÃ§Ã£o de debounce para evitar lag na digitaÃ§Ã£o/ajuste de sliders
+// Função de debounce para evitar lag na digitação/ajuste de sliders
 function debounce(func, wait) {
   let timeout;
   return function (...args) {
@@ -64,9 +64,9 @@ function debounce(func, wait) {
   };
 }
 
-// Formata nÃºmeros para exibir atÃ© uma casa decimal com vÃ­rgula
+// Formata números para exibir até uma casa decimal com vírgula
 function fmtNum(val) {
-  if (val === null || val === undefined || String(val).trim() === '' || String(val).trim() === 'Ã¢â‚¬â€') return 'Ã¢â‚¬â€';
+  if (val === null || val === undefined || String(val).trim() === '' || String(val).trim() === '—') return '—';
   let cleanVal = val;
   if (typeof val === 'string' && val.includes(',')) {
     cleanVal = val.replace(/\./g, '').replace(',', '.');
@@ -82,10 +82,10 @@ function fmtCob(valor) {
   if (!isFinite(valor) || valor === Infinity || valor === null || valor === undefined) return 'Sem Giro';
   const formatado = Number(valor).toFixed(1).replace('.', ',');
   const isOne = Number(valor).toFixed(1) === '1,0' || Number(valor).toFixed(1) === '1.0';
-  return `${formatado} ${isOne ? 'mÃªs' : 'meses'}`;
+  return `${formatado} ${isOne ? 'mês' : 'meses'}`;
 }
 
-// Verifica se o SKU Ã© vÃ¡lido para ser exibido na aba VINI (OpÃ§Ã£o B - Remove apenas HR MP 088)
+// Verifica se o SKU é válido para ser exibido na aba VINI (Opção B - Remove apenas HR MP 088)
 function isSkuValidoVini(sku) {
   if (!sku) return false;
   const skuNorm = String(sku).trim().toUpperCase();
@@ -95,9 +95,9 @@ function isSkuValidoVini(sku) {
   return true;
 }
 
-// ObtÃ©m status do item com base na cobertura virtual calculada e meta de cobertura
+// Obtém status do item com base na cobertura virtual calculada e meta de cobertura
 function getItemStatus(item) {
-  // 1. MÃ©dia mensal igual a 0 = Sem Giro
+  // 1. Média mensal igual a 0 = Sem Giro
   if (Number(item.mediaMensal) === 0) {
     return 'semGiro';
   }
@@ -105,17 +105,17 @@ function getItemStatus(item) {
   // Usamos a cobertura virtual recalculada localmente no JavaScript, com fallback para o prio2 original
   let cob = item.coberturaVirtual;
   if (cob === undefined || cob === null || isNaN(Number(cob))) {
-    cob = item.prio2 !== 'Ã¢â‚¬â€' && item.prio2 !== '' ? Number(item.prio2) : NaN;
+    cob = item.prio2 !== '—' && item.prio2 !== '' ? Number(item.prio2) : NaN;
   }
 
-  // Se a cobertura for invÃ¡lida, consideramos como Seguro
+  // Se a cobertura for inválida, consideramos como Seguro
   if (isNaN(cob)) {
     return 'seguro';
   }
 
   const limiteCritico = VINI_STATE.coberturaAlvo / 3;
 
-  // 2. ClassificaÃ§Ã£o baseada no limite crÃ­tico dinÃ¢mico em relaÃ§Ã£o Ã  meta de cobertura
+  // 2. Classificação baseada no limite crítico dinâmico em relação à meta de cobertura
   if (cob <= limiteCritico) {
     return 'critico';
   } else if (cob > limiteCritico && cob <= VINI_STATE.coberturaAlvo) {
@@ -125,9 +125,9 @@ function getItemStatus(item) {
   }
 }
 
-// Converte datas do Excel (nÃºmero de dias desde 1900) para pt-BR
+// Converte datas do Excel (número de dias desde 1900) para pt-BR
 function excelDateToDateStr(excelDate) {
-  if (!excelDate) return 'Ã¢â‚¬â€';
+  if (!excelDate) return '—';
   if (typeof excelDate === 'string') return excelDate;
   if (!isNaN(excelDate)) {
     const date = new Date((excelDate - 25569) * 86400 * 1000);
@@ -157,7 +157,7 @@ function reativarSku(sku) {
 }
 window.reativarSku = reativarSku;
 
-// Processa dados do Excel de Fornecedores e extrai os vÃ­nculos de SKU com Fornecedor PadrÃ£o
+// Processa dados do Excel de Fornecedores e extrai os vínculos de SKU com Fornecedor Padrão
 function processFornecedoresExcel(arrayBuffer) {
   try {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
@@ -167,8 +167,8 @@ function processFornecedoresExcel(arrayBuffer) {
 
     const map = {};
     rows.forEach(row => {
-      const skuKey = Object.keys(row).find(k => k.toUpperCase().includes('SKU') || k.toUpperCase() === 'CÃƒâ€œDIGO' || k.toUpperCase() === 'CODIGO');
-      const fornKey = Object.keys(row).find(k => k.toUpperCase().includes('FORNECEDOR') || k.toUpperCase() === 'RESPONSÃƒÂVEL' || k.toUpperCase() === 'RESPONSAVEL');
+      const skuKey = Object.keys(row).find(k => k.toUpperCase().includes('SKU') || k.toUpperCase() === 'CÓDIGO' || k.toUpperCase() === 'CODIGO');
+      const fornKey = Object.keys(row).find(k => k.toUpperCase().includes('FORNECEDOR') || k.toUpperCase() === 'RESPONSÁVEL' || k.toUpperCase() === 'RESPONSAVEL');
 
       const sku = skuKey ? String(row[skuKey]).trim().toUpperCase() : '';
       const forn = fornKey ? String(row[fornKey]).trim().toUpperCase() : '';
@@ -187,8 +187,8 @@ function processFornecedoresExcel(arrayBuffer) {
   }
 }
 
-// Processa dados do Excel fabri1.xlsx de fabricaÃ§Ã£o e monta o mapa de sub-itens e sub-sub-itens
-// LÃª TODAS as abas do arquivo e mescla os resultados num Ãºnico mapa.
+// Processa dados do Excel fabri1.xlsx de fabricação e monta o mapa de sub-itens e sub-sub-itens
+// Lê TODAS as abas do arquivo e mescla os resultados num único mapa.
 function processFabriExcel(arrayBuffer) {
   try {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
@@ -204,20 +204,20 @@ function processFabriExcel(arrayBuffer) {
       const colKeys = Object.keys(firstRow);
 
       const skuKitKey = colKeys.find(k => k.toUpperCase().includes('SKU KIT') || k.toUpperCase().includes('SKU FABRICADO') || k.toUpperCase() === 'SKU KIT/FABRICADO');
-      const descKitKey = colKeys.find(k => k.toUpperCase().includes('DESCRIÃƒâ€¡ÃƒÆ’O KIT') || k.toUpperCase().includes('DESCRIÃƒâ€¡ÃƒÆ’O FABRICADO') || k.toUpperCase() === 'DESCRIÃƒâ€¡ÃƒÆ’O KIT/FABRICADO');
+      const descKitKey = colKeys.find(k => k.toUpperCase().includes('DESCRIÇÃO KIT') || k.toUpperCase().includes('DESCRIÇÃO FABRICADO') || k.toUpperCase() === 'DESCRIÇÃO KIT/FABRICADO');
       const skuCompKey = colKeys.find(k => k.toUpperCase().includes('SKU COMPONENTE') || k.toUpperCase() === 'SKU COMPONENTE');
-      const descCompKey = colKeys.find(k => k.toUpperCase().includes('DESCRIÃƒâ€¡ÃƒÆ’O COMPONENTE') || k.toUpperCase() === 'DESCRIÃƒâ€¡ÃƒÆ’O COMPONENTE');
+      const descCompKey = colKeys.find(k => k.toUpperCase().includes('DESCRIÇÃO COMPONENTE') || k.toUpperCase() === 'DESCRIÇÃO COMPONENTE');
       const fornCompKey = colKeys.find(k => k.toUpperCase().includes('FORNECEDOR COMPONENTE') || k.toUpperCase() === 'FORNECEDOR COMPONENTE');
       const qtyCompKey = colKeys.find(k => k.toUpperCase().includes('QUANTIDADE COMPONENTE') || k.toUpperCase() === 'QUANTIDADE COMPONENTE');
       const skuMatKey = colKeys.find(k => k.toUpperCase().includes('SKU MATERIAL') || k.toUpperCase() === 'SKU MATERIAL');
-      const descMatKey = colKeys.find(k => k.toUpperCase().includes('DESCRIÃƒâ€¡ÃƒÆ’O MATERIAL') || k.toUpperCase() === 'DESCRIÃƒâ€¡ÃƒÆ’O MATERIAL');
+      const descMatKey = colKeys.find(k => k.toUpperCase().includes('DESCRIÇÃO MATERIAL') || k.toUpperCase() === 'DESCRIÇÃO MATERIAL');
       const fornMatKey = colKeys.find(k => k.toUpperCase().includes('FORNECEDOR MATERIAL') || k.toUpperCase() === 'FORNECEDOR MATERIAL');
       const qtyMatKey = colKeys.find(k => k.toUpperCase().includes('QTDE MATERIAL') || k.toUpperCase() === 'QTDE MATERIAL');
-      // A coluna de unidade aparece truncada como "Un (" no Excel Ã¢â‚¬â€ busca por prefixo
+      // A coluna de unidade aparece truncada como "Un (" no Excel — busca por prefixo
       const unMatKey = colKeys.find(k => k.toUpperCase().startsWith('UN'));
 
       if (!skuKitKey) {
-        console.warn(`[fabri1] Aba "${sheetName}" sem coluna de SKU kit Ã¢â‚¬â€ ignorada.`);
+        console.warn(`[fabri1] Aba "${sheetName}" sem coluna de SKU kit — ignorada.`);
         return;
       }
 
@@ -226,7 +226,7 @@ function processFabriExcel(arrayBuffer) {
         if (!skuKit || skuKit === '' || skuKit === 'UNDEFINED') return;
 
         const skuComp = skuCompKey ? String(row[skuCompKey]).trim().toUpperCase() : '';
-        // Ignora se nÃ£o houver um SKU de componente vÃ¡lido
+        // Ignora se não houver um SKU de componente válido
         if (!skuComp || skuComp === '' || skuComp === 'UNDEFINED') return;
 
         if (!map[skuKit]) {
@@ -245,7 +245,7 @@ function processFabriExcel(arrayBuffer) {
           unMat: unMatKey ? String(row[unMatKey]).trim() : ''
         };
 
-        // Evita duplicatas (mesmo SKU componente jÃ¡ inserido neste item kit)
+        // Evita duplicatas (mesmo SKU componente já inserido neste item kit)
         const jaExiste = map[skuKit].some(c => c.skuComp === component.skuComp && c.skuMat === component.skuMat);
         if (!jaExiste) {
           map[skuKit].push(component);
@@ -258,13 +258,13 @@ function processFabriExcel(arrayBuffer) {
     console.log(`[fabri1] ${Object.keys(map).length} SKUs carregados de ${wb.SheetNames.length} aba(s): ${wb.SheetNames.join(', ')}`);
     return true;
   } catch (err) {
-    console.error('Erro ao processar planilha de fabricaÃ§Ã£o fabri1.xlsx:', err);
+    console.error('Erro ao processar planilha de fabricação fabri1.xlsx:', err);
     throw err;
   }
 }
 
 
-// Expande ou recolhe um item de nÃ­vel 1 na tabela
+// Expande ou recolhe um item de nível 1 na tabela
 function toggleItemExpansion(sku) {
   if (!sku) return;
   if (VINI_STATE.expandedItems.has(sku)) {
@@ -277,7 +277,7 @@ function toggleItemExpansion(sku) {
 }
 window.toggleItemExpansion = toggleItemExpansion;
 
-// Expande ou recolhe um componente de nÃ­vel 2 na tabela
+// Expande ou recolhe um componente de nível 2 na tabela
 function toggleCompExpansion(skuPai, skuComp) {
   if (!skuPai || !skuComp) return;
   const key = `${skuPai}|${skuComp}`;
@@ -291,7 +291,7 @@ function toggleCompExpansion(skuPai, skuComp) {
 }
 window.toggleCompExpansion = toggleCompExpansion;
 
-// Salva a quantidade e unidade do material (sub-sub-item) editados pelo usuÃ¡rio
+// Salva a quantidade e unidade do material (sub-sub-item) editados pelo usuário
 function saveMaterialUsuario(key, qty, unit) {
   if (!key) return;
   if (!VINI_STATE.materiaisUsuario[key]) {
@@ -330,10 +330,10 @@ function processExcelWorkbook(arrayBuffer) {
       epData = XLSX.utils.sheet_to_json(ws, { defval: '' });
     }
 
-    // Mapeamento auxiliar de Entradas Previstas somadas por SKU
+    // Mapeçamento auxiliar de Entradas Previstas somadas por SKU
     const epMap = {};
     epData.forEach(item => {
-      const sku = String(item['CÃ³digo (SKU)'] || '').trim().toUpperCase();
+      const sku = String(item['Código (SKU)'] || '').trim().toUpperCase();
       const qty = parseInt(item['Qtde']) || 0;
       if (sku) {
         epMap[sku] = (epMap[sku] || 0) + qty;
@@ -347,35 +347,35 @@ function processExcelWorkbook(arrayBuffer) {
     }
 
     if (!wb.SheetNames.includes(pcpSheetName)) {
-      throw new Error('Aba de Necessidade nÃ£o localizada na planilha.');
+      throw new Error('Aba de Necessidade não localizada na planilha.');
     }
 
     const ws = wb.Sheets[pcpSheetName];
     const rawNecessidade = XLSX.utils.sheet_to_json(ws, { defval: '' });
     
-    // ObtÃ©m os cabeÃ§alhos reais (linha 1) para descobrir o nome da coluna M (Ã­ndice 12)
+    // Obtém os cabeçalhos reais (linha 1) para descobrir o nome da coluna M (índice 12)
     const headersArray = XLSX.utils.sheet_to_json(ws, { header: 1 })[0] || [];
     const colM_Header = headersArray[12]; // Coluna M
 
     const necessidadeData = rawNecessidade.map(row => {
-      const sku = String(row['CÃ³digo (SKU)'] || '').trim().toUpperCase();
+      const sku = String(row['Código (SKU)'] || '').trim().toUpperCase();
       const produto = row['Produto'] || 'Produto sem nome';
-      const entradasPrevistas = 0; // Zerado conforme solicitaÃ§Ã£o do usuÃ¡rio (virÃ¡ apenas de ProduÃ§Ã£o de Componentes)
+      const entradasPrevistas = 0; // Zerado conforme solicitação do usuário (virá apenas de Produção de Componentes)
 
-      const saidasPrevistas = parseFloat(row['SaÃ­das previstas']) || 0;
-      const estoqueFisico = parseFloat(row['Estoque fÃ­sico']) || 0;
+      const saidasPrevistas = parseFloat(row['Saídas previstas']) || 0;
+      const estoqueFisico = parseFloat(row['Estoque físico']) || 0;
       
-      // LÃª o valor utilizando a chave que corresponde Ã  coluna M (Ã­ndice 12)
+      // Lê o valor utilizando a chave que corresponde à coluna M (índice 12)
       const rawSaidasPeriodoVal = colM_Header && row[colM_Header] !== undefined ? row[colM_Header] : 0;
       const saidasPeriodo = parseFloat(String(rawSaidasPeriodoVal).replace(',', '.')) || 0;
       
-      const prio2 = row['Prio 2'] !== undefined && row['Prio 2'] !== '' ? parseFloat(row['Prio 2']) : 'Ã¢â‚¬â€';
+      const prio2 = row['Prio 2'] !== undefined && row['Prio 2'] !== '' ? parseFloat(row['Prio 2']) : '—';
 
       const estoqueVirtual = estoqueFisico + entradasPrevistas - saidasPrevistas;
 
-      // Parse robusto da MÃ©dia Mensal (garante que strings erradas ou nulas virem nÃºmeros corretos)
+      // Parse robusto da Média Mensal (garante que strings erradas ou nulas virem números corretos)
       let mediaMensal = 0;
-      const rawMedia = row['MÃ©dia mensal'];
+      const rawMedia = row['Média mensal'];
       if (rawMedia !== undefined && rawMedia !== null && rawMedia !== '') {
         const parsedMedia = parseFloat(String(rawMedia).replace(',', '.'));
         if (!isNaN(parsedMedia)) {
@@ -386,14 +386,14 @@ function processExcelWorkbook(arrayBuffer) {
       }
       mediaMensal = Number(mediaMensal.toFixed(2));
 
-      // Coberturas baseadas em fÃ³rmulas seguras
+      // Coberturas baseadas em fórmulas seguras
       const coberturaFisica = mediaMensal > 0 ? Number((estoqueFisico / mediaMensal).toFixed(2)) : Infinity;
       const coberturaVirtual = mediaMensal > 0 ? Number(((estoqueFisico + entradasPrevistas - saidasPeriodo) / mediaMensal).toFixed(2)) : Infinity;
 
       return {
         produto,
-        sku: sku || 'Ã¢â‚¬â€',  // Usa a variÃ¡vel local jÃ¡ normalizada (trim + toUpperCase)
-        entradasPrevistas: 0, // Zerado conforme solicitaÃ§Ã£o
+        sku: sku || '—',  // Usa a variável local já normalizada (trim + toUpperCase)
+        entradasPrevistas: 0, // Zerado conforme solicitação
         saidasPrevistas,
         estoqueFisico,
         estoqueVirtual,
@@ -427,7 +427,7 @@ async function loadViniExcelData() {
   if (VINI_STATE.loaded && VINI_STATE.necessidadeData?.length > 0) return true;
   const tbody = document.getElementById('vini-body');
   if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="13" class="empty-cell">Nenhum planejamento V.I.N.I no banco central. Use "Sincronizar" para importar dados pela aplicaÃ§Ã£o.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="empty-cell">Nenhum planejamento V.I.N.I no banco central. Use "Sincronizar" para importar dados pela aplicação.</td></tr>';
   }
   return false;
 }
@@ -441,7 +441,7 @@ function renderViniTable() {
     return;
   }
 
-  // Atualiza o estoque fÃ­sico e recÃ¡lculos no V.I.N.I com base no estoque central e nos mapas de saÃ­das
+  // Atualiza o estoque físico e recálculos no V.I.N.I com base no estoque central e nos mapas de saídas
   if (window.EARV) {
     VINI_STATE.necessidadeData.forEach(item => {
       const skuNorm = String(item.sku || '').trim().toUpperCase();
@@ -473,7 +473,7 @@ function renderViniTable() {
 
   const searchText = (document.getElementById('vini-search')?.value || '').toLowerCase();
 
-  // 2. Calcula contadores rÃ¡pidos com base no fornecedor selecionado
+  // 2. Calcula contadores rápidos com base no fornecedor selecionado
   let countTotalActive = 0;
   let countCritical = 0;
   let countWarning = 0;
@@ -552,16 +552,16 @@ function renderViniTable() {
   // Filtro de Prioridade 2
   const prio2FilterVal = VINI_STATE.prio2Filter;
   if (prio2FilterVal === 'has-prio') {
-    filtered = filtered.filter(item => item.prio2 !== 'Ã¢â‚¬â€');
+    filtered = filtered.filter(item => item.prio2 !== '—');
   } else if (prio2FilterVal === 'no-prio') {
-    filtered = filtered.filter(item => item.prio2 === 'Ã¢â‚¬â€');
+    filtered = filtered.filter(item => item.prio2 === '—');
   } else if (prio2FilterVal !== 'all') {
     filtered = filtered.filter(item => String(item.prio2) === prio2FilterVal);
   }
 
 
 
-  // 5. Se for Tabela, aplica filtro por aba de KPI rÃ¡pida
+  // 5. Se for Tabela, aplica filtro por aba de KPI rápida
   const tabFilter = VINI_STATE.filterType;
   if (tabFilter === 'inactive') {
     // Exibe apenas inativos
@@ -622,8 +622,8 @@ function renderViniTable() {
         valB = b.mediaMensal;
         break;
       case 'prio2':
-        valA = a.prio2 === 'Ã¢â‚¬â€' ? 999999 : Number(a.prio2);
-        valB = b.prio2 === 'Ã¢â‚¬â€' ? 999999 : Number(b.prio2);
+        valA = a.prio2 === '—' ? 999999 : Number(a.prio2);
+        valB = b.prio2 === '—' ? 999999 : Number(b.prio2);
         break;
       case 'coberturaFisica':
         valA = a.coberturaFisica;
@@ -651,17 +651,17 @@ function renderViniTable() {
     }
   });
 
-  // Atualiza setas visuais no cabeÃ§alho da tabela
+  // Atualiza setas visuais no cabeçalho da tabela
   document.querySelectorAll('#vini-table thead th.sortable-th').forEach(th => {
     const col = th.dataset.column;
     const iconSpan = th.querySelector('.sort-icon');
     if (iconSpan) {
       if (col === VINI_STATE.sortColumn) {
         th.classList.add('active-sort');
-        iconSpan.textContent = VINI_STATE.sortDirection === 'asc' ? 'Ã¢â€“Â²' : 'Ã¢â€“Â¼';
+        iconSpan.textContent = VINI_STATE.sortDirection === 'asc' ? 'â–²' : 'â–¼';
       } else {
         th.classList.remove('active-sort');
-        iconSpan.textContent = 'Ã¢â€¡â€¦';
+        iconSpan.textContent = 'â‡…';
       }
     }
   });
@@ -679,7 +679,7 @@ function renderViniTable() {
     const entradasTotal = localVirtual; // Apenas OPs de componentes (zerando entradas oficiais)
     const estoqueVirtualTotal = item.estoqueFisico + entradasTotal - item.saidasPrevistas;
 
-    // Coberturas baseadas em fÃ³rmulas seguras recalculadas com o virtual local
+    // Coberturas baseadas em fórmulas seguras recalculadas com o virtual local
     const coberturaVirtualTotal = item.mediaMensal > 0 ? (item.estoqueFisico + entradasTotal) / item.mediaMensal : Infinity;
     const comprarTotal = Math.ceil(Math.max(0, (VINI_STATE.coberturaAlvo * item.mediaMensal) - item.estoqueFisico - entradasTotal));
 
@@ -692,7 +692,7 @@ function renderViniTable() {
 
     const highlightBuyClass = comprarTotal > 0 && !isInactive ? 'td-highlight-buy' : '';
 
-    // BotÃ£o de Inativar ou Reativar conforme o estado
+    // Botão de Inativar ou Reativar conforme o estado
     let actionBtn = '';
     if (isInactive) {
       const showIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
@@ -714,7 +714,7 @@ function renderViniTable() {
 
     const skuUp = String(item.sku || '').trim().toUpperCase();
 
-    // Linha NÃ­vel 1 - Produto
+    // Linha Nível 1 - Produto
     rowsHtmlArray.push(`
       <tr class="${trClass}">
         <td style="text-align: left; white-space: normal; min-width: 130px;">
@@ -729,10 +729,10 @@ function renderViniTable() {
         <td style="font-weight:600; color: ${estoqueVirtualTotal < 0 ? 'var(--accent-red)' : 'var(--text-primary)'}">${fmtNum(estoqueVirtualTotal)}</td>
         <td>${fmtNum(item.saidasPeriodo)}</td>
         <td>${fmtNum(item.mediaMensal)}</td>
-        <td>${item.prio2 === 'Ã¢â‚¬â€' ? 'Ã¢â‚¬â€' : fmtNum(item.prio2)}</td>
+        <td>${item.prio2 === '—' ? '—' : fmtNum(item.prio2)}</td>
         <td style="color: ${item.coberturaFisica === Infinity ? 'var(--text-secondary)' : item.coberturaFisica < VINI_STATE.coberturaAlvo ? 'var(--accent-red)' : 'var(--accent-green)'}">${fmtCob(item.coberturaFisica)}</td>
         <td style="font-weight:600; color: ${coberturaVirtualTotal === Infinity ? 'var(--text-secondary)' : coberturaVirtualTotal < VINI_STATE.coberturaAlvo ? 'var(--accent-red)' : 'var(--accent-green)'}">${fmtCob(coberturaVirtualTotal)}</td>
-        <td class="${highlightBuyClass}">${isInactive ? 'Ã¢â‚¬â€' : comprarTotal > 0 ? fmtNum(comprarTotal) : 'Ã¢Å“â€œ OK'}</td>
+        <td class="${highlightBuyClass}">${isInactive ? '—' : comprarTotal > 0 ? fmtNum(comprarTotal) : 'âœ“ OK'}</td>
         <td style="text-align: center;">${actionBtn}</td>
       </tr>
     `);
@@ -741,7 +741,7 @@ function renderViniTable() {
   tbody.innerHTML = rowsHtmlArray.join('');
 }
 
-// ObtÃ©m a lista de dados do VINI filtrada de acordo com o estado atual da UI
+// Obtém a lista de dados do VINI filtrada de acordo com o estado atual da UI
 function getViniFilteredData() {
   if (!VINI_STATE.loaded) return [];
 
@@ -771,14 +771,14 @@ function getViniFilteredData() {
   // 3. Filtro de Prioridade 2
   const prio2FilterVal = VINI_STATE.prio2Filter;
   if (prio2FilterVal === 'has-prio') {
-    filtered = filtered.filter(item => item.prio2 !== 'Ã¢â‚¬â€');
+    filtered = filtered.filter(item => item.prio2 !== '—');
   } else if (prio2FilterVal === 'no-prio') {
-    filtered = filtered.filter(item => item.prio2 === 'Ã¢â‚¬â€');
+    filtered = filtered.filter(item => item.prio2 === '—');
   } else if (prio2FilterVal !== 'all') {
     filtered = filtered.filter(item => String(item.prio2) === prio2FilterVal);
   }
 
-  // 4. Filtro de Aba rÃ¡pida de KPI
+  // 4. Filtro de Aba rápida de KPI
   const tabFilter = VINI_STATE.filterType;
   if (tabFilter === 'inactive') {
     filtered = filtered.filter(item => VINI_STATE.inativados.has(item.sku));
@@ -795,7 +795,7 @@ function getViniFilteredData() {
     }
   }
 
-  // 5. Aplica ordenaÃ§Ã£o
+  // 5. Aplica ordenação
   filtered = [...filtered].sort((a, b) => {
     const entA = prodComp_getSaldoVirtualLocal(a.sku);
     const entB = prodComp_getSaldoVirtualLocal(b.sku);
@@ -838,8 +838,8 @@ function getViniFilteredData() {
         valB = b.mediaMensal;
         break;
       case 'prio2':
-        valA = a.prio2 === 'Ã¢â‚¬â€' ? 999999 : Number(a.prio2);
-        valB = b.prio2 === 'Ã¢â‚¬â€' ? 999999 : Number(b.prio2);
+        valA = a.prio2 === '—' ? 999999 : Number(a.prio2);
+        valB = b.prio2 === '—' ? 999999 : Number(b.prio2);
         break;
       case 'coberturaFisica':
         valA = a.coberturaFisica;
@@ -874,7 +874,7 @@ function getViniFilteredData() {
 function exportViniToCSV() {
   const filtrados = getViniFilteredData();
   if (filtrados.length === 0) {
-    showToast('Nenhum registro filtrado disponÃ­vel para exportar.', 'error');
+    showToast('Nenhum registro filtrado disponível para exportar.', 'error');
     return;
   }
 
@@ -911,27 +911,27 @@ function exportViniToCSV() {
   showToast('Planilha CSV filtrada exportada com sucesso!');
 }
 
-// Exporta relatÃ³rio filtrado em TXT contendo apenas Produto, SKU e Comprar
+// Exporta relatório filtrado em TXT contendo apenas Produto, SKU e Comprar
 function exportViniToTXT() {
   const filtrados = getViniFilteredData();
   if (filtrados.length === 0) {
-    showToast('Nenhum registro filtrado disponÃ­vel para exportar.', 'error');
+    showToast('Nenhum registro filtrado disponível para exportar.', 'error');
     return;
   }
 
-  const dataGeracao = new Date().toLocaleDateString('pt-BR') + ' Ã s ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const fornName = VINI_STATE.selectedFornecedor === 'all' ? 'VisÃ£o Geral' : VINI_STATE.selectedFornecedor;
+  const dataGeracao = new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const fornName = VINI_STATE.selectedFornecedor === 'all' ? 'Visão Geral' : VINI_STATE.selectedFornecedor;
   const filterName = {
     all: 'Todos os Itens',
-    critical: 'Itens CrÃ­ticos',
-    warning: 'Itens em AtenÃ§Ã£o',
+    critical: 'Itens Críticos',
+    warning: 'Itens em Atenção',
     ok: 'Itens Seguros',
     noDemand: 'Itens Sem Giro',
     inactive: 'Itens Inativados'
   }[VINI_STATE.filterType] || VINI_STATE.filterType;
 
   let txt = `======================================================
-     HR NÃƒÂUTICA PCP - RELATÃƒâ€œRIO DE COMPRAS (V.I.N.I)
+     HR NÁUTICA PCP - RELATÓRIO DE COMPRAS (V.I.N.I)
 ======================================================
 Filtro Fornecedor: ${fornName}
 Filtro Categoria: ${filterName}
@@ -954,7 +954,7 @@ ${'PRODUTO'.padEnd(40, ' ')} | ${'SKU'.padEnd(12, ' ')} | COMPRAR
     txt += `${prodName.padEnd(40, ' ')} | ${item.sku.padEnd(12, ' ')} | ${comprar > 0 ? comprar : 0}\n`;
   });
 
-  txt += `======================================================\nFim do RelatÃ³rio. Total de itens: ${filtrados.length}`;
+  txt += `======================================================\nFim do Relatório. Total de itens: ${filtrados.length}`;
 
   const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -968,11 +968,11 @@ ${'PRODUTO'.padEnd(40, ' ')} | ${'SKU'.padEnd(12, ' ')} | COMPRAR
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  showToast('RelatÃ³rio TXT filtrado exportado com sucesso!');
+  showToast('Relatório TXT filtrado exportado com sucesso!');
 }
 
 
-// Preenche opÃ§Ãµes de Prioridade 2 com base nos dados reais
+// Preenche opções de Prioridade 2 com base nos dados reais
 function updatePrio2FilterOptions() {
   const select = document.getElementById('vini-prio2-filter');
   if (!select) return;
@@ -986,7 +986,7 @@ function updatePrio2FilterOptions() {
   const prioSet = new Set();
   if (Array.isArray(VINI_STATE.necessidadeData)) {
     VINI_STATE.necessidadeData.forEach(item => {
-      if (item.prio2 !== 'Ã¢â‚¬â€' && !isNaN(item.prio2) && item.prio2 !== '' && item.prio2 !== undefined) {
+      if (item.prio2 !== '—' && !isNaN(item.prio2) && item.prio2 !== '' && item.prio2 !== undefined) {
         prioSet.add(Number(item.prio2));
       }
     });
@@ -1026,7 +1026,7 @@ function initViniEvents() {
     slider.addEventListener('input', (e) => {
       const val = parseInt(e.target.value);
       VINI_STATE.coberturaAlvo = val;
-      sliderVal.textContent = val + (val === 1 ? ' mÃªs' : ' meses');
+      sliderVal.textContent = val + (val === 1 ? ' mês' : ' meses');
       debouncedRender();
     });
   }
@@ -1042,7 +1042,7 @@ function initViniEvents() {
 
 
 
-  // Ouvintes de clique para as Abas de Filtros RÃ¡pidos (Tabela)
+  // Ouvintes de clique para as Abas de Filtros Rápidos (Tabela)
   const tabs = {
     all: document.getElementById('vini-filter-all'),
     critical: document.getElementById('vini-filter-critical-tab'),
@@ -1063,7 +1063,7 @@ function initViniEvents() {
     }
   });
 
-  // Ouvintes de clique nos cabeÃ§alhos da tabela
+  // Ouvintes de clique nos cabeçalhos da tabela
   document.querySelectorAll('#vini-table thead th.sortable-th').forEach(th => {
     th.addEventListener('click', () => {
       const col = th.dataset.column;
@@ -1077,7 +1077,7 @@ function initViniEvents() {
     });
   });
 
-  // BotÃµes de ExportaÃ§Ã£o
+  // Botões de Exportação
   const btnExportCSV = document.getElementById('btn-vini-export-csv');
   if (btnExportCSV) {
     btnExportCSV.addEventListener('click', () => {
@@ -1104,7 +1104,7 @@ function initViniEvents() {
 
 }
 
-// Reprocessa coberturas de dados jÃ¡ em cache
+// Reprocessa coberturas de dados já em cache
 function reprocessNecessidadeData() {
   if (!Array.isArray(VINI_STATE.necessidadeData) || VINI_STATE.necessidadeData.length === 0) return;
 
@@ -1127,7 +1127,7 @@ function reprocessNecessidadeData() {
     }
 
     const localVirtual = typeof prodComp_getSaldoVirtualLocal === 'function' ? prodComp_getSaldoVirtualLocal(item.sku) : 0;
-    const entradasPrevistas = 0; // Zerado conforme solicitaÃ§Ã£o do usuÃ¡rio
+    const entradasPrevistas = 0; // Zerado conforme solicitação do usuário
     const entradasTotal = localVirtual; // Apenas OPs locais de componentes
 
     const mediaMensal = saidasPeriodo > 0 ? Number((saidasPeriodo / 3).toFixed(2)) : 0;
@@ -1154,7 +1154,7 @@ function reprocessNecessidadeData() {
   RemoteStorage.setItem('hrn_vini_necessidades', JSON.stringify(VINI_STATE.necessidadeData));
 }
 
-// MigraÃ§Ã£o: normaliza SKUs existentes no cache para uppercase (compatibilidade com dados antigos)
+// Migração: normaliza SKUs existentes no cache para uppercase (compatibilidade com dados antigos)
 function migrateSkusToUpperCase() {
   if (!Array.isArray(VINI_STATE.necessidadeData) || VINI_STATE.necessidadeData.length === 0) return;
   let mudou = false;
@@ -1192,7 +1192,7 @@ function clearCachedEntradasPrevistas() {
   }
 }
 
-// Inicializa o mÃ³dulo
+// Inicializa o módulo
 async function initViniModule() {
   initViniEvents();
   clearCachedEntradasPrevistas();
@@ -1208,7 +1208,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initViniModule();
 });
 
-// Adiciona estilos chave de animaÃ§Ã£o para spin
+// Adiciona estilos chave de animação para spin
 if (!document.getElementById('hrn-vini-spin-styles')) {
   const styleSheet = document.createElement("style");
   styleSheet.id = 'hrn-vini-spin-styles';

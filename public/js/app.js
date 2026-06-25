@@ -1,14 +1,14 @@
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   app.js â€“ Lógica principal & roteamento
+/* ═══════════════════════════════════════════
+   app.js – Lógica principal & roteamento
    HR Náutica PCP
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 
 'use strict';
 
-// â”€â”€ Seed inicial (Gerenciado pelo SyncManager de forma condicional) â”€â”€
+// ── Seed inicial (Gerenciado pelo SyncManager de forma condicional) ──
 // O seed agora só roda se o banco local e de rede estiverem totalmente vazios.
 
-// â”€â”€ Estado global â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Estado global ─────────────────────────
 const STATE = {
   currentPage: 'dashboard',
   charts: {},
@@ -20,9 +20,9 @@ const STATE = {
   editingVendaId: null,
 };
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 // UTILS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 function $(id) {
   const el = document.getElementById(id);
   if (!el) {
@@ -55,13 +55,13 @@ function showToast(msg, type = 'success') {
 }
 
 function formatDate(iso) {
-  if (!iso) return 'â€”';
+  if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleDateString('pt-BR');
 }
 
 function formatDateTime(iso) {
-  if (!iso) return 'â€”';
+  if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
@@ -114,10 +114,10 @@ function etapaIndex(etapa) {
   return ['Fila de Espera','Injeção/Fundição','Usinagem','Balanceamento','Pintura/Polimento','Qualidade','Pronto/Entregue'].indexOf(etapa);
 }
 
-// â”€â”€ Preenche selects de modelo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Preenche selects de modelo ────────────
 function populateModeloSelects() {
   const modelos = DB.getModelos();
-  const opts = ['<option value="">â€” Selecione um modelo â€”</option>',
+  const opts = ['<option value="">— Selecione um modelo —</option>',
     ...modelos.map(m => `<option value="${m.nome}">${m.nome}</option>`)
   ].join('');
   ['op-modelo','peca-modelo','venda-modelo'].forEach(id => {
@@ -126,29 +126,29 @@ function populateModeloSelects() {
   });
 }
 
-// â”€â”€ Preenche select de materiais â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Preenche select de materiais ──────────
 function populateMaterialSelect() {
   const mats = DB.getMateriais();
-  const opts = ['<option value="">â€” Selecione â€”</option>',
+  const opts = ['<option value="">— Selecione —</option>',
     ...mats.map(m => `<option value="${m.id}">${m.nome} (saldo: ${m.saldo} ${m.unidade})</option>`)
   ].join('');
   const el = $('mov-material');
   if (el) el.innerHTML = opts;
 }
 
-// â”€â”€ Preenche select de OPs no modal mov â”€â”€
+// ── Preenche select de OPs no modal mov ──
 function populateOpSelectMov() {
   const ops = DB.getOps();
-  const opts = ['<option value="">â€” Nenhuma â€”</option>',
-    ...ops.map(o => `<option value="${o.id}">${o.numero} â€“ ${o.modelo}</option>`)
+  const opts = ['<option value="">— Nenhuma —</option>',
+    ...ops.map(o => `<option value="${o.id}">${o.numero} – ${o.modelo}</option>`)
   ].join('');
   const el = $('mov-op');
   if (el) el.innerHTML = opts;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// NAVEGAÃ‡ÃƒO
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════
 function navigate(page) {
   // Oculta todas as páginas
   document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
@@ -185,9 +185,9 @@ function navigate(page) {
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 // DASHBOARD
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 function renderDashboard() {
   const ops      = DB.getOps();
   const modelos  = DB.getModelos();
@@ -226,7 +226,7 @@ function renderOpsRecentesTable(ops) {
     return `<tr>
       <td><span style="color:var(--accent-blue);font-weight:700">${op.numero}</span></td>
       <td style="color:var(--text-primary);font-weight:500">${op.modelo}</td>
-      <td>${op.cliente || 'â€”'}</td>
+      <td>${op.cliente || '—'}</td>
       <td>${etapaChip(op.etapa)}</td>
       <td class="${atrasado ? 'priority-urgente' : ''}">${formatDate(op.prazo)}${atrasado ? ' âš ' : ''}</td>
       <td>${etapaChip(op.etapa)}</td>
@@ -319,9 +319,9 @@ function renderFluxoChart(ops) {
   });
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// ORDENS DE PRODUÃ‡ÃƒO â€“ KANBAN
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
+// ORDENS DE PRODUÇÃO – KANBAN
+// ═══════════════════════════════════════════
 const ETAPAS = ['Fila de Espera','Injeção/Fundição','Usinagem','Balanceamento','Pintura/Polimento','Qualidade','Pronto/Entregue'];
 
 function renderOrdens() {
@@ -379,9 +379,9 @@ function deleteOp(id) {
 }
 window.deleteOp = deleteOp;
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 // MODAL OP
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 function updateOpInsumosPreview() {
   const modelo = $('op-modelo').value;
   const qty = parseInt($('op-qty').value) || 1;
@@ -443,7 +443,7 @@ function updateOpInsumosPreview() {
       
     listDiv.innerHTML += `
       <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;display:flex;flex-direction:column;gap:4px">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.nome}">ðŸ“¦ Caixa</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.nome}">🌱“¦ Caixa</div>
         <div style="font-size:0.68rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.nome}">${c.nome}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
           <span style="font-size:0.72rem;color:var(--text-muted)">Qtd: <strong>${qty}</strong> | Saldo: <strong>${c.saldo}</strong></span>
@@ -481,7 +481,7 @@ function openEditOp(id) {
   const op = DB.getOpById(id);
   if (!op) return;
   STATE.editingOpId = id;
-  $('modal-op-title').textContent = `Editar â€“ ${op.numero}`;
+  $('modal-op-title').textContent = `Editar – ${op.numero}`;
   $('op-edit-id').value = id;
   populateModeloSelects();
   $('op-modelo').value    = op.modelo;
@@ -529,9 +529,9 @@ function saveOp() {
   navigate('ordens');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// MODELOS DE HÃ‰LICES
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
+// MODELOS DE HÉLICES
+// ═══════════════════════════════════════════
 function handleExcelUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -788,9 +788,9 @@ function deleteModelo(id) {
 }
 window.deleteModelo = deleteModelo;
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 // ESTOQUE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 function renderEstoque() {
   const search = ($('estoque-search')?.value || '').toLowerCase();
   let mats = DB.getMateriais();
@@ -803,11 +803,11 @@ function renderEstoque() {
   alertsEl.innerHTML = [
     ...criticos.map(m => `<div class="alert-banner alert-banner--red">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Estoque crítico: <strong>${m.nome}</strong> â€” saldo atual: ${m.saldo} ${m.unidade} (mínimo: ${m.minimo})
+      Estoque crítico: <strong>${m.nome}</strong> — saldo atual: ${m.saldo} ${m.unidade} (mínimo: ${m.minimo})
     </div>`),
     ...baixos.map(m => `<div class="alert-banner alert-banner--orange">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      Atenção: <strong>${m.nome}</strong> está próximo do mínimo â€” saldo: ${m.saldo} ${m.unidade}
+      Atenção: <strong>${m.nome}</strong> está próximo do mínimo — saldo: ${m.saldo} ${m.unidade}
     </div>`)
   ].join('');
 
@@ -855,8 +855,8 @@ function renderEstoque() {
         ? `<span class="chip chip--green">Entrada</span>`
         : `<span class="chip chip--red">Saída</span>`}</td>
       <td style="font-weight:600">${mv.qty}</td>
-      <td>${mv.opNumero || 'â€”'}</td>
-      <td style="color:var(--text-muted)">${mv.obs || 'â€”'}</td>
+      <td>${mv.opNumero || '—'}</td>
+      <td style="color:var(--text-muted)">${mv.obs || '—'}</td>
     </tr>`).join('');
   }
 }
@@ -959,9 +959,9 @@ function saveMov() {
   renderEstoque();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// PROGRAMAÃ‡ÃƒO DE FUNDIÃ‡ÃƒO DE HÃ‰LICE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
+// PROGRAMAÇÃO DE FUNDIÇÃO DE HÉLICE
+// ═══════════════════════════════════════════
 function statusFundicaoChip(s) {
   const map = {
     'Agendado':     'chip--blue',
@@ -1006,13 +1006,13 @@ function renderFundicao() {
   }
   tbody.innerHTML = list.slice().reverse().map(f => `<tr>
     <td><span style="color:var(--accent-orange);font-weight:700">${f.numero}</span></td>
-    <td style="color:var(--text-primary);font-weight:500">${f.modelo || 'â€”'}</td>
-    <td>${f.material || 'â€”'}</td>
+    <td style="color:var(--text-primary);font-weight:500">${f.modelo || '—'}</td>
+    <td>${f.material || '—'}</td>
     <td>${f.qty}</td>
-    <td>${f.peso > 0 ? f.peso + ' kg' : 'â€”'}</td>
+    <td>${f.peso > 0 ? f.peso + ' kg' : '—'}</td>
     <td>${formatDate(f.data)}</td>
-    <td>${f.forno || 'â€”'}</td>
-    <td>${f.temp ? f.temp + '°C' : 'â€”'}</td>
+    <td>${f.forno || '—'}</td>
+    <td>${f.temp ? f.temp + '°C' : '—'}</td>
     <td>${statusFundicaoChip(f.status)}</td>
     <td><div class="td-actions">
       <button class="btn-icon" onclick="openEditFundicao('${f.id}')" title="Editar">
@@ -1027,7 +1027,7 @@ function renderFundicao() {
 
 function populateFundicaoModeloSelect() {
   const modelos = DB.getModelos();
-  const opts = ['<option value="">â€” Selecione um modelo â€”</option>',
+  const opts = ['<option value="">— Selecione um modelo —</option>',
     ...modelos.map(m => `<option value="${m.nome}">${m.nome}</option>`)
   ].join('');
   const el = $('fundicao-modelo');
@@ -1054,7 +1054,7 @@ function openEditFundicao(id) {
   const f = DB.getFundicoes().find(x => x.id === id);
   if (!f) return;
   STATE.editingFundicaoId = id;
-  $('modal-fundicao-title').textContent = `Editar Programação â€“ ${f.numero}`;
+  $('modal-fundicao-title').textContent = `Editar Programação – ${f.numero}`;
   $('fundicao-edit-id').value  = id;
   populateFundicaoModeloSelect();
   $('fundicao-modelo').value   = f.modelo;
@@ -1107,9 +1107,9 @@ function deleteFundicao(id) {
 }
 window.deleteFundicao = deleteFundicao;
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// MANUTENÃ‡ÃƒO DE FERRAMENTAS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
+// MANUTENÇÃO DE FERRAMENTAS
+// ═══════════════════════════════════════════
 
 function statusMntChip(s) {
   const map = {
@@ -1168,17 +1168,17 @@ function renderManutencao() {
     // Calcula dias em manutenção
     const diasStr = m.dataEntrada
       ? (() => { const d = Math.floor((Date.now() - new Date(m.dataEntrada).getTime()) / 86400000); return d + 'd'; })()
-      : 'â€”';
+      : '—';
     // Verifica atraso na previsão
     const atrasado = m.dataPrevisao && m.status !== 'Liberada' && new Date(m.dataPrevisao) < new Date();
     return `<tr>
       <td><span style="color:var(--accent-orange);font-weight:700">${m.numero}</span></td>
       <td style="color:var(--text-primary);font-weight:600">${m.ferramenta}</td>
       <td><span class="chip chip--gray">${m.tipo}</span></td>
-      <td style="color:var(--text-secondary);font-size:0.76rem">${m.motivo || 'â€”'}</td>
-      <td style="color:var(--text-muted);font-size:0.76rem">${m.responsavel || 'â€”'}</td>
-      <td style="color:var(--text-muted);font-size:0.76rem">${m.dataEntrada ? (formatDate(m.dataEntrada) + ' <span style="color:var(--text-muted);font-size:0.68rem">('+diasStr+')</span>') : 'â€”'}</td>
-      <td style="color:${atrasado ? 'var(--accent-red)' : 'var(--text-muted)'};font-size:0.76rem;font-weight:${atrasado ? '700' : '400'}">${m.dataPrevisao ? formatDate(m.dataPrevisao) + (atrasado ? ' âš ï¸' : '') : 'â€”'}</td>
+      <td style="color:var(--text-secondary);font-size:0.76rem">${m.motivo || '—'}</td>
+      <td style="color:var(--text-muted);font-size:0.76rem">${m.responsavel || '—'}</td>
+      <td style="color:var(--text-muted);font-size:0.76rem">${m.dataEntrada ? (formatDate(m.dataEntrada) + ' <span style="color:var(--text-muted);font-size:0.68rem">('+diasStr+')</span>') : '—'}</td>
+      <td style="color:${atrasado ? 'var(--accent-red)' : 'var(--text-muted)'};font-size:0.76rem;font-weight:${atrasado ? '700' : '400'}">${m.dataPrevisao ? formatDate(m.dataPrevisao) + (atrasado ? ' âš ï¸' : '') : '—'}</td>
       <td>${prioridadeMntChip(m.prioridade)}</td>
       <td>${statusMntChip(m.status)}</td>
       <td><div class="td-actions">
@@ -1228,7 +1228,7 @@ function openEditManutencao(id) {
   const m = DB.getManutencoes().find(x => x.id === id);
   if (!m) return;
   STATE.editingMntId = id;
-  $('modal-mnt-title').textContent  = `Editar Manutenção â€“ ${m.numero}`;
+  $('modal-mnt-title').textContent  = `Editar Manutenção – ${m.numero}`;
   $('mnt-edit-id').value     = id;
   
   resetMntFerramentaOptions();
@@ -1306,26 +1306,26 @@ function deleteManutencao(id) {
 }
 window.deleteManutencao = deleteManutencao;
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// RASTREIO DE OPERAÃ‡Ã•ES (FLUXO)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
+// RASTREIO DE OPERAÇÕES (FLUXO)
+// ═══════════════════════════════════════════
 
-// â”€â”€ OPERAÃ‡Ã•ES DO FLUXO PRODUTIVO (7 etapas) â”€â”€
+// ── OPERAÇÕES DO FLUXO PRODUTIVO (7 etapas) ──
 const OPERACOES = [
-  { codigo: '01', nome: 'Fundição',      cor: '#f97316', icon: 'ðŸ”¥' },
+  { codigo: '01', nome: 'Fundição',      cor: '#f97316', icon: '🌱”¥' },
   { codigo: '02', nome: 'Vulcanização',  cor: '#e11d48', icon: 'â™¨ï¸' },
   { codigo: '03', nome: 'Polimento',     cor: '#a855f7', icon: 'âœ¨' },
   { codigo: '04', nome: 'Usinagem',      cor: '#3b82f6', icon: 'âš™ï¸' },
-  { codigo: '05', nome: 'Pintura',       cor: '#ec4899', icon: 'ðŸŽ¨' },
-  { codigo: '06', nome: 'Embuchamento',  cor: '#f59e0b', icon: 'ðŸ› ï¸' },
+  { codigo: '05', nome: 'Pintura',       cor: '#ec4899', icon: '🌱Ž¨' },
+  { codigo: '06', nome: 'Embuchamento',  cor: '#f59e0b', icon: '🌱› ï¸' },
   { codigo: '07', nome: 'Gravação',      cor: '#14b8a6', icon: 'âœï¸' },
 ];
 
-const ULTIMA_OP = '07'; // Ãšltima operação do fluxo
+const ULTIMA_OP = '07'; // Última operação do fluxo
 
 function getOpLabel(codigo) {
   const op = OPERACOES.find(o => o.codigo === codigo);
-  return op ? `${op.codigo} â€“ ${op.nome}` : codigo;
+  return op ? `${op.codigo} – ${op.nome}` : codigo;
 }
 
 function getOpCor(codigo) {
@@ -1333,7 +1333,7 @@ function getOpCor(codigo) {
   return op ? op.cor : '#888';
 }
 
-// â”€â”€ Calcula o status visual de uma peça baseado no tempo na op â”€â”€
+// ── Calcula o status visual de uma peça baseado no tempo na op ──
 function calcularStatus(p) {
   if (p.status === 'bloqueado') return 'bloqueado';
   if (p.operacaoAtual === ULTIMA_OP) return 'concluido';
@@ -1370,7 +1370,7 @@ function progressBar(pct, status) {
   </div>`;
 }
 
-// â”€â”€ Render dos KPIs do Rastreio â”€â”€
+// ── Render dos KPIs do Rastreio ──
 function renderFluxoKPIs(pecas) {
   const total      = pecas.length;
   const atencao    = pecas.filter(p => { const s = calcularStatus(p); return s === 'atencao' || s === 'atrasado'; }).length;
@@ -1385,7 +1385,7 @@ function renderFluxoKPIs(pecas) {
   if (lbl) lbl.textContent = `${total} peça${total !== 1 ? 's' : ''}`;
 }
 
-// â”€â”€ Pipeline visual com micro-indicadores â”€â”€
+// ── Pipeline visual com micro-indicadores ──
 function renderPipeline() {
   const pipeline = $('flow-pipeline');
   if (!pipeline) return;
@@ -1394,12 +1394,12 @@ function renderPipeline() {
   // Contagens e soma de qty por operação
   const contagens   = {};
   const totalQty    = {};
-  const atrasadas   = {};
+  const atrasaídas   = {};
   const bloqueadas  = {};
   OPERACOES.forEach(op => {
     contagens[op.codigo]  = 0;
     totalQty[op.codigo]   = 0;
-    atrasadas[op.codigo]  = 0;
+    atrasaídas[op.codigo]  = 0;
     bloqueadas[op.codigo] = 0;
   });
   pecas.forEach(p => {
@@ -1407,7 +1407,7 @@ function renderPipeline() {
       contagens[p.operacaoAtual]++;
       totalQty[p.operacaoAtual] += (parseInt(p.qty) || 0);
       const s = calcularStatus(p);
-      if (s === 'atrasado') atrasadas[p.operacaoAtual]++;
+      if (s === 'atrasado') atrasaídas[p.operacaoAtual]++;
       if (s === 'bloqueado') bloqueadas[p.operacaoAtual]++;
     }
   });
@@ -1430,7 +1430,7 @@ function renderPipeline() {
           </div>
           <div class="pipeline-indicators">
             <div class="pipeline-ind">
-              <span class="pipeline-ind-val" style="color:var(--accent-red)">${atrasadas[op.codigo]}</span>
+              <span class="pipeline-ind-val" style="color:var(--accent-red)">${atrasaídas[op.codigo]}</span>
               <span class="pipeline-ind-lbl">Atras.</span>
             </div>
             <div class="pipeline-ind">
@@ -1439,12 +1439,12 @@ function renderPipeline() {
             </div>
           </div>
         </div>
-        ${i < OPERACOES.length - 1 ? '<div class="pipeline-arrow">â€º</div>' : ''}
+        ${i < OPERACOES.length - 1 ? '<div class="pipeline-arrow">”º</div>' : ''}
       </div>`;
   }).join('');
 }
 
-// â”€â”€ Tabela principal de Rastreio â”€â”€
+// ── Tabela principal de Rastreio ──
 function renderFluxo() {
   const allPecas = DB.getPecas();
   renderPipeline();
@@ -1481,13 +1481,13 @@ function renderFluxo() {
     const tempoNaOp = tempoDecorrido(p.atualizadoEm);
     const opLink = p.opNumero
       ? `<span style="color:var(--accent-blue);font-weight:700;cursor:pointer;font-size:0.76rem" onclick="navigate('ordens')" title="Ver na aba Ordens de Produção">${p.opNumero}</span>`
-      : '<span style="color:var(--text-muted);font-size:0.76rem">â€”</span>';
+      : '<span style="color:var(--text-muted);font-size:0.76rem">—</span>';
     return `<tr>
       <td><span style="color:var(--accent-purple);font-weight:700;cursor:pointer" onclick="openHistorico('${p.id}')" title="Ver histórico">${p.numero}</span></td>
-      <td style="color:var(--text-primary);font-weight:500">${p.modelo || 'â€”'}</td>
+      <td style="color:var(--text-primary);font-weight:500">${p.modelo || '—'}</td>
       <td>${p.qty}</td>
       <td>${opLink}</td>
-      <td><span class="op-badge" style="background:${op.cor}22;color:${op.cor};border:1px solid ${op.cor}55">${op.icon} ${op.codigo} â€“ ${op.nome}</span></td>
+      <td><span class="op-badge" style="background:${op.cor}22;color:${op.cor};border:1px solid ${op.cor}55">${op.icon} ${op.codigo} – ${op.nome}</span></td>
       <td style="color:var(--text-muted);font-size:0.76rem">${formatDateTime(p.atualizadoEm)}</td>
       <td style="color:var(--text-muted);font-size:0.76rem">${tempoNaOp}</td>
       <td>${statusBadge(status)}</td>
@@ -1498,7 +1498,7 @@ function renderFluxo() {
         </button>
         ${!isUltima ? `<button class="btn-icon success" onclick="avancarOp('${p.id}')" title="Avançar operação">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>` : `<span title="Entrada em Estoque â€“ Concluído" style="color:var(--accent-green);font-size:0.72rem;font-weight:700">âœ“ Est.</span>`}
+        </button>` : `<span title="Entrada em Estoque – Concluído" style="color:var(--accent-green);font-size:0.72rem;font-weight:700">âœ“ Est.</span>`}
         <button class="btn-icon" onclick="openEditPeca('${p.id}')" title="Editar">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
@@ -1512,7 +1512,7 @@ function renderFluxo() {
 
 
 function tempoDecorrido(isoStr) {
-  if (!isoStr) return 'â€”';
+  if (!isoStr) return '—';
   const diff = Date.now() - new Date(isoStr).getTime();
   const mins  = Math.floor(diff / 60000);
   const hours = Math.floor(mins / 60);
@@ -1522,7 +1522,7 @@ function tempoDecorrido(isoStr) {
   return `${mins}m`;
 }
 
-// â”€â”€ Modal de Histórico da Peça â”€â”€
+// ── Modal de Histórico da Peça ──
 function openHistorico(id) {
   const p = DB.getPecas().find(x => x.id === id);
   if (!p) return;
@@ -1531,7 +1531,7 @@ function openHistorico(id) {
   const pct    = calcularPorcentagem(p);
   const hist   = p.historico || [];
 
-  $('modal-historico-title').textContent = `Histórico â€“ ${p.numero}`;
+  $('modal-historico-title').textContent = `Histórico – ${p.numero}`;
 
   // Calcula tempo total (desde criação)
   const tempoTotal = tempoDecorrido(p.criadoEm);
@@ -1539,12 +1539,12 @@ function openHistorico(id) {
   $('modal-historico-body').innerHTML = `
     <div class="peca-info-grid">
       <div class="peca-info-item">
-        <div class="peca-info-label">NÂº / Lote</div>
+        <div class="peca-info-label">Nº / Lote</div>
         <div class="peca-info-value" style="color:var(--accent-purple)">${p.numero}</div>
       </div>
       <div class="peca-info-item">
         <div class="peca-info-label">Modelo</div>
-        <div class="peca-info-value">${p.modelo || 'â€”'}</div>
+        <div class="peca-info-value">${p.modelo || '—'}</div>
       </div>
       <div class="peca-info-item">
         <div class="peca-info-label">Quantidade</div>
@@ -1552,7 +1552,7 @@ function openHistorico(id) {
       </div>
       <div class="peca-info-item">
         <div class="peca-info-label">OP Atual</div>
-        <div class="peca-info-value" style="color:${op.cor}">${op.icon} ${op.codigo} â€“ ${op.nome}</div>
+        <div class="peca-info-value" style="color:${op.cor}">${op.icon} ${op.codigo} – ${op.nome}</div>
       </div>
       <div class="peca-info-item">
         <div class="peca-info-label">Tempo Total</div>
@@ -1583,7 +1583,7 @@ function openHistorico(id) {
           const hopData = OPERACOES.find(o => o.codigo === h.op);
           const isLast = i === hist.length - 1;
           return `<div class="historico-item">
-            <div class="historico-op-label">${hopData ? `${hopData.icon} ${hopData.codigo} â€“ ${hopData.nome}` : h.op}</div>
+            <div class="historico-op-label">${hopData ? `${hopData.icon} ${hopData.codigo} – ${hopData.nome}` : h.op}</div>
             <div class="historico-data">${formatDateTime(h.data)}</div>
             ${h.obs ? `<div class="historico-obs">${h.obs}</div>` : ''}
           </div>`;
@@ -1619,7 +1619,7 @@ function openEditPeca(id) {
   const p = DB.getPecas().find(x => x.id === id);
   if (!p) return;
   STATE.editingPecaId = id;
-  $('modal-peca-title').textContent = `Editar Peça â€“ ${p.numero}`;
+  $('modal-peca-title').textContent = `Editar Peça – ${p.numero}`;
   $('peca-edit-id').value = id;
   populateModeloSelects();
   $('peca-numero').value        = p.numero;
@@ -1673,9 +1673,9 @@ function avancarOp(id) {
   const proxOp = OPERACOES[idx + 1];
   DB.updatePeca(id, {
     operacaoAtual: proxOp.codigo,
-    obsMovimento: `Avançado para Op. ${proxOp.codigo} â€“ ${proxOp.nome}`,
+    obsMovimento: `Avançado para Op. ${proxOp.codigo} – ${proxOp.nome}`,
   });
-  showToast(`âœ… Peça avançada â†’ ${proxOp.codigo} â€“ ${proxOp.nome}`);
+  showToast(`âœ… Peça avançada → ${proxOp.codigo} – ${proxOp.nome}`);
   renderFluxo();
 }
 window.avancarOp = avancarOp;
@@ -1688,9 +1688,9 @@ function deletePeca(id) {
 }
 window.deletePeca = deletePeca;
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// EXPEDIÃ‡ÃƒO / VENDAS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
+// EXPEDIÇÃO / VENDAS
+// ═══════════════════════════════════════════
 function renderExpedicao() {
   const search = ($('expedicao-search')?.value || '').toLowerCase();
   const allPedidos = DB.getPedidos();
@@ -1746,8 +1746,8 @@ function renderExpedicao() {
       tbodyPedidos.innerHTML = list.map(p => {
         return `<tr>
           <td><span style="color:var(--accent-purple);font-weight:700">${p.numero}</span></td>
-          <td style="color:var(--text-primary);font-weight:500">${p.cliente || 'â€”'}</td>
-          <td>${p.modelo || 'â€”'}</td>
+          <td style="color:var(--text-primary);font-weight:500">${p.cliente || '—'}</td>
+          <td>${p.modelo || '—'}</td>
           <td>${p.qty}</td>
           <td>${formatDate(p.criadoEm)}</td>
           <td><div class="td-actions">
@@ -1782,7 +1782,7 @@ function openEditVenda(id) {
   const p = DB.getPedidos().find(x => x.id === id);
   if (!p) return;
   STATE.editingVendaId = id;
-  $('modal-venda-title').textContent = `Editar Venda â€“ ${p.numero}`;
+  $('modal-venda-title').textContent = `Editar Venda – ${p.numero}`;
   $('venda-edit-id').value = id;
   populateModeloSelects();
   $('venda-cliente').value = p.cliente;
@@ -1840,13 +1840,13 @@ function deleteVenda(id) {
 }
 window.deleteVenda = deleteVenda;
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// RELATÃ“RIOS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
+// RELATÓRIOS
+// ═══════════════════════════════════════════
 function renderRelatorios() {
   const ops = DB.getOps();
 
-  // Chart 1 â€“ Produção por mês (últimos 6 meses)
+  // Chart 1 – Produção por mês (últimos 6 meses)
   const meses = [];
   const counts = [];
   for (let i = 5; i >= 0; i--) {
@@ -1882,7 +1882,7 @@ function renderRelatorios() {
     options: chartBaseOptions(),
   });
 
-  // Chart 2 â€“ OPs por status (donut)
+  // Chart 2 – OPs por status (donut)
   const statusLabels = ETAPAS;
   const statusCounts = ETAPAS.map(e => ops.filter(o => o.etapa === e).length);
   const ctx2 = $('rel-status-chart').getContext('2d');
@@ -1908,7 +1908,7 @@ function renderRelatorios() {
     }
   });
 
-  // Chart 3 â€“ Top modelos
+  // Chart 3 – Top modelos
   const modeloCounts = {};
   ops.forEach(o => { modeloCounts[o.modelo] = (modeloCounts[o.modelo] || 0) + 1; });
   const modeloEntries = Object.entries(modeloCounts).sort((a,b) => b[1]-a[1]).slice(0,5);
@@ -1932,12 +1932,12 @@ function renderRelatorios() {
 
   // Tabela de atrasos
   const hoje = new Date();
-  const atrasadas = ops.filter(o => o.etapa !== 'Pronto/Entregue' && new Date(o.prazo) < hoje);
+  const atrasaídas = ops.filter(o => o.etapa !== 'Pronto/Entregue' && new Date(o.prazo) < hoje);
   const tbody = $('rel-atraso-body');
-  if (!atrasadas.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">Sem ordens em atraso. ðŸŽ‰</td></tr>';
+  if (!atrasaídas.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">Sem ordens em atraso. 🌱Ž‰</td></tr>';
   } else {
-    tbody.innerHTML = atrasadas.map(o => `<tr>
+    tbody.innerHTML = atrasaídas.map(o => `<tr>
       <td><span style="color:var(--accent-blue);font-weight:700">${o.numero}</span></td>
       <td>${o.modelo}</td>
       <td style="color:var(--accent-red)">${formatDate(o.prazo)}</td>
@@ -1985,12 +1985,12 @@ function exportCSV() {
   showToast('CSV exportado com sucesso!');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 // EVENT LISTENERS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
 
-  // â”€â”€ Navegação â”€â”€
+  // ── Navegação ──
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -2006,27 +2006,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // â”€â”€ Botões Nova OP â”€â”€
+  // ── Botões Nova OP ──
   $('btn-nova-op-dashboard').addEventListener('click', () => { populateModeloSelects(); openNovaOp(); });
   const btnNovaOp = $('btn-nova-op');
   if (btnNovaOp) {
     btnNovaOp.addEventListener('click', () => { populateModeloSelects(); openNovaOp(); });
   }
 
-  // â”€â”€ Modal OP â”€â”€
+  // ── Modal OP ──
   $('modal-op-close').addEventListener('click', closeModalOp);
   $('btn-cancel-op').addEventListener('click', closeModalOp);
   $('btn-save-op').addEventListener('click', saveOp);
   $('op-modelo').addEventListener('change', updateOpInsumosPreview);
   $('op-qty').addEventListener('input', updateOpInsumosPreview);
 
-  // â”€â”€ Modal Modelo â”€â”€
+  // ── Modal Modelo ──
   $('btn-novo-modelo').addEventListener('click', openNovoModelo);
   $('modal-modelo-close').addEventListener('click', closeModalModelo);
   $('btn-cancel-modelo').addEventListener('click', closeModalModelo);
   $('btn-save-modelo').addEventListener('click', saveModelo);
 
-  // â”€â”€ Excel Matrix Upload â”€â”€
+  // ── Excel Matrix Upload ──
   const btnImportarMatriz = $('btn-importar-matriz');
   const inputMatrizExcel = $('input-matriz-excel');
   if (btnImportarMatriz && inputMatrizExcel) {
@@ -2036,47 +2036,47 @@ document.addEventListener('DOMContentLoaded', () => {
     inputMatrizExcel.addEventListener('change', handleExcelUpload);
   }
 
-  // â”€â”€ Modal Material â”€â”€
+  // ── Modal Material ──
   $('btn-novo-material').addEventListener('click', openNovoMaterial);
   $('modal-material-close').addEventListener('click', closeModalMaterial);
   $('btn-cancel-material').addEventListener('click', closeModalMaterial);
   $('btn-save-material').addEventListener('click', saveMaterial);
 
-  // â”€â”€ Modal Movimentação â”€â”€
+  // ── Modal Movimentação ──
   $('btn-mov-estoque').addEventListener('click', openModalMov);
   $('modal-mov-close').addEventListener('click', closeModalMov);
   $('btn-cancel-mov').addEventListener('click', closeModalMov);
   $('btn-save-mov').addEventListener('click', saveMov);
 
-  // â”€â”€ Modal Peça (Rastreio) â”€â”€
+  // ── Modal Peça (Rastreio) ──
   $('btn-nova-peca').addEventListener('click', openNovaPeca);
   $('modal-peca-close').addEventListener('click', closeModalPeca);
   $('btn-cancel-peca').addEventListener('click', closeModalPeca);
   $('btn-save-peca').addEventListener('click', savePeca);
 
-  // â”€â”€ Modal Histórico â”€â”€
+  // ── Modal Histórico ──
   $('modal-historico-close').addEventListener('click', closeModalHistorico);
   $('btn-close-historico').addEventListener('click', closeModalHistorico);
 
-  // â”€â”€ Modal Fundição â”€â”€
+  // ── Modal Fundição ──
   $('btn-nova-fundicao').addEventListener('click', openNovaFundicao);
   $('modal-fundicao-close').addEventListener('click', closeModalFundicao);
   $('btn-cancel-fundicao').addEventListener('click', closeModalFundicao);
   $('btn-save-fundicao').addEventListener('click', saveFundicao);
 
-  // â”€â”€ Modal Manutenção â”€â”€
+  // ── Modal Manutenção ──
   $('btn-nova-manutencao').addEventListener('click', openNovaManutencao);
   $('modal-mnt-close').addEventListener('click', closeModalManutencao);
   $('btn-cancel-mnt').addEventListener('click', closeModalManutencao);
   $('btn-save-mnt').addEventListener('click', saveManutencao);
 
-  // â”€â”€ Modal Venda (Expedição) â”€â”€
+  // ── Modal Venda (Expedição) ──
   $('btn-nova-venda').addEventListener('click', openNovaVenda);
   $('modal-venda-close').addEventListener('click', closeModalVenda);
   $('btn-cancel-venda').addEventListener('click', closeModalVenda);
   $('btn-save-venda').addEventListener('click', saveVenda);
 
-  // â”€â”€ Buscas â”€â”€
+  // ── Buscas ──
   const opSearch = $('op-search');
   if (opSearch) opSearch.addEventListener('input', renderOrdens);
   const opFilterStatus = $('op-filter-status');
@@ -2093,24 +2093,24 @@ document.addEventListener('DOMContentLoaded', () => {
   $('fluxo-filter-status').addEventListener('change', renderFluxo);
   $('expedicao-search').addEventListener('input', renderExpedicao);
 
-  // â”€â”€ Exportar CSV â”€â”€
+  // ── Exportar CSV ──
   $('btn-export-csv').addEventListener('click', exportCSV);
 
-  // â”€â”€ Fechar modais ao clicar fora â”€â”€
+  // ── Fechar modais ao clicar fora ──
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) overlay.classList.add('hidden');
     });
   });
 
-  // â”€â”€ Tecla ESC para fechar modais â”€â”€
+  // ── Tecla ESC para fechar modais ──
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
     }
   });
 
-  // â”€â”€ Inicialização do Módulo de Análise de Produção â”€â”€
+  // ── Inicialização do Módulo de Análise de Produção ──
   if (typeof initAnaliseListeners === 'function') {
     initAnaliseListeners();
   }
@@ -2118,7 +2118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAnaliseExcelData();
   }
 
-  // â”€â”€ Inicialização do SyncManager (Sincronização em Rede) â”€â”€
+  // ── Inicialização do SyncManager (Sincronização em Rede) ──
   if (typeof SyncManager !== 'undefined') {
     SyncManager.init(() => {
       // Callback executado quando o polling encontra dados novos no servidor
@@ -2135,7 +2135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // â”€â”€ Render inicial â”€â”€
+  // ── Render inicial ──
   navigate('dashboard');
 });
 

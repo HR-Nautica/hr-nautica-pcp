@@ -1,11 +1,11 @@
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   db.js â€“ Camada de dados (RemoteStorage)
+/* ═══════════════════════════════════════════
+   db.js – Camada de dados (RemoteStorage)
    HR Náutica PCP
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 
 const DB = {
 
-  // â”€â”€â”€ Keys â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Keys ───────────────────────────────
   KEYS: {
     ops:          'hrn_ops',
     modelos:      'hrn_modelos',
@@ -19,7 +19,7 @@ const DB = {
     manutencoes:  'hrn_manutencoes',
   },
 
-  // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Helpers ────────────────────────────
   _get(key) {
     try { return JSON.parse(RemoteStorage.getItem(key)) || []; }
     catch { return []; }
@@ -37,7 +37,7 @@ const DB = {
     return new Date().toISOString();
   },
 
-  // â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Config ─────────────────────────────
   getConfig() {
     try { return JSON.parse(RemoteStorage.getItem(this.KEYS.config)) || { meta: 100, opCounter: 0 }; }
     catch { return { meta: 100, opCounter: 0 }; }
@@ -55,11 +55,11 @@ const DB = {
     return String(cfg.opCounter).padStart(4, '0');
   },
 
-  // â•â•â• ORDENS DE PRODUÃ‡ÃƒO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ═══ ORDENS DE PRODUÇÃO ══════════════════
   getOps()         { return this._get(this.KEYS.ops); },
   saveOps(list)    { this._set(this.KEYS.ops, list); },
 
-  // â”€â”€â”€ Helpers para Insumos / Consumo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Helpers para Insumos / Consumo ────────────────
   getOpRequirements(modeloNome, qty) {
     if (!modeloNome) return null;
     const model = this.getModelos().find(m => m.nome === modeloNome);
@@ -188,7 +188,7 @@ const DB = {
 
     ops.push(op);
     this.saveOps(ops);
-    this.addAtividade(`Nova OP criada: ${op.numero} â€“ ${op.modelo}`, 'blue');
+    this.addAtividade(`Nova OP criada: ${op.numero} – ${op.modelo}`, 'blue');
     return op;
   },
 
@@ -243,7 +243,7 @@ const DB = {
 
   getOpById(id) { return this.getOps().find(o => o.id === id); },
 
-  // â•â•â• MODELOS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ═══ MODELOS ════════════════════════════
   getModelos()      { return this._get(this.KEYS.modelos); },
   saveModelos(list) { this._set(this.KEYS.modelos, list); },
 
@@ -292,7 +292,7 @@ const DB = {
     this.addAtividade('Modelo de hélice removido', 'red');
   },
 
-  // â•â•â• MATERIAIS / ESTOQUE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ═══ MATERIAIS / ESTOQUE ════════════════
   getMateriais()      { return this._get(this.KEYS.materiais); },
   saveMateriais(list) { this._set(this.KEYS.materiais, list); },
 
@@ -328,7 +328,7 @@ const DB = {
 
   getMaterialById(id) { return this.getMateriais().find(m => m.id === id); },
 
-  // â•â•â• MOVIMENTAÃ‡Ã•ES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ═══ MOVIMENTAÇÕES ══════════════════════
   getMovimentos()      { return this._get(this.KEYS.movimentos); },
   saveMovimentos(list) { this._set(this.KEYS.movimentos, list); },
 
@@ -361,7 +361,7 @@ const DB = {
     return mov;
   },
 
-  // â•â•â• PEDIDOS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ═══ PEDIDOS ════════════════════════════
   getPedidos()      { return this._get(this.KEYS.pedidos); },
   savePedidos(list) { this._set(this.KEYS.pedidos, list); },
   _pedidoCounter: null,
@@ -389,7 +389,7 @@ const DB = {
     };
     list.push(p);
     this.savePedidos(list);
-    this.addAtividade(`Novo pedido: ${p.numero} â€“ ${p.cliente}`, 'purple');
+    this.addAtividade(`Novo pedido: ${p.numero} – ${p.cliente}`, 'purple');
     return p;
   },
 
@@ -406,7 +406,7 @@ const DB = {
     this.addAtividade('Pedido removido', 'red');
   },
 
-  // â•â•â• PROGRAMAÃ‡ÃƒO DE FUNDIÃ‡ÃƒO â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ═══ PROGRAMAÇÃO DE FUNDIÇÃO ══════════════
   getFundicoes()       { return this._get(this.KEYS.fundicoes); },
   saveFundicoes(list)  { this._set(this.KEYS.fundicoes, list); },
 
@@ -435,7 +435,7 @@ const DB = {
     };
     list.push(f);
     this.saveFundicoes(list);
-    this.addAtividade(`Nova programação de fundição: ${f.numero} â€“ ${f.modelo}`, 'orange');
+    this.addAtividade(`Nova programação de fundição: ${f.numero} – ${f.modelo}`, 'orange');
     return f;
   },
 
@@ -455,7 +455,7 @@ const DB = {
     if (f) this.addAtividade(`Prog. fundição ${f.numero} removida`, 'red');
   },
 
-  // â•â•â• MANUTENÃ‡ÃƒO DE FERRAMENTAS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ═══ MANUTENÇÃO DE FERRAMENTAS ════════════════
   getManutencoes()       { return this._get(this.KEYS.manutencoes); },
   saveManutencoes(list)  { this._set(this.KEYS.manutencoes, list); },
 
@@ -485,7 +485,7 @@ const DB = {
     };
     list.push(m);
     this.saveManutencoes(list);
-    this.addAtividade(`Ferramenta interditada: ${m.numero} â€“ ${m.ferramenta}`, 'orange');
+    this.addAtividade(`Ferramenta interditada: ${m.numero} – ${m.ferramenta}`, 'orange');
     return m;
   },
 
@@ -506,7 +506,7 @@ const DB = {
     if (m) this.addAtividade(`Manutenção ${m.numero} removida`, 'red');
   },
 
-  // â•â•â• PEÃ‡AS / RASTREIO DE OPERAÃ‡Ã•ES â•â•â•â•â•â•â•â•â•â•â•â•
+  // ═══ PEÇAS / RASTREIO DE OPERAÇÕES ════════════
   getPecas()       { return this._get(this.KEYS.pecas); },
   savePecas(list)  { this._set(this.KEYS.pecas, list); },
 
@@ -533,7 +533,7 @@ const DB = {
     };
     list.push(p);
     this.savePecas(list);
-    this.addAtividade(`Nova peça ${p.numero} â€“ ${p.modelo} (Op. ${p.operacaoAtual})`, 'blue');
+    this.addAtividade(`Nova peça ${p.numero} – ${p.modelo} (Op. ${p.operacaoAtual})`, 'blue');
     return p;
   },
 
@@ -564,7 +564,7 @@ const DB = {
     if (p) this.addAtividade(`Peça ${p.numero} removida`, 'red');
   },
 
-  // â•â•â• ATIVIDADES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ═══ ATIVIDADES ═════════════════════════
   getAtividades()      { return this._get(this.KEYS.atividades); },
   saveAtividades(list) { this._set(this.KEYS.atividades, list); },
 
@@ -575,7 +575,7 @@ const DB = {
     this.saveAtividades(list.slice(0, 50));
   },
 
-  // â”€â”€â”€ Seed Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Seed Data ──────────────────────────
   seed() {
     // One-time cleanup to ensure all mock/fake data is removed from RemoteStorage
     if (!RemoteStorage.getItem('hrn_cleaned_mock_data_v3')) {
@@ -646,7 +646,7 @@ const DB = {
       }
     });
 
-    // â”€â”€ Seed Itens em Produção (Rastreio de OP + OPs vinculadas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Seed Itens em Produção (Rastreio de OP + OPs vinculadas) ──────────────
     if (!RemoteStorage.getItem('hrn_seeded_itens_producao_v2') &&
         typeof ITENS_PRODUCAO !== 'undefined' && Array.isArray(ITENS_PRODUCAO)) {
 
@@ -656,7 +656,7 @@ const DB = {
       this.saveOps(opsRestantes);
       RemoteStorage.removeItem('hrn_seeded_itens_producao_v1');
 
-      // Mapa de localização â†’ código de operação
+      // Mapa de localização → código de operação
       const locToOp = (loc) => {
         if (!loc) return '01';
         const l = loc.toLowerCase().replace(/\r?\n/g, ' ').trim();
@@ -673,7 +673,7 @@ const DB = {
         return '01';
       };
 
-      // Mapa de código de OP â†’ etapa da OP (Ordens de Produção)
+      // Mapa de código de OP → etapa da OP (Ordens de Produção)
       const opToEtapa = {
         '01': 'Injeção/Fundição',
         '02': 'Pintura/Polimento',
@@ -685,7 +685,7 @@ const DB = {
       };
 
       // Agrupa por SKU + localização para criar OPs únicas
-      const opMap = {}; // chave: sku|opCode â†’ { id, numero }
+      const opMap = {}; // chave: sku|opCode → { id, numero }
 
       ITENS_PRODUCAO.forEach((item, idx) => {
         if (!item.nome || item.qty === 0) return;
@@ -726,7 +726,7 @@ const DB = {
           opId:          opId,
           opNumero:      opNumero,
           obs:           `Loc. planilha: ${item.localizacao} | Bruto: ${item.bruto}`,
-          historico: [{ op: opCode, data: this._now(), obs: `Importado de itens_em_produção â€“ ${item.localizacao}` }],
+          historico: [{ op: opCode, data: this._now(), obs: `Importado de itens_em_produção – ${item.localizacao}` }],
           criadoEm:      this._now(),
           atualizadoEm:  this._now(),
         };

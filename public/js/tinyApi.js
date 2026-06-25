@@ -1,16 +1,16 @@
 /**
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
- *  tinyApi.js â€” Módulo de integração com o servidor proxy local
+ * ═══════════════════════════════════════════════════════════════
+ *  tinyApi.js — Módulo de integração com o servidor proxy local
  *
  *  Como funciona:
- *  - Ao carregar, testa se o servidor local está ativo em localhost:3001
+ *  - Aço carregar, testa se o servidor local está ativo em localhost:3001
  *  - Se estiver ativo: usa a API Tiny (dados em tempo real)
  *  - Se não estiver: sistema continua funcionando normalmente
  *    com as planilhas sincronizadas manualmente (comportamento atual)
  *
  *  Não é necessário alterar este arquivo para ativar a integração.
  *  Basta rodar "node server.js" na pasta do projeto.
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════
  */
 
 'use strict';
@@ -25,7 +25,7 @@ const TinyAPI = {
   ultimoErro:        null,
 };
 
-// â”€â”€â”€ Verificação de disponibilidade â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Verificação de disponibilidade ───────────────────────────────────────────
 
 /**
  * Testa se o servidor proxy local está rodando.
@@ -37,7 +37,7 @@ async function verificarServidorProxy() {
     const res = await fetch(`${TINY_PROXY_BASE}/api/status`, {
       method:  'GET',
       headers: { 'Accept': 'application/json' },
-      // Timeout curto â€” se o servidor não responder em 1s, não está ativo
+      // Timeout curto — se o servidor não responder em 1s, não está ativo
       signal:  AbortSignal.timeout(1500),
     });
 
@@ -56,7 +56,7 @@ async function verificarServidorProxy() {
     return true;
 
   } catch (err) {
-    // Servidor não está rodando â€” comportamento normal, sem erro visível
+    // Servidor não está rodando — comportamento normal, sem erro visível
     TinyAPI.disponivel  = false;
     TinyAPI.ultimoErro  = err.message;
     console.info('[TinyAPI] Servidor proxy não detectado. Usando modo offline (planilhas manuais).');
@@ -64,7 +64,7 @@ async function verificarServidorProxy() {
   }
 }
 
-// â”€â”€â”€ Funções de busca de dados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Funções de busca de dados ─────────────────────────────────────────────────
 
 /**
  * Busca o estoque físico atual de todos os produtos via API Tiny.
@@ -83,7 +83,7 @@ async function buscarEstoqueTiny() {
       console.info('[TinyAPI] Retornando dados de exemplo. Configure o token para dados reais.');
     }
 
-    // Converte para mapa SKU â†’ estoque
+    // Converte para mapa SKU → estoque
     const estoqueMap = {};
     (data.produtos || []).forEach(p => {
       estoqueMap[p.sku.trim().toUpperCase()] = p.estoqueFisico;
@@ -143,14 +143,14 @@ async function buscarSaidasPeriodo(dias = 90) {
   }
 }
 
-// â”€â”€â”€ Sincronização automática com o VINI_STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Sincronização automática com o VINI_STATE ────────────────────────────────
 
 /**
  * Se o servidor proxy estiver ativo e com token configurado,
  * atualiza os dados de estoque do VINI_STATE com dados em tempo real do Tiny.
  *
  * Chamada futura: integrar ao botão "Sync PCP" ou a um timer automático.
- * Por enquanto é apenas um stub â€” não quebra nada se o servidor não estiver ativo.
+ * Por enquanto é apenas um stub — não quebra nada se o servidor não estiver ativo.
  *
  * @returns {Promise<{atualizado: boolean, mensagem: string}>}
  */
@@ -228,7 +228,7 @@ async function obterStatusSincronizacao() {
   }
 }
 
-// â”€â”€â”€ Inicialização â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Inicialização ─────────────────────────────────────────────────────────────
 
 // Verifica automaticamente ao carregar o script (não bloqueia nada)
 verificarServidorProxy().then(ativo => {

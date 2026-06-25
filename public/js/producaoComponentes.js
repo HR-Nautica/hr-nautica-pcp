@@ -1,7 +1,7 @@
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   producaoComponentes.js  â€“  Gestão de OPs e Entradas Locais
+/* ═══════════════════════════════════════════════════════════════
+   producaoComponentes.js  –  Gestão de OPs e Entradas Locais
    HR Náutica PCP  |  Módulo de Produção de Componentes
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ═══════════════════════════════════════════════════════════════ */
 'use strict';
 
 // Estado global do módulo de componentes
@@ -87,12 +87,12 @@ function prodComp_getRowOperacoes(row) {
       if (val && val !== '-') {
         operacoes[opKey] = { label: val, status: 'Pendente' };
       } else {
-        operacoes[opKey] = { label: 'â€”', status: 'â€”' };
+        operacoes[opKey] = { label: '—', status: '—' };
       }
     });
   } else {
     ['op01', 'op02', 'op03', 'op04', 'op05', 'op06'].forEach(opKey => {
-      operacoes[opKey] = { label: 'â€”', status: 'â€”' };
+      operacoes[opKey] = { label: '—', status: '—' };
     });
   }
   return operacoes;
@@ -181,9 +181,9 @@ function prodComp_createOP(sku, qty, descOverride) {
       parentSku: null,
       operacoes: rowInRows ? prodComp_getRowOperacoes(rowInRows) : {
         op01: { label: 'Compras', status: 'Pendente' },
-        op02: { label: 'â€”', status: 'â€”' },
-        op03: { label: 'â€”', status: 'â€”' },
-        op04: { label: 'â€”', status: 'â€”' },
+        op02: { label: '—', status: '—' },
+        op03: { label: '—', status: '—' },
+        op04: { label: '—', status: '—' },
         op05: { label: 'Montagem', status: 'Pendente' },
         op06: { label: 'Embalagem', status: 'Pendente' }
       }
@@ -245,7 +245,7 @@ function prodComp_toggleOpStatus(opId, itemSku, opKey) {
   if (!item) return;
 
   const opInfo = item.operacoes[opKey];
-  if (!opInfo || opInfo.status === 'â€”') return;
+  if (!opInfo || opInfo.status === '—') return;
 
   if (opInfo.status === 'Pendente') {
     // Verifica bloqueio de sub-itens
@@ -303,7 +303,7 @@ function prodComp_finalizarOP(opId) {
   prodComp_save();
 
   if (typeof showToast === 'function') {
-    showToast(`ðŸŽ‰ OP de Componente ${op.id} concluída com sucesso!`, 'success');
+    showToast(`🌱Ž‰ OP de Componente ${op.id} concluída com sucesso!`, 'success');
   }
 
   prodComp_render();
@@ -346,7 +346,7 @@ function safeGetJSON(key, defaultVal) {
 
 // Função utilitária local para formatação robusta de números
 function prodComp_fmtNum(val) {
-  if (val === null || val === undefined || String(val).trim() === '' || String(val).trim() === 'â€”') return 'â€”';
+  if (val === null || val === undefined || String(val).trim() === '' || String(val).trim() === '—') return '—';
   let cleanVal = val;
   if (typeof val === 'string' && val.includes(',')) {
     cleanVal = val.replace(/\./g, '').replace(',', '.');
@@ -403,8 +403,8 @@ function prodComp_render() {
   // Carrega tabelas de suporte para a renderização do conjunto (estoque)
   const estoqueMap = safeGetJSON('hrn_earv_estoque', {});
 
-  // â”€â”€ Reserva de estoque por SKU entre OPs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Acumula o quanto de cada SKU já foi "consumido" pelas OPs processadas.
+  // ── Reserva de estoque por SKU entre OPs ────────────────────────────────
+  // Acumula o quanto de cada SKU já foi "consumido" pelas OPs processaídas.
   // OPs são percorridas na ordem da tela (filtered já está ordenado).
   // Apenas componentes (nivel != '00') participam da reserva.
   const reservadoPorSku = {}; // { [sku]: quantidade já reservada pelas OPs anteriores }
@@ -416,7 +416,7 @@ function prodComp_render() {
     const isOPConcluida = op.status === 'Concluído';
     const statusText = isOPConcluida 
       ? `<span class="earv-op-badge earv-op-badge--op06" style="padding: 0.25rem 0.6rem; font-weight: 700;">âœ“ CONCLUÍDA</span>`
-      : `<span class="earv-op-badge earv-op-badge--op02" style="padding: 0.25rem 0.6rem; font-weight: 700;">âš™ EM PRODUÃ‡ÃƒO</span>`;
+      : `<span class="earv-op-badge earv-op-badge--op02" style="padding: 0.25rem 0.6rem; font-weight: 700;">âš™ EM PRODUÇÃO</span>`;
 
     let actionsHtml = '';
     if (!isOPConcluida) {
@@ -429,7 +429,7 @@ function prodComp_render() {
       
       actionsHtml = `
         <button class="earv-btn ${btnClass} earv-btn--sm" onclick="prodComp_finalizarOP('${op.id}')" style="margin-right: 0.5rem; padding: 0.35rem 0.75rem; font-size: 0.76rem; font-weight: 700; ${btnStyle}">
-          ðŸ Finalizar OP
+          🌱 Finalizar OP
         </button>
         <button class="earv-btn earv-btn--outline earv-btn--sm" onclick="prodComp_deleteOP('${op.id}')" style="padding: 0.35rem 0.75rem; font-size: 0.76rem; font-weight: 700; border-color: var(--accent-red); color: var(--accent-red);">
           Cancelar
@@ -465,7 +465,7 @@ function prodComp_render() {
       const estFisico = (estoqueMap[skuNorm] !== undefined && estoqueMap[skuNorm] !== null)
         ? estoqueMap[skuNorm] : 0;
 
-      // â”€â”€ Estoque disponível com reserva progressiva â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Estoque disponível com reserva progressiva ───────────────────
       // Para item final (nivel 00): usa o estoque físico direto (ele é produzido, não consumido)
       // Para componentes (nivel 01/02): desconta o que OPs anteriores já reservaram
       let est;
@@ -483,14 +483,14 @@ function prodComp_render() {
       // Estilo da coluna Estoque
       let stockHtml = '';
       if (item.nivel === '00') {
-        // Item final â€” exibe estoque atual sem indicador de insuficiência
+        // Item final — exibe estoque atual sem indicador de insuficiência
         if (est <= 0) {
           stockHtml = `<span class="earv-stock earv-stock--zero" title="Nenhuma unidade em estoque atualmente">0</span>`;
         } else {
           stockHtml = `<span class="earv-stock earv-stock--ok" title="Estoque atual antes da produção">${prodComp_fmtNum(est)}</span>`;
         }
       } else {
-        // Componentes â€” mostra estoque disponível real (após reserva de OPs anteriores)
+        // Componentes — mostra estoque disponível real (após reserva de OPs anteriores)
         const tooltip = estFisico !== est
           ? `Estoque físico: ${prodComp_fmtNum(estFisico)} | Já reservado por OPs anteriores: ${prodComp_fmtNum(reservadoPorSku[skuNorm] || 0)} | Disponível: ${prodComp_fmtNum(est)}`
           : '';
@@ -504,8 +504,8 @@ function prodComp_render() {
       }
 
       // Saldo após a operação:
-      // - Nível 00 (item final): a OP PRODUZ â†’ saldo = estoque físico + quantidade produzida
-      // - Nível 01/02 (componentes): CONSUMIDOS â†’ saldo = estoque disponível âˆ’ quantidade necessária
+      // - Nível 00 (item final): a OP PRODUZ → saldo = estoque físico + quantidade produzida
+      // - Nível 01/02 (componentes): CONSUMIDOS → saldo = estoque disponível âˆ’ quantidade necessária
       const saldo = item.nivel === '00'
         ? estFisico + item.quantidadeTotal  // Produção soma ao estoque físico
         : est - item.quantidadeTotal;       // Consumo subtrai do estoque disponível real
@@ -522,7 +522,7 @@ function prodComp_render() {
         saldoHtml = `<span style="font-weight: 700; color: var(--accent-green);">+${prodComp_fmtNum(saldo)}</span>`;
       }
 
-      // Atualiza a reserva acumulada do SKU APÃ“S calcular esta linha
+      // Atualiza a reserva acumulada do SKU APÓS calcular esta linha
       if (item.nivel !== '00' && reservadoNessaLinha > 0) {
         reservadoPorSku[skuNorm] = (reservadoPorSku[skuNorm] || 0) + reservadoNessaLinha;
       }
@@ -533,10 +533,10 @@ function prodComp_render() {
         const opInfo = item.operacoes[opKey];
         // Label da planilha: é o nome do responsável (ex: "Alberto")
         const opLabel = window.OP && window.OP[opKey] ? window.OP[opKey].label : opKey.toUpperCase();
-        const responsavel = (!opInfo || opInfo.status === 'â€”') ? null : (opInfo.label && opInfo.label !== 'â€”' ? opInfo.label : null);
+        const responsavel = (!opInfo || opInfo.status === '—') ? null : (opInfo.label && opInfo.label !== '—' ? opInfo.label : null);
 
-        if (!opInfo || opInfo.status === 'â€”') {
-          opsColsHtml += `<td class="earv-td"><span class="earv-dash">â€”</span></td>`;
+        if (!opInfo || opInfo.status === '—') {
+          opsColsHtml += `<td class="earv-td"><span class="earv-dash">—</span></td>`;
         } else if (opInfo.status === 'OK') {
           const clickAction = isConcluido ? '' : `onclick="prodComp_toggleOpStatus('${op.id}', '${item.sku}', '${opKey}')"`;
           const cursorStyle = isConcluido ? 'cursor: default;' : 'cursor: pointer;';
@@ -569,14 +569,14 @@ function prodComp_render() {
                   <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
                     <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
                     <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" title="Bloqueado: conclua os sub-itens primeiro" onclick="event.stopPropagation()" style="width:100%;">
-                      ðŸ”’ ${responsavel ? `<span style="font-weight:700;">${responsavel}</span>` : opLabel}
+                      🌱”’ ${responsavel ? `<span style="font-weight:700;">${responsavel}</span>` : opLabel}
                     </button>
                   </div>
                 </td>
               `;
             } else {
               // Ativo e clicável: mostra nome do responsável em destaque
-              // EXCEÃ‡ÃƒO: se é OP de Compras (op01) e o estoque cobre a necessidade, mostra badge informativa
+              // EXCEÇÃO: se é OP de Compras (op01) e o estoque cobre a necessidade, mostra badge informativa
               const escapedOpId = op.id.replace(/'/g, "\\'");
               const escapedSku  = item.sku.replace(/'/g, "\\'");
 
@@ -584,13 +584,13 @@ function prodComp_render() {
               const estoqueCobreNecessidade = saldo >= 0;
 
               if (isComprasOp && estoqueCobreNecessidade) {
-                // Estoque suficiente: não precisa comprar â€” badge informativa verde
+                // Estoque suficiente: não precisa comprar — badge informativa verde
                 const saldoFormatado = prodComp_fmtNum(saldo);
                 opsColsHtml += `
                   <td class="earv-td" style="padding: 4px !important; text-align: center;">
                     <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
                       <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
-                      <span class="op-btn--em-estoque" title="Estoque suficiente â€” saldo pós-consumo: +${saldoFormatado}">
+                      <span class="op-btn--em-estoque" title="Estoque suficiente — saldo pós-consumo: +${saldoFormatado}">
                         <span style="display:block;font-size:0.78rem;font-weight:800;line-height:1.2;">âœ“ Em estoque</span>
                         <span style="display:block;font-size:0.63rem;opacity:0.8;line-height:1;">saldo: +${saldoFormatado}</span>
                       </span>
@@ -605,9 +605,9 @@ function prodComp_render() {
                       <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
                       <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--resp-btn" 
                         onclick="prodComp_toggleOpStatus('${escapedOpId}', '${escapedSku}', '${opKey}')"
-                        title="Clique para confirmar OK â€” ${responsavel || opLabel}"
+                        title="Clique para confirmar OK — ${responsavel || opLabel}"
                         style="width:100%; position:relative; overflow:hidden;">
-                        <span class="op-resp-name" style="display:block;font-size:0.82rem;font-weight:700;color:inherit;line-height:1.2;">${responsavel || 'â€“'}</span>
+                        <span class="op-resp-name" style="display:block;font-size:0.82rem;font-weight:700;color:inherit;line-height:1.2;">${responsavel || '–'}</span>
                         <span class="op-resp-hint" style="display:block;font-size:0.65rem;opacity:0.7;line-height:1;">toque para OK</span>
                       </button>
                     </div>
@@ -672,7 +672,7 @@ function prodComp_render() {
 }
 window.prodComp_render = prodComp_render;
 
-// Exporta tarefas das OPs ativas â€” formato por Kit â†’ por OP (01â†’06)
+// Exporta tarefas das OPs ativas — formato por Kit → por OP (01→06)
 function prodComp_exportTarefas() {
   prodComp_load();
 
@@ -705,7 +705,7 @@ function prodComp_exportTarefas() {
 
   let txt = '';
   txt += `============================================================\n`;
-  txt += `   HR NÃUTICA PCP  â€“  RELATÃ“RIO DE TAREFAS\n`;
+  txt += `   HR NÁUTICA PCP  –  RELATÓRIO DE TAREFAS\n`;
   txt += `============================================================\n`;
   txt += `Gerado em: ${dataGeracao}\n`;
   txt += `Total de OPs em produção: ${activeOps.length}\n`;
@@ -720,7 +720,7 @@ function prodComp_exportTarefas() {
     const skuKit = itemFinal ? itemFinal.sku : op.sku;
 
     txt += `------------------------------------------------------------\n`;
-    txt += `Kit ${skuKit}  (${op.id} | ${op.dataCriacao}) â€“ Qtd: ${op.quantidade}\n`;
+    txt += `Kit ${skuKit}  (${op.id} | ${op.dataCriacao}) – Qtd: ${op.quantidade}\n`;
     txt += `------------------------------------------------------------\n`;
 
     opKeys.forEach(opKey => {
@@ -735,7 +735,7 @@ function prodComp_exportTarefas() {
         // Compras: apenas componentes com saldo NEGATIVO (falta estoque)
         componentes.forEach(item => {
           const opInfo = item.operacoes[opKey];
-          if (!opInfo || opInfo.status === 'â€”') return;
+          if (!opInfo || opInfo.status === '—') return;
 
           const estFisico = estoqueMap[item.sku] ?? 0;
           const jaReservado = reservadoPorSkuExport[item.sku] || 0;
@@ -746,9 +746,9 @@ function prodComp_exportTarefas() {
           const reservadoAqui = Math.min(item.quantidadeTotal, estDisponivel);
           reservadoPorSkuExport[item.sku] = jaReservado + reservadoAqui;
 
-          if (saldo >= 0) return; // Estoque suficiente â€” não precisa comprar
+          if (saldo >= 0) return; // Estoque suficiente — não precisa comprar
 
-          const responsavel = (opInfo.label && opInfo.label !== 'â€”') ? opInfo.label : opLabel;
+          const responsavel = (opInfo.label && opInfo.label !== '—') ? opInfo.label : opLabel;
           const qtyComprar  = Math.abs(saldo);
 
           linhas.push({ responsavel, sku: item.sku, qty: qtyComprar });
@@ -768,21 +768,21 @@ function prodComp_exportTarefas() {
       } else {
         // Demais operações: checar item final (op05, op06) e componentes (op02, op03, op04)
         const candidatos = ['op05', 'op06'].includes(opKey)
-          ? [itemFinal].filter(Boolean)                      // Montagem/Embalagem â†’ só item final
-          : componentes;                                     // Usinagem/Cromo/Pintura â†’ componentes
+          ? [itemFinal].filter(Boolean)                      // Montagem/Embalagem → só item final
+          : componentes;                                     // Usinagem/Cromo/Pintura → componentes
 
         candidatos.forEach(item => {
           const opInfo = item.operacoes[opKey];
-          if (!opInfo || opInfo.status === 'â€”') return;
+          if (!opInfo || opInfo.status === '—') return;
 
-          const responsavel = (opInfo.label && opInfo.label !== 'â€”') ? opInfo.label : opLabel;
+          const responsavel = (opInfo.label && opInfo.label !== '—') ? opInfo.label : opLabel;
           linhas.push({ responsavel, sku: item.sku, qty: item.quantidadeTotal });
         });
       }
 
       if (linhas.length === 0) {
         // Nenhuma tarefa nesta OP
-        txt += `OP ${opNum}: â€”\n`;
+        txt += `OP ${opNum}: —\n`;
       } else {
         // Agrupa por responsável (pode haver mais de um por OP)
         const porResp = {};
@@ -803,7 +803,7 @@ function prodComp_exportTarefas() {
     });
   });
 
-  // â”€â”€ Seção de Consolidação â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Seção de Consolidação ────────────────────────────────────────────
   // Mostra SKUs de compra que aparecem em mais de uma ordem de produção
   const skusMultiplosOps = Object.entries(comprasConsolidado)
     .filter(([, v]) => v.ordens.length > 1);
@@ -813,11 +813,11 @@ function prodComp_exportTarefas() {
     txt += `COMPRAS CONSOLIDADAS (mesmo item em múltiplas ordens)\n`;
     txt += `============================================================\n`;
     skusMultiplosOps.forEach(([sku, data]) => {
-      txt += `${sku}  â€“  ${data.descricao}\n`;
+      txt += `${sku}  –  ${data.descricao}\n`;
       txt += `  Responsável: ${data.responsavel}\n`;
       txt += `  Total a comprar: ${data.totalQty} un\n`;
       data.ordens.forEach(o => {
-        txt += `    â€¢ ${o.opId}: ${o.qty} un\n`;
+        txt += `    ”¢ ${o.opId}: ${o.qty} un\n`;
       });
       txt += `\n`;
     });
