@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 const RemoteStorage = {
   data: new Map(),
@@ -58,14 +58,14 @@ const RemoteStorage = {
     } catch (error) {
       this.setConnectionState(false);
       if (initial) throw error;
-      console.error("[ACCESS] Falha ao atualizar:", error);
+      console.error("[BANCO] Falha ao atualizar:", error);
     }
   },
   enqueue(key, operation) {
     const previous = this.writeQueues.get(key) || Promise.resolve();
     const next = previous.catch(() => {}).then(operation).catch((error) => {
       this.setConnectionState(false);
-      console.error(`[ACCESS] Falha ao gravar ${key}:`, error);
+      console.error(`[BANCO] Falha ao gravar ${key}:`, error);
     });
     this.writeQueues.set(key, next);
   },
@@ -108,7 +108,7 @@ const RemoteStorage = {
     const container = document.getElementById("net-sync-status");
     const text = document.getElementById("net-sync-text");
     if (container) container.className = `sync-status-container ${online ? "online" : "offline"}`;
-    if (text) text.textContent = online ? "Access conectado" : "Banco indisponivel";
+    if (text) text.textContent = online ? "Supabase conectado" : "Banco indisponivel";
     if (warning && online && !warning.textContent.startsWith("Os dados de")) {
       warning.style.display = "none";
     }
@@ -120,6 +120,7 @@ const RemoteStorage = {
 };
 
 window.RemoteStorage = RemoteStorage;
+
 
 
 

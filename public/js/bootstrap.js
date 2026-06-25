@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 const applicationScripts = [
   "/js/db.js",
@@ -48,13 +48,14 @@ async function bootstrap() {
     console.error("[BOOT]", error);
     const warning = document.getElementById("central-server-warning");
     if (warning) {
-      warning.textContent = "Nao foi possivel iniciar: Access ou API indisponivel.";
+      warning.textContent = "Nao foi possivel iniciar: Banco ou API indisponivel.";
       warning.style.display = "block";
     }
   }
 }
 
 bootstrap();
+
 
 
 

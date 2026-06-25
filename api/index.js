@@ -1,4 +1,4 @@
-import compression from "compression";
+﻿import compression from "compression";
 import express from "express";
 import helmet from "helmet";
 
@@ -34,7 +34,7 @@ app.use("/api", integrationsRouter);
 
 app.use((error, _req, res, _next) => {
   console.error("[API]", error);
-  const dbError = ["IM002", "HY000", "08001"].includes(error.code) || /ODBC|Access|database|banco/i.test(error.message || "");
+  const dbError = ["IM002", "HY000", "08001", "DATABASE_CONFIG_MISSING", "SUPABASE_REST_ERROR"].includes(error.code) || /ODBC|Access|Supabase|database|banco/i.test(error.message || "");
   res.status(dbError ? 503 : 500).json({
     ok: false,
     error: dbError
@@ -43,8 +43,11 @@ app.use((error, _req, res, _next) => {
     debugMessage: error.message,
     debugStack: error.stack,
     debugCode: error.code,
-    envDatabaseUrlExists: !!process.env.DATABASE_URL
+    envDatabaseUrlExists: !!process.env.DATABASE_URL,
+    envSupabaseUrlExists: !!process.env.SUPABASE_URL,
+    envSupabaseServiceRoleExists: !!process.env.SUPABASE_SERVICE_ROLE_KEY
   });
 });
 
 export default app;
+

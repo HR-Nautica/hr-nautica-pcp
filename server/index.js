@@ -26,7 +26,7 @@ app.get("/api/status", async (_req, res, next) => {
       ok: true,
       service: "HR Nautica PCP",
       version: "2.0.0",
-      database: "access-connected",
+      database: "supabase-connected",
       databaseTime
     });
   } catch (error) {
@@ -41,11 +41,11 @@ app.get("*splat", (_req, res) => res.sendFile(path.join(dist, "index.html")));
 
 app.use((error, _req, res, _next) => {
   console.error("[API]", error);
-  const dbError = ["IM002", "HY000", "08001"].includes(error.code) || /ODBC|Access|database|banco/i.test(error.message || "");
+  const dbError = ["IM002", "HY000", "08001", "DATABASE_CONFIG_MISSING", "SUPABASE_REST_ERROR"].includes(error.code) || /ODBC|Access|Supabase|database|banco/i.test(error.message || "");
   res.status(dbError ? 503 : 500).json({
     ok: false,
     error: dbError
-      ? "Microsoft Access indisponivel ou configuracao invalida."
+      ? "Banco Supabase indisponivel ou configuracao invalida."
       : "Erro interno. Nenhuma transacao parcial foi mantida."
   });
 });
@@ -53,4 +53,5 @@ app.use((error, _req, res, _next) => {
 app.listen(config.port, config.host, () => {
   console.log(`HR Nautica PCP disponivel na porta ${config.port}`);
 });
+
 

@@ -3,37 +3,34 @@
 Aplicacao local multiusuario:
 
 - frontend Vite Vanilla JS;
-- API Node.js + Express rodando em cada PC;
-- Microsoft Access `.accdb` compartilhado como fonte persistente;
-- cada usuario abre em `http://localhost:3001` no proprio computador;
-- funcionamento sem internet, exceto instalacao inicial de dependencias.
+- API Node.js + Express;
+- Supabase/PostgreSQL como fonte persistente;
+- deploy no Vercel ou execucao local em `http://localhost:3001`;
+- sincronizacao centralizada pela API.
 
-## Requisitos de cada PC
+## Requisitos
 
-- Node.js 20 ou superior;
-- Microsoft Access Database Engine 2016, 32 ou 64 bits compatível com o Node instalado;
-- acesso de leitura/escrita ao arquivo `.accdb` compartilhado;
-- permissao para executar `Iniciar PCP.bat`.
+- Node.js 20 ou superior para desenvolvimento local;
+- projeto Supabase com as tabelas de `database/schema-postgres.sql`;
+- variaveis de ambiente configuradas no Vercel ou no `.env` local.
 
-O navegador nao grava diretamente no Access. Cada PC roda uma API local Node.js,
-e essa API grava no mesmo arquivo `.accdb` via ODBC.
+O navegador nao grava diretamente no banco. Ele conversa com a API Node.js, e a API persiste os dados no Supabase.
 
 ## Configuracao do banco
 
-Copie `.env.exemplo` para `.env` e configure o caminho do banco:
+No Vercel, configure pelo menos:
 
 ```env
-ACCESS_DB_PATH=\\192.168.100.250\DADOS\NAUTICA\04_PCP\automação\database\pcp.accdb
-HOST=127.0.0.1
-PORT=3001
+SUPABASE_URL=https://[PROJECT_REF].supabase.co
+SUPABASE_SERVICE_ROLE_KEY=[SERVICE_ROLE_KEY]
+VITE_SUPABASE_ANON_KEY=[ANON_PUBLIC_KEY]
 ```
 
-Use caminho UNC sempre que possivel. Unidade mapeada como `Z:` pode falhar se o
-servico/processo for aberto por outro usuario.
+Localmente, voce tambem pode usar `DATABASE_URL` para conexao PostgreSQL direta/pooler. Quando `DATABASE_URL` existe, ela tem prioridade; quando nao existe, a API usa `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` via REST.
 
 ## Instalacao
 
-Com o sistema antigo parado, rode uma vez:
+Para rodar localmente, rode uma vez:
 
 ```powershell
 npm install
@@ -43,9 +40,7 @@ npm run build
 npm start
 ```
 
-`db:init` cria o `.accdb` quando o Microsoft ACE/OLEDB estiver instalado e cria
-as tabelas via ODBC. Se a criacao automatica do arquivo falhar, crie um banco
-Access vazio em `database\pcp.accdb` e rode `npm run db:init` novamente.
+`db:init` cria/garante as tabelas do Supabase quando `DATABASE_URL` estiver configurada. No Vercel, a API tambem funciona com `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` depois que as tabelas existem.
 
 Depois da migracao, o `dados_pcp.json` nao e consultado automaticamente.
 
@@ -55,7 +50,7 @@ Depois da migracao, o `dados_pcp.json` nao e consultado automaticamente.
 2. Acesse `http://localhost:3001`.
 3. Informe seu nome no primeiro acesso. Esse nome fica salvo no navegador e entra no `audit_log` das alteracoes.
 
-Cada PC deve apontar para o mesmo `ACCESS_DB_PATH` no `.env`.
+Todos os ambientes devem apontar para o mesmo projeto Supabase.
 
 ## Desenvolvimento
 
@@ -68,10 +63,10 @@ npm run dev
 
 ## Protecao de dados
 
-- cada chave de dados possui versao no Access;
+- cada chave de dados possui versao no Supabase;
 - gravacoes concorrentes com versao antiga sao rejeitadas;
 - cada alteracao e registrada em `audit_log` com usuario (`actor`);
-- erros de banco executam rollback quando suportado pelo driver ODBC;
+- erros de banco executam rollback quando suportado pela conexao PostgreSQL;
 - se o banco estiver indisponivel, o navegador bloqueia novas gravacoes;
 - alteracoes de outros usuarios sao detectadas a cada tres segundos.
 
@@ -90,7 +85,10 @@ O backup deve ocorrer em horario sem usuarios gravando no sistema.
 - `index.html`: shell visual preservado;
 - `public/js`: modulos funcionais existentes e armazenamento remoto;
 - `public/css`: layout existente;
-- `server`: API e conexao Access/ODBC;
-- `database/schema.sql`: referencia do schema Access;
+- `server`: API e conexao Supabase/PostgreSQL;
+- `database/schema.sql`: referencia do schema Supabase;
 - `scripts`: inicializacao, migracao e assets offline;
 - `dist`: build de producao.
+
+
+

@@ -1,7 +1,7 @@
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   analise.js â€“ Módulo de Análise de Produção
-   HR Náutica PCP
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+﻿/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+   analise.js Ã¢â‚¬â€œ MÃ³dulo de AnÃ¡lise de ProduÃ§Ã£o
+   HR NÃ¡utica PCP
+   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 
 'use strict';
 
@@ -39,7 +39,7 @@ const ANALISE_STATE = {
 // Formata cobertura em meses (comportamento similar ao vini.js)
 function fmtAnaliseCob(valor) {
   if (!isFinite(valor) || valor === Infinity || valor === null || valor === undefined) return 'Sem Giro';
-  return `${Number(valor).toFixed(1)} ${valor === 1 ? 'mês' : 'meses'}`;
+  return `${Number(valor).toFixed(1)} ${valor === 1 ? 'mÃªs' : 'meses'}`;
 }
 
 function excelRoundDown(val, decimals) {
@@ -51,7 +51,7 @@ function excelRoundDown(val, decimals) {
   return sign * Math.floor(absVal * factor) / factor;
 }
 
-// Obtém a classificação de criticidade de um item com base na prioridade física (prio2)
+// ObtÃ©m a classificaÃ§Ã£o de criticidade de um item com base na prioridade fÃ­sica (prio2)
 function getAnaliseItemStatus(item, targetCoverage) {
   if (item.prio2 === null || item.prio2 === undefined || isNaN(Number(item.prio2))) {
     return 'ok';
@@ -67,17 +67,17 @@ function getAnaliseItemStatus(item, targetCoverage) {
   }
 }
 
-// Sincroniza as peças em Rastreio de Operações a partir da aba correspondente da Planilha
+// Sincroniza as peÃ§as em Rastreio de OperaÃ§Ãµes a partir da aba correspondente da Planilha
 function syncRastreioPecas(wb) {
   try {
-    // 1. Encontra a aba de Rastreio de Peças
+    // 1. Encontra a aba de Rastreio de PeÃ§as
     let sheetName = wb.SheetNames.find(name => {
       const n = name.toLowerCase();
-      return n.includes('rastreio') || n.includes('producao') || n.includes('produção') || n.includes('peças') || n.includes('pecas') || n.includes('fluxo') || n.includes('lote');
+      return n.includes('rastreio') || n.includes('producao') || n.includes('produÃ§Ã£o') || n.includes('peÃ§as') || n.includes('pecas') || n.includes('fluxo') || n.includes('lote');
     });
     
     if (!sheetName) {
-      console.warn('[RASTREIO] Nenhuma aba de Rastreio/Produção localizada na planilha.');
+      console.warn('[RASTREIO] Nenhuma aba de Rastreio/ProduÃ§Ã£o localizada na planilha.');
       return;
     }
     
@@ -99,7 +99,7 @@ function syncRastreioPecas(wb) {
     let pecasMovidas = 0;
     let pecasAdicionadas = 0;
     
-    // Normalização das localizações para códigos de operação
+    // NormalizaÃ§Ã£o das localizaÃ§Ãµes para cÃ³digos de operaÃ§Ã£o
     const locToOp = (loc) => {
       if (!loc) return '01';
       const l = loc.toLowerCase().replace(/\r?\n/g, ' ').trim();
@@ -117,16 +117,16 @@ function syncRastreioPecas(wb) {
     };
     
     const opToEtapa = {
-      '01': 'Injeção/Fundição',
+      '01': 'InjeÃ§Ã£o/FundiÃ§Ã£o',
       '02': 'Pintura/Polimento',
       '03': 'Pintura/Polimento',
       '04': 'Usinagem',
       '05': 'Pintura/Polimento',
-      '06': 'Em Produção',
-      '07': 'Em Produção',
+      '06': 'Em ProduÃ§Ã£o',
+      '07': 'Em ProduÃ§Ã£o',
     };
     
-    // Mapa para criar OPs temporárias se necessário
+    // Mapa para criar OPs temporÃ¡rias se necessÃ¡rio
     const opMap = {};
     opsLocais.forEach(op => {
       const key = `${op.modelo}|${op.etapa}`;
@@ -136,19 +136,19 @@ function syncRastreioPecas(wb) {
     const now = new Date().toISOString();
     
     rowsJson.forEach((row, idx) => {
-      const nome = String(row['Descrição'] || row['descricao'] || row['Modelo'] || row['Produto'] || row['nome'] || '').trim();
-      const sku = String(row['Código (SKU)'] || row['Codigo (SKU)'] || row['SKU'] || row['Código'] || '').trim().toUpperCase();
+      const nome = String(row['DescriÃ§Ã£o'] || row['descricao'] || row['Modelo'] || row['Produto'] || row['nome'] || '').trim();
+      const sku = String(row['CÃ³digo (SKU)'] || row['Codigo (SKU)'] || row['SKU'] || row['CÃ³digo'] || '').trim().toUpperCase();
       const bruto = String(row['Bruto'] || row['bruto'] || row['Bruto/Coquilha'] || '').trim();
-      const localizacao = String(row['Localização'] || row['Localizacao'] || row['Etapa'] || row['Operação'] || '').trim();
-      const qty = parseInt(row['Acompanhamento de Peças (qty)'] || row['Acompanhamento de Pecas (qty)'] || row['qty'] || row['Qtd'] || row['Quantidade'] || '0', 10);
+      const localizacao = String(row['LocalizaÃ§Ã£o'] || row['Localizacao'] || row['Etapa'] || row['OperaÃ§Ã£o'] || '').trim();
+      const qty = parseInt(row['Acompanhamento de PeÃ§as (qty)'] || row['Acompanhamento de Pecas (qty)'] || row['qty'] || row['Qtd'] || row['Quantidade'] || '0', 10);
       
       if (!nome || !sku || qty === 0) return;
       
       const opCode = locToOp(localizacao);
-      const etapa = opToEtapa[opCode] || 'Em Produção';
+      const etapa = opToEtapa[opCode] || 'Em ProduÃ§Ã£o';
       const loteNum = `${sku}-L${String(idx + 1).padStart(3, '0')}`;
       
-      // Procura se a peça já existe localmente
+      // Procura se a peÃ§a jÃ¡ existe localmente
       const pecaExistente = pecasLocais.find(p => p.numero === loteNum);
       
       if (pecaExistente) {
@@ -167,7 +167,7 @@ function syncRastreioPecas(wb) {
             obs: `Atualizado via Planilha (de ${oldOp} para ${opCode})`
           });
           
-          console.log(`[RASTREIO] Peça ${loteNum} movida para Op. ${opCode}`);
+          console.log(`[RASTREIO] PeÃ§a ${loteNum} movida para Op. ${opCode}`);
           pecasMovidas++;
           hasChanges = true;
         }
@@ -177,7 +177,7 @@ function syncRastreioPecas(wb) {
           hasChanges = true;
         }
         
-        // Se a operação mudou e tem OP vinculada, move a OP no Kanban
+        // Se a operaÃ§Ã£o mudou e tem OP vinculada, move a OP no Kanban
         if (mudouOp && pecaExistente.opNumero) {
           const op = opsLocais.find(o => o.numero === pecaExistente.opNumero);
           if (op && op.etapa !== etapa) {
@@ -187,7 +187,7 @@ function syncRastreioPecas(wb) {
           }
         }
       } else {
-        // Se a peça não existe, cria a OP e a peça correspondente
+        // Se a peÃ§a nÃ£o existe, cria a OP e a peÃ§a correspondente
         const mapKey = `${nome}|${etapa}`;
         let opId = opMap[mapKey]?.id;
         let opNumero = opMap[mapKey]?.numero;
@@ -220,13 +220,13 @@ function syncRastreioPecas(wb) {
           opId: opId,
           opNumero: opNumero,
           obs: `Sincronizada via Planilha. Loc: ${localizacao} | Bruto: ${bruto}`,
-          historico: [{ op: opCode, data: now, obs: `Importada via Planilha â€“ ${localizacao}` }],
+          historico: [{ op: opCode, data: now, obs: `Importada via Planilha Ã¢â‚¬â€œ ${localizacao}` }],
           criadoEm: now,
           atualizadoEm: now
         };
         
         pecasLocais.push(novaPeca);
-        console.log(`[RASTREIO] Nova peça ${loteNum} cadastrada da planilha.`);
+        console.log(`[RASTREIO] Nova peÃ§a ${loteNum} cadastrada da planilha.`);
         pecasAdicionadas++;
         hasChanges = true;
       }
@@ -240,11 +240,11 @@ function syncRastreioPecas(wb) {
     }
     
     if (pecasMovidas > 0 || pecasAdicionadas > 0) {
-      DB.addAtividade(`Sincronização de Rastreio: ${pecasMovidas} peças movidas, ${pecasAdicionadas} novas peças criadas.`, 'teal');
+      DB.addAtividade(`SincronizaÃ§Ã£o de Rastreio: ${pecasMovidas} peÃ§as movidas, ${pecasAdicionadas} novas peÃ§as criadas.`, 'teal');
     }
     
   } catch (err) {
-    console.error('[RASTREIO] Erro ao sincronizar peças da Planilha:', err);
+    console.error('[RASTREIO] Erro ao sincronizar peÃ§as da Planilha:', err);
   }
 }
 
@@ -253,18 +253,18 @@ function processAnaliseExcel(arrayBuffer) {
   try {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
     
-    // Trata como a planilha padrão de Cobertura (3-Cobertura)
+    // Trata como a planilha padrÃ£o de Cobertura (3-Cobertura)
     let sheetName = '3-Cobertura';
     if (!wb.SheetNames.includes(sheetName)) {
       sheetName = wb.SheetNames.find(name => name.toLowerCase().includes('cobertura')) || wb.SheetNames[0];
     }
 
     if (!wb.SheetNames.includes(sheetName)) {
-      throw new Error('Aba de Cobertura não localizada na planilha.');
+      throw new Error('Aba de Cobertura nÃ£o localizada na planilha.');
     }
 
     const ws = wb.Sheets[sheetName];
-    // sheet_to_json a partir da linha 5 (range: 5) para capturar os cabeçalhos corretos
+    // sheet_to_json a partir da linha 5 (range: 5) para capturar os cabeÃ§alhos corretos
     const rowsJson = XLSX.utils.sheet_to_json(ws, { range: 5, defval: '' });
 
     if (!rowsJson || rowsJson.length === 0) {
@@ -273,19 +273,19 @@ function processAnaliseExcel(arrayBuffer) {
 
     const parsedData = rowsJson.map(row => {
       const produto = String(row['Produto'] || '').trim();
-      const sku = String(row['Código (SKU)'] || row['SKU'] || '').trim().toUpperCase();
-      const codigoBruto = String(row['Código Bruto'] || '').trim();
+      const sku = String(row['CÃ³digo (SKU)'] || row['SKU'] || '').trim().toUpperCase();
+      const codigoBruto = String(row['CÃ³digo Bruto'] || '').trim();
       
-      const entradasPrevistas = parseFloat(row['Entradas previstas (em Produção)']) || 0;
-      const saidasPrevistas = parseFloat(row['Saídas previstas (Vendido)']) || 0;
-      const estoqueFisico = parseFloat(row['Estoque físico']) || 0;
+      const entradasPrevistas = parseFloat(row['Entradas previstas (em ProduÃ§Ã£o)']) || 0;
+      const saidasPrevistas = parseFloat(row['SaÃ­das previstas (Vendido)']) || 0;
+      const estoqueFisico = parseFloat(row['Estoque fÃ­sico']) || 0;
       const estoque1 = parseFloat(row['Estoque 1']) || 0;
       const estoqueVirtual = parseFloat(row['Estoque virtual']) || 0;
-      const mediaMensal = parseFloat(row['Média mensal']) || 0;
+      const mediaMensal = parseFloat(row['MÃ©dia mensal']) || 0;
       
       const prioVal = row['Prio2'] !== undefined && row['Prio2'] !== '' ? parseFloat(row['Prio2']) : null;
       const coberturaVirtual = parseFloat(row['Cobertura Est. Virtual']) || 0;
-      const localizacao = String(row['Localização'] || '-').trim();
+      const localizacao = String(row['LocalizaÃ§Ã£o'] || '-').trim();
       const bucha = String(row['bucha'] || '-').trim();
 
       return {
@@ -311,7 +311,7 @@ function processAnaliseExcel(arrayBuffer) {
 
     RemoteStorage.setItem('hrn_analise_cobertura_data', JSON.stringify(parsedData));
 
-    // Sincroniza também as peças em Rastreio (se houver a aba correspondente no mesmo arquivo)
+    // Sincroniza tambÃ©m as peÃ§as em Rastreio (se houver a aba correspondente no mesmo arquivo)
     syncRastreioPecas(wb);
 
     return true;
@@ -321,7 +321,7 @@ function processAnaliseExcel(arrayBuffer) {
   }
 }
 
-// Carrega dados da planilha via Fetch automaticamente no início
+// Carrega dados da planilha via Fetch automaticamente no inÃ­cio
 async function loadAnaliseExcelData() {
   if (ANALISE_STATE.loaded && ANALISE_STATE.coberturaData?.length > 0) {
     renderAnaliseTable();
@@ -329,7 +329,7 @@ async function loadAnaliseExcelData() {
   }
   const tbody = document.getElementById('analise-body');
   if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="14" class="empty-cell">Nenhum dado de cobertura no Access. Use "Sincronizar Cobertura" para importar uma planilha pela aplicação.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14" class="empty-cell">Nenhum dado de cobertura no banco central. Use "Sincronizar Cobertura" para importar uma planilha pela aplicaÃ§Ã£o.</td></tr>';
   }
   return false;
 }
@@ -343,7 +343,7 @@ function renderAnaliseTable() {
     return;
   }
 
-  // Atualiza o estoque físico e recálculos na Análise de Produção
+  // Atualiza o estoque fÃ­sico e recÃ¡lculos na AnÃ¡lise de ProduÃ§Ã£o
   ANALISE_STATE.coberturaData.forEach(item => {
     const skuNorm = String(item.sku || '').trim().toUpperCase();
     if (window.EARV) {
@@ -358,7 +358,7 @@ function renderAnaliseTable() {
     item.estoqueVirtual = item.estoqueFisico + (item.entradasPrevistas || 0) - (item.saidasPrevistas || 0);
     item.coberturaVirtual = item.mediaMensal > 0 ? item.estoqueVirtual / item.mediaMensal : Infinity;
     
-    // Recalcula prio2 utilizando a fórmula física baseada no Excel
+    // Recalcula prio2 utilizando a fÃ³rmula fÃ­sica baseada no Excel
     const estoque1 = item.estoqueFisico - item.saidasPrevistas;
     if (estoque1 < 0) {
       item.prio2 = -1.0;
@@ -383,7 +383,7 @@ function renderAnaliseTable() {
     }
   });
 
-  // 1. Calcula contadores rápidos de KPIs
+  // 1. Calcula contadores rÃ¡pidos de KPIs
   let countTotal = 0;
   let countCritical = 0;
   let countWarning = 0;
@@ -424,7 +424,7 @@ function renderAnaliseTable() {
     );
   }
 
-  // Filtro de KPIs rápidos
+  // Filtro de KPIs rÃ¡pidos
   if (ANALISE_STATE.filterType === 'critical') {
     filtered = filtered.filter(item => getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo) === 'critical');
   } else if (ANALISE_STATE.filterType === 'warning') {
@@ -433,11 +433,11 @@ function renderAnaliseTable() {
     filtered = filtered.filter(item => getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo) === 'ok');
   }
 
-  // 3. Aplica ordenação
+  // 3. Aplica ordenaÃ§Ã£o
   filtered = [...filtered].sort((a, b) => {
     let valA, valB;
     
-    // Calcula valores recomendados dinamicamente para comparação, caso ordene por "Qtd Produzir"
+    // Calcula valores recomendados dinamicamente para comparaÃ§Ã£o, caso ordene por "Qtd Produzir"
     const diffA = a.estoqueVirtual - (a.mediaMensal * ANALISE_STATE.coberturaAlvo);
     const colocarOpA = diffA < 0 ? Math.ceil(Math.abs(diffA) / 10) * 10 : 0;
     const diffB = b.estoqueVirtual - (b.mediaMensal * ANALISE_STATE.coberturaAlvo);
@@ -485,7 +485,7 @@ function renderAnaliseTable() {
         valB = b.coberturaVirtual;
         break;
       case 'prio2':
-        // Nulls (Sem prio) vão para o final
+        // Nulls (Sem prio) vÃ£o para o final
         valA = a.prio2 === null ? 9999 : Number(a.prio2);
         valB = b.prio2 === null ? 9999 : Number(b.prio2);
         break;
@@ -510,17 +510,17 @@ function renderAnaliseTable() {
     }
   });
 
-  // Atualiza setas visuais no cabeçalho
+  // Atualiza setas visuais no cabeÃ§alho
   document.querySelectorAll('#analise-table thead th.sortable-th').forEach(th => {
     const col = th.dataset.column;
     const iconSpan = th.querySelector('.sort-icon');
     if (iconSpan) {
       if (col === ANALISE_STATE.sortColumn) {
         th.classList.add('active-sort');
-        iconSpan.textContent = ANALISE_STATE.sortDirection === 'asc' ? 'â–²' : 'â–¼';
+        iconSpan.textContent = ANALISE_STATE.sortDirection === 'asc' ? 'Ã¢â€“Â²' : 'Ã¢â€“Â¼';
       } else {
         th.classList.remove('active-sort');
-        iconSpan.textContent = 'â‡…';
+        iconSpan.textContent = 'Ã¢â€¡â€¦';
       }
     }
   });
@@ -532,7 +532,7 @@ function renderAnaliseTable() {
 
   // Renderiza as linhas
   tbody.innerHTML = filtered.map(item => {
-    // Cálculo dinâmico com base na meta de cobertura
+    // CÃ¡lculo dinÃ¢mico com base na meta de cobertura
     const diff = item.estoqueVirtual - (item.mediaMensal * ANALISE_STATE.coberturaAlvo);
     const need = diff < 0 ? Math.ceil(Math.abs(diff) / 10) * 10 : 0;
 
@@ -542,30 +542,30 @@ function renderAnaliseTable() {
     let statusBadge = '';
     if (status === 'critical') {
       trClass = 'tr-critical-stock';
-      statusBadge = '<span class="chip chip--red" style="font-size:0.65rem">Crítico</span>';
+      statusBadge = '<span class="chip chip--red" style="font-size:0.65rem">CrÃ­tico</span>';
     } else if (status === 'warning') {
       trClass = 'tr-warning-stock';
-      statusBadge = '<span class="chip chip--orange" style="font-size:0.65rem">Atenção</span>';
+      statusBadge = '<span class="chip chip--orange" style="font-size:0.65rem">AtenÃ§Ã£o</span>';
     } else {
-      statusBadge = '<span class="chip chip--green" style="font-size:0.65rem">Estável</span>';
+      statusBadge = '<span class="chip chip--green" style="font-size:0.65rem">EstÃ¡vel</span>';
     }
 
-    // Botão de ação
+    // BotÃ£o de aÃ§Ã£o
     let actionBtn = '';
     if (need > 0) {
       actionBtn = `<button class="btn-primary" style="padding:4px 8px;font-size:0.7rem;height:auto" onclick="abrirNovaOPPreenchida('${escapeJSString(item.produto)}', ${need}, ${item.prio2})">Criar OP</button>`;
     } else {
-      actionBtn = `<span style="color:var(--text-muted);font-size:0.7rem;font-weight:600">âœ“ OK</span>`;
+      actionBtn = `<span style="color:var(--text-muted);font-size:0.7rem;font-weight:600">Ã¢Å“â€œ OK</span>`;
     }
 
-    const formattedPrio = item.prio2 !== null ? item.prio2.toFixed(1) : 'â€”';
+    const formattedPrio = item.prio2 !== null ? item.prio2.toFixed(1) : 'Ã¢â‚¬â€';
     const formattedNeed = need > 0 ? `<strong>${need}</strong>` : '0';
 
     return `<tr class="${trClass}">
-      <td><span style="color:var(--text-muted);font-weight:700">${item.prioridadeGeral || 'â€”'}</span></td>
+      <td><span style="color:var(--text-muted);font-weight:700">${item.prioridadeGeral || 'Ã¢â‚¬â€'}</span></td>
       <td style="text-align:left !important;color:var(--text-primary);font-weight:500">${item.produto}</td>
       <td><span class="chip chip--blue" style="font-size:0.68rem;font-family:monospace;font-weight:700">${item.sku}</span></td>
-      <td><span style="color:var(--text-secondary);font-size:0.72rem">${item.codigoBruto || 'â€”'}</span></td>
+      <td><span style="color:var(--text-secondary);font-size:0.72rem">${item.codigoBruto || 'Ã¢â‚¬â€'}</span></td>
       <td>${item.estoqueFisico}</td>
       <td>${item.entradasPrevistas}</td>
       <td>${item.saidasPrevistas}</td>
@@ -604,15 +604,15 @@ function renderAnaliseTable() {
 
 // Prefills and opens the Create OP Modal from a recommendation
 function abrirNovaOPPreenchida(produto, qty, prio2) {
-  // Chamamos o preenchimento padrão
+  // Chamamos o preenchimento padrÃ£o
   if (typeof openNovaOp === 'function') {
     openNovaOp();
   }
 
-  // Preenchemos os campos específicos
+  // Preenchemos os campos especÃ­ficos
   const modeloSelect = document.getElementById('op-modelo');
   if (modeloSelect) {
-    // Tenta encontrar a opção correspondente ao produto
+    // Tenta encontrar a opÃ§Ã£o correspondente ao produto
     let found = false;
     for (let i = 0; i < modeloSelect.options.length; i++) {
       if (modeloSelect.options[i].value === produto) {
@@ -622,7 +622,7 @@ function abrirNovaOPPreenchida(produto, qty, prio2) {
       }
     }
     
-    // Se não encontrou pelo nome completo, tenta correspondência parcial
+    // Se nÃ£o encontrou pelo nome completo, tenta correspondÃªncia parcial
     if (!found) {
       for (let i = 0; i < modeloSelect.options.length; i++) {
         if (produto.toLowerCase().includes(modeloSelect.options[i].value.toLowerCase()) ||
@@ -655,10 +655,10 @@ function abrirNovaOPPreenchida(produto, qty, prio2) {
 
   const obsInput = document.getElementById('op-obs');
   if (obsInput) {
-    obsInput.value = 'Ordem de produção planejada automaticamente com base na análise de criticidade.';
+    obsInput.value = 'Ordem de produÃ§Ã£o planejada automaticamente com base na anÃ¡lise de criticidade.';
   }
 
-  // Seta um prazo de entrega padrão para hoje + 7 dias
+  // Seta um prazo de entrega padrÃ£o para hoje + 7 dias
   const prazoInput = document.getElementById('op-prazo');
   if (prazoInput) {
     const defaultDate = new Date();
@@ -666,17 +666,17 @@ function abrirNovaOPPreenchida(produto, qty, prio2) {
     prazoInput.value = defaultDate.toISOString().split('T')[0];
   }
 
-  // Atualiza a pré-visualização de insumos do modal de OP
+  // Atualiza a prÃ©-visualizaÃ§Ã£o de insumos do modal de OP
   if (typeof updateOpInsumosPreview === 'function') {
     updateOpInsumosPreview();
   }
 }
 window.abrirNovaOPPreenchida = abrirNovaOPPreenchida;
 
-// Exporta a lista de peças com necessidade de produção (Qtd a Produzir > 0) para CSV compatível com Excel
+// Exporta a lista de peÃ§as com necessidade de produÃ§Ã£o (Qtd a Produzir > 0) para CSV compatÃ­vel com Excel
 function exportAnaliseToExcel() {
   if (!ANALISE_STATE.loaded || !ANALISE_STATE.coberturaData.length) {
-    showToast('Nenhum dado disponível para exportar.', 'error');
+    showToast('Nenhum dado disponÃ­vel para exportar.', 'error');
     return;
   }
 
@@ -688,7 +688,7 @@ function exportAnaliseToExcel() {
   }).filter(item => item.need > 0);
 
   if (itemsToProduce.length === 0) {
-    showToast('Nenhuma peça precisa ser produzida com a meta de cobertura atual.', 'info');
+    showToast('Nenhuma peÃ§a precisa ser produzida com a meta de cobertura atual.', 'info');
     return;
   }
 
@@ -696,16 +696,16 @@ function exportAnaliseToExcel() {
     'Geral (Rank)',
     'Produto',
     'SKU',
-    'Código Bruto',
-    'Estoque Físico',
+    'CÃ³digo Bruto',
+    'Estoque FÃ­sico',
     'Entradas Previstas',
-    'Saídas Previstas',
+    'SaÃ­das Previstas',
     'Estoque Virtual',
-    'Média Mensal',
+    'MÃ©dia Mensal',
     'Cobertura (meses)',
     'Prioridade (Prio2)',
     'Qtd a Produzir',
-    'Localização',
+    'LocalizaÃ§Ã£o',
     'Bucha'
   ];
 
@@ -720,7 +720,7 @@ function exportAnaliseToExcel() {
     item.estoqueVirtual,
     item.mediaMensal.toFixed(2),
     item.coberturaVirtual.toFixed(2),
-    item.prio2 !== null ? item.prio2.toFixed(2) : 'â€”',
+    item.prio2 !== null ? item.prio2.toFixed(2) : 'Ã¢â‚¬â€',
     item.need,
     item.localizacao,
     item.bucha
@@ -741,23 +741,23 @@ function exportAnaliseToExcel() {
   link.click();
   document.body.removeChild(link);
   
-  showToast(`Lista de ${itemsToProduce.length} peças a produzir exportada com sucesso!`);
+  showToast(`Lista de ${itemsToProduce.length} peÃ§as a produzir exportada com sucesso!`);
 }
 window.exportAnaliseToExcel = exportAnaliseToExcel;
 
-// Inicialização de Listeners do módulo de Análise de Produção
+// InicializaÃ§Ã£o de Listeners do mÃ³dulo de AnÃ¡lise de ProduÃ§Ã£o
 function initAnaliseListeners() {
   // 1. Slider de cobertura
   const slider = document.getElementById('analise-months-slider');
   const badge = document.getElementById('analise-months-value');
   if (slider && badge) {
     slider.value = ANALISE_STATE.coberturaAlvo;
-    badge.textContent = `${ANALISE_STATE.coberturaAlvo} ${ANALISE_STATE.coberturaAlvo === 1 ? 'mês' : 'meses'}`;
+    badge.textContent = `${ANALISE_STATE.coberturaAlvo} ${ANALISE_STATE.coberturaAlvo === 1 ? 'mÃªs' : 'meses'}`;
 
     slider.addEventListener('input', debounce((e) => {
       const val = Number(e.target.value);
       ANALISE_STATE.coberturaAlvo = val;
-      badge.textContent = `${val} ${val === 1 ? 'mês' : 'meses'}`;
+      badge.textContent = `${val} ${val === 1 ? 'mÃªs' : 'meses'}`;
       RemoteStorage.setItem('hrn_analise_cobertura_alvo', val);
       renderAnaliseTable();
     }, 150));
@@ -772,7 +772,7 @@ function initAnaliseListeners() {
     }, 200));
   }
 
-  // 3. Abas de filtros rápidos (KPIs)
+  // 3. Abas de filtros rÃ¡pidos (KPIs)
   const filterTabs = {
     'analise-filter-all': 'all',
     'analise-filter-critical-tab': 'critical',
@@ -799,12 +799,12 @@ function initAnaliseListeners() {
     }
   });
 
-  // 4. Ordenação nas colunas de cabeçalho
+  // 4. OrdenaÃ§Ã£o nas colunas de cabeÃ§alho
   document.querySelectorAll('#analise-table thead th.sortable-th').forEach(th => {
     th.addEventListener('click', () => {
       const col = th.dataset.column;
       if (ANALISE_STATE.sortColumn === col) {
-        // Inverte direção
+        // Inverte direÃ§Ã£o
         ANALISE_STATE.sortDirection = ANALISE_STATE.sortDirection === 'asc' ? 'desc' : 'asc';
       } else {
         ANALISE_STATE.sortColumn = col;
@@ -814,7 +814,7 @@ function initAnaliseListeners() {
     });
   });
 
-  // 5. Botão de exportação para Excel
+  // 5. BotÃ£o de exportaÃ§Ã£o para Excel
   const btnExportExcel = document.getElementById('btn-analise-export-excel');
   if (btnExportExcel) {
     btnExportExcel.addEventListener('click', (e) => {
@@ -823,7 +823,7 @@ function initAnaliseListeners() {
     });
   }
 
-  // 6. Botão de sincronização de planilha (Abre seletor de arquivos para importação manual)
+  // 6. BotÃ£o de sincronizaÃ§Ã£o de planilha (Abre seletor de arquivos para importaÃ§Ã£o manual)
   const btnSync = document.getElementById('btn-analise-sync');
   const inpFile = document.getElementById('input-analise-excel');
 
@@ -859,7 +859,7 @@ function initAnaliseListeners() {
           }
         } catch (err) {
           console.error(err);
-          showToast('Erro ao ler a planilha. Certifique-se de que é a planilha CODAN atualizada.', 'error');
+          showToast('Erro ao ler a planilha. Certifique-se de que Ã© a planilha CODAN atualizada.', 'error');
         } finally {
           btnSync.disabled = false;
           btnSync.innerHTML = originalHTML;
@@ -870,7 +870,7 @@ function initAnaliseListeners() {
     });
   }
 
-  // 7. Botão de ajuda / explicação da aba
+  // 7. BotÃ£o de ajuda / explicaÃ§Ã£o da aba
   const btnAjuda = document.getElementById('btn-analise-ajuda');
   const modalAjuda = document.getElementById('modal-ajuda-analise');
   const btnAjudaClose = document.getElementById('modal-ajuda-analise-close');
@@ -899,13 +899,14 @@ function initAnaliseListeners() {
       doubleScrollChild.style.width = tableWrap.scrollWidth + 'px';
     }
   }, 100));
-  // 9. Agendar atualização automática a cada 5 minutos do Google Sheets em background (Removido para evitar sobrescrever a planilha selecionada manualmente)
+  // 9. Agendar atualizaÃ§Ã£o automÃ¡tica a cada 5 minutos do Google Sheets em background (Removido para evitar sobrescrever a planilha selecionada manualmente)
 }
 
-// Expõe inicializadores globalmente para app.js
+// ExpÃµe inicializadores globalmente para app.js
 window.loadAnaliseExcelData = loadAnaliseExcelData;
 window.renderAnaliseTable = renderAnaliseTable;
 window.initAnaliseListeners = initAnaliseListeners;
+
 
 
 
