@@ -39,7 +39,6 @@ const RemoteStorage = {
     this.currentUser = window.PCP_CURRENT_USER || "";
     this.onUpdate = onUpdate || null;
     await this.load(true);
-    this.pollingId = window.setInterval(() => this.load(false), 3000);
   },
   async load(initial) {
     try {
@@ -120,6 +119,7 @@ const RemoteStorage = {
 };
 
 window.RemoteStorage = RemoteStorage;
+
 
 
 
