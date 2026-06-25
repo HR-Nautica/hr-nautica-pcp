@@ -931,7 +931,7 @@ function exportViniToTXT() {
   }[VINI_STATE.filterType] || VINI_STATE.filterType;
 
   let txt = `======================================================
-     HR NÁUTICA PCP - RELATÓRIO DE COMPRAS (V.I.N.I)
+     HR NÁUTICA PCP - RELATÓRIO DE COMPRAS (VINI)
 ======================================================
 Filtro Fornecedor: ${fornName}
 Filtro Categoria: ${filterName}

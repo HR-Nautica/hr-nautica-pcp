@@ -70,7 +70,7 @@
       </a>
       <a href="#" class="nav-item" data-page="vini" id="nav-vini">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-        V.I.N.I 🌱
+        VINI
       </a>
     </nav>
 
@@ -341,56 +341,64 @@
         <h1 class="page-title">Estoque Componentes</h1>
       </div>
 
-      <div class="earv-row">
-        <input type="text" id="estoque-arv-search"
-          class="earv-search-input"
-          placeholder="Buscar por SKU ou Descricao..." />
-        <button class="earv-btn earv-btn--outline" id="btn-earv-expand-all" title="Expandir todos os itens">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/><polyline points="6 3 12 9 18 3"/></svg>
-          Expandir Tudo
-        </button>
-        <button class="earv-btn earv-btn--outline" id="btn-earv-collapse-all" title="Recolher todos os itens">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/><polyline points="18 21 12 15 6 21"/></svg>
-          Recolher Tudo
-        </button>
-      </div>
+      <!-- Barra de Ferramentas Simplificada com Dropdown de Ações -->
+      <div class="vini-toolbar">
+        <div class="vini-toolbar-left">
+          <input type="text" id="estoque-arv-search" class="search-input" placeholder="Buscar por SKU ou Descrição..." style="width: 240px; height: 38px;" />
+          <select class="select-sm" id="estoque-arv-filter-pos" style="height: 38px; min-width: 140px;">
+            <option value="all">Todos os Níveis</option>
+            <option value="00">Itens Finais</option>
+            <option value="01">Componentes</option>
+            <option value="02">Materiais</option>
+          </select>
+          <select class="select-sm" id="estoque-arv-filter-op" style="height: 38px; min-width: 160px;">
+            <option value="all">Todas as Operações</option>
+            <option value="op01">OP 01 - Compras</option>
+            <option value="op02">OP 02 - Usinagem</option>
+            <option value="op03">OP 03 - Cromo</option>
+            <option value="op04">OP 04 - Pintura</option>
+            <option value="op05">OP 05 - Montagem</option>
+            <option value="op06">OP 06 - Embalagem</option>
+          </select>
+          <span class="earv-count-badge" id="estoque-arv-count" style="font-size: 0.72rem; padding: 4px 10px;">0 itens</span>
+        </div>
 
-      <div class="earv-row earv-row--wrap" style="margin-top: 0.5rem;">
-        <select class="earv-select" id="estoque-arv-filter-pos">
-          <option value="all">Todos os Niveis</option>
-          <option value="00">Itens Finais</option>
-          <option value="01">Componentes</option>
-          <option value="02">Materiais</option>
-        </select>
-        <select class="earv-select" id="estoque-arv-filter-op">
-          <option value="all">Todas as Operacoes</option>
-          <option value="op01">OP 01 - Compras</option>
-          <option value="op02">OP 02 - Usinagem</option>
-          <option value="op03">OP 03 - Cromo</option>
-          <option value="op04">OP 04 - Pintura</option>
-          <option value="op05">OP 05 - Montagem</option>
-          <option value="op06">OP 06 - Embalagem</option>
-        </select>
-        <span class="earv-count-badge" id="estoque-arv-count">0 itens</span>
-        <div style="flex:1"></div>
-        <button class="earv-btn earv-btn--primary" id="btn-estoque-sync-estoque"
-          title="Importar estoque fisico da planilha NecessidadePCP.xlsx. Cada importacao substitui o snapshot anterior.">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          Sincronizar Estoque
-        </button>
-        <button class="earv-btn earv-btn--outline" id="btn-estoque-sync-saidas-previstas"
-          title="Importar saidas previstas. Cada importacao substitui o snapshot anterior.">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12M17 17l-5-5-5 5M2 12h20M12 2v10"/></svg>
-          Sincronizar Saidas Previstas
-        </button>
-        <button class="earv-btn earv-btn--outline" id="btn-estoque-arv-sync"
-          title="Importar planilha fabri1_arvore_com_chave_familia.xlsx. Cada importacao substitui a arvore anterior.">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          Sync Arvore
-        </button>
-        <input type="file" id="input-estoque-arv-file" accept=".xlsx,.xls" style="display:none;" />
-        <input type="file" id="input-estoque-sync-file" accept=".xlsx,.xls" style="display:none;" />
-        <input type="file" id="input-estoque-sync-saidas-previstas-file" accept=".xlsx,.xls" style="display:none;" />
+        <div class="vini-toolbar-right">
+          <!-- Dropdown Ações -->
+          <div class="earv-dropdown">
+            <button class="btn-secondary btn-export" style="height: 38px; gap: 6px; cursor: pointer;" onclick="event.stopPropagation(); earv_toggleDropdown()">
+              Ações ⚙️
+            </button>
+            <div class="earv-dropdown-menu hidden" id="earv-actions-menu">
+              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-estoque-sync-estoque').click();">
+                🔄 Sincronizar Estoque
+              </a>
+              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-estoque-sync-saidas-previstas').click();">
+                📈 Sincronizar Saídas
+              </a>
+              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-estoque-arv-sync').click();">
+                🌳 Sincronizar Árvore
+              </a>
+              <div class="earv-dropdown-divider"></div>
+              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-earv-expand-all').click();">
+                ➕ Expandir Tudo
+              </a>
+              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-earv-collapse-all').click();">
+                ➖ Recolher Tudo
+              </a>
+            </div>
+          </div>
+
+          <!-- Hidden original buttons to preserve existing JS selectors and event listeners -->
+          <button id="btn-earv-expand-all" style="display:none;"></button>
+          <button id="btn-earv-collapse-all" style="display:none;"></button>
+          <button id="btn-estoque-sync-estoque" style="display:none;"></button>
+          <button id="btn-estoque-sync-saidas-previstas" style="display:none;"></button>
+          <button id="btn-estoque-arv-sync" style="display:none;"></button>
+          <input type="file" id="input-estoque-arv-file" accept=".xlsx,.xls" style="display:none;" />
+          <input type="file" id="input-estoque-sync-file" accept=".xlsx,.xls" style="display:none;" />
+          <input type="file" id="input-estoque-sync-saidas-previstas-file" accept=".xlsx,.xls" style="display:none;" />
+        </div>
       </div>
 
       <div class="earv-kpi-row">
@@ -888,10 +896,10 @@
       </div>
     </div>
 
-    <!-- ──── PAGE: V.I.N.IÃ°Å¸Å’‘ ──── -->
+    <!-- ──── PAGE: VINI ──── -->
     <div class="page hidden" id="page-vini">
       <div class="page-header" style="margin-bottom: 1rem;">
-        <h1 class="page-title">V.I.N.I Ã°Å¸Å’‘ â─“ Planejamento de Produção EPS</h1>
+        <h1 class="page-title">VINI</h1>
       </div>
 
       <!-- Barra de Ferramentas Unificada (UX Compacta) -->

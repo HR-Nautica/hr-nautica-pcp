@@ -1,11 +1,12 @@
-﻿"use strict";
+"use strict";
 
 const EARV_STORAGE_KEYS = {
   tree: "hrn_estoque_arvore",
   estoque: "hrn_earv_estoque",
   saidasPeriodo: "hrn_earv_saidas_periodo",
   saidasPrevistas: "hrn_earv_saidas_previstas",
-  meta: "hrn_earv_meta"
+  meta: "hrn_earv_meta",
+  quantidadesUsuario: "hrn_earv_quantidades_usuario"
 };
 
 const EARV = {
@@ -16,6 +17,7 @@ const EARV = {
   estoqueMap: {},
   saidasPeriodoMap: {},
   saidasPrevistasMap: {},
+  quantidadesUsuario: {},
   estoqueLoaded: false,
   saidasPrevistasLoaded: false,
   loaded: false,
@@ -122,11 +124,13 @@ function getValue(row, aliases, fallback = "") {
 }
 
 function normalizeTreeRow(rawRow) {
+  const rawQty = getValue(rawRow, ["Quantidade", "Qtd", "Qtde", "Qtd/Un", "QTD UN"], "");
   const row = {
     Posicao: normalizeText(getValue(rawRow, ["Posicao", "Posição", "Pos", "Nivel", "Nível"])),
     SKU: normalizeSku(getValue(rawRow, ["SKU", "Codigo", "Código", "Codigo SKU", "Código SKU", "Código (SKU)"])),
     Descricao: normalizeText(getValue(rawRow, ["Descricao", "Descrição", "Produto", "Componente", "Item"])),
-    Quantidade: getValue(rawRow, ["Quantidade", "Qtd", "Qtde", "Qtd/Un", "QTD UN"], ""),
+    Quantidade: rawQty,
+    QuantidadeOriginal: rawQty,
     Chave_Familia: normalizeText(getValue(rawRow, ["Chave_Familia", "Chave Familia", "Familia", "Família"], ""))
   };
 
@@ -142,6 +146,13 @@ function normalizeTreeRow(rawRow) {
   if (row.Posicao === "1") row.Posicao = "01";
   if (row.Posicao === "2") row.Posicao = "02";
   if (!row.Chave_Familia) row.Chave_Familia = row.SKU;
+
+  // Apply user override if present
+  const sku = row.SKU;
+  if (sku && EARV.quantidadesUsuario && EARV.quantidadesUsuario[sku] !== undefined) {
+    row.Quantidade = EARV.quantidadesUsuario[sku];
+  }
+
   return row;
 }
 
@@ -378,7 +389,7 @@ function earv_rowLevel00(fam, isExpanded, hasChildrenOverride) {
       <td class="earv-td earv-td--desc"><div class="earv-desc-wrap"><span class="earv-toggle-btn ${hasChildren ? "" : "earv-toggle-invisible"}">${icon}</span><span class="earv-desc-text earv-desc--00">${escapeHtml(row.Descricao)}</span></div></td>
       <td class="earv-td earv-td--sku earv-sku--00">${escapeHtml(row.SKU)}</td>
       <td class="earv-td"><span class="earv-nivel-badge earv-nivel--00">Item Final</span></td>
-      <td class="earv-td earv-td--num">${escapeHtml(row.Quantidade)}</td>
+      <td class="earv-td earv-td--num" onclick="event.stopPropagation()">${earv_renderQtyCell(row)}</td>
       <td class="earv-td earv-td--estoque" onclick="event.stopPropagation()">${earv_stockCell(row.SKU)}</td>
       <td class="earv-td">${earv_opBadge(row[OP.op01.col], "op01")}</td>
       <td class="earv-td">${earv_opBadge(row[OP.op02.col], "op02")}</td>
@@ -400,7 +411,7 @@ function earv_rowLevel01(comp, isExpanded, hasMatOverride) {
       <td class="earv-td earv-td--desc"><div class="earv-desc-wrap earv-indent-01"><span class="earv-toggle-btn earv-toggle-sm ${hasMat ? "" : "earv-toggle-invisible"}">${icon}</span><span class="earv-arrow">${ARROW_CHILD}</span><span class="earv-desc-text earv-desc--01">${escapeHtml(row.Descricao)}</span></div></td>
       <td class="earv-td earv-td--sku earv-sku--01">${escapeHtml(row.SKU)}</td>
       <td class="earv-td"><span class="earv-nivel-badge earv-nivel--01">Componente</span></td>
-      <td class="earv-td earv-td--num">${escapeHtml(row.Quantidade)}</td>
+      <td class="earv-td earv-td--num" onclick="event.stopPropagation()">${earv_renderQtyCell(row)}</td>
       <td class="earv-td earv-td--estoque" onclick="event.stopPropagation()">${earv_stockCell(row.SKU)}</td>
       <td class="earv-td">${earv_opBadge(row[OP.op01.col], "op01")}</td>
       <td class="earv-td">${earv_opBadge(row[OP.op02.col], "op02")}</td>
@@ -417,7 +428,7 @@ function earv_rowLevel02(row) {
       <td class="earv-td earv-td--desc"><div class="earv-desc-wrap earv-indent-02"><span class="earv-arrow earv-arrow--muted">${ARROW_CHILD}</span><span class="earv-desc-text earv-desc--02">${escapeHtml(row.Descricao)}</span></div></td>
       <td class="earv-td earv-td--sku earv-sku--02">${escapeHtml(row.SKU)}</td>
       <td class="earv-td"><span class="earv-nivel-badge earv-nivel--02">Material</span></td>
-      <td class="earv-td earv-td--num">${escapeHtml(row.Quantidade)}</td>
+      <td class="earv-td earv-td--num" onclick="event.stopPropagation()">${earv_renderQtyCell(row)}</td>
       <td class="earv-td earv-td--estoque">${earv_stockCell(row.SKU)}</td>
       <td class="earv-td">${earv_opBadge(row[OP.op01.col], "op01")}</td>
       <td class="earv-td">${earv_opBadge(row[OP.op02.col], "op02")}</td>
@@ -449,27 +460,30 @@ function earv_render() {
   let totalVisible = 0;
 
   fams.forEach(fam => {
+    const famMatchesSelf = earv_rowMatches(fam.row, search, opF);
     const filteredComponents = [];
     fam.components.forEach(comp => {
-      const matchedMaterials = comp.materials.filter(mat => earv_rowMatches(mat, search, opF));
       const compMatchesSelf = earv_rowMatches(comp.row, search, opF);
-      if (!hasFilter || compMatchesSelf || matchedMaterials.length > 0) {
-        filteredComponents.push({ comp, matchedMaterials });
+      const matchedMaterials = comp.materials.filter(mat => earv_rowMatches(mat, search, opF));
+      if (!hasFilter || famMatchesSelf || compMatchesSelf || matchedMaterials.length > 0) {
+        const matsToShow = (famMatchesSelf || compMatchesSelf) ? comp.materials : matchedMaterials;
+        filteredComponents.push({ comp, matchedMaterials: matsToShow });
       }
     });
 
-    const famMatchesSelf = earv_rowMatches(fam.row, search, opF);
     if (hasFilter && !famMatchesSelf && filteredComponents.length === 0) return;
 
+    const hasActualChildren = fam.components.length > 0;
     const isExpanded = hasFilter ? filteredComponents.length > 0 : EARV.expandedFamilies.has(fam.familyKey);
     totalVisible++;
-    if (["all", "00", "01", "02"].includes(posF)) html.push(earv_rowLevel00(fam, isExpanded, filteredComponents.length > 0));
+    if (["all", "00", "01", "02"].includes(posF)) html.push(earv_rowLevel00(fam, isExpanded, hasActualChildren));
 
     if (isExpanded || posF === "01" || posF === "02") {
       filteredComponents.forEach(({ comp, matchedMaterials }) => {
+        const compHasActualMaterials = comp.materials.length > 0;
         const compExpanded = hasFilter ? matchedMaterials.length > 0 : EARV.expandedComponents.has(comp.compKey);
         totalVisible++;
-        if (["all", "01", "02"].includes(posF)) html.push(earv_rowLevel01(comp, compExpanded, matchedMaterials.length > 0));
+        if (["all", "01", "02"].includes(posF)) html.push(earv_rowLevel01(comp, compExpanded, compHasActualMaterials));
         if ((isExpanded && compExpanded) || posF === "02") {
           matchedMaterials.forEach(mat => { totalVisible++; html.push(earv_rowLevel02(mat)); });
         }
@@ -535,6 +549,9 @@ function parseCachedJson(key, fallback) {
 }
 
 function earv_loadFromCache() {
+  const quantidadesUsuario = parseCachedJson(EARV_STORAGE_KEYS.quantidadesUsuario, {});
+  EARV.quantidadesUsuario = quantidadesUsuario && typeof quantidadesUsuario === "object" ? quantidadesUsuario : {};
+
   const rows = parseCachedJson(EARV_STORAGE_KEYS.tree, []);
   if (Array.isArray(rows) && rows.length) {
     EARV.rows = rows.map(normalizeTreeRow);
@@ -713,5 +730,73 @@ window.earv_toggleFamily = earv_toggleFamily;
 window.earv_toggleComp = earv_toggleComp;
 window.EARV = EARV;
 window.OP = OP;
+window.earv_toggleDropdown = earv_toggleDropdown;
+window.earv_editQty = earv_editQty;
+
+function earv_renderQtyCell(row) {
+  const sku = normalizeSku(row.SKU);
+  const origQty = String(row.QuantidadeOriginal || row.Quantidade || "").trim();
+  const hasOverride = EARV.quantidadesUsuario && EARV.quantidadesUsuario[sku] !== undefined;
+  const isUserInserted = origQty.toLowerCase().includes("inserida") || origQty.toLowerCase().includes("usuario") || origQty.toLowerCase().includes("usuário");
+
+  if (isUserInserted || hasOverride) {
+    const displayVal = row.Quantidade;
+    return `
+      <div class="earv-qty-editable-cell">
+        <span class="earv-qty-val">${escapeHtml(displayVal)}</span>
+        <button class="earv-btn-edit-qty" onclick="event.stopPropagation(); earv_editQty('${escapeJsString(row.SKU)}')" title="Editar Quantidade">✏️</button>
+      </div>`;
+  }
+  return escapeHtml(row.Quantidade);
+}
+
+function earv_editQty(sku) {
+  const cleanSku = normalizeSku(sku);
+  const matchedRows = EARV.rows.filter(r => normalizeSku(r.SKU) === cleanSku);
+  if (!matchedRows.length) {
+    alert("SKU não encontrado na árvore.");
+    return;
+  }
+
+  const firstRow = matchedRows[0];
+  const origQty = firstRow.QuantidadeOriginal || firstRow.Quantidade;
+  const currentVal = EARV.quantidadesUsuario[cleanSku] !== undefined
+    ? EARV.quantidadesUsuario[cleanSku]
+    : origQty;
+
+  const newVal = prompt(`Editar quantidade para o SKU ${cleanSku}:\n(Valor original: ${origQty})`, currentVal);
+  if (newVal === null) return;
+
+  const trimmed = newVal.trim();
+  if (trimmed === "") {
+    delete EARV.quantidadesUsuario[cleanSku];
+    matchedRows.forEach(r => {
+      r.Quantidade = r.QuantidadeOriginal;
+    });
+  } else {
+    EARV.quantidadesUsuario[cleanSku] = trimmed;
+    matchedRows.forEach(r => {
+      r.Quantidade = trimmed;
+    });
+  }
+
+  RemoteStorage.setItem(EARV_STORAGE_KEYS.quantidadesUsuario, JSON.stringify(EARV.quantidadesUsuario));
+  persistSnapshot({ [EARV_STORAGE_KEYS.tree]: EARV.rows });
+  earv_afterStockUpdate();
+}
+
+function earv_toggleDropdown() {
+  const menu = document.getElementById("earv-actions-menu");
+  if (menu) {
+    menu.classList.toggle("hidden");
+  }
+}
+
+window.addEventListener("click", () => {
+  const menu = document.getElementById("earv-actions-menu");
+  if (menu && !menu.classList.contains("hidden")) {
+    menu.classList.add("hidden");
+  }
+});
 
 
