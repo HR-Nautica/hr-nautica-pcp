@@ -725,8 +725,8 @@ function renderViniTable() {
         <td style="font-weight:700; color:var(--accent-blue);">${item.sku}</td>
         <td>${fmtNum(entradasTotal)}</td>
         <td>${fmtNum(item.saidasPrevistas)}</td>
-        <td>${fmtNum(item.estoqueFisico)}</td>
-        <td style="font-weight:600; color: ${estoqueVirtualTotal < 0 ? 'var(--accent-red)' : 'var(--text-primary)'}">${fmtNum(estoqueVirtualTotal)}</td>
+        <td style="font-weight:700; color: var(--text-primary);">${fmtNum(item.estoqueFisico)}</td>
+        <td style="color: ${estoqueVirtualTotal < 0 ? 'var(--accent-red)' : 'var(--text-primary)'}">${fmtNum(estoqueVirtualTotal)}</td>
         <td>${fmtNum(item.saidasPeriodo)}</td>
         <td>${fmtNum(item.mediaMensal)}</td>
         <td>${item.prio2 === '—' ? '—' : fmtNum(item.prio2)}</td>

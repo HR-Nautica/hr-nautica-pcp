@@ -136,6 +136,15 @@ body {
   gap: 2px;
 }
 
+.sidebar-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.85rem 0.85rem 0.35rem 0.85rem;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -2795,9 +2804,14 @@ body {
 /* â”€â”€ Tabela principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .earv-table {
   width: 100%;
+  min-width: 1300px;
   border-collapse: collapse;
   font-size: 0.93rem;
   table-layout: fixed;
+}
+
+#vini-table {
+  min-width: 1400px;
 }
 
 /* â”€â”€ Headers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
