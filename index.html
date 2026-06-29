@@ -72,7 +72,12 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
         VINI
       </a>
+      <button class="btn-logout" id="btn-logout" title="Sair do sistema">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
     </nav>
+
 
     <div class="sidebar-footer">
       <p>HR Náutica © 2026</p>
@@ -1657,6 +1662,30 @@
   </div>
 
 
+  <!-- ────────────────── TELA DE LOGIN ────────────────── -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <img src="/logo.png" alt="HR Náutica Logo" class="login-logo" />
+      <h2 class="login-title">HR Náutica PCP</h2>
+      <p class="login-subtitle">Entre com suas credenciais para continuar</p>
+      
+      <form id="login-form" class="login-form">
+        <div class="login-group">
+          <label for="login-username">Usuário</label>
+          <input type="text" id="login-username" placeholder="Digite seu usuário" required autocomplete="username" />
+        </div>
+        <div class="login-group">
+          <label for="login-password">Senha</label>
+          <input type="password" id="login-password" placeholder="Digite sua senha" required autocomplete="current-password" />
+        </div>
+        
+        <div id="login-error" class="login-error hidden"></div>
+        
+        <button type="submit" class="login-btn">Entrar</button>
+      </form>
+    </div>
+  </div>
+
   <script src="/js/remote-storage.js"></script>
   <script src="/js/bootstrap.js"></script>
 
@@ -1668,4 +1697,3 @@
 
 </body>
 </html>
-

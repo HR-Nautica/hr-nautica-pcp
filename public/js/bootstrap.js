@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 const applicationScripts = [
   "/js/db.js",
@@ -21,18 +21,76 @@ function loadScript(source) {
 }
 
 function requireUserLogin() {
-  const storageKey = "hrn_login_usuario";
-  let user = window.localStorage.getItem(storageKey) || "";
-  while (!user.trim()) {
-    user = window.prompt("Informe seu nome para registrar suas alteracoes:", "") || "";
-  }
-  user = user.trim().slice(0, 100);
-  window.localStorage.setItem(storageKey, user);
-  window.PCP_CURRENT_USER = user;
+  return new Promise((resolve) => {
+    const storageKey = "hrn_login_usuario";
+    const userRoleKey = "hrn_usuario_role";
+    
+    const cachedUser = window.localStorage.getItem(storageKey) || "";
+    const cachedRole = window.localStorage.getItem(userRoleKey) || "";
+    
+    if (cachedUser && (cachedUser === "lucas_admin" || cachedRole === "operator")) {
+      window.PCP_CURRENT_USER = cachedUser;
+      window.PCP_USER_ROLE = cachedUser === "lucas_admin" ? "admin" : "operator";
+      
+      const overlay = document.getElementById("login-overlay");
+      if (overlay) overlay.classList.add("hidden");
+      
+      resolve(cachedUser);
+      return;
+    }
+    
+    const overlay = document.getElementById("login-overlay");
+    if (overlay) overlay.classList.remove("hidden");
+    
+    const form = document.getElementById("login-form");
+    const usernameInput = document.getElementById("login-username");
+    const passwordInput = document.getElementById("login-password");
+    const errorMsg = document.getElementById("login-error");
+    
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+      
+      if (!username) {
+        errorMsg.textContent = "Por favor, digite o usuário.";
+        errorMsg.classList.remove("hidden");
+        return;
+      }
+      
+      if (username === "lucas_admin") {
+        if (password === "admin123!") {
+          window.localStorage.setItem(storageKey, username);
+          window.localStorage.setItem(userRoleKey, "admin");
+          window.PCP_CURRENT_USER = username;
+          window.PCP_USER_ROLE = "admin";
+          
+          if (overlay) overlay.classList.add("hidden");
+          resolve(username);
+        } else {
+          errorMsg.textContent = "Senha incorreta para o administrador!";
+          errorMsg.classList.remove("hidden");
+        }
+      } else {
+        if (password === "nautica123") {
+          window.localStorage.setItem(storageKey, username);
+          window.localStorage.setItem(userRoleKey, "operator");
+          window.PCP_CURRENT_USER = username;
+          window.PCP_USER_ROLE = "operator";
+          
+          if (overlay) overlay.classList.add("hidden");
+          resolve(username);
+        } else {
+          errorMsg.textContent = "Senha incorreta para operador! Use a senha padrão.";
+          errorMsg.classList.remove("hidden");
+        }
+      }
+    });
+  });
 }
 async function bootstrap() {
   try {
-    requireUserLogin();
+    await requireUserLogin();
     await RemoteStorage.init(() => {
       if (document.querySelector(".modal-overlay:not(.hidden)")) return;
       window.location.reload();

@@ -150,6 +150,13 @@ function populateOpSelectMov() {
 // NAVEGAÇÃO
 // ═══════════════════════════════════════════
 function navigate(page) {
+  const isOperator = window.PCP_USER_ROLE !== 'admin';
+  const RESTRICTED_PAGES = ['ordens', 'modelos', 'manutencao', 'relatorios', 'estoque', 'vini'];
+  
+  if (isOperator && RESTRICTED_PAGES.includes(page)) {
+    page = 'dashboard';
+  }
+
   // Oculta todas as páginas
   document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
   // Remove active de todos os nav items
@@ -1989,6 +1996,27 @@ function exportCSV() {
 // EVENT LISTENERS
 // ═══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+
+  // ── Controle de Acesso e Sidebar por Perfil ──
+  const isOperator = window.PCP_USER_ROLE !== 'admin';
+  const RESTRICTED_PAGES = ['ordens', 'modelos', 'manutencao', 'relatorios', 'estoque', 'vini'];
+  
+  if (isOperator) {
+    RESTRICTED_PAGES.forEach(page => {
+      const el = $(`nav-${page}`);
+      if (el) el.style.display = 'none';
+    });
+  }
+
+  // ── Botão Logout ──
+  const btnLogout = $('btn-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+      window.localStorage.removeItem('hrn_login_usuario');
+      window.localStorage.removeItem('hrn_usuario_role');
+      window.location.reload();
+    });
+  }
 
   // ── Navegação ──
   document.querySelectorAll('.nav-item').forEach(item => {

@@ -1,7 +1,7 @@
 // Seed data imported from matriz_dados.xlsx
 const MATRIZ_DATA = [
   {
-    "nome": "HÃ‰LICE MERCURY 75/125 HP 13 3/4 X 15",
+    "nome": "HÉLICE MERCURY 75/125 HP 13 3/4 X 15",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
@@ -17,10 +17,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 75",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÃ‰LICE MERCURY 75/125 HP"
+    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 75/125 HP 13 1/4 X 17",
+    "nome": "HÉLICE MERCURY 75/125 HP 13 1/4 X 17",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
@@ -36,10 +36,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 75",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÃ‰LICE MERCURY 75/125 HP"
+    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 75/125 HP 13 X 19",
+    "nome": "HÉLICE MERCURY 75/125 HP 13 X 19",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
@@ -55,10 +55,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 75",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÃ‰LICE MERCURY 75/125 HP"
+    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 150/250 HP 14 1/2 X 17",
+    "nome": "HÉLICE MERCURY 150/250 HP 14 1/2 X 17",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
@@ -74,10 +74,10 @@ const MATRIZ_DATA = [
     "estria": "",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 150/250 HP 13 1/2 X 23",
+    "nome": "HÉLICE MERCURY 150/250 HP 13 1/2 X 23",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/2",
@@ -93,10 +93,10 @@ const MATRIZ_DATA = [
     "estria": "",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 4 / 5 HP 7 1/4 X 6 1/2 PINADO",
+    "nome": "HÉLICE YAMAHA 4 / 5 HP 7 1/4 X 6 1/2 PINADO",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "7 1/4",
@@ -112,10 +112,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 4 Pinado",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (1\" 1/8 x 31) PARA HÃ‰LICE YAMAHA 4/5 HP PINADO"
+    "buchaModelo": "BUCHA (1\" 1/8 x 31) PARA HÉLICE YAMAHA 4/5 HP PINADO"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40 / 55 HP 11 1/8 X 13",
+    "nome": "HÉLICE YAMAHA 40 / 55 HP 11 1/8 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/8",
@@ -131,10 +131,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 1/2 X 13",
+    "nome": "HÉLICE YAMAHA 40/55 HP 11 1/2 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/2",
@@ -150,10 +150,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 1/8 X 12",
+    "nome": "HÉLICE YAMAHA 40/55 HP 11 1/8 X 12",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/8",
@@ -169,10 +169,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 1/4 X 14",
+    "nome": "HÉLICE YAMAHA 40/55 HP 11 1/4 X 14",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/4",
@@ -188,10 +188,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 1/4 X 14 MAX TORK",
+    "nome": "HÉLICE YAMAHA 40/55 HP 11 1/4 X 14 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/4",
@@ -210,7 +210,7 @@ const MATRIZ_DATA = [
     "buchaModelo": "N/A"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 1/4 X 14",
+    "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 1/4 X 14",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/4",
@@ -226,10 +226,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 3/8 X 14",
+    "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 3/8 X 14",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -245,10 +245,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 3/8 X 14",
+    "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 14",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -264,10 +264,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 1/2 X 13",
+    "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 1/2 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
@@ -283,10 +283,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 1/2 X 13",
+    "nome": "HÉLICE YAMAHA 40/55 HP 10 1/2 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
@@ -302,10 +302,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 40/55/60/65 HP 11 1/2 X 11",
+    "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 1/2 X 11",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/2",
@@ -321,10 +321,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 40/55/60/65 HP 11 1/2 X 13",
+    "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 1/2 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/2",
@@ -340,10 +340,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 40/55/60/65 HP 11 1/4 X 15",
+    "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 1/4 X 15",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/4",
@@ -359,10 +359,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 40/55/60/65 HP 11 3/8 X 14",
+    "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 3/8 X 14",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 3/8",
@@ -378,10 +378,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 40 SUPER 10 3/8 X 13",
+    "nome": "HÉLICE MERCURY 40 SUPER 10 3/8 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -397,10 +397,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 3/8 X 13",
+    "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -416,7 +416,7 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
     "nome": "HELICE YAMAHA 40 HP 2T/ F60 4T 11 3/8 X 13",
@@ -435,10 +435,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 11 X 15",
+    "nome": "HÉLICE YAMAHA 40/55 HP 11 X 15",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11",
@@ -454,10 +454,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40 HP 3 CIL. 10 3/8 X 13",
+    "nome": "HÉLICE YAMAHA 40 HP 3 CIL. 10 3/8 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -473,10 +473,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40 HP 10 1/8 X 15 3 CIL",
+    "nome": "HÉLICE YAMAHA 40 HP 10 1/8 X 15 3 CIL",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/8",
@@ -492,10 +492,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÃ‰LICE YAMAHA/SUZUKI 40 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 30/60 HP 10 3/8 X 13",
+    "nome": "HÉLICE MERCURY 30/60 HP 10 3/8 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -511,10 +511,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 30/60",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 84) PARA HÃ‰LICE MERCURY 30/60 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 84) PARA HÉLICE MERCURY 30/60 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 30/60 HP 10 3/8 X 13",
+    "nome": "HÉLICE MERCURY 30/60 HP 10 3/8 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -530,7 +530,7 @@ const MATRIZ_DATA = [
     "estria": "Mercury 30/60",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 1/8 x 84) PARA HÃ‰LICE MERCURY 30/60 HP"
+    "buchaModelo": "BUCHA (1\" 1/8 x 84) PARA HÉLICE MERCURY 30/60 HP"
   },
   {
     "nome": "HELICE JOHNSON / OMC 4 HP 8 X 7 1/2 CONTRA ROTANTE",
@@ -549,7 +549,7 @@ const MATRIZ_DATA = [
     "estria": "Johnson 4",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (1\" 3/8 x 50) PARA HÃ‰LICE JOHNSON 4 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 50) PARA HÉLICE JOHNSON 4 HP"
   },
   {
     "nome": "HELICE JOHNSON / MERCURY 3.3 HP 7 1/2 X 6",
@@ -568,10 +568,10 @@ const MATRIZ_DATA = [
     "estria": "Johnson 3.3",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (1\" 3/8 x 50) PARA HÃ‰LICE JOHNSON/MERCURY 3.3 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 50) PARA HÉLICE JOHNSON/MERCURY 3.3 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 150/250 HP V6 14 1/2 X 19",
+    "nome": "HÉLICE MERCURY 150/250 HP V6 14 1/2 X 19",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
@@ -587,10 +587,10 @@ const MATRIZ_DATA = [
     "estria": "",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 60/140 HP 13 1/4 X 17",
+    "nome": "HÉLICE YAMAHA 60/140 HP 13 1/4 X 17",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
@@ -606,10 +606,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 60",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 75/85/115/140 HP 13 X 19",
+    "nome": "HÉLICE SUZUKI 75/85/115/140 HP 13 X 19",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
@@ -625,10 +625,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 60/140 HP 13 X 19",
+    "nome": "HÉLICE YAMAHA 60/140 HP 13 X 19",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
@@ -644,10 +644,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 60",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 75/85/115/140 HP 12 1/4 x 15",
+    "nome": "HÉLICE SUZUKI 75/85/115/140 HP 12 1/4 x 15",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "12 1/4",
@@ -663,10 +663,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 60 / 140 HP 13 3/4 X 15",
+    "nome": "HÉLICE YAMAHA 60 / 140 HP 13 3/4 X 15",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
@@ -682,10 +682,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 60",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI DF 75/140 HP 14 X 19",
+    "nome": "HÉLICE SUZUKI DF 75/140 HP 14 X 19",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14",
@@ -701,10 +701,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 150/250 HP 14 X 19",
+    "nome": "HÉLICE YAMAHA 150/250 HP 14 X 19",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14",
@@ -720,10 +720,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 60",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 60/140 HP 12 5/8 X 21",
+    "nome": "HÉLICE YAMAHA 60/140 HP 12 5/8 X 21",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "12 5/8",
@@ -739,10 +739,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 60",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 75/85/115/140 HP 13 1/4 X 17",
+    "nome": "HÉLICE SUZUKI 75/85/115/140 HP 13 1/4 X 17",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
@@ -758,10 +758,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI DF 75/140 HP 13 1/4 X 17",
+    "nome": "HÉLICE SUZUKI DF 75/140 HP 13 1/4 X 17",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
@@ -777,10 +777,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 40",
     "caixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 150/250 HP 14 X 19",
+    "nome": "HÉLICE MERCURY 150/250 HP 14 X 19",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14",
@@ -796,10 +796,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 60",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 150/250 HP 13 3/4 x 21",
+    "nome": "HÉLICE YAMAHA 150/250 HP 13 3/4 x 21",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
@@ -815,10 +815,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 60",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 150/250 HP 14 1/2 X 17",
+    "nome": "HÉLICE YAMAHA 150/250 HP 14 1/2 X 17",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
@@ -834,10 +834,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 60",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÃ‰LICE YAMAHA 60/140 HP"
+    "buchaModelo": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 4/5 HP 7 1/4 X 7 ESTRIADO",
+    "nome": "HÉLICE YAMAHA 4/5 HP 7 1/4 X 7 ESTRIADO",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "7 1/4",
@@ -853,10 +853,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 4 Estriado",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (1\" x 31) PARA HÃ‰LICE YAMAHA 4/5 HP ESTRIADO"
+    "buchaModelo": "BUCHA (1\" x 31) PARA HÉLICE YAMAHA 4/5 HP ESTRIADO"
   },
   {
-    "nome": "HÃ‰LICE J/E 25/35 HP 10 X 13 STD",
+    "nome": "HÉLICE J/E 25/35 HP 10 X 13 STD",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10",
@@ -872,10 +872,10 @@ const MATRIZ_DATA = [
     "estria": "Johnson 25",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (1\" x 73) PARA HÃ‰LICE J/E 25 HP"
+    "buchaModelo": "BUCHA (1\" x 73) PARA HÉLICE J/E 25 HP"
   },
   {
-    "nome": "HÃ‰LICE J/E 25/35 HP 10 X 15",
+    "nome": "HÉLICE J/E 25/35 HP 10 X 15",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10",
@@ -891,10 +891,10 @@ const MATRIZ_DATA = [
     "estria": "Johnson 25",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (1\" x 73) PARA HÃ‰LICE J/E 25 HP"
+    "buchaModelo": "BUCHA (1\" x 73) PARA HÉLICE J/E 25 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 15 HP 9 1/4 X 10",
+    "nome": "HÉLICE SUZUKI 15 HP 9 1/4 X 10",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -910,10 +910,10 @@ const MATRIZ_DATA = [
     "estria": "Suzuki 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (13/16 x 53,9) PARA HÃ‰LICE SUZUKI 15 HP"
+    "buchaModelo": "BUCHA (13/16 x 53,9) PARA HÉLICE SUZUKI 15 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 15 HP 9 1/4 X 11",
+    "nome": "HÉLICE SUZUKI 15 HP 9 1/4 X 11",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -929,10 +929,10 @@ const MATRIZ_DATA = [
     "estria": "Suzuki 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (13/16 x 53,9) PARA HÃ‰LICE SUZUKI 15 HP"
+    "buchaModelo": "BUCHA (13/16 x 53,9) PARA HÉLICE SUZUKI 15 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI F. 15 HP 9 1/4 X 11",
+    "nome": "HÉLICE SUZUKI F. 15 HP 9 1/4 X 11",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -948,10 +948,10 @@ const MATRIZ_DATA = [
     "estria": "Suzuki 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (13/16 x 53,9) PARA HÃ‰LICE SUZUKI 15 HP"
+    "buchaModelo": "BUCHA (13/16 x 53,9) PARA HÉLICE SUZUKI 15 HP"
   },
   {
-    "nome": "HÃ‰LICE J/E 15 HP 9 1/2 X 10",
+    "nome": "HÉLICE J/E 15 HP 9 1/2 X 10",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/2",
@@ -967,10 +967,10 @@ const MATRIZ_DATA = [
     "estria": "Johnson 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (13/16 x 59) PARA HÃ‰LICE J/E 15 HP"
+    "buchaModelo": "BUCHA (13/16 x 59) PARA HÉLICE J/E 15 HP"
   },
   {
-    "nome": "HÃ‰LICE J/E 15 HP 9 X 11",
+    "nome": "HÉLICE J/E 15 HP 9 X 11",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
@@ -986,10 +986,10 @@ const MATRIZ_DATA = [
     "estria": "Johnson 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (13/16 x 59) PARA HÃ‰LICE J/E 15 HP"
+    "buchaModelo": "BUCHA (13/16 x 59) PARA HÉLICE J/E 15 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 75/125 HP 13 3/4 X 15",
+    "nome": "HÉLICE MERCURY 75/125 HP 13 3/4 X 15",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
@@ -1005,10 +1005,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 75",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÃ‰LICE MERCURY 75/125 HP"
+    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 75/125 HP 13 1/4 X 17",
+    "nome": "HÉLICE MERCURY 75/125 HP 13 1/4 X 17",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
@@ -1024,10 +1024,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 75",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÃ‰LICE MERCURY 75/125 HP"
+    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 75/125 HP 13 X 19",
+    "nome": "HÉLICE MERCURY 75/125 HP 13 X 19",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
@@ -1043,10 +1043,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 75",
     "caixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
-    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÃ‰LICE MERCURY 75/125 HP"
+    "buchaModelo": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 6 /15 HP 9 X 10 1/2 USA",
+    "nome": "HÉLICE MERCURY 6 /15 HP 9 X 10 1/2 USA",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
@@ -1062,10 +1062,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 15 USA",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (3/4 x 55) PARA HÃ‰LICE MERCURY 15 HP USA"
+    "buchaModelo": "BUCHA (3/4 x 55) PARA HÉLICE MERCURY 15 HP USA"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 6 /15 HP 9 X 9",
+    "nome": "HÉLICE MERCURY 6 /15 HP 9 X 9",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
@@ -1081,10 +1081,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 15 USA",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (3/4 x 55) PARA HÃ‰LICE MERCURY 15 HP USA"
+    "buchaModelo": "BUCHA (3/4 x 55) PARA HÉLICE MERCURY 15 HP USA"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 8 HP 8 1/2 X 8 1/2",
+    "nome": "HÉLICE YAMAHA 8 HP 8 1/2 X 8 1/2",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "8 1/2",
@@ -1100,10 +1100,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 8",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (3/4 x 70,5) PARA HÃ‰LICE YAMAHA 8 HP"
+    "buchaModelo": "BUCHA (3/4 x 70,5) PARA HÉLICE YAMAHA 8 HP"
   },
   {
-    "nome": "HÃ‰LICE HIDEA 15 HP 9 1/4 X 11",
+    "nome": "HÉLICE HIDEA 15 HP 9 1/4 X 11",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -1119,10 +1119,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (3/4 x 78) PARA HÃ‰LICE YAMAHA 15 HP"
+    "buchaModelo": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 15 HP 9 1/4 X 11",
+    "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 11",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -1138,7 +1138,7 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (3/4 x 78) PARA HÃ‰LICE YAMAHA 15 HP"
+    "buchaModelo": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP"
   },
   {
     "nome": "HELICE YAMAHA 15 HP 9 1/4 X 12",
@@ -1157,10 +1157,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (3/4 x 78) PARA HÃ‰LICE YAMAHA 15 HP"
+    "buchaModelo": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 15 HP 9 1/4 X 9",
+    "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 9",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -1176,10 +1176,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (3/4 x 78) PARA HÃ‰LICE YAMAHA 15 HP"
+    "buchaModelo": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 15 HP 9 1/4 X 10 1/2",
+    "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 10 1/2",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -1195,10 +1195,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3A 15 HP COM CODIGO HR HY 008",
     "skuCaixa": "HR CXA 003",
-    "buchaModelo": "BUCHA (3/4 x 78) PARA HÃ‰LICE YAMAHA 15 HP"
+    "buchaModelo": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP"
   },
   {
-    "nome": "HÃ‰LICE HONDA 15 HP 9 1/4 X 10",
+    "nome": "HÉLICE HONDA 15 HP 9 1/4 X 10",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -1214,10 +1214,10 @@ const MATRIZ_DATA = [
     "estria": "Yamaha 15",
     "caixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
-    "buchaModelo": "BUCHA (3/4 x 78) PARA HÃ‰LICE YAMAHA 15 HP"
+    "buchaModelo": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 25/30 HP 9 7/8 X 13",
+    "nome": "HÉLICE YAMAHA 25/30 HP 9 7/8 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
@@ -1233,10 +1233,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÃ‰LICE YAMAHA 25 HP"
+    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP"
   },
   {
-    "nome": "HÃ‰LICE HIDEA 20/25 HP 9 1/4 X 11 Geração 1",
+    "nome": "HÉLICE HIDEA 20/25 HP 9 1/4 X 11 Geração 1",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -1252,10 +1252,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÃ‰LICE YAMAHA 25 HP"
+    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 25/30 HP 9 7/8 X 12",
+    "nome": "HÉLICE YAMAHA 25/30 HP 9 7/8 X 12",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
@@ -1271,10 +1271,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÃ‰LICE YAMAHA 25 HP"
+    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 25/30 HP 9 7/8 X 10 1/2",
+    "nome": "HÉLICE YAMAHA 25/30 HP 9 7/8 X 10 1/2",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
@@ -1290,10 +1290,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÃ‰LICE YAMAHA 25 HP"
+    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP"
   },
   {
-    "nome": "HÃ‰LICE HIDEA 30 HP 9 7/8 X 12",
+    "nome": "HÉLICE HIDEA 30 HP 9 7/8 X 12",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
@@ -1309,10 +1309,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÃ‰LICE YAMAHA 25 HP"
+    "buchaModelo": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 25/30 SEA-PRO 9 7/8 X 12",
+    "nome": "HÉLICE MERCURY 25/30 SEA-PRO 9 7/8 X 12",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
@@ -1328,10 +1328,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 77) PARA HÃ‰LICE MERCURY 25 HP (Parede Fina)"
+    "buchaModelo": "BUCHA (7/8 x 77) PARA HÉLICE MERCURY 25 HP (Parede Fina)"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 25/30 SEA-PRO 9 7/8 X 13",
+    "nome": "HÉLICE MERCURY 25/30 SEA-PRO 9 7/8 X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
@@ -1347,10 +1347,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 77) PARA HÃ‰LICE MERCURY 25 HP (Parede Fina)"
+    "buchaModelo": "BUCHA (7/8 x 77) PARA HÉLICE MERCURY 25 HP (Parede Fina)"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 25/30 HP SEA-PRO 9.6  X 13",
+    "nome": "HÉLICE MERCURY 25/30 HP SEA-PRO 9.6  X 13",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "6",
@@ -1366,10 +1366,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 77) PARA HÃ‰LICE MERCURY 25 HP (Parede Fina)"
+    "buchaModelo": "BUCHA (7/8 x 77) PARA HÉLICE MERCURY 25 HP (Parede Fina)"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 25/30 HP SEA-PRO 9.9  X 13 MT1763",
+    "nome": "HÉLICE MERCURY 25/30 HP SEA-PRO 9.9  X 13 MT1763",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
@@ -1385,10 +1385,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 77) PARA HÃ‰LICE MERCURY 25 HP (Parede Fina)"
+    "buchaModelo": "BUCHA (7/8 x 77) PARA HÉLICE MERCURY 25 HP (Parede Fina)"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 15 SUPER 9 1/4 X 10",
+    "nome": "HÉLICE MERCURY 15 SUPER 9 1/4 X 10",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -1404,10 +1404,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 15",
     "caixa": "CAIXA PARDA HR NAUTICA N5 15 HP MERCURY",
     "skuCaixa": "HR CXA 013",
-    "buchaModelo": "BUCHA (7/8 x 80) PARA HÃ‰LICE MERCURY 15 HP"
+    "buchaModelo": "BUCHA (7/8 x 80) PARA HÉLICE MERCURY 15 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 15 SUPER 9 1/4 X 9",
+    "nome": "HÉLICE MERCURY 15 SUPER 9 1/4 X 9",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -1423,10 +1423,10 @@ const MATRIZ_DATA = [
     "estria": "Mercury 15",
     "caixa": "CAIXA PARDA HR NAUTICA N5 15 HP MERCURY",
     "skuCaixa": "HR CXA 013",
-    "buchaModelo": "BUCHA (7/8 x 80) PARA HÃ‰LICE MERCURY 15 HP"
+    "buchaModelo": "BUCHA (7/8 x 80) PARA HÉLICE MERCURY 15 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 25/30 HP 10 1/4 X 13 STD",
+    "nome": "HÉLICE SUZUKI 25/30 HP 10 1/4 X 13 STD",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/4",
@@ -1442,10 +1442,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 82) PARA HÃ‰LICE SUZUKI 25 HP"
+    "buchaModelo": "BUCHA (7/8 x 82) PARA HÉLICE SUZUKI 25 HP"
   },
   {
-    "nome": "HÃ‰LICE SUZUKI 25/30 HP 10 1/4 X 12",
+    "nome": "HÉLICE SUZUKI 25/30 HP 10 1/4 X 12",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/4",
@@ -1461,10 +1461,10 @@ const MATRIZ_DATA = [
     "estria": "Y/M/S 25 (parede fina)",
     "caixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
-    "buchaModelo": "BUCHA (7/8 x 82) PARA HÃ‰LICE SUZUKI 25 HP"
+    "buchaModelo": "BUCHA (7/8 x 82) PARA HÉLICE SUZUKI 25 HP"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 150/250 HP V6 14 1/2 X 19 MAX TORK",
+    "nome": "HÉLICE MERCURY 150/250 HP V6 14 1/2 X 19 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
@@ -1483,7 +1483,7 @@ const MATRIZ_DATA = [
     "buchaModelo": "N/A"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 3/8 X 14 MAX TORK",
+    "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 3/8 X 14 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -1502,7 +1502,7 @@ const MATRIZ_DATA = [
     "buchaModelo": "N/A"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 3/8 X 14 MAX TORK",
+    "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 14 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -1521,7 +1521,7 @@ const MATRIZ_DATA = [
     "buchaModelo": "N/A"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 15 SUPER 9 1/4 X 9 MAX TORK",
+    "nome": "HÉLICE MERCURY 15 SUPER 9 1/4 X 9 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
@@ -1540,7 +1540,7 @@ const MATRIZ_DATA = [
     "buchaModelo": "N/A"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 40/50 HP SUPER 10 1/2 X 13 MAX TORK",
+    "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 1/2 X 13 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
@@ -1559,7 +1559,7 @@ const MATRIZ_DATA = [
     "buchaModelo": "N/A"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 1/2 X 13 MAX TORK",
+    "nome": "HÉLICE YAMAHA 40/55 HP 10 1/2 X 13 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
@@ -1578,7 +1578,7 @@ const MATRIZ_DATA = [
     "buchaModelo": "N/A"
   },
   {
-    "nome": "HÃ‰LICE MERCURY 40 SUPER 10 3/8 X 13 MAX TORK",
+    "nome": "HÉLICE MERCURY 40 SUPER 10 3/8 X 13 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -1597,7 +1597,7 @@ const MATRIZ_DATA = [
     "buchaModelo": "N/A"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 40/55 HP 10 3/8 X 13 MAX TORK",
+    "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 13 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
@@ -1616,7 +1616,7 @@ const MATRIZ_DATA = [
     "buchaModelo": "N/A"
   },
   {
-    "nome": "HÃ‰LICE YAMAHA 15 HP 9 1/4 X 10 1/2 MAX TORK",
+    "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 10 1/2 MAX TORK",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
