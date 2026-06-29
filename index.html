@@ -473,46 +473,39 @@
         <h1 class="page-title">Produção de Componentes</h1>
       </div>
 
-      <!-- Toolbar -->
-      <div class="earv-row">
-        <input type="text" id="prod-comp-search"
-          class="earv-search-input"
-          placeholder="🔍 Buscar por OP, SKU ou Descrição..." style="height: 46px; font-size: 1.1rem; padding: 0 1rem;" />
-        <select class="earv-select" id="prod-comp-filter-status" style="max-width: 200px; height: 46px;">
-          <option value="all">📋 Todos os Status</option>
-          <option value="Em Produção">âÅ¡â„¢Ã¯Â¸ Em Produção</option>
-          <option value="Concluído">✅ Concluído</option>
-        </select>
-        <span class="earv-count-badge" id="producao-componentes-count">- OPs</span>
-        <button class="earv-btn earv-btn--primary" id="btn-prod-comp-export" style="height: 46px; font-weight: bold; background-color: var(--accent-blue); border: none; padding: 0 1.25rem; margin-left: 0.5rem; border-radius: var(--radius); cursor: pointer;" title="Exportar Tarefas por Responsável">
-          Exportar Tarefas
-        </button>
-      </div>
+      <div class="prod-comp-layout">
+        <!-- Coluna Esquerda: Lista de OPCs e Filtros da Lista -->
+        <div class="prod-comp-sidebar">
+          <div class="prod-comp-sidebar-header">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+              <span style="font-weight:800; font-size:1.05rem; color:var(--text-primary);">Lista de OPs</span>
+              <span class="earv-count-badge" id="producao-componentes-count" style="margin: 0;">- OPs</span>
+            </div>
+            <input type="text" id="prod-comp-search" class="earv-search-input" placeholder="🔍 Buscar por OP, SKU ou Descrição..." style="width:100%; height: 38px; font-size: 0.9rem; padding: 0 0.75rem; margin-bottom: 0.5rem;" />
+            <div style="display:flex; gap: 0.5rem; width: 100%;">
+              <select class="earv-select" id="prod-comp-filter-status" style="flex:1; height: 36px; font-size:0.8rem; padding: 0 0.5rem;">
+                <option value="all">📋 Todos os Status</option>
+                <option value="Em Produção">⚙ Em Produção</option>
+                <option value="Concluído">✅ Concluído</option>
+              </select>
+              <button class="earv-btn earv-btn--primary" id="btn-prod-comp-export" style="height: 36px; font-size:0.75rem; font-weight: bold; background-color: var(--accent-blue); border: none; padding: 0 0.75rem; border-radius: var(--radius); cursor: pointer;" title="Exportar Tarefas por Responsável">
+                Exportar
+              </button>
+            </div>
+          </div>
+          <div class="prod-comp-list" id="prod-comp-opc-list">
+            <div class="empty-cell" style="padding: 2rem; font-size: 0.85rem;">Carregando OPs...</div>
+          </div>
+        </div>
 
-      <!-- Tabela -->
-      <div class="card earv-table-card" style="margin-top: 1rem;">
-        <div class="table-wrap">
-          <table class="earv-table">
-            <thead>
-              <tr>
-                <th class="earv-th earv-th--desc" style="text-align: left;">Produto / Componente</th>
-                <th class="earv-th" style="min-width:110px;">SKU</th>
-                <th class="earv-th" style="min-width:90px;">Nível</th>
-                <th class="earv-th" style="min-width:95px;">Qtd Necessária</th>
-                <th class="earv-th earv-th--estoque" style="min-width:100px;">Estoque</th>
-                <th class="earv-th" style="min-width:110px;">Saldo Restante</th>
-                <th class="earv-th earv-th--op earv-th--op01" style="min-width:110px;">OP 01<br/><small>Compras</small></th>
-                <th class="earv-th earv-th--op earv-th--op02" style="min-width:110px;">OP 02<br/><small>Usinagem</small></th>
-                <th class="earv-th earv-th--op earv-th--op03" style="min-width:100px;">OP 03<br/><small>Cromo</small></th>
-                <th class="earv-th earv-th--op earv-th--op04" style="min-width:100px;">OP 04<br/><small>Pintura</small></th>
-                <th class="earv-th earv-th--op earv-th--op05" style="min-width:110px;">OP 05<br/><small>Montagem</small></th>
-                <th class="earv-th earv-th--op earv-th--op06" style="min-width:110px;">OP 06<br/><small>Embalagem</small></th>
-              </tr>
-            </thead>
-            <tbody id="producao-componentes-body">
-              <tr><td colspan="11" class="empty-cell">Nenhuma ordem de produção de componente ativa.</td></tr>
-            </tbody>
-          </table>
+        <!-- Coluna Direita: Detalhes da OP Selecionada -->
+        <div class="prod-comp-details" id="prod-comp-opc-details">
+          <div class="prod-comp-details-empty">
+            <div style="text-align:center;">
+              <span style="font-size: 3rem; display:block; margin-bottom: 1rem; opacity: 0.5;">📋</span>
+              Selecione uma OP na lista ao lado para gerenciar as operações e visualizar os componentes.
+            </div>
+          </div>
         </div>
       </div>
     </div>

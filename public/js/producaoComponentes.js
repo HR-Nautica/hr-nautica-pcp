@@ -357,11 +357,25 @@ function prodComp_fmtNum(val) {
   return num.toFixed(1).replace('.', ',');
 }
 
-// Renderiza a tabela de OPs de componentes
+// Roda o filtro local dos itens da OP selecionada
+function prodComp_setLocalFilter(filterVal) {
+  PROD_COMP_STATE.localFilter = filterVal;
+  prodComp_render();
+}
+
+// Seleciona uma OP na barra lateral
+function prodComp_selectOP(opId) {
+  PROD_COMP_STATE.selectedOpId = opId;
+  PROD_COMP_STATE.localFilter = 'all'; // reseta o filtro local
+  prodComp_render();
+}
+
+// Renderiza a tabela de OPs de componentes em formato Mestre-Detalhe
 function prodComp_render() {
-  const tbody = document.getElementById('producao-componentes-body');
+  const sidebarList = document.getElementById('prod-comp-opc-list');
+  const detailsArea = document.getElementById('prod-comp-opc-details');
   const countBadge = document.getElementById('producao-componentes-count');
-  if (!tbody) return;
+  if (!sidebarList || !detailsArea) return;
 
   prodComp_load();
 
@@ -370,12 +384,12 @@ function prodComp_render() {
 
   let filtered = PROD_COMP_STATE.ops.filter(o => !o.deleted);
 
-  // Filtro de status
+  // Filtro de status geral (barra lateral)
   if (statusFilter !== 'all') {
     filtered = filtered.filter(op => op.status === statusFilter);
   }
 
-  // Filtro de busca
+  // Filtro de busca geral (barra lateral)
   if (search) {
     filtered = filtered.filter(op => 
       op.id.toLowerCase().includes(search) ||
@@ -395,265 +409,384 @@ function prodComp_render() {
     countBadge.textContent = `${filtered.length} ${filtered.length === 1 ? 'OP' : 'OPs'}`;
   }
 
+  // Se a OP selecionada não existe mais ou não está no filtro, tenta selecionar a primeira ativa
+  if (filtered.length > 0) {
+    const aindaExiste = filtered.some(op => op.id === PROD_COMP_STATE.selectedOpId);
+    if (!aindaExiste) {
+      PROD_COMP_STATE.selectedOpId = filtered[0].id;
+    }
+  } else {
+    PROD_COMP_STATE.selectedOpId = null;
+  }
+
+  // 1. Renderizar a barra lateral esquerda (Lista de OPs)
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty-cell">Nenhuma ordem de produção de componente ativa.</td></tr>';
+    sidebarList.innerHTML = '<div class="empty-cell" style="padding: 2rem; font-size: 0.85rem; text-align:center;">Nenhuma OP correspondente.</div>';
+    detailsArea.innerHTML = `
+      <div class="prod-comp-details-empty">
+        <div style="text-align:center;">
+          <span style="font-size: 3rem; display:block; margin-bottom: 1rem; opacity: 0.5;">📋</span>
+          Nenhuma OP cadastrada ou correspondente aos filtros.
+        </div>
+      </div>
+    `;
     return;
   }
 
-  // Carrega tabelas de suporte para a renderização do conjunto (estoque)
+  // Renderiza os cards das OPs na barra lateral
+  let sidebarCardsHtml = '';
+  filtered.forEach(op => {
+    const isActive = op.id === PROD_COMP_STATE.selectedOpId;
+    const cardClass = isActive ? 'opc-card active' : 'opc-card';
+    
+    // Calcula o progresso (percentual de operações concluidas)
+    let totalOps = 0;
+    let okOps = 0;
+    op.itens.forEach(item => {
+      Object.keys(item.operacoes).forEach(opKey => {
+        const opVal = item.operacoes[opKey];
+        if (opVal && opVal.status !== '—') {
+          totalOps++;
+          if (opVal.status === 'OK') okOps++;
+        }
+      });
+    });
+    const pct = totalOps > 0 ? Math.round((okOps / totalOps) * 100) : 0;
+    const statusText = op.status === 'Concluído' ? '✓ Concluída' : `${pct}% Concluído`;
+    const statusColor = op.status === 'Concluído' ? 'var(--accent-green)' : 'var(--accent-blue)';
+
+    sidebarCardsHtml += `
+      <div class="${cardClass}" onclick="prodComp_selectOP('${op.id}')">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="opc-card-title">${op.id}</span>
+          <span style="font-size:0.7rem; font-weight:700; color:${statusColor};">${statusText}</span>
+        </div>
+        <div class="opc-card-desc" title="${op.descricao}">${op.descricao}</div>
+        <div class="opc-card-meta">
+          <span>Qtd: <strong>${op.quantidade}</strong></span>
+          <span>${op.dataCriacao}</span>
+        </div>
+      </div>
+    `;
+  });
+  sidebarList.innerHTML = sidebarCardsHtml;
+
+  // 2. Renderizar a coluna direita (Detalhes da OP selecionada)
+  const selectedOP = PROD_COMP_STATE.ops.find(op => op.id === PROD_COMP_STATE.selectedOpId);
+  if (!selectedOP) {
+    detailsArea.innerHTML = `
+      <div class="prod-comp-details-empty">
+        <div style="text-align:center;">
+          <span style="font-size: 3rem; display:block; margin-bottom: 1rem; opacity: 0.5;">📋</span>
+          Selecione uma OP na lista ao lado para gerenciar as operações e visualizar os componentes.
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // ── Reserva de estoque por SKU entre todas as OPs (mantém cálculo correto do estoque) ──
   const estoqueMap = safeGetJSON('hrn_earv_estoque', {});
 
-  // ── Reserva de estoque por SKU entre OPs ────────────────────────────────
-  // Acumula o quanto de cada SKU já foi "consumido" pelas OPs processaídas.
-  // OPs são percorridas na ordem da tela (filtered já está ordenado).
-  // Apenas componentes (nivel != '00') participam da reserva.
-  const reservadoPorSku = {}; // { [sku]: quantidade já reservada pelas OPs anteriores }
+  // Limpa as reservas e calcula as reservas reais acumuladas até a OP selecionada (exclusive)
+  // para exibir o estoque disponível correto para a OP selecionada.
+  const reservadoAteSelected = {};
+  for (let i = 0; i < filtered.length; i++) {
+    const op = filtered[i];
+    if (op.id === selectedOP.id) break; // para antes de acumular a reserva da OP atual
+    op.itens.forEach(item => {
+      if (item.nivel !== '00') {
+        const skuNorm = item.sku;
+        const estFisico = estoqueMap[skuNorm] || 0;
+        const jaReservado = reservadoAteSelected[skuNorm] || 0;
+        const est = Math.max(0, estFisico - jaReservado);
+        const reservadoNessaLinha = Math.min(item.quantidadeTotal, est);
+        reservadoAteSelected[skuNorm] = jaReservado + reservadoNessaLinha;
+      }
+    });
+  }
 
-  const rowsHtmlArray = [];
+  // Renderiza detalhes da OP selecionada
+  const isOPConcluida = selectedOP.status === 'Concluído';
+  const statusText = isOPConcluida 
+    ? `<span class="earv-op-badge" style="background-color: var(--accent-green-bg); color: var(--accent-green); padding: 0.25rem 0.6rem; font-weight: 800;">✓ CONCLUÍDA</span>`
+    : `<span class="earv-op-badge" style="background-color: var(--accent-blue-bg); color: var(--accent-blue); padding: 0.25rem 0.6rem; font-weight: 800;">⚙ EM PRODUÇÃO</span>`;
 
-  filtered.forEach(op => {
-    // Cabeçalho da OP
-    const isOPConcluida = op.status === 'Concluído';
-    const statusText = isOPConcluida 
-      ? `<span class="earv-op-badge earv-op-badge--op06" style="padding: 0.25rem 0.6rem; font-weight: 700;">✓ CONCLUÍDA</span>`
-      : `<span class="earv-op-badge earv-op-badge--op02" style="padding: 0.25rem 0.6rem; font-weight: 700;">⚙ EM PRODUÇÃO</span>`;
+  let actionsHtml = '';
+  if (!isOPConcluida) {
+    const temPendentes = selectedOP.itens.some(item => 
+      Object.values(item.operacoes).some(o => o.status === 'Pendente')
+    );
+    const btnClass = temPendentes ? 'earv-btn--outline' : 'earv-btn--primary';
+    const btnStyle = temPendentes ? 'opacity: 0.5; cursor: not-allowed;' : '';
+    
+    actionsHtml = `
+      <button class="earv-btn ${btnClass} earv-btn--sm" onclick="prodComp_finalizarOP('${selectedOP.id}')" style="padding: 0.45rem 1rem; font-size: 0.8rem; font-weight: 700; ${btnStyle}">
+        🌱 Finalizar OP
+      </button>
+      <button class="earv-btn earv-btn--outline earv-btn--sm" onclick="prodComp_deleteOP('${selectedOP.id}')" style="padding: 0.45rem 1rem; font-size: 0.8rem; font-weight: 700; border-color: var(--accent-red); color: var(--accent-red); margin-left:0.5rem;">
+        Cancelar OP
+      </button>
+    `;
+  } else {
+    actionsHtml = `<span style="color: var(--accent-green); font-size: 0.85rem; font-weight: 700; margin-right: 10px;">✓ Concluída e Integrada</span>`;
+  }
 
-    let actionsHtml = '';
-    if (!isOPConcluida) {
-      // Verifica se todas as operações estão OK para habilitar ou estilizar o botão de finalizar
-      const temPendentes = op.itens.some(item => 
-        Object.values(item.operacoes).some(o => o.status === 'Pendente')
-      );
-      const btnClass = temPendentes ? 'earv-btn--outline' : 'earv-btn--primary';
-      const btnStyle = temPendentes ? 'opacity: 0.5; cursor: not-allowed;' : '';
-      
-      actionsHtml = `
-        <button class="earv-btn ${btnClass} earv-btn--sm" onclick="prodComp_finalizarOP('${op.id}')" style="margin-right: 0.5rem; padding: 0.35rem 0.75rem; font-size: 0.76rem; font-weight: 700; ${btnStyle}">
-          🌱 Finalizar OP
-        </button>
-        <button class="earv-btn earv-btn--outline earv-btn--sm" onclick="prodComp_deleteOP('${op.id}')" style="padding: 0.35rem 0.75rem; font-size: 0.76rem; font-weight: 700; border-color: var(--accent-red); color: var(--accent-red);">
-          Cancelar
-        </button>
-      `;
+  // Filtros locais (Todos, Comprar, Usinar, Outros)
+  const f = PROD_COMP_STATE.localFilter || 'all';
+  const filtersHtml = `
+    <div class="opc-detail-filters">
+      <button class="filter-btn ${f === 'all' ? 'active' : ''}" onclick="prodComp_setLocalFilter('all')">📋 Todos os Componentes</button>
+      <button class="filter-btn ${f === 'compras' ? 'active' : ''}" onclick="prodComp_setLocalFilter('compras')">⚠️ Comprar (Falta Estoque)</button>
+      <button class="filter-btn ${f === 'usinagem' ? 'active' : ''}" onclick="prodComp_setLocalFilter('usinagem')">⚙️ Usinar Pendentes</button>
+      <button class="filter-btn ${f === 'outros' ? 'active' : ''}" onclick="prodComp_setLocalFilter('outros')">🔧 Outras Pendências</button>
+    </div>
+  `;
+
+  // Renderiza tabela de itens
+  let rowsHtml = '';
+  let countRendered = 0;
+
+  selectedOP.itens.forEach(item => {
+    const isConcluido = isOPConcluida;
+    const skuNorm = item.sku;
+    const estFisico = estoqueMap[skuNorm] || 0;
+
+    let est;
+    let reservadoNessaLinha = 0;
+
+    if (item.nivel === '00') {
+      est = estFisico;
     } else {
-      actionsHtml = `<span style="color: var(--accent-green); font-size: 0.85rem; font-weight: 700; margin-right: 10px;">✓ Concluída e Integrada</span>`;
+      const jaReservado = reservadoAteSelected[skuNorm] || 0;
+      est = Math.max(0, estFisico - jaReservado);
+      reservadoNessaLinha = Math.min(item.quantidadeTotal, est);
     }
 
-    rowsHtmlArray.push(`
-      <tr class="op-header-row" style="background-color: var(--bg-card); font-weight: 600; border-left: 4px solid ${isOPConcluida ? 'var(--accent-green)' : 'var(--accent-blue)'};">
-        <td colspan="6" style="text-align: left; padding: 0.75rem 1rem;">
-          <span style="font-weight: 800; color: var(--accent-blue); font-size: 0.95rem;">${op.id}</span>
-          <span style="margin: 0 8px; color: var(--text-muted);">|</span>
-          <span style="color: var(--text-primary); font-weight: 700;">${op.descricao}</span>
-          <span style="margin: 0 8px; color: var(--text-muted);">|</span>
-          Qtd: <strong style="color: var(--accent-orange); font-size: 0.95rem;">${op.quantidade}</strong>
-          <span style="margin: 0 8px; color: var(--text-muted);">|</span>
-          Data: <span style="font-size: 0.82rem; color: var(--text-secondary);">${op.dataCriacao}</span>
-          <span style="margin: 0 12px;"></span>
-          ${statusText}
-        </td>
-        <td colspan="6" style="text-align: right; padding: 0.75rem 1rem; white-space: nowrap;">
-          ${actionsHtml}
-        </td>
-      </tr>
-    `);
+    const saldo = item.nivel === '00'
+      ? estFisico + item.quantidadeTotal
+      : est - item.quantidadeTotal;
 
-    // Linhas de itens e sub-itens da OP
-    op.itens.forEach(item => {
-      const isConcluido = isOPConcluida;
-      const skuNorm = item.sku;
-      const estFisico = (estoqueMap[skuNorm] !== undefined && estoqueMap[skuNorm] !== null)
-        ? estoqueMap[skuNorm] : 0;
+    // Aplicar Filtro Local
+    if (f === 'compras') {
+      if (item.nivel === '00' || item.operacoes.op01?.status !== 'Pendente' || saldo >= 0) return;
+    } else if (f === 'usinagem') {
+      if (item.operacoes.op02?.status !== 'Pendente') return;
+    } else if (f === 'outros') {
+      const temOutrosPendentes = ['op03', 'op04', 'op05', 'op06'].some(opKey => item.operacoes[opKey]?.status === 'Pendente');
+      if (!temOutrosPendentes) return;
+    }
 
-      // ── Estoque disponível com reserva progressiva ───────────────────
-      // Para item final (nivel 00): usa o estoque físico direto (ele é produzido, não consumido)
-      // Para componentes (nivel 01/02): desconta o que OPs anteriores já reservaram
-      let est;
-      let reservadoNessaLinha = 0;
+    countRendered++;
 
-      if (item.nivel === '00') {
-        est = estFisico; // Item final: estoque físico sem desconto
+    // Estilo da coluna Estoque
+    let stockHtml = '';
+    if (item.nivel === '00') {
+      stockHtml = est <= 0 
+        ? `<span class="earv-stock earv-stock--zero">0</span>`
+        : `<span class="earv-stock earv-stock--ok">${prodComp_fmtNum(est)}</span>`;
+    } else {
+      const jaReservadoExport = reservadoAteSelected[skuNorm] || 0;
+      const tooltip = jaReservadoExport > 0
+        ? `Estoque físico: ${prodComp_fmtNum(estFisico)} | Reservado antes: ${prodComp_fmtNum(jaReservadoExport)} | Disponível: ${prodComp_fmtNum(est)}`
+        : '';
+      if (est <= 0) {
+        stockHtml = `<span class="earv-stock earv-stock--zero" title="${tooltip || 'Sem estoque'}">0</span>`;
+      } else if (est < item.quantidadeTotal) {
+        stockHtml = `<span class="earv-stock earv-stock--zero" title="${tooltip || `Falta estoque`}">${prodComp_fmtNum(est)}</span>`;
       } else {
-        const jaReservado = reservadoPorSku[skuNorm] || 0;
-        est = Math.max(0, estFisico - jaReservado); // Estoque disponível após reservas anteriores
-        // Quanto esta linha vai reservar: o mínimo entre o que precisa e o que há disponível
-        reservadoNessaLinha = Math.min(item.quantidadeTotal, est);
+        stockHtml = `<span class="earv-stock earv-stock--ok" title="${tooltip}">${prodComp_fmtNum(est)}</span>`;
       }
+    }
 
-      // Estilo da coluna Estoque
-      let stockHtml = '';
-      if (item.nivel === '00') {
-        // Item final — exibe estoque atual sem indicador de insuficiência
-        if (est <= 0) {
-          stockHtml = `<span class="earv-stock earv-stock--zero" title="Nenhuma unidade em estoque atualmente">0</span>`;
-        } else {
-          stockHtml = `<span class="earv-stock earv-stock--ok" title="Estoque atual antes da produção">${prodComp_fmtNum(est)}</span>`;
-        }
+    // Saldo HTML
+    let saldoHtml = '';
+    if (item.nivel === '00') {
+      saldoHtml = `<span style="font-weight: 700; color: var(--accent-green);">+${prodComp_fmtNum(saldo)}</span>`;
+    } else if (saldo < 0) {
+      saldoHtml = `<span style="font-weight: 700; color: var(--accent-red);">${prodComp_fmtNum(saldo)}</span>`;
+    } else {
+      saldoHtml = `<span style="font-weight: 700; color: var(--accent-green);">+${prodComp_fmtNum(saldo)}</span>`;
+    }
+
+    // Atualiza a reserva para os sub-itens subsequentes
+    if (item.nivel !== '00' && reservadoNessaLinha > 0) {
+      reservadoAteSelected[skuNorm] = (reservadoAteSelected[skuNorm] || 0) + reservadoNessaLinha;
+    }
+
+    // Células de Operações
+    let opsColsHtml = '';
+    ['op01', 'op02', 'op03', 'op04', 'op05', 'op06'].forEach(opKey => {
+      const opInfo = item.operacoes[opKey];
+      const opLabel = window.OP && window.OP[opKey] ? window.OP[opKey].label : opKey.toUpperCase();
+      const responsavel = (!opInfo || opInfo.status === '—') ? null : (opInfo.label && opInfo.label !== '—' ? opInfo.label : null);
+
+      if (!opInfo || opInfo.status === '—') {
+        opsColsHtml += `<td class="earv-td"><span class="earv-dash">—</span></td>`;
+      } else if (opInfo.status === 'OK') {
+        const clickAction = isConcluido ? '' : `onclick="prodComp_toggleOpStatus('${selectedOP.id}', '${item.sku}', '${opKey}')"`;
+        const cursorStyle = isConcluido ? 'cursor: default;' : 'cursor: pointer;';
+        opsColsHtml += `
+          <td class="earv-td" style="padding: 6px !important; text-align: center;">
+            <button class="earv-op-btn op-btn--ok" style="${cursorStyle};width:100%;" ${clickAction} title="Clique para reverter">
+              ✓ Concluído${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
+            </button>
+          </td>
+        `;
       } else {
-        // Componentes — mostra estoque disponível real (após reserva de OPs anteriores)
-        const tooltip = estFisico !== est
-          ? `Estoque físico: ${prodComp_fmtNum(estFisico)} | Já reservado por OPs anteriores: ${prodComp_fmtNum(reservadoPorSku[skuNorm] || 0)} | Disponível: ${prodComp_fmtNum(est)}`
-          : '';
-        if (est <= 0) {
-          stockHtml = `<span class="earv-stock earv-stock--zero" title="${tooltip || 'Sem estoque disponível'}">0</span>`;
-        } else if (est < item.quantidadeTotal) {
-          stockHtml = `<span class="earv-stock earv-stock--zero" title="${tooltip || `Estoque insuficiente (${est} < ${item.quantidadeTotal})`}">${prodComp_fmtNum(est)}</span>`;
-        } else {
-          stockHtml = `<span class="earv-stock earv-stock--ok" title="${tooltip}">${prodComp_fmtNum(est)}</span>`;
-        }
-      }
-
-      // Saldo após a operação:
-      // - Nível 00 (item final): a OP PRODUZ → saldo = estoque físico + quantidade produzida
-      // - Nível 01/02 (componentes): CONSUMIDOS → saldo = estoque disponível - quantidade necessária
-      const saldo = item.nivel === '00'
-        ? estFisico + item.quantidadeTotal  // Produção soma ao estoque físico
-        : est - item.quantidadeTotal;       // Consumo subtrai do estoque disponível real
-
-      let saldoHtml = '';
-      if (item.nivel === '00') {
-        const saldoLabel = estFisico > 0
-          ? `Estoque atual (${prodComp_fmtNum(estFisico)}) + Produção (${prodComp_fmtNum(item.quantidadeTotal)})`
-          : `Resultado da produção`;
-        saldoHtml = `<span style="font-weight: 700; color: var(--accent-green);" title="${saldoLabel}">+${prodComp_fmtNum(saldo)}</span>`;
-      } else if (saldo < 0) {
-        saldoHtml = `<span style="font-weight: 700; color: var(--accent-red);">${prodComp_fmtNum(saldo)}</span>`;
-      } else {
-        saldoHtml = `<span style="font-weight: 700; color: var(--accent-green);">+${prodComp_fmtNum(saldo)}</span>`;
-      }
-
-      // Atualiza a reserva acumulada do SKU APÓS calcular esta linha
-      if (item.nivel !== '00' && reservadoNessaLinha > 0) {
-        reservadoPorSku[skuNorm] = (reservadoPorSku[skuNorm] || 0) + reservadoNessaLinha;
-      }
-
-      // Renderiza as 6 colunas de operações com nome do responsável
-      let opsColsHtml = '';
-      ['op01', 'op02', 'op03', 'op04', 'op05', 'op06'].forEach(opKey => {
-        const opInfo = item.operacoes[opKey];
-        // Label da planilha: é o nome do responsável (ex: "Alberto")
-        const opLabel = window.OP && window.OP[opKey] ? window.OP[opKey].label : opKey.toUpperCase();
-        const responsavel = (!opInfo || opInfo.status === '—') ? null : (opInfo.label && opInfo.label !== '—' ? opInfo.label : null);
-
-        if (!opInfo || opInfo.status === '—') {
-          opsColsHtml += `<td class="earv-td"><span class="earv-dash">—</span></td>`;
-        } else if (opInfo.status === 'OK') {
-          const clickAction = isConcluido ? '' : `onclick="prodComp_toggleOpStatus('${op.id}', '${item.sku}', '${opKey}')"`;
-          const cursorStyle = isConcluido ? 'cursor: default;' : 'cursor: pointer;';
+        if (isConcluido) {
           opsColsHtml += `
             <td class="earv-td" style="padding: 6px !important; text-align: center;">
-              <button class="earv-op-btn op-btn--ok" style="${cursorStyle};width:100%;" ${clickAction} title="Clique para reverter">
-                ✓ Concluído${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
+              <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" style="cursor:default;width:100%;" onclick="event.stopPropagation()">
+                ⏳ Pendente${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
               </button>
             </td>
           `;
         } else {
-          // Status 'Pendente'
-          if (isConcluido) {
+          const isBlocked = prodComp_isItemBlocked(selectedOP, item);
+          if (isBlocked) {
             opsColsHtml += `
               <td class="earv-td" style="padding: 6px !important; text-align: center;">
-                <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" style="cursor:default;width:100%;" onclick="event.stopPropagation()">
-                  ⏳ Pendente${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
+                <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" title="Bloqueado: conclua os sub-itens primeiro" onclick="event.stopPropagation()" style="width:100%;">
+                  🔒 Bloqueado${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
                 </button>
               </td>
             `;
           } else {
-            const isBlocked = prodComp_isItemBlocked(op, item);
-            if (isBlocked) {
+            const escapedOpId = selectedOP.id.replace(/'/g, "\'");
+            const escapedSku  = item.sku.replace(/'/g, "\'");
+            const isComprasOp = (opKey === 'op01');
+            const estoqueCobreNecessidade = saldo >= 0;
+
+            if (isComprasOp && estoqueCobreNecessidade) {
+              const saldoFormatado = prodComp_fmtNum(saldo);
               opsColsHtml += `
                 <td class="earv-td" style="padding: 6px !important; text-align: center;">
-                  <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" title="Bloqueado: conclua os sub-itens primeiro" onclick="event.stopPropagation()" style="width:100%;">
-                    🔒 Bloqueado${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
-                  </button>
+                  <span class="op-btn--em-estoque" title="Estoque suficiente — saldo pós-consumo: +${saldoFormatado}">
+                    <span style="display:block;font-size:0.78rem;font-weight:800;line-height:1.2;">✓ Em estoque</span>
+                    <span style="display:block;font-size:0.63rem;opacity:0.8;line-height:1;">saldo: +${saldoFormatado}</span>
+                  </span>
                 </td>
               `;
             } else {
-              const escapedOpId = op.id.replace(/'/g, "\\'");
-              const escapedSku  = item.sku.replace(/'/g, "\\'");
-
-              const isComprasOp = (opKey === 'op01');
-              const estoqueCobreNecessidade = saldo >= 0;
-
-              if (isComprasOp && estoqueCobreNecessidade) {
-                const saldoFormatado = prodComp_fmtNum(saldo);
-                opsColsHtml += `
-                  <td class="earv-td" style="padding: 6px !important; text-align: center;">
-                    <span class="op-btn--em-estoque" title="Estoque suficiente — saldo pós-consumo: +${saldoFormatado}">
-                      <span style="display:block;font-size:0.78rem;font-weight:800;line-height:1.2;">✓ Em estoque</span>
-                      <span style="display:block;font-size:0.63rem;opacity:0.8;line-height:1;">saldo: +${saldoFormatado}</span>
-                    </span>
-                  </td>
-                `;
-              } else {
-                opsColsHtml += `
-                  <td class="earv-td" style="padding: 6px !important; text-align: center;">
-                    <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--resp-btn" 
-                      onclick="prodComp_toggleOpStatus('${escapedOpId}', '${escapedSku}', '${opKey}')"
-                      title="Clique para confirmar concluído — ${responsavel || opLabel}"
-                      style="width:100%; position:relative; overflow:hidden; padding: 6px 4px;">
-                      <span class="op-resp-name" style="display:block;font-size:0.82rem;font-weight:700;color:inherit;line-height:1.2;">${responsavel || 'Iniciar'}</span>
-                      <span class="op-resp-hint" style="display:block;font-size:0.65rem;opacity:0.7;line-height:1;">Pendente</span>
-                    </button>
-                  </td>
-                `;
-              }
+              opsColsHtml += `
+                <td class="earv-td" style="padding: 6px !important; text-align: center;">
+                  <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--resp-btn" 
+                    onclick="prodComp_toggleOpStatus('${escapedOpId}', '${escapedSku}', '${opKey}')"
+                    title="Clique para confirmar concluído — ${responsavel || opLabel}"
+                    style="width:100%; position:relative; overflow:hidden; padding: 6px 4px;">
+                    <span class="op-resp-name" style="display:block;font-size:0.82rem;font-weight:700;color:inherit;line-height:1.2;">${responsavel || 'Iniciar'}</span>
+                    <span class="op-resp-hint" style="display:block;font-size:0.65rem;opacity:0.7;line-height:1;">Pendente</span>
+                  </button>
+                </td>
+              `;
             }
           }
         }
-      });
-
-      // Recuos e setinhas com base no nível
-      let descHtml = '';
-      let rowClass = '';
-      if (item.nivel === '00') {
-        rowClass = 'earv-row-00';
-        descHtml = `
-          <div class="earv-desc-wrap">
-            <span class="earv-toggle-btn earv-toggle-invisible">▶</span>
-            <span class="earv-desc-text earv-desc--00">${item.descricao}</span>
-          </div>
-        `;
-      } else if (item.nivel === '01') {
-        rowClass = 'earv-row-01';
-        descHtml = `
-          <div class="earv-desc-wrap earv-indent-01">
-            <span class="earv-arrow">↳</span>
-            <span class="earv-desc-text earv-desc--01">${item.descricao}</span>
-          </div>
-        `;
-      } else if (item.nivel === '02') {
-        rowClass = 'earv-row-02';
-        descHtml = `
-          <div class="earv-desc-wrap earv-indent-02">
-            <span class="earv-arrow earv-arrow--muted">↳</span>
-            <span class="earv-desc-text earv-desc--02">${item.descricao}</span>
-          </div>
-        `;
       }
-
-      const levelBadge = item.nivel === '00' 
-        ? '<span class="earv-nivel-badge earv-nivel--00">Item Final</span>'
-        : item.nivel === '01'
-          ? '<span class="earv-nivel-badge earv-nivel--01">Componente</span>'
-          : '<span class="earv-nivel-badge earv-nivel--02">Material</span>';
-
-      rowsHtmlArray.push(`
-        <tr class="${rowClass}" style="background-color: transparent;">
-          <td class="earv-td earv-td--desc">${descHtml}</td>
-          <td class="earv-td earv-td--sku ${item.nivel === '00' ? 'earv-sku--00' : item.nivel === '01' ? 'earv-sku--01' : 'earv-sku--02'}">${item.sku}</td>
-          <td class="earv-td">${levelBadge}</td>
-          <td class="earv-td earv-td--num" style="font-weight: 700; color: var(--accent-orange);">${prodComp_fmtNum(item.quantidadeTotal)}</td>
-          <td class="earv-td earv-td--estoque">${stockHtml}</td>
-          <td class="earv-td earv-td--estoque" style="text-align: center;">${saldoHtml}</td>
-          ${opsColsHtml}
-        </tr>
-      `);
     });
+
+    // Recuo e setas
+    let descHtml = '';
+    let rowClass = '';
+    if (item.nivel === '00') {
+      rowClass = 'earv-row-00';
+      descHtml = `
+        <div class="earv-desc-wrap">
+          <span class="earv-toggle-btn earv-toggle-invisible">▶</span>
+          <span class="earv-desc-text earv-desc--00">${item.descricao}</span>
+        </div>
+      `;
+    } else if (item.nivel === '01') {
+      rowClass = 'earv-row-01';
+      descHtml = `
+        <div class="earv-desc-wrap earv-indent-01">
+          <span class="earv-arrow">↳</span>
+          <span class="earv-desc-text earv-desc--01">${item.descricao}</span>
+        </div>
+      `;
+    } else if (item.nivel === '02') {
+      rowClass = 'earv-row-02';
+      descHtml = `
+        <div class="earv-desc-wrap earv-indent-02">
+          <span class="earv-arrow earv-arrow--muted">↳</span>
+          <span class="earv-desc-text earv-desc--02">${item.descricao}</span>
+        </div>
+      `;
+    }
+
+    const levelBadge = item.nivel === '00' 
+      ? '<span class="earv-nivel-badge earv-nivel--00">Item Final</span>'
+      : item.nivel === '01'
+        ? '<span class="earv-nivel-badge earv-nivel--01">Componente</span>'
+        : '<span class="earv-nivel-badge earv-nivel--02">Material</span>';
+
+    rowsHtml += `
+      <tr class="${rowClass}" style="background-color: transparent;">
+        <td class="earv-td earv-td--desc">${descHtml}</td>
+        <td class="earv-td earv-td--sku ${item.nivel === '00' ? 'earv-sku--00' : item.nivel === '01' ? 'earv-sku--01' : 'earv-sku--02'}">${item.sku}</td>
+        <td class="earv-td">${levelBadge}</td>
+        <td class="earv-td earv-td--num" style="font-weight: 700; color: var(--accent-orange);">${prodComp_fmtNum(item.quantidadeTotal)}</td>
+        <td class="earv-td earv-td--estoque">${stockHtml}</td>
+        <td class="earv-td earv-td--estoque" style="text-align: center;">${saldoHtml}</td>
+        ${opsColsHtml}
+      </tr>
+    `;
   });
 
-  tbody.innerHTML = rowsHtmlArray.join('');
+  const tableBodyContent = countRendered === 0
+    ? `<tr><td colspan="12" class="empty-cell" style="padding: 3rem; text-align: center; font-style: italic;">Nenhum componente corresponde ao filtro local selecionado.</td></tr>`
+    : rowsHtml;
+
+  detailsArea.innerHTML = `
+    <!-- Cabeçalho -->
+    <div class="opc-detail-header">
+      <div class="opc-detail-info">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="opc-detail-title">${selectedOP.id}</span>
+          ${statusText}
+        </div>
+        <span class="opc-detail-desc">${selectedOP.descricao}</span>
+        <span class="opc-detail-meta">Quantidade Total OP: <strong>${selectedOP.quantidade}</strong> | Criado em: ${selectedOP.dataCriacao}</span>
+      </div>
+      <div class="opc-detail-actions">
+        ${actionsHtml}
+      </div>
+    </div>
+
+    <!-- Filtros Locais -->
+    ${filtersHtml}
+
+    <!-- Tabela de Itens -->
+    <div class="table-wrap" style="flex:1; overflow-y:auto; border: 1px solid var(--border); border-radius: var(--radius);">
+      <table class="earv-table" style="min-width: 1410px !important;">
+        <thead>
+          <tr>
+            <th class="earv-th earv-th--desc" style="text-align: left;">Produto / Componente</th>
+            <th class="earv-th" style="min-width:110px;">SKU</th>
+            <th class="earv-th" style="min-width:90px;">Nível</th>
+            <th class="earv-th" style="min-width:95px;">Qtd Necessária</th>
+            <th class="earv-th earv-th--estoque" style="min-width:100px;">Estoque</th>
+            <th class="earv-th" style="min-width:110px;">Saldo Restante</th>
+            <th class="earv-th earv-th--op earv-th--op01" style="min-width:110px;">OP 01<br/><small>Compras</small></th>
+            <th class="earv-th earv-th--op earv-th--op02" style="min-width:110px;">OP 02<br/><small>Usinagem</small></th>
+            <th class="earv-th earv-th--op earv-th--op03" style="min-width:100px;">OP 03<br/><small>Cromo</small></th>
+            <th class="earv-th earv-th--op earv-th--op04" style="min-width:100px;">OP 04<br/><small>Pintura</small></th>
+            <th class="earv-th earv-th--op earv-th--op05" style="min-width:110px;">OP 05<br/><small>Montagem</small></th>
+            <th class="earv-th earv-th--op earv-th--op06" style="min-width:110px;">OP 06<br/><small>Embalagem</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableBodyContent}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 window.prodComp_render = prodComp_render;
+window.prodComp_selectOP = prodComp_selectOP;
+window.prodComp_setLocalFilter = prodComp_setLocalFilter;
+
 
 // Exporta tarefas das OPs ativas — formato por Kit → por OP (01→06)
 function prodComp_exportTarefas() {
