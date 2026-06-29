@@ -2012,6 +2012,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnLogout = $('btn-logout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
+      window.sessionStorage.removeItem('hrn_login_usuario');
+      window.sessionStorage.removeItem('hrn_usuario_role');
       window.localStorage.removeItem('hrn_login_usuario');
       window.localStorage.removeItem('hrn_usuario_role');
       window.location.reload();

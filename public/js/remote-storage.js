@@ -19,7 +19,10 @@ const RemoteStorage = {
   },
   setItem(key, serializedValue) {
     const value = this.parse(serializedValue);
+    const previous = this.data.get(key);
+    const unchanged = this.data.has(key) && JSON.stringify(previous) === JSON.stringify(value);
     this.data.set(key, value);
+    if (unchanged) return;
     if (key.startsWith("hrn_") && key !== "hrn_sync_timestamp") {
       this.enqueue(key, () => this.persist(key, value));
     }

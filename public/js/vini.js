@@ -77,6 +77,29 @@ function fmtNum(val) {
   return num.toFixed(1).replace('.', ',');
 }
 
+function parseViniNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (value === null || value === undefined) return 0;
+
+  let str = String(value).trim();
+  if (!str || str === 'â€”') return 0;
+  str = str.replace(/[^0-9,.-]/g, '');
+  if (!str || str === '-' || str === ',' || str === '.') return 0;
+
+  const hasComma = str.includes(',');
+  const hasDot = str.includes('.');
+  if (hasComma && hasDot) {
+    str = str.lastIndexOf(',') > str.lastIndexOf('.')
+      ? str.replace(/\./g, '').replace(',', '.')
+      : str.replace(/,/g, '');
+  } else if (hasComma) {
+    str = str.replace(',', '.');
+  }
+
+  const parsed = Number(str);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 // Formata cobertura em meses
 function fmtCob(valor) {
   if (!isFinite(valor) || valor === Infinity || valor === null || valor === undefined) return 'Sem Giro';
@@ -362,14 +385,14 @@ function processExcelWorkbook(arrayBuffer) {
       const produto = row['Produto'] || 'Produto sem nome';
       const entradasPrevistas = 0; // Zerado conforme solicitação do usuário (virá apenas de Produção de Componentes)
 
-      const saidasPrevistas = parseFloat(row['Saídas previstas']) || 0;
-      const estoqueFisico = parseFloat(row['Estoque físico']) || 0;
+      const saidasPrevistas = parseViniNumber(row['Saídas previstas']);
+      const estoqueFisico = parseViniNumber(row['Estoque físico']);
       
       // Lê o valor utilizando a chave que corresponde à coluna M (índice 12)
       const rawSaidasPeriodoVal = colM_Header && row[colM_Header] !== undefined ? row[colM_Header] : 0;
-      const saidasPeriodo = parseFloat(String(rawSaidasPeriodoVal).replace(',', '.')) || 0;
+      const saidasPeriodo = parseViniNumber(rawSaidasPeriodoVal);
       
-      const prio2 = row['Prio 2'] !== undefined && row['Prio 2'] !== '' ? parseFloat(row['Prio 2']) : '—';
+      const prio2 = row['Prio 2'] !== undefined && row['Prio 2'] !== '' ? parseViniNumber(row['Prio 2']) : '—';
 
       const estoqueVirtual = estoqueFisico + entradasPrevistas - saidasPrevistas;
 
@@ -377,7 +400,7 @@ function processExcelWorkbook(arrayBuffer) {
       let mediaMensal = 0;
       const rawMedia = row['Média mensal'];
       if (rawMedia !== undefined && rawMedia !== null && rawMedia !== '') {
-        const parsedMedia = parseFloat(String(rawMedia).replace(',', '.'));
+        const parsedMedia = parseViniNumber(rawMedia);
         if (!isNaN(parsedMedia)) {
           mediaMensal = parsedMedia;
         }
@@ -1105,23 +1128,24 @@ function initViniEvents() {
 }
 
 // Reprocessa coberturas de dados já em cache
-function reprocessNecessidadeData() {
+function reprocessNecessidadeData(options = {}) {
+  const shouldPersist = options.persist !== false;
   if (!Array.isArray(VINI_STATE.necessidadeData) || VINI_STATE.necessidadeData.length === 0) return;
 
   VINI_STATE.necessidadeData = VINI_STATE.necessidadeData.map(item => {
     const skuNorm = String(item.sku || '').trim().toUpperCase();
 
-    let estoqueFisico = parseFloat(item.estoqueFisico) || 0;
+    let estoqueFisico = parseViniNumber(item.estoqueFisico);
     if (window.EARV && EARV.estoqueLoaded && EARV.estoqueMap) {
       estoqueFisico = EARV.estoqueMap[skuNorm] !== undefined ? EARV.estoqueMap[skuNorm] : 0;
     }
 
-    let saidasPeriodo = parseFloat(item.saidasPeriodo) || 0;
+    let saidasPeriodo = parseViniNumber(item.saidasPeriodo);
     if (window.EARV && EARV.estoqueLoaded && EARV.saidasPeriodoMap) {
       saidasPeriodo = EARV.saidasPeriodoMap[skuNorm] !== undefined ? EARV.saidasPeriodoMap[skuNorm] : 0;
     }
 
-    let saidasPrevistas = parseFloat(item.saidasPrevistas) || 0;
+    let saidasPrevistas = parseViniNumber(item.saidasPrevistas);
     if (window.EARV && EARV.saidasPrevistasLoaded && EARV.saidasPrevistasMap) {
       saidasPrevistas = EARV.saidasPrevistasMap[skuNorm] !== undefined ? EARV.saidasPrevistasMap[skuNorm] : 0;
     }
@@ -1151,7 +1175,9 @@ function reprocessNecessidadeData() {
     };
   });
 
-  RemoteStorage.setItem('hrn_vini_necessidades', JSON.stringify(VINI_STATE.necessidadeData));
+  if (shouldPersist) {
+    RemoteStorage.setItem('hrn_vini_necessidades', JSON.stringify(VINI_STATE.necessidadeData));
+  }
 }
 
 // Migração: normaliza SKUs existentes no cache para uppercase (compatibilidade com dados antigos)
@@ -1219,6 +1245,11 @@ if (!document.getElementById('hrn-vini-spin-styles')) {
   `;
   document.head.appendChild(styleSheet);
 }
+
+window.addEventListener('hrn:estoque-componentes-sync', () => {
+  reprocessNecessidadeData({ persist: true });
+  renderViniTable();
+});
 
 
 

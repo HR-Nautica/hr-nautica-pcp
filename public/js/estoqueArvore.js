@@ -41,6 +41,7 @@ const ARROW_CHILD = "&#8627;";
 const SORT_IDLE = "&#8645;";
 const SORT_ASC = "&#8593;";
 const SORT_DESC = "&#8595;";
+const EXCEL_COL_M_INDEX = 12;
 
 function normalizeText(value) {
   return String(value ?? "")
@@ -217,9 +218,8 @@ function earv_processPCPExcel(arrayBuffer) {
 
   const cols = detectColumns(rowsRaw, {
     sku: h => h === "SKU" || h.includes("CODIGO SKU") || h === "CODIGO" || h.startsWith("COD "),
-    estoque: h => h.includes("ESTOQUE FISICO") || h === "ESTOQUE" || h.includes("SALDO ATUAL"),
-    saidasPeriodo: h => h.includes("SAIDAS PER") || h.includes("SAIDAS NO PERIODO") || h.includes("CONSUMO") || h.includes("MEDIA MENSAL")
-  }, { sku: 1, estoque: 8, saidasPeriodo: 12 }, ["sku", "estoque"]);
+    estoque: h => h.includes("ESTOQUE FISICO") || h === "ESTOQUE" || h.includes("SALDO ATUAL")
+  }, { sku: 1, estoque: 8 }, ["sku", "estoque"]);
 
   for (let r = cols.headerIdx + 1; r < rowsRaw.length; r++) {
     const row = rowsRaw[r] || [];
@@ -229,7 +229,7 @@ function earv_processPCPExcel(arrayBuffer) {
     const estoque = parseRobustFloat(row[cols.estoque]);
     if (!Number.isNaN(estoque)) estoqueMap[sku] = estoque;
 
-    const saidasPeriodo = parseRobustFloat(row[cols.saidasPeriodo]);
+    const saidasPeriodo = parseRobustFloat(row[EXCEL_COL_M_INDEX]);
     if (!Number.isNaN(saidasPeriodo)) saidasPeriodoMap[sku] = saidasPeriodo;
   }
 
@@ -241,7 +241,10 @@ function earv_processPCPExcel(arrayBuffer) {
     [EARV_STORAGE_KEYS.estoque]: estoqueMap,
     [EARV_STORAGE_KEYS.saidasPeriodo]: saidasPeriodoMap
   });
-  return Object.keys(estoqueMap).length;
+  return {
+    estoque: Object.keys(estoqueMap).length,
+    saidasPeriodo: Object.keys(saidasPeriodoMap).length
+  };
 }
 
 function earv_processSaidasPrevistasExcel(arrayBuffer) {
@@ -598,9 +601,16 @@ function earv_setLoading(button, loading) {
 
 function earv_afterStockUpdate() {
   earv_render();
-  if (typeof reprocessNecessidadeData === "function") reprocessNecessidadeData();
+  if (typeof reprocessNecessidadeData === "function") reprocessNecessidadeData({ persist: true });
   if (typeof renderViniTable === "function") renderViniTable();
   if (typeof renderAnaliseTable === "function") renderAnaliseTable();
+  window.dispatchEvent(new CustomEvent("hrn:estoque-componentes-sync", {
+    detail: {
+      estoque: EARV.estoqueMap,
+      saidasPeriodo: EARV.saidasPeriodoMap,
+      saidasPrevistas: EARV.saidasPrevistasMap
+    }
+  }));
 }
 
 function earv_initEvents() {
@@ -639,7 +649,9 @@ function earv_initEvents() {
       earv_readFile(file, arrayBuffer => {
         try {
           const total = earv_processPCPExcel(arrayBuffer);
-          if (typeof showToast === "function") showToast(`Estoque sincronizado: ${total} SKUs substituidos.`, "success");
+          if (typeof showToast === "function") {
+            showToast(`Estoque sincronizado: ${total.estoque} SKUs e ${total.saidasPeriodo} saidas no periodo pela coluna M.`, "success");
+          }
           earv_afterStockUpdate();
         } catch (error) {
           console.error("[EARV] Erro ao importar estoque", error);

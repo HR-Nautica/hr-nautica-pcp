@@ -24,9 +24,12 @@ function requireUserLogin() {
   return new Promise((resolve) => {
     const storageKey = "hrn_login_usuario";
     const userRoleKey = "hrn_usuario_role";
+    const session = window.sessionStorage;
+    window.localStorage.removeItem(storageKey);
+    window.localStorage.removeItem(userRoleKey);
     
-    const cachedUser = window.localStorage.getItem(storageKey) || "";
-    const cachedRole = window.localStorage.getItem(userRoleKey) || "";
+    const cachedUser = session.getItem(storageKey) || "";
+    const cachedRole = session.getItem(userRoleKey) || "";
     
     if (cachedUser && (cachedUser === "lucas_admin" || cachedRole === "operator")) {
       window.PCP_CURRENT_USER = cachedUser;
@@ -60,8 +63,8 @@ function requireUserLogin() {
       
       if (username === "lucas_admin") {
         if (password === "admin123!") {
-          window.localStorage.setItem(storageKey, username);
-          window.localStorage.setItem(userRoleKey, "admin");
+          session.setItem(storageKey, username);
+          session.setItem(userRoleKey, "admin");
           window.PCP_CURRENT_USER = username;
           window.PCP_USER_ROLE = "admin";
           
@@ -73,8 +76,8 @@ function requireUserLogin() {
         }
       } else {
         if (password === "nautica123") {
-          window.localStorage.setItem(storageKey, username);
-          window.localStorage.setItem(userRoleKey, "operator");
+          session.setItem(storageKey, username);
+          session.setItem(userRoleKey, "operator");
           window.PCP_CURRENT_USER = username;
           window.PCP_USER_ROLE = "operator";
           
