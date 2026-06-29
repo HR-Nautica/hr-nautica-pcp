@@ -541,42 +541,33 @@ function prodComp_render() {
           const clickAction = isConcluido ? '' : `onclick="prodComp_toggleOpStatus('${op.id}', '${item.sku}', '${opKey}')"`;
           const cursorStyle = isConcluido ? 'cursor: default;' : 'cursor: pointer;';
           opsColsHtml += `
-            <td class="earv-td" style="padding: 4px !important; text-align: center;">
-              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
-                <button class="earv-op-btn op-btn--ok" style="${cursorStyle};width:100%;" ${clickAction} title="Clique para reverter">✓ OK${responsavel ? ` Â· ${responsavel}` : ''}</button>
-              </div>
+            <td class="earv-td" style="padding: 6px !important; text-align: center;">
+              <button class="earv-op-btn op-btn--ok" style="${cursorStyle};width:100%;" ${clickAction} title="Clique para reverter">
+                ✓ Concluído${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
+              </button>
             </td>
           `;
         } else {
           // Status 'Pendente'
           if (isConcluido) {
             opsColsHtml += `
-              <td class="earv-td" style="padding: 4px !important; text-align: center;">
-                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                  <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
-                  <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" style="cursor:default;width:100%;" onclick="event.stopPropagation()">
-                    ${responsavel ? `<span style="font-weight:700;">${responsavel}</span>` : opLabel}
-                  </button>
-                </div>
+              <td class="earv-td" style="padding: 6px !important; text-align: center;">
+                <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" style="cursor:default;width:100%;" onclick="event.stopPropagation()">
+                  ⏳ Pendente${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
+                </button>
               </td>
             `;
           } else {
             const isBlocked = prodComp_isItemBlocked(op, item);
             if (isBlocked) {
               opsColsHtml += `
-                <td class="earv-td" style="padding: 4px !important; text-align: center;">
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                    <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
-                    <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" title="Bloqueado: conclua os sub-itens primeiro" onclick="event.stopPropagation()" style="width:100%;">
-                      🔒 ${responsavel ? `<span style="font-weight:700;">${responsavel}</span>` : opLabel}
-                    </button>
-                  </div>
+                <td class="earv-td" style="padding: 6px !important; text-align: center;">
+                  <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" title="Bloqueado: conclua os sub-itens primeiro" onclick="event.stopPropagation()" style="width:100%;">
+                    🔒 Bloqueado${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
+                  </button>
                 </td>
               `;
             } else {
-              // Ativo e clicável: mostra nome do responsável em destaque
-              // EXCEÇÃO: se é OP de Compras (op01) e o estoque cobre a necessidade, mostra badge informativa
               const escapedOpId = op.id.replace(/'/g, "\\'");
               const escapedSku  = item.sku.replace(/'/g, "\\'");
 
@@ -584,33 +575,25 @@ function prodComp_render() {
               const estoqueCobreNecessidade = saldo >= 0;
 
               if (isComprasOp && estoqueCobreNecessidade) {
-                // Estoque suficiente: não precisa comprar — badge informativa verde
                 const saldoFormatado = prodComp_fmtNum(saldo);
                 opsColsHtml += `
-                  <td class="earv-td" style="padding: 4px !important; text-align: center;">
-                    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                      <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
-                      <span class="op-btn--em-estoque" title="Estoque suficiente — saldo pós-consumo: +${saldoFormatado}">
-                        <span style="display:block;font-size:0.78rem;font-weight:800;line-height:1.2;">✓ Em estoque</span>
-                        <span style="display:block;font-size:0.63rem;opacity:0.8;line-height:1;">saldo: +${saldoFormatado}</span>
-                      </span>
-                    </div>
+                  <td class="earv-td" style="padding: 6px !important; text-align: center;">
+                    <span class="op-btn--em-estoque" title="Estoque suficiente — saldo pós-consumo: +${saldoFormatado}">
+                      <span style="display:block;font-size:0.78rem;font-weight:800;line-height:1.2;">✓ Em estoque</span>
+                      <span style="display:block;font-size:0.63rem;opacity:0.8;line-height:1;">saldo: +${saldoFormatado}</span>
+                    </span>
                   </td>
                 `;
               } else {
-                // Precisa comprar (ou outra operação): mostra botão clicável do responsável
                 opsColsHtml += `
-                  <td class="earv-td" style="padding: 4px !important; text-align: center;">
-                    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                      <span style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${opLabel}</span>
-                      <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--resp-btn" 
-                        onclick="prodComp_toggleOpStatus('${escapedOpId}', '${escapedSku}', '${opKey}')"
-                        title="Clique para confirmar OK — ${responsavel || opLabel}"
-                        style="width:100%; position:relative; overflow:hidden;">
-                        <span class="op-resp-name" style="display:block;font-size:0.82rem;font-weight:700;color:inherit;line-height:1.2;">${responsavel || '–'}</span>
-                        <span class="op-resp-hint" style="display:block;font-size:0.65rem;opacity:0.7;line-height:1;">toque para OK</span>
-                      </button>
-                    </div>
+                  <td class="earv-td" style="padding: 6px !important; text-align: center;">
+                    <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--resp-btn" 
+                      onclick="prodComp_toggleOpStatus('${escapedOpId}', '${escapedSku}', '${opKey}')"
+                      title="Clique para confirmar concluído — ${responsavel || opLabel}"
+                      style="width:100%; position:relative; overflow:hidden; padding: 6px 4px;">
+                      <span class="op-resp-name" style="display:block;font-size:0.82rem;font-weight:700;color:inherit;line-height:1.2;">${responsavel || 'Iniciar'}</span>
+                      <span class="op-resp-hint" style="display:block;font-size:0.65rem;opacity:0.7;line-height:1;">Pendente</span>
+                    </button>
                   </td>
                 `;
               }
