@@ -16,24 +16,6 @@
 </head>
 <body>
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HR Náutica – Sistema PCP</title>
-  <meta name="description" content="Sistema de Planejamento e Controle da Produção para a HR Náutica – fábrica de hélices náuticas." />
-  <link rel="icon" type="image/png" href="/logo.png" />
-
-
-  <script src="/vendor/chart.umd.js"></script>
-  <script src="/vendor/xlsx.full.min.js"></script>
-  <script src="/js/matriz_data.js"></script>
-  <script src="/js/itens_producao_data.js"></script>
-  <link rel="stylesheet" href="/css/style.css" />
-</head>
-<body>
-
   <!-- ────────────────── SIDEBAR ────────────────── -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -76,7 +58,7 @@
         Produção Componentes
       </a>
       <a href="#" class="nav-item" data-page="vini" id="nav-vini">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/><path d="M2 12h20"/></svg>
         VINI
       </a>
       <a href="#" class="nav-item" data-page="expedicao" id="nav-expedicao">
@@ -97,6 +79,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Relatórios
       </a>
+      <a href="#" class="nav-item" data-page="usuarios" id="nav-usuarios">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Controle de Acesso
+      </a>
 
       <button class="btn-logout" id="btn-logout" title="Sair do sistema">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -106,7 +92,6 @@
     <div class="sidebar-footer">
       <p>HR Náutica © 2026</p>
       <p>PCP v1.0</p>
-      <p class="footer-sub">Sistema criado por Gustavo Henrique</p>
       <div class="sync-status-container" id="net-sync-status">
         <span class="sync-dot-net"></span>
         <span id="net-sync-text">Buscando servidor...</span>
@@ -212,7 +197,7 @@
       <div class="card" style="margin-top:1.5rem">
         <div class="card-header">
           <h2 class="card-title">Ordens de Produção Recentes</h2>
-          <a href="#" class="link-ver-todas" data-page="ordens">Ver todas â” ’</a>
+          <a href="#" class="link-ver-todas" data-page="ordens">Ver todas Â·</a>
         </div>
         <div class="table-wrap">
           <table class="data-table" id="ops-recentes-table">
@@ -798,84 +783,24 @@
         </div>
       </div>
 
-      <!-- KPIs da Expedição -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Itens Vendidos</span>
-            <div class="kpi-icon" style="background:var(--accent-blue)22;color:var(--accent-blue)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="ekpi-total-itens">0</div>
-          <div class="kpi-sub">total de hélices entregues</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Média de Vendas</span>
-            <div class="kpi-icon" style="background:var(--accent-teal)22;color:var(--accent-teal)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="ekpi-media-vendas">0,00</div>
-          <div class="kpi-sub">média por modelo (zerada)</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Pedidos Faturados</span>
-            <div class="kpi-icon" style="background:var(--accent-purple)22;color:var(--accent-purple)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="ekpi-total-pedidos">0</div>
-          <div class="kpi-sub">ordens de venda concluídas</div>
-        </div>
-      </div>
-
-      <div class="relatorios-grid" style="grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-top: 1.5rem;">
-        <!-- Card 1: Resumo por Modelo -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Média e Vendas por Modelo</h2>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Modelo</th>
-                  <th>Total Vendido</th>
-                  <th>Média de Vendas</th>
-                </tr>
-              </thead>
-              <tbody id="expedicao-modelos-body">
-                <tr><td colspan="3" class="empty-cell">Nenhum modelo cadastrado.</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Card 2: Histórico de Vendas -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Histórico de Pedidos / Vendas</h2>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Nº Pedido</th>
-                  <th>Cliente</th>
-                  <th>Modelo</th>
-                  <th>Qtd</th>
-                  <th>Data Venda</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="expedicao-pedidos-body">
-                <tr><td colspan="6" class="empty-cell">Sem vendas registradas.</td></tr>
-              </tbody>
-            </table>
-          </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Modelo da Hélice</th>
+                <th>Qtd Vendida</th>
+                <th>Nota Fiscal (NF)</th>
+                <th>Status do Pedido</th>
+                <th>Data de Envio</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="expedicao-body">
+              <tr><td colspan="7" class="empty-cell">Nenhuma venda registrada na expedição.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -883,60 +808,108 @@
     <!-- ──── PAGE: RELATÓRIOS ──── -->
     <div class="page hidden" id="page-relatorios">
       <div class="page-header">
-        <h1 class="page-title">Relatórios</h1>
+        <h1 class="page-title">Relatórios e Métricas</h1>
         <div class="header-actions">
-          <button class="btn-secondary" id="btn-export-csv">
+          <button class="btn-primary" id="btn-export-csv">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Exportar CSV
           </button>
         </div>
       </div>
-      <div class="relatorios-grid">
-        <div class="card">
-          <div class="card-header"><h2 class="card-title">Produção por Mês</h2></div>
-          <div class="chart-wrap"><canvas id="rel-mensal-chart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h2 class="card-title">OPs por Status</h2></div>
-          <div class="chart-wrap chart-wrap--sm"><canvas id="rel-status-chart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h2 class="card-title">Top Modelos Produzidos</h2></div>
-          <div class="chart-wrap chart-wrap--sm"><canvas id="rel-modelos-chart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h2 class="card-title">OPs em Atraso</h2></div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>OP</th><th>Modelo</th><th>Prazo</th><th>Dias Atraso</th></tr></thead>
-              <tbody id="rel-atraso-body">
-                <tr><td colspan="4" class="empty-cell">Sem ordens em atraso.</td></tr>
-              </tbody>
-            </table>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">TOTAL HÉLICES ENTREGUES</span>
+            <div class="kpi-icon kpi-icon--green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
           </div>
+          <div class="kpi-value" id="rel-total-prontas">0</div>
+          <div class="kpi-sub">Total acumulado</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">PEÔ¡AS EM RASTREIO</span>
+            <div class="kpi-icon kpi-icon--teal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="rel-pecas-ativas">0</div>
+          <div class="kpi-sub">Em linha de produção</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">PROGRAMAÔ¡Ô¢ES DE FUNDIÔ¡ÃO</span>
+            <div class="kpi-icon kpi-icon--orange">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="rel-lotes-fundicao">0</div>
+          <div class="kpi-sub">Lotes registrados</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">PEDIDOS CONCLUÃDOS</span>
+            <div class="kpi-icon kpi-icon--blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="rel-pedidos-concl">0</div>
+          <div class="kpi-sub">Expedidos com sucesso</div>
         </div>
       </div>
     </div>
 
-    <!-- ──── PAGE: VINI ──── -->
+    <!-- ──── PAGE: CONTROLE DE ACESSO (USUÁRIOS) ──── -->
+    <div class="page hidden" id="page-usuarios">
+      <div class="page-header">
+        <h1 class="page-title">Controle de Acesso</h1>
+      </div>
+
+      <div class="card" style="margin-top: 1rem;">
+        <div class="card-header">
+          <h2 class="card-title">Solicitações de Acesso Pendentes e Aprovadas</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Data de Solicitação</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="usuarios-solicitacoes-body">
+              <tr><td colspan="4" class="empty-cell">Nenhuma solicitação de acesso encontrada.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── PAGE: VINI (ANÁLISE DE NECESSIDADE DE PEÇAS / CODAN) ──── -->
     <div class="page hidden" id="page-vini">
-      <div class="page-header" style="margin-bottom: 1rem;">
-        <h1 class="page-title">VINI</h1>
+      <div class="page-header" style="margin-bottom: 0.75rem;">
+        <h1 class="page-title" style="display:flex; align-items:center; gap:10px;">
+          Análise de Necessidade de Peças
+          <span style="font-size: 0.72rem; font-weight: 500; color: var(--text-muted); background: var(--bg-elevated); padding: 2px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border);">VINI / CODAN</span>
+        </h1>
       </div>
 
       <!-- Barra de Ferramentas Unificada (UX Compacta) -->
       <div class="vini-toolbar">
         <div class="vini-toolbar-left">
-          <input type="text" class="search-input" id="vini-search" placeholder="Buscar por SKU ou Produto..." style="width: 210px; height: 38px;" />
-          <select class="select-sm" id="vini-prio2-filter" title="Filtrar por Prioridade 2" style="height: 38px; min-width: 140px;">
-            <option value="all">Todas Prioridades</option>
-            <option value="has-prio">Com Prio 2</option>
-            <option value="no-prio">Sem Prio 2</option>
+          <input type="text" id="vini-search" class="search-input" placeholder="Buscar por SKU ou Nome da Peça..." style="width: 250px; height: 38px;" />
+          
+          <select class="select-sm" id="vini-prio2-filter" style="height: 38px; min-width: 140px;" title="Filtrar por prioridade (Prio2)">
+            <option value="all">Todas as Prios</option>
           </select>
         </div>
 
         <div class="vini-toolbar-center">
-          <div class="vini-slider-wrapper" title="Horizonte de Cobertura Alvo: os produtos cujos estoques durarem menos que este limite ficarão como Críticos.">
+          <div class="vini-slider-wrapper" title="Deslize para alterar a meta de meses de cobertura">
             <span class="vini-slider-label">Meta Cobertura:</span>
             <input type="range" class="vini-slider-input" id="vini-months-slider" min="1" max="12" value="3" />
             <span class="vini-slider-value-badge" id="vini-months-value">3 meses</span>
@@ -944,221 +917,205 @@
         </div>
 
         <div class="vini-toolbar-right">
-          <button class="btn-secondary btn-export" id="btn-vini-export-csv" title="Exportar dados para Excel/CSV">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            CSV
+          <button class="btn-secondary btn-export" id="btn-vini-export-excel" title="Exportar tabela atual para Excel com os filtros aplicados" style="height: 38px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar Excel
           </button>
-          <button class="btn-secondary btn-export" id="btn-vini-export-txt" title="Exportar relatório TXT">
-            TXT
+          <button class="btn-secondary btn-sync-pcp" id="btn-vini-sync" title="Sincronizar a aba 3-Cobertura da Planilha PCP CODAN" style="height: 38px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Sincronizar Cobertura
           </button>
+          <input type="file" id="input-vini-excel" accept=".xlsx, .xls" style="display: none;" />
         </div>
       </div>
 
-      <!-- Filtros Rápidos com KPIs (exibidos apenas na Tabela por padrão) -->
-      <div class="filter-tabs" id="vini-filter-tabs-container">
+      <!-- Filtros Rápidos com KPIs -->
+      <div class="filter-tabs">
         <div class="filter-tab active" id="vini-filter-all">
           <span class="filter-tab-kpi" id="vini-kpi-total" style="color: var(--accent-blue)">0</span>
           <div class="filter-tab-label">
             <span class="filter-tab-title">Todos</span>
-            <span class="filter-tab-desc">Catálogo ativo</span>
+            <span class="filter-tab-desc">Total de peças</span>
           </div>
         </div>
-        <div class="filter-tab" id="vini-filter-critical-tab">
+        <div class="filter-tab" id="vini-filter-critical">
           <span class="filter-tab-kpi" id="vini-kpi-critical" style="color: var(--accent-red)">0</span>
           <div class="filter-tab-label">
             <span class="filter-tab-title">Críticos</span>
-            <span class="filter-tab-desc">Abaixo da meta</span>
+            <span class="filter-tab-desc">Cobertura &le; Meta</span>
           </div>
         </div>
-        <div class="filter-tab" id="vini-filter-warning-tab">
+        <div class="filter-tab" id="vini-filter-warning">
           <span class="filter-tab-kpi" id="vini-kpi-warning" style="color: var(--accent-orange)">0</span>
           <div class="filter-tab-label">
             <span class="filter-tab-title">Atenção</span>
-            <span class="filter-tab-desc">Próximo da meta</span>
+            <span class="filter-tab-desc">Cobertura &le; Meta + 1</span>
           </div>
         </div>
         <div class="filter-tab" id="vini-filter-ok">
           <span class="filter-tab-kpi" id="vini-kpi-ok" style="color: var(--accent-green)">0</span>
           <div class="filter-tab-label">
-            <span class="filter-tab-title">Seguro</span>
-            <span class="filter-tab-desc">Estoque OK</span>
-          </div>
-        </div>
-        <div class="filter-tab" id="vini-filter-no-demand">
-          <span class="filter-tab-kpi" id="vini-kpi-no-demand" style="color: var(--accent-purple)">0</span>
-          <div class="filter-tab-label">
-            <span class="filter-tab-title">Sem Giro</span>
-            <span class="filter-tab-desc">Sem saídas</span>
-          </div>
-        </div>
-        <div class="filter-tab" id="vini-filter-inactive-tab">
-          <span class="filter-tab-kpi" id="vini-kpi-inactive" style="color: var(--text-muted)">0</span>
-          <div class="filter-tab-label">
-            <span class="filter-tab-title">Inativados</span>
-            <span class="filter-tab-desc">Itens ocultos</span>
+            <span class="filter-tab-title">Seguros</span>
+            <span class="filter-tab-desc">Acima da meta</span>
           </div>
         </div>
       </div>
 
-      <!-- Tabela EPS principal com Rolagem Horizontal e Ações (oculta por padrão) -->
-      <div class="card" id="vini-table-container">
+      <!-- Tabela Principal VINI -->
+      <div class="card" style="margin-top: 1rem;">
         <div class="table-wrap">
           <table class="data-table" id="vini-table">
             <thead>
               <tr>
-                <th class="sortable-th" data-column="produto" style="text-align: left;">Produto <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="sku">SKU <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="entradasPrevistas">Entradas <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="saidasPrevistas">Saídas <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="estoqueFisico">Estoque <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="estoqueVirtual">Est. Virt. <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="saidasPeriodo">Saídas Per. <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="mediaMensal">Média/m <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="prio2">Prio 2 <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="coberturaFisica">Cob. Fís. <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th" data-column="coberturaVirtual">Cob. Virt. <span class="sort-icon">⇅</span></th>
-                <th class="sortable-th td-highlight-buy" data-column="comprar">Comprar <span class="sort-icon">⇅</span></th>
-                <th style="width: 50px; text-align: center;">Ações</th>
+                <th class="sortable-th" data-column="prioridadeGeral" style="width:70px">Geral <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="produto" style="text-align:left !important">Produto <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="sku" style="width:100px">SKU <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="codigoBruto" style="width:110px">Cód. Bruto <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="estoqueFisico" style="width:80px">Físico <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="entradasPrevistas" style="width:90px">Entradas <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="saidasPrevistas" style="width:80px">Saídas <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="estoqueVirtual" style="width:95px">Virtual <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="mediaMensal" style="width:95px">Média Mensal <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="cobertura" style="width:95px">Cobertura <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="prio2" style="width:95px">Prioridade <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="colocarOp" style="width:110px">Qtd Produzir <span class="sort-icon">⇅</span></th>
+                <th class="sortable-th" data-column="localizacao" style="width:130px">Localização <span class="sort-icon">⇅</span></th>
+                <th style="width:90px">Ações</th>
               </tr>
             </thead>
-            <tbody id="vini-body">
-              <tr><td colspan="13" class="empty-cell">Carregando dados da planilha NecessidadePCP.xlsx...</td></tr>
+            <tbody id="vini-table-body">
+              <tr>
+                <td colspan="14" class="empty-cell">Carregando dados da análise de peças...</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
-
-
     </div>
 
   </main>
 
-  <!-- ─────────────────── MODALS ─────────────────── -->
+  <!-- ────────────────── MODAIS ────────────────── -->
 
-  <!-- Modal Nova OP -->
+  <!-- Modal: Nova OP -->
   <div class="modal-overlay hidden" id="modal-op">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-op-title">Nova Ordem de Produção</h3>
-        <button class="modal-close" id="modal-op-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <h2 class="modal-title" id="modal-op-title">Nova Ordem de Produção</h2>
+        <button class="btn-icon" id="modal-op-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="op-edit-id" />
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Modelo de Hélice *</label>
-            <select class="form-input" id="op-modelo"></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Quantidade *</label>
-            <input type="number" class="form-input" id="op-qty" min="1" value="1" />
-          </div>
-        </div>
-        <!-- Painel de Insumos da Produção (Bucha e Caixa) -->
-        <div id="op-insumos-preview" style="margin-bottom: 1.25rem; display: none;">
-          <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.5rem">Análise de Insumos da Produção</div>
-          <div id="op-insumos-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-            <!-- Gerado dinamicamente via JS -->
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Cliente</label>
-            <input type="text" class="form-input" id="op-cliente" placeholder="Nome do cliente" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Prazo de Entrega *</label>
-            <input type="date" class="form-input" id="op-prazo" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Etapa Atual</label>
-            <select class="form-input" id="op-etapa">
-              <option>Fila de Espera</option>
-              <option>Injeção/Fundição</option>
-              <option>Usinagem</option>
-              <option>Balanceamento</option>
-              <option>Pintura/Polimento</option>
-              <option>Qualidade</option>
-              <option>Pronto/Entregue</option>
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label for="op-modelo">Modelo da Hélice *</label>
+            <select id="op-modelo" required>
+              <option value="">— Selecione um modelo —</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Prioridade</label>
-            <select class="form-input" id="op-prioridade">
-              <option>Normal</option>
-              <option>Alta</option>
-              <option>Urgente</option>
+            <label for="op-qty">Quantidade (un) *</label>
+            <input type="number" id="op-qty" min="1" value="1" required />
+          </div>
+          <div class="form-group">
+            <label for="op-cliente">Cliente / Destino</label>
+            <input type="text" id="op-cliente" placeholder="Ex: Náutica Silva / Estoque" />
+          </div>
+          <div class="form-group">
+            <label for="op-prazo">Prazo de Entrega *</label>
+            <input type="date" id="op-prazo" required />
+          </div>
+          <div class="form-group">
+            <label for="op-etapa">Etapa Inicial</label>
+            <select id="op-etapa">
+              <option value="Fila de Espera">Fila de Espera</option>
+              <option value="Injeção/Fundição">Injeção/Fundição</option>
+              <option value="Usinagem">Usinagem</option>
+              <option value="Balanceamento">Balanceamento</option>
+              <option value="Pintura/Polimento">Pintura/Polimento</option>
+              <option value="Qualidade">Qualidade</option>
             </select>
           </div>
+          <div class="form-group">
+            <label for="op-prioridade">Prioridade</label>
+            <select id="op-prioridade">
+              <option value="Normal">Normal</option>
+              <option value="Alta">Alta</option>
+              <option value="Urgente">Urgente</option>
+            </select>
+          </div>
+          <div class="form-group span-2">
+            <label for="op-obs">Observações</label>
+            <textarea id="op-obs" rows="2" placeholder="Especificações técnicas, lote de matéria-prima..."></textarea>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Observações</label>
-          <textarea class="form-input form-textarea" id="op-obs" placeholder="Observações adicionais..."></textarea>
+
+        <!-- Preview de Insumos Necessários -->
+        <div id="op-insumos-preview" style="margin-top:1rem;display:none">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);margin-bottom:0.5rem;display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Insumos / Componentes Necessários
+          </div>
+          <div id="op-insumos-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-cancel-op">Cancelar</button>
-        <button class="btn-primary" id="btn-save-op">Salvar Ordem</button>
+        <button class="btn-primary" id="btn-save-op">Salvar OP</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Novo Modelo -->
+  <!-- Modal: Novo Modelo -->
   <div class="modal-overlay hidden" id="modal-modelo">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-modelo-title">Novo Modelo de Hélice</h3>
-        <button class="modal-close" id="modal-modelo-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <h2 class="modal-title" id="modal-modelo-title">Novo Modelo de Hélice</h2>
+        <button class="btn-icon" id="modal-modelo-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="modelo-edit-id" />
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Nome do Modelo *</label>
-            <input type="text" class="form-input" id="modelo-nome" placeholder="Ex: Hélice 3 Pás Inox 15 pol" />
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label for="modelo-nome">Nome do Modelo *</label>
+            <input type="text" id="modelo-nome" placeholder="Ex: HÉLICE MERCURY 40/50 HP 10 3/8 X 13" required />
           </div>
           <div class="form-group">
-            <label class="form-label">Número de Pás *</label>
-            <select class="form-input" id="modelo-pas">
-              <option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Material *</label>
-            <select class="form-input" id="modelo-material">
-              <option>Alumínio</option>
-              <option>Aço Inox</option>
-              <option>Bronze</option>
-              <option>Latão</option>
-              <option>Nylon/Polímero</option>
+            <label for="modelo-pas">Nº de Pás</label>
+            <select id="modelo-pas">
+              <option value="3">3 pás</option>
+              <option value="4">4 pás</option>
+              <option value="2">2 pás</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Diâmetro (pol) *</label>
-            <input type="text" class="form-input" id="modelo-diametro" placeholder="Ex: 15 pol" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Passo (pol)</label>
-            <input type="text" class="form-input" id="modelo-passo" placeholder="Ex: 17 pol" />
+            <label for="modelo-material">Material Principal</label>
+            <select id="modelo-material">
+              <option value="Alumínio">Alumínio (Silício/Magnésio)</option>
+              <option value="Inox">Aço Inoxidável</option>
+              <option value="Bronze">Bronze Náutico</option>
+            </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Peso estimado (kg)</label>
-            <input type="number" class="form-input" id="modelo-peso" placeholder="Ex: 2.5" step="0.1" />
+            <label for="modelo-diametro">Diâmetro</label>
+            <input type="text" id="modelo-diametro" placeholder="Ex: 10 3/8&quot;" />
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Descrição / Aplicação</label>
-          <textarea class="form-input form-textarea" id="modelo-desc" placeholder="Aplicação recomendada, especificações técnicas..."></textarea>
+          <div class="form-group">
+            <label for="modelo-passo">Passo</label>
+            <input type="text" id="modelo-passo" placeholder="Ex: 13&quot;" />
+          </div>
+          <div class="form-group">
+            <label for="modelo-peso">Peso Estimado (kg)</label>
+            <input type="number" id="modelo-peso" step="0.1" placeholder="Ex: 2.5" />
+          </div>
+          <div class="form-group span-2">
+            <label for="modelo-desc">Componentes / Descrição</label>
+            <textarea id="modelo-desc" rows="2" placeholder="Ex: Tubo: 3.5&quot; | Bucha: 1&quot; x 90mm | Estria: 13 dentes | Caixa: N1"></textarea>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -1168,524 +1125,433 @@
     </div>
   </div>
 
-  <!-- Modal Novo Material -->
+  <!-- Modal: Novo Material (Estoque) -->
   <div class="modal-overlay hidden" id="modal-material">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-material-title">Novo Material</h3>
-        <button class="modal-close" id="modal-material-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <h2 class="modal-title" id="modal-material-title">Novo Item no Estoque</h2>
+        <button class="btn-icon" id="modal-material-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="material-edit-id" />
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Nome do Material *</label>
-            <input type="text" class="form-input" id="material-nome" placeholder="Ex: Alumínio Liga 356" />
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label for="material-nome">Nome do Material / Componente *</label>
+            <input type="text" id="material-nome" placeholder="Ex: Lingote de Alumínio SAE 305 / Bucha Bronzearte" required />
           </div>
           <div class="form-group">
-            <label class="form-label">Unidade *</label>
-            <select class="form-input" id="material-unidade">
-              <option>kg</option><option>ton</option><option>litros</option><option>mÂÂ²</option><option>mÂÂ³</option><option>peças</option><option>barras</option><option>chapas</option>
+            <label for="material-categoria">Categoria</label>
+            <select id="material-categoria">
+              <option value="MateriaPrima">Matéria-Prima</option>
+              <option value="Componente">Componente (Bucha, Tubo, Anel)</option>
+              <option value="Insumo">Insumo (Tinta, Lixa, Solda)</option>
+              <option value="Embalagem">Embalagem (Caixa, Papelão)</option>
             </select>
           </div>
-        </div>
-        <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Saldo Atual *</label>
-            <input type="number" class="form-input" id="material-saldo" placeholder="0" step="0.1" />
+            <label for="material-unidade">Unidade de Medida</label>
+            <select id="material-unidade">
+              <option value="kg">kg (Quilos)</option>
+              <option value="un">un (Unidades)</option>
+              <option value="l">l (Litros)</option>
+              <option value="m">m (Metros)</option>
+            </select>
+          </div>
+          <div class="form-group" id="material-saldo-div">
+            <label for="material-saldo">Saldo Inicial</label>
+            <input type="number" id="material-saldo" min="0" value="0" step="0.1" />
           </div>
           <div class="form-group">
-            <label class="form-label">Estoque Mínimo *</label>
-            <input type="number" class="form-input" id="material-minimo" placeholder="0" step="0.1" />
+            <label for="material-minimo">Estoque Mínimo (Alerta)</label>
+            <input type="number" id="material-minimo" min="0" value="10" step="0.1" />
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Fornecedor</label>
-          <input type="text" class="form-input" id="material-fornecedor" placeholder="Nome do fornecedor" />
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-cancel-material">Cancelar</button>
-        <button class="btn-primary" id="btn-save-material">Salvar Material</button>
+        <button class="btn-primary" id="btn-save-material">Salvar Item</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Movimentação de Estoque -->
+  <!-- Modal: Movimentação de Estoque -->
   <div class="modal-overlay hidden" id="modal-mov">
-    <div class="modal modal--sm">
+    <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title">Registrar Movimentação</h3>
-        <button class="modal-close" id="modal-mov-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <h2 class="modal-title">Registrar Movimentação de Estoque</h2>
+        <button class="btn-icon" id="modal-mov-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Material *</label>
-          <select class="form-input" id="mov-material"></select>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Tipo *</label>
-            <select class="form-input" id="mov-tipo">
-              <option value="Entrada">Entrada</option>
-              <option value="Saída">Saída</option>
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label for="mov-material">Material / Componente *</label>
+            <select id="mov-material" required>
+              <option value="">— Selecione —</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Quantidade *</label>
-            <input type="number" class="form-input" id="mov-qty" placeholder="0" min="0.01" step="0.1" />
+            <label for="mov-tipo">Tipo de Movimento</label>
+            <select id="mov-tipo">
+              <option value="Entrada">Entrada (+ Compra/Recebimento)</option>
+              <option value="Saída">Saída (- Consumo/Produção)</option>
+            </select>
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">OP Vinculada</label>
-          <select class="form-input" id="mov-op">
-            <option value="">â─” Nenhuma â─”</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Observação</label>
-          <input type="text" class="form-input" id="mov-obs" placeholder="Motivo da movimentação..." />
+          <div class="form-group">
+            <label for="mov-qty">Quantidade *</label>
+            <input type="number" id="mov-qty" min="0.1" step="0.1" value="1" required />
+          </div>
+          <div class="form-group span-2">
+            <label for="mov-op">Vincular a OP (Opcional)</label>
+            <select id="mov-op">
+              <option value="">— Nenhuma —</option>
+            </select>
+          </div>
+          <div class="form-group span-2">
+            <label for="mov-obs">Observações / Motivo</label>
+            <input type="text" id="mov-obs" placeholder="Ex: NF 1234 / Perda na usinagem / Ajuste de inventário" />
+          </div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-cancel-mov">Cancelar</button>
-        <button class="btn-primary" id="btn-save-mov">Registrar</button>
+        <button class="btn-primary" id="btn-save-mov">Confirmar Movimentação</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Nova Peça -->
-  <div class="modal-overlay hidden" id="modal-peca">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title" id="modal-peca-title">Nova Peça em Rastreio</h3>
-        <button class="modal-close" id="modal-peca-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="peca-edit-id" />
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Número da Peça / Lote *</label>
-            <input type="text" class="form-input" id="peca-numero" placeholder="Ex: PC-001, Lote 12" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Modelo de Hélice *</label>
-            <select class="form-input" id="peca-modelo"></select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Tipo de Fundição *</label>
-            <select class="form-input" id="peca-tipo-fundicao">
-              <option value="Coquilha">Coquilha</option>
-              <option value="Areia">Areia</option>
-              <option value="Injetada">Injetada</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Quantidade *</label>
-            <input type="number" class="form-input" id="peca-qty" min="1" value="1" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Operação Inicial *</label>
-            <select class="form-input" id="peca-op-atual">
-              <option value="01">01 â─“ Fundição</option>
-              <option value="02">02 â─“ Vulcanização</option>
-              <option value="03">03 â─“ Polimento</option>
-              <option value="04">04 â─“ Usinagem</option>
-              <option value="05">05 â─“ Pintura</option>
-              <option value="06">06 â─“ Embuchamento</option>
-              <option value="07">07 â─“ Gravação</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Status Inicial</label>
-            <select class="form-input" id="peca-status-inicial">
-              <option value="em-producao">Em Produção</option>
-              <option value="atencao">Atenção</option>
-              <option value="bloqueado">Bloqueado</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Observações</label>
-          <textarea class="form-input form-textarea" id="peca-obs" placeholder="Informações adicionais da peça ou lote..."></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-ghost" id="btn-cancel-peca">Cancelar</button>
-        <button class="btn-primary" id="btn-save-peca">Salvar Peça</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Histórico da Peça -->
-  <div class="modal-overlay hidden" id="modal-historico">
-    <div class="modal modal--lg">
-      <div class="modal-header">
-        <h3 class="modal-title" id="modal-historico-title">Histórico da Peça</h3>
-        <button class="modal-close" id="modal-historico-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body" id="modal-historico-body">
-        <!-- preenchido por JS -->
-      </div>
-      <div class="modal-footer">
-        <button class="btn-ghost" id="btn-close-historico">Fechar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Programação de Fundição de Hélice -->
+  <!-- Modal: Nova Programação de Fundição -->
   <div class="modal-overlay hidden" id="modal-fundicao">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-fundicao-title">Nova Programação de Fundição</h3>
-        <button class="modal-close" id="modal-fundicao-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <h2 class="modal-title" id="modal-fundicao-title">Novo Agendamento de Fundição</h2>
+        <button class="btn-icon" id="modal-fundicao-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="fundicao-edit-id" />
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Modelo de Hélice *</label>
-            <select class="form-input" id="fundicao-modelo"></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Quantidade de Peças *</label>
-            <input type="number" class="form-input" id="fundicao-qty" min="1" value="1" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Material de Fundição *</label>
-            <select class="form-input" id="fundicao-material">
-              <option>Alumínio Liga 356</option>
-              <option>Alumínio Liga 380</option>
-              <option>Bronze Silício</option>
-              <option>Bronze Alumínio</option>
-              <option>Latão Naval</option>
-              <option>Aço Inoxidável</option>
-              <option>Ferro Fundido</option>
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label for="fundicao-modelo">Modelo da Hélice *</label>
+            <select id="fundicao-modelo" required>
+              <option value="">— Selecione um modelo —</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Peso Est. por Peça (kg)</label>
-            <input type="number" class="form-input" id="fundicao-peso" placeholder="Ex: 2.5" step="0.1" min="0" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Data Programada *</label>
-            <input type="date" class="form-input" id="fundicao-data" />
+            <label for="fundicao-lote">Nº do Lote de Fundição</label>
+            <input type="text" id="fundicao-lote" placeholder="Ex: LOTE-2026-042" />
           </div>
           <div class="form-group">
-            <label class="form-label">Forno / Equipamento</label>
-            <input type="text" class="form-input" id="fundicao-forno" placeholder="Ex: Forno Elétrico 1" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Temperatura de Fusão (Â°C)</label>
-            <input type="number" class="form-input" id="fundicao-temp" placeholder="Ex: 720" min="0" />
+            <label for="fundicao-qty">Quantidade de Peças *</label>
+            <input type="number" id="fundicao-qty" min="1" value="10" required />
           </div>
           <div class="form-group">
-            <label class="form-label">Status</label>
-            <select class="form-input" id="fundicao-status">
-              <option>Agendado</option>
-              <option>Em Andamento</option>
-              <option>Concluído</option>
-              <option>Cancelado</option>
+            <label for="fundicao-liga">Liga Metálica</label>
+            <select id="fundicao-liga">
+              <option value="Alumínio AlMg5">Alumínio AlMg5 (Náutico)</option>
+              <option value="Alumínio SAE 305">Alumínio SAE 305</option>
+              <option value="Inox CF8M">Aço Inox CF8M</option>
+              <option value="Bronze Manganês">Bronze Manganês</option>
             </select>
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Observações</label>
-          <textarea class="form-input form-textarea" id="fundicao-obs" placeholder="Instruções especiais, parâmetros de fusão..."></textarea>
+          <div class="form-group">
+            <label for="fundicao-data">Data Programada *</label>
+            <input type="date" id="fundicao-data" required />
+          </div>
+          <div class="form-group">
+            <label for="fundicao-status">Status Inicial</label>
+            <select id="fundicao-status">
+              <option value="Agendado">Agendado</option>
+              <option value="Em Fusão">Em Fusão</option>
+              <option value="Resfriando">Resfriando</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+          </div>
+          <div class="form-group span-2">
+            <label for="fundicao-obs">Observações</label>
+            <textarea id="fundicao-obs" rows="2" placeholder="Temp. de vazamento, forno utilizado, operador..."></textarea>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-cancel-fundicao">Cancelar</button>
-        <button class="btn-primary" id="btn-save-fundicao">Salvar Programação</button>
+        <button class="btn-primary" id="btn-save-fundicao">Salvar Agendamento</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Manutenção de Ferramentas -->
-  <div class="modal-overlay hidden" id="modal-manutencao">
+  <!-- Modal: Nova Peça em Rastreio -->
+  <div class="modal-overlay hidden" id="modal-peca">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-mnt-title">Interditar Ferramenta</h3>
-        <button class="modal-close" id="modal-mnt-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <h2 class="modal-title" id="modal-peca-title">Cadastrar Peça em Rastreio</h2>
+        <button class="btn-icon" id="modal-peca-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="peca-edit-id" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="peca-numero">Código / Identificação da Peça</label>
+            <input type="text" id="peca-numero" placeholder="Ex: P-001 / Deixe em branco p/ automático" />
+          </div>
+          <div class="form-group">
+            <label for="peca-modelo">Modelo da Hélice *</label>
+            <select id="peca-modelo" required>
+              <option value="">— Selecione —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="peca-qty">Quantidade no Lote</label>
+            <input type="number" id="peca-qty" min="1" value="1" required />
+          </div>
+          <div class="form-group">
+            <label for="peca-op-vinculo">Vincular a OP (Opcional)</label>
+            <select id="peca-op-vinculo">
+              <option value="">— Nenhuma —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="peca-op">Operação Inicial</label>
+            <select id="peca-op">
+              <option value="01">01 – Injeção / Coquilha</option>
+              <option value="02">02 – Esmerilhamento</option>
+              <option value="03">03 – Polimento</option>
+              <option value="04">04 – Usinagem</option>
+              <option value="05">05 – Pintura Epóxi</option>
+              <option value="06">06 – Embuchamento</option>
+              <option value="07">07 – Gravação & Embalagem</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="peca-fundicao">Lote / Liga Metálica</label>
+            <input type="text" id="peca-fundicao" placeholder="Ex: AlMg5 – Lote 042" />
+          </div>
+          <div class="form-group span-2">
+            <label for="peca-obs">Observações</label>
+            <input type="text" id="peca-obs" placeholder="Detalhes do lote, defeitos apontados..." />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-cancel-peca">Cancelar</button>
+        <button class="btn-primary" id="btn-save-peca">Cadastrar Peça</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Histórico da Peça -->
+  <div class="modal-overlay hidden" id="modal-historico">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Histórico de Movimentações</h2>
+        <button class="btn-icon" id="modal-historico-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="background:var(--bg-elevated);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between">
+            <div>
+              <span style="font-size:0.75rem;color:var(--text-muted)">PEÇA / LOTE</span>
+              <div style="font-size:1.1rem;font-weight:700;color:var(--accent-blue)" id="hist-peca-num">—</div>
+            </div>
+            <div>
+              <span style="font-size:0.75rem;color:var(--text-muted)">MODELO</span>
+              <div style="font-size:0.95rem;font-weight:600;color:var(--text-primary)" id="hist-peca-modelo">—</div>
+            </div>
+            <div>
+              <span style="font-size:0.75rem;color:var(--text-muted)">OP VINCULADA</span>
+              <div style="font-size:0.95rem;font-weight:600;color:var(--accent-teal)" id="hist-peca-op">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="timeline" id="hist-timeline">
+          <!-- Timeline items rendered by JS -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" id="btn-close-historico">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Manutenção de Maquinário -->
+  <div class="modal-overlay hidden" id="modal-mnt">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-mnt-title">Nova Ordem de Manutenção</h2>
+        <button class="btn-icon" id="modal-mnt-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="mnt-edit-id" />
-        <div class="form-row">
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label for="mnt-maquina">Máquina / Equipamento *</label>
+            <input type="text" id="mnt-maquina" placeholder="Ex: Forno de Indução 01 / Torno CNC Romi" required />
+          </div>
           <div class="form-group">
-            <label class="form-label">Ferramenta / Coquilha *</label>
-            <select class="form-input" id="mnt-ferramenta">
-              <option value="">Selecione...</option>
-              <option value="COQUILHA 02">COQUILHA 02</option>
-              <option value="COQUILHA 03">COQUILHA 03</option>
-              <option value="COQUILHA 04">COQUILHA 04</option>
-              <option value="COQUILHA 05">COQUILHA 05</option>
-              <option value="COQUILHA 06">COQUILHA 06</option>
-              <option value="COQUILHA 07">COQUILHA 07</option>
-              <option value="COQUILHA 08">COQUILHA 08</option>
-              <option value="COQUILHA 09">COQUILHA 09</option>
-              <option value="COQUILHA 10">COQUILHA 10</option>
-              <option value="COQUILHA 11">COQUILHA 11</option>
-              <option value="COQUILHA 12">COQUILHA 12</option>
-              <option value="COQUILHA 13">COQUILHA 13</option>
-              <option value="COQUILHA 14">COQUILHA 14</option>
-              <option value="COQUILHA 15">COQUILHA 15</option>
-              <option value="COQUILHA 16">COQUILHA 16</option>
-              <option value="COQUILHA 17">COQUILHA 17</option>
-              <option value="COQUILHA 18">COQUILHA 18</option>
-              <option value="COQUILHA 19">COQUILHA 19</option>
-              <option value="COQUILHA 20">COQUILHA 20</option>
-              <option value="COQUILHA 21">COQUILHA 21</option>
-              <option value="COQUILHA 22">COQUILHA 22</option>
+            <label for="mnt-tipo">Tipo de Manutenção</label>
+            <select id="mnt-tipo">
+              <option value="Preventiva">Preventiva</option>
+              <option value="Corretiva">Corretiva</option>
+              <option value="Preditiva">Preditiva</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Tipo *</label>
-            <select class="form-input" id="mnt-tipo" disabled style="background-color: var(--bg-secondary); cursor: not-allowed; opacity: 0.8;">
-              <option value="Coquilha" selected>Coquilha</option>
+            <label for="mnt-data">Data Programada *</label>
+            <input type="date" id="mnt-data" required />
+          </div>
+          <div class="form-group span-2">
+            <label for="mnt-desc">Descrição do Serviço / Defeito *</label>
+            <textarea id="mnt-desc" rows="2" placeholder="Troca de resistências, calibração de sensores..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="mnt-tecnico">Técnico / Responsável</label>
+            <input type="text" id="mnt-tecnico" placeholder="Ex: João Silva / Manutencor" />
+          </div>
+          <div class="form-group">
+            <label for="mnt-status">Status Inicial</label>
+            <select id="mnt-status">
+              <option value="Pendente">Pendente</option>
+              <option value="Em Andamento">Em Andamento</option>
+              <option value="Concluído">Concluído</option>
             </select>
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Motivo da Interdição *</label>
-          <input type="text" class="form-input" id="mnt-motivo" placeholder="Ex: Trinca, desgaste excessivo, quebra de pino..." />
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Responsável</label>
-            <input type="text" class="form-input" id="mnt-responsavel" placeholder="Nome do responsável" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Prioridade</label>
-            <select class="form-input" id="mnt-prioridade">
-              <option>Normal</option>
-              <option>Alta</option>
-              <option>Urgente</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Data de Entrada</label>
-            <input type="date" class="form-input" id="mnt-data-entrada" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Previsão de Retorno</label>
-            <input type="date" class="form-input" id="mnt-data-previsao" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Status</label>
-          <select class="form-input" id="mnt-status">
-            <option>Em Manutenção</option>
-            <option>Liberada</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Observações</label>
-          <textarea class="form-input form-textarea" id="mnt-obs" placeholder="Detalhes adicionais, peças necessárias..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-cancel-mnt">Cancelar</button>
-        <button class="btn-primary" id="btn-save-mnt">Salvar Registro</button>
+        <button class="btn-primary" id="btn-save-mnt">Salvar Manutenção</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Registrar Venda / Expedição -->
+  <!-- Modal: Registrar Venda / Expedição -->
   <div class="modal-overlay hidden" id="modal-venda">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-venda-title">Registrar Venda / Envio</h3>
-        <button class="modal-close" id="modal-venda-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <h2 class="modal-title" id="modal-venda-title">Nova Venda / Expedição</h2>
+        <button class="btn-icon" id="modal-venda-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="venda-edit-id" />
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Cliente *</label>
-            <input type="text" class="form-input" id="venda-cliente" placeholder="Nome do cliente ou empresa" />
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label for="venda-cliente">Cliente / Comprador *</label>
+            <input type="text" id="venda-cliente" placeholder="Ex: Marine Center Ltda / Silva Náutica" required />
           </div>
-          <div class="form-group">
-            <label class="form-label">Modelo de Hélice *</label>
-            <select class="form-input" id="venda-modelo">
-              <!-- preenchido por JS -->
+          <div class="form-group span-2">
+            <label for="venda-modelo">Modelo da Hélice *</label>
+            <select id="venda-modelo" required>
+              <option value="">— Selecione um modelo —</option>
             </select>
           </div>
-        </div>
-        <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Quantidade Vendida *</label>
-            <input type="number" class="form-input" id="venda-qty" min="1" value="1" />
+            <label for="venda-qty">Quantidade Vendida *</label>
+            <input type="number" id="venda-qty" min="1" value="1" required />
           </div>
           <div class="form-group">
-            <label class="form-label">Data da Venda *</label>
-            <input type="date" class="form-input" id="venda-data" />
+            <label for="venda-nota">Número da Nota Fiscal (NF)</label>
+            <input type="text" id="venda-nota" placeholder="Ex: NF-004821" />
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Observações</label>
-          <textarea class="form-input form-textarea" id="venda-obs" placeholder="Ex: Detalhes da entrega, transportadora, etc."></textarea>
+          <div class="form-group">
+            <label for="venda-status">Status do Pedido</label>
+            <select id="venda-status">
+              <option value="Aguardando">Aguardando Produção</option>
+              <option value="Planejado">Planejado</option>
+              <option value="Em Produção">Em Produção</option>
+              <option value="Concluído">Pronto p/ Envio</option>
+              <option value="Entregue">Entregue ao Cliente</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="venda-data">Data da Venda / Previsão Envio</label>
+            <input type="date" id="venda-data" />
+          </div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-cancel-venda">Cancelar</button>
-        <button class="btn-primary" id="btn-save-venda">Salvar Venda</button>
+        <button class="btn-primary" id="btn-save-venda">Registrar Venda</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal de Explicação/Ajuda da Análise de Produção -->
-  <div class="modal-overlay hidden" id="modal-ajuda-analise">
-    <div class="modal" style="max-width: 800px;">
+  <!-- Modal: Explicação da Aba Análise de Produção -->
+  <div class="modal-overlay hidden" id="modal-ajuda-analise" style="z-index: 9999;">
+    <div class="modal" style="max-width: 650px;">
       <div class="modal-header">
-        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-          Como funciona o Planejamento e Análise de Produção?
-        </h3>
-        <button class="modal-close" id="modal-ajuda-analise-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <h2 class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Como Funciona a Análise de Produção?
+        </h2>
+        <button class="btn-icon" id="modal-ajuda-analise-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <div class="modal-body" style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary);">
-        <p style="margin-bottom: 1rem;">Esta aba foi projetada para organizar a ordem de fabricação de hélices com base na criticidade real de vendas e no saldo de estoque. O objetivo é evitar a produção desnecessária e focar no que é urgente.</p>
+      <div class="modal-body" style="font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+        <p style="margin-bottom: 1rem;">
+          Esta aba calcula de forma inteligente a <strong>criticidade de estoque e cobertura</strong> para cada produto da fábrica, ajudando o PCP a decidir quais peças devem ser produzidas com prioridade.
+        </p>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
-          <!-- Bloco 1: Cobertura de Estoque -->
-          <div style="background: rgba(96,165,250,0.03); border: 1px solid rgba(96,165,250,0.12); border-radius: var(--radius-lg); padding: 1rem;">
-            <h4 style="color: var(--accent-blue); display: flex; align-items: center; gap: 6px; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.9rem;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Cálculo da Cobertura
-            </h4>
-            <p style="font-size: 0.78rem;">A <strong>Cobertura (meses)</strong> mostra por quanto tempo o estoque físico atual atende as vendas futuras.</p>
-            <p style="font-size: 0.78rem; margin-top: 0.35rem;">Calculada como: <br/><code style="color: var(--text-primary); font-weight: 600;">Estoque Virtual / Média Mensal</code></p>
-            <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.25rem;">* O Estoque Virtual considera: Estoque Físico - Saídas Confirmadas (Pedidos) + Entradas Previstas (OPs em andamento).</p>
-          </div>
+        <h4 style="color: var(--text-primary); font-weight: 700; margin-top: 1rem; margin-bottom: 0.4rem;">📊 Conceitos Principais:</h4>
+        <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
+          <li><strong>Estoque Virtual:</strong> <code>Físico + Entradas Previstas - Saídas Previstas</code>. Representa a quantidade real projetada de peças.</li>
+          <li><strong>Cobertura (meses):</strong> <code>Estoque Virtual / Média Mensal</code>. Indica quantos meses o estoque atual durará com base no giro de vendas.</li>
+          <li><strong>Prioridade (Prio2):</strong> Quanto menor o valor, mais crítica é a situação do produto. Produtos com Prio2 negativo ou menor que a Meta de Cobertura estão em falta eminente.</li>
+          <li><strong>Qtd a Produzir:</strong> Recomendação automática de quantas peças produzir para atingir a <strong>Meta Cobertura</strong> selecionada.</li>
+        </ul>
 
-          <!-- Bloco 2: Horizonte Alvo (Meta) -->
-          <div style="background: rgba(251,146,60,0.03); border: 1px solid rgba(251,146,60,0.12); border-radius: var(--radius-lg); padding: 1rem;">
-            <h4 style="color: var(--accent-orange); display: flex; align-items: center; gap: 6px; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.9rem;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 22 22 22"/></svg>
-              Meta de Cobertura Alvo
-            </h4>
-            <p style="font-size: 0.78rem;">O controle de <strong>Meta Cobertura</strong> (ajustado no controle deslizante superior) define quantos meses de vendas planejamos manter cobertos no estoque.</p>
-            <p style="font-size: 0.78rem; margin-top: 0.35rem;">Se o estoque virtual projetado durar menos que a meta, o sistema calcula a recomendação de produção: <br/><code style="color: var(--text-primary); font-weight: 600;">Qtd Produzir = (Meta * Média) - Est. Virtual</code> (arredondado para múltiplos de 10).</p>
-          </div>
-        </div>
-
-        <h4 style="color: var(--text-primary); margin-bottom: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Regras de Negócio e Prioridade
-        </h4>
-
-        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
-          <!-- Item 1 -->
-          <div style="display: flex; gap: 12px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem;">
-            <div style="background: var(--accent-blue-bg); color: var(--accent-blue); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-size: 0.8rem;">1</div>
-            <div>
-              <strong style="color: var(--text-primary); display: block; margin-bottom: 0.15rem; font-size: 0.82rem;">Classificação de Criticidade (Status)</strong>
-              <span style="font-size: 0.78rem; display: block; margin-bottom: 0.25rem;">Os produtos são classificados em três zonas visuais de acordo com o nível de cobertura do estoque:</span>
-              <ul style="padding-left: 1rem; font-size: 0.76rem; display: flex; flex-direction: column; gap: 3px;">
-                <li><strong style="color: var(--accent-red);">Críticos (Linhas Vermelhas):</strong> Estoque dura 1.0 mês ou menos. Risco iminente de desabastecimento.</li>
-                <li><strong style="color: var(--accent-orange);">Atenção (Linhas Laranjas):</strong> Estoque dura mais de 1.0 mês, mas fica abaixo da Meta Cobertura estipulada.</li>
-                <li><strong style="color: var(--accent-green);">Estáveis (Linhas Padrão):</strong> Estoque cobre a meta de forma segura. Nenhuma ação é requerida no momento (mostra âÅ““ OK).</li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- Item 2 -->
-          <div style="display: flex; gap: 12px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem;">
-            <div style="background: var(--accent-blue-bg); color: var(--accent-blue); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-size: 0.8rem;">2</div>
-            <div>
-              <strong style="color: var(--text-primary); display: block; margin-bottom: 0.15rem; font-size: 0.82rem;">Como saber o que produzir & Criar OP</strong>
-              <span style="font-size: 0.78rem;">O ranking de criticidade exibe os itens mais críticos no topo da lista. Para iniciar a fabricação, basta clicar no botão azul <strong>"Criar OP"</strong> na linha do produto. O sistema abrirá o modal de cadastro preenchendo automaticamente o modelo de hélice, a quantidade ideal e a prioridade.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer" style="padding: 0.75rem 1rem;">
-        <button class="btn-primary" id="btn-ajuda-analise-fechar">Entendido</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification -->
-  <div class="toast hidden" id="toast">
-    <span id="toast-msg"></span>
-  </div>
-
-  <!-- Modal Criar OP de Componente -->
-  <div class="modal-overlay hidden" id="modal-criar-op-componente">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title">Abrir Ordem de Produção de Componente</h3>
-        <button class="modal-close" id="btn-close-modal-op-comp">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">SKU *</label>
-            <input type="text" class="form-input" id="op-comp-sku" readonly style="background-color: var(--bg-secondary); cursor: not-allowed; font-weight: 700; color: var(--accent-blue);" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Quantidade a Produzir *</label>
-            <input type="number" class="form-input" id="op-comp-qty" min="1" value="10" style="font-weight: 700;" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Descrição do Item</label>
-          <input type="text" class="form-input" id="op-comp-desc" readonly style="background-color: var(--bg-secondary); cursor: not-allowed;" />
-        </div>
+        <h4 style="color: var(--text-primary); font-weight: 700; margin-top: 1rem; margin-bottom: 0.4rem;">💡 Funcionalidades Rápidas:</h4>
+        <ul style="padding-left: 1.2rem;">
+          <li><strong>Slider Meta Cobertura:</strong> Ajuste o horizonte desejado (ex: 3 meses). Os contadores de Críticos/Atenção recalcularão na hora.</li>
+          <li><strong>Criar OP:</strong> Clique no botão de ação da tabela para preencher e abrir automaticamente o formulário de Nova Ordem de Produção com o modelo e a quantidade recomendada.</li>
+          <li><strong>Sincronizar Cobertura:</strong> Importe a planilha CODAN atualizada para atualizar os estoques e rastreios.</li>
+          <li><strong>Exportar Excel:</strong> Gere um arquivo CSV/Excel apenas com as peças que precisam ser produzidas.</li>
+        </ul>
       </div>
       <div class="modal-footer">
-        <button class="btn-ghost" id="btn-cancel-op-comp">Cancelar</button>
-        <button class="btn-primary" id="btn-save-op-comp" style="background-color: var(--accent-green); border-color: var(--accent-green);">Confirmar Produção</button>
+        <button class="btn-primary" id="btn-ajuda-analise-fechar">Entendi</button>
       </div>
     </div>
+  </div>
+
+  <!-- Toast de Notificação Geral -->
+  <div class="toast hidden" id="toast">
+    <span class="toast-icon">✓</span>
+    <span class="toast-msg" id="toast-msg">Operação realizada com sucesso!</span>
   </div>
 
   <div id="central-server-warning" style="display: none; background: #e74c3c; color: white; padding: 15px; text-align: center; z-index: 99999; position: fixed; top: 0; width: 100%; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-    Ã°Å¸Å¡Â¨ ATENÇÃO: Nenhum Servidor Central está rodando! Peça para alguém abrir o servidor e recarregue a página. As edições estão bloqueadas.
+    Aviso: O servidor de banco central está offline. Suas alterações serão mantidas localmente.
   </div>
 
-
-  <!-- ────────────────── TELA DE LOGIN ────────────────── -->
-  <div id="login-overlay" class="login-overlay">
-    <div class="login-card">
-      <img src="/logo.png" alt="HR Náutica Logo" class="login-logo" />
+  <!-- Modal de Login & Solicitação de Acesso -->
+  <div id="login-overlay" class="login-overlay hidden">
+    <div class="login-box">
+      <div class="login-logo">
+        <img src="/logo.png" alt="HR Náutica" />
+      </div>
       <h2 class="login-title">HR Náutica PCP</h2>
-      <p class="login-subtitle">Entre com suas credenciais para continuar</p>
+      <p id="login-subtitle" class="login-subtitle">Entre com suas credenciais para continuar</p>
       
+      <!-- Tabs -->
+      <div class="login-tabs">
+        <button type="button" class="login-tab-btn active" id="tab-login">Entrar</button>
+        <button type="button" class="login-tab-btn" id="tab-solicitar">Solicitar Acesso</button>
+      </div>
+
+      <!-- Form de Login -->
       <form id="login-form" class="login-form">
         <div class="login-group">
           <label for="login-username">Usuário</label>
@@ -1699,6 +1565,23 @@
         <div id="login-error" class="login-error hidden"></div>
         
         <button type="submit" class="login-btn">Entrar</button>
+      </form>
+
+      <!-- Form de Solicitar Acesso -->
+      <form id="solicitar-form" class="login-form hidden">
+        <div class="login-group">
+          <label for="solicitar-username">Nome de Usuário</label>
+          <input type="text" id="solicitar-username" placeholder="Digite o usuário desejado" required autocomplete="off" />
+        </div>
+        <div class="login-group">
+          <label for="solicitar-password">Senha (6 dígitos)</label>
+          <input type="password" id="solicitar-password" placeholder="Digite uma senha de 6 números" required pattern="[0-9]{6}" inputmode="numeric" maxlength="6" autocomplete="off" />
+        </div>
+        
+        <div id="solicitar-error" class="login-error hidden"></div>
+        <div id="solicitar-success" class="login-success hidden"></div>
+        
+        <button type="submit" class="login-btn">Solicitar Acesso ao Admin</button>
       </form>
     </div>
   </div>
