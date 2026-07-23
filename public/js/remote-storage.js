@@ -1,5 +1,30 @@
 "use strict";
 
+function debounce(func, wait = 150) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+window.debounce = window.debounce || debounce;
+
+function safeGetJSON(key, defaultVal) {
+  try {
+    const raw = typeof RemoteStorage !== "undefined" ? RemoteStorage.getItem(key) : localStorage.getItem(key);
+    if (!raw) return defaultVal;
+    const parsed = JSON.parse(raw);
+    return parsed !== null && parsed !== undefined ? parsed : defaultVal;
+  } catch (err) {
+    return defaultVal;
+  }
+}
+window.safeGetJSON = window.safeGetJSON || safeGetJSON;
+
 const RemoteStorage = {
   data: new Map(),
   versions: new Map(),

@@ -747,6 +747,9 @@ window.exportAnaliseToExcel = exportAnaliseToExcel;
 
 // Inicialização de Listeners do módulo de Análise de Produção
 function initAnaliseListeners() {
+  if (ANALISE_STATE.listenersInitialized) return;
+  ANALISE_STATE.listenersInitialized = true;
+
   // 1. Slider de cobertura
   const slider = document.getElementById('analise-months-slider');
   const badge = document.getElementById('analise-months-value');
@@ -899,15 +902,58 @@ function initAnaliseListeners() {
       doubleScrollChild.style.width = tableWrap.scrollWidth + 'px';
     }
   }, 100));
-  // 9. Agendar atualização automática a cada 5 minutos do Google Sheets em background (Removido para evitar sobrescrever a planilha selecionada manualmente)
+}
+
+function seedAnaliseFromMatriz() {
+  if (typeof MATRIZ_DATA === 'undefined' || !Array.isArray(MATRIZ_DATA)) return [];
+  return MATRIZ_DATA.map((m, idx) => ({
+    prioridadeGeral: String(idx + 1),
+    produto: m.nome || 'Produto Sem Nome',
+    sku: m.sku || `SKU-${idx + 1}`,
+    codigoBruto: m.codigoBruto || '-',
+    entradasPrevistas: 0,
+    saidasPrevistas: 0,
+    estoqueFisico: 12,
+    estoque1: 12,
+    estoqueVirtual: 12,
+    mediaMensal: 4,
+    prio2: 3.0,
+    coberturaVirtual: 3.0,
+    localizacao: '01 - Fundição',
+    bucha: m.bucha || '-'
+  }));
+}
+
+function initAnaliseModule() {
+  try {
+    initAnaliseListeners();
+    if (!ANALISE_STATE.coberturaData || ANALISE_STATE.coberturaData.length === 0) {
+      const cached = safeGetJSON('hrn_analise_cobertura_data', null);
+      if (cached && Array.isArray(cached) && cached.length > 0) {
+        ANALISE_STATE.coberturaData = cached;
+      } else {
+        const seeded = seedAnaliseFromMatriz();
+        if (seeded && seeded.length > 0) {
+          ANALISE_STATE.coberturaData = seeded;
+          RemoteStorage.setItem('hrn_analise_cobertura_data', JSON.stringify(seeded));
+        }
+      }
+    }
+    ANALISE_STATE.loaded = true;
+    renderAnaliseTable();
+  } catch (err) {
+    console.error('[ANALISE] Erro na inicialização do módulo:', err);
+  }
 }
 
 // Expõe inicializadores globalmente para app.js
 window.loadAnaliseExcelData = loadAnaliseExcelData;
 window.renderAnaliseTable = renderAnaliseTable;
 window.initAnaliseListeners = initAnaliseListeners;
+window.initAnaliseModule = initAnaliseModule;
 
-
-
-
-
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAnaliseModule);
+} else {
+  initAnaliseModule();
+}

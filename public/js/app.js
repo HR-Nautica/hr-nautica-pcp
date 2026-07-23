@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════
    app.js – Lógica principal & roteamento
    HR Náutica PCP
-═══════════════════════════════════════════ */
+   ═══════════════════════════════════════════ */
 
 'use strict';
 
@@ -151,7 +151,7 @@ function populateOpSelectMov() {
 // ═══════════════════════════════════════════
 function navigate(page) {
   const isOperator = window.PCP_USER_ROLE !== 'admin';
-  const RESTRICTED_PAGES = ['ordens', 'modelos', 'manutencao', 'relatorios', 'estoque', 'vini'];
+  const RESTRICTED_PAGES = ['ordens', 'modelos', 'manutencao', 'relatorios', 'estoque', 'vini', 'usuarios'];
   
   if (isOperator && RESTRICTED_PAGES.includes(page)) {
     page = 'dashboard';
@@ -174,7 +174,8 @@ function navigate(page) {
   switch (page) {
     case 'dashboard':   renderDashboard();   break;
     case 'ordens':
-      if (typeof renderAnaliseTable === 'function') renderAnaliseTable();
+      if (typeof initAnaliseModule === 'function') initAnaliseModule();
+      else if (typeof renderAnaliseTable === 'function') renderAnaliseTable();
       break;
     case 'modelos':     renderModelos();     break;
     case 'estoque':     renderEstoque();     break;
@@ -188,6 +189,9 @@ function navigate(page) {
       break;
     case 'producao-componentes':
       if (typeof prodComp_render === 'function') prodComp_render();
+      break;
+    case 'usuarios':
+      if (typeof renderUsuarios === 'function') renderUsuarios();
       break;
   }
 }
@@ -796,128 +800,90 @@ function deleteModelo(id) {
 window.deleteModelo = deleteModelo;
 
 // ═══════════════════════════════════════════
-// ESTOQUE
+// ESTOQUE & MOVIMENTAÇÃO
 // ═══════════════════════════════════════════
 function renderEstoque() {
   const search = ($('estoque-search')?.value || '').toLowerCase();
-  let mats = DB.getMateriais();
-  if (search) mats = mats.filter(m => m.nome.toLowerCase().includes(search));
+  let list = DB.getMateriais();
+  if (search) list = list.filter(m => m.nome.toLowerCase().includes(search) || m.categoria.toLowerCase().includes(search));
 
-  // Alertas
-  const alertsEl = $('estoque-alerts');
-  const criticos = DB.getMateriais().filter(m => m.saldo < m.minimo);
-  const baixos   = DB.getMateriais().filter(m => m.saldo >= m.minimo && m.saldo < m.minimo * 1.2);
-  alertsEl.innerHTML = [
-    ...criticos.map(m => `<div class="alert-banner alert-banner--red">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Estoque crítico: <strong>${m.nome}</strong> — saldo atual: ${m.saldo} ${m.unidade} (mínimo: ${m.minimo})
-    </div>`),
-    ...baixos.map(m => `<div class="alert-banner alert-banner--orange">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      Atenção: <strong>${m.nome}</strong> está próximo do mínimo — saldo: ${m.saldo} ${m.unidade}
-    </div>`)
-  ].join('');
-
-  // Tabela
   const tbody = $('estoque-body');
-  if (!mats.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">Nenhum material cadastrado.</td></tr>';
-  } else {
-    tbody.innerHTML = mats.map(m => {
-      const critico = m.saldo < m.minimo;
-      const baixo   = !critico && m.saldo < m.minimo * 1.2;
-      const statusChip = critico
-        ? `<span class="chip chip--red">Crítico</span>`
-        : baixo
-          ? `<span class="chip chip--orange">Baixo</span>`
-          : `<span class="chip chip--green">Normal</span>`;
-      return `<tr>
-        <td style="color:var(--text-primary);font-weight:500">${m.nome}</td>
-        <td>${m.unidade}</td>
-        <td style="${critico ? 'color:var(--accent-red);font-weight:700' : baixo ? 'color:var(--accent-orange);font-weight:600' : ''}">${m.saldo}</td>
-        <td>${m.minimo}</td>
-        <td>${statusChip}</td>
-        <td><div class="td-actions">
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhum item cadastrado no estoque.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(m => {
+    const baixo = m.saldo <= m.minimo;
+    const statusChip = baixo
+      ? `<span class="chip chip--red">⚠ Saldo Baixo (${m.saldo} ${m.unidade})</span>`
+      : `<span class="chip chip--green">✓ Normal (${m.saldo} ${m.unidade})</span>`;
+
+    return `<tr>
+      <td style="color:var(--text-primary);font-weight:600">${m.nome}</td>
+      <td><span class="chip chip--blue">${m.categoria}</span></td>
+      <td><strong>${m.saldo}</strong> ${m.unidade}</td>
+      <td>${m.minimo} ${m.unidade}</td>
+      <td>${statusChip}</td>
+      <td>${formatDate(m.atualizadoEm)}</td>
+      <td>
+        <div style="display:flex;gap:4px;justify-content:center">
           <button class="btn-icon" onclick="openEditMaterial('${m.id}')" title="Editar">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
           <button class="btn-icon danger" onclick="deleteMaterial('${m.id}')" title="Excluir">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
           </button>
-        </div></td>
-      </tr>`;
-    }).join('');
-  }
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
 
-  // Histórico de movimentações
-  const movs = DB.getMovimentos().slice().reverse();
-  const movBody = $('mov-body');
-  if (!movs.length) {
-    movBody.innerHTML = '<tr><td colspan="6" class="empty-cell">Sem movimentações registradas.</td></tr>';
-  } else {
-    movBody.innerHTML = movs.map(mv => `<tr>
-      <td>${formatDateTime(mv.data)}</td>
-      <td style="color:var(--text-primary)">${mv.materialNome}</td>
-      <td>${mv.tipo === 'Entrada'
-        ? `<span class="chip chip--green">Entrada</span>`
-        : `<span class="chip chip--red">Saída</span>`}</td>
-      <td style="font-weight:600">${mv.qty}</td>
-      <td>${mv.opNumero || '—'}</td>
-      <td style="color:var(--text-muted)">${mv.obs || '—'}</td>
-    </tr>`).join('');
-  }
+function openNovoMaterial() {
+  STATE.editingMaterialId = null;
+  $('modal-material-title').textContent = 'Novo Item no Estoque';
+  $('material-edit-id').value = '';
+  $('material-nome').value = '';
+  $('material-minimo').value = 0;
+  $('material-saldo-div').style.display = 'block';
+  $('material-saldo').value = 0;
+  $('material-categoria').value = 'MateriaPrima';
+  $('material-unidade').value = 'un';
+  $('modal-material').classList.remove('hidden');
 }
 
 function openEditMaterial(id) {
   const m = DB.getMateriais().find(x => x.id === id);
   if (!m) return;
   STATE.editingMaterialId = id;
-  $('modal-material-title').textContent = 'Editar Material';
+  $('modal-material-title').textContent = 'Editar Item';
   $('material-edit-id').value = id;
-  $('material-nome').value       = m.nome;
-  $('material-unidade').value    = m.unidade;
-  $('material-saldo').value      = m.saldo;
-  $('material-minimo').value     = m.minimo;
-  $('material-fornecedor').value = m.fornecedor || '';
+  $('material-nome').value      = m.nome;
+  $('material-categoria').value = m.categoria;
+  $('material-unidade').value   = m.unidade;
+  $('material-minimo').value    = m.minimo;
+  $('material-saldo-div').style.display = 'none';
   $('modal-material').classList.remove('hidden');
 }
 window.openEditMaterial = openEditMaterial;
-
-function deleteMaterial(id) {
-  if (!confirm('Excluir este material do estoque?')) return;
-  DB.deleteMaterial(id);
-  renderEstoque();
-  showToast('Material excluído.', 'error');
-}
-window.deleteMaterial = deleteMaterial;
-
-function openNovoMaterial() {
-  STATE.editingMaterialId = null;
-  $('modal-material-title').textContent = 'Novo Material';
-  $('material-edit-id').value = '';
-  ['material-nome','material-saldo','material-minimo','material-fornecedor'].forEach(id => { $(id).value = ''; });
-  $('material-unidade').value = 'kg';
-  $('modal-material').classList.remove('hidden');
-}
 
 function closeModalMaterial() { $('modal-material').classList.add('hidden'); }
 
 function saveMaterial() {
   const nome = $('material-nome').value.trim();
   if (!nome) { showToast('Informe o nome do material.', 'error'); return; }
-  const saldo  = parseFloat($('material-saldo').value);
-  const minimo = parseFloat($('material-minimo').value);
-  if (isNaN(saldo)) { showToast('Informe o saldo atual.', 'error'); return; }
-  if (isNaN(minimo)) { showToast('Informe o estoque mínimo.', 'error'); return; }
   const data = {
-    nome, saldo, minimo,
-    unidade:    $('material-unidade').value,
-    fornecedor: $('material-fornecedor').value.trim(),
+    nome,
+    categoria: $('material-categoria').value,
+    unidade:   $('material-unidade').value,
+    minimo:    parseFloat($('material-minimo').value) || 0,
   };
   if (STATE.editingMaterialId) {
     DB.updateMaterial(STATE.editingMaterialId, data);
     showToast('Material atualizado!');
   } else {
+    data.saldo = parseFloat($('material-saldo').value) || 0;
     DB.addMaterial(data);
     showToast('Material cadastrado!');
   }
@@ -925,135 +891,108 @@ function saveMaterial() {
   renderEstoque();
 }
 
-// Modal Movimentação
+function deleteMaterial(id) {
+  if (!confirm('Excluir este item do estoque?')) return;
+  DB.deleteMaterial(id);
+  renderEstoque();
+  showToast('Item excluído.', 'error');
+}
+window.deleteMaterial = deleteMaterial;
+
 function openModalMov() {
   populateMaterialSelect();
   populateOpSelectMov();
-  $('mov-qty').value = '';
-  $('mov-obs').value = '';
-  $('mov-tipo').value = 'Entrada';
+  $('mov-material').value = '';
+  $('mov-tipo').value     = 'Entrada';
+  $('mov-qty').value      = 1;
+  $('mov-op').value       = '';
+  $('mov-obs').value      = '';
   $('modal-mov').classList.remove('hidden');
 }
+
 function closeModalMov() { $('modal-mov').classList.add('hidden'); }
 
 function saveMov() {
   const matId = $('mov-material').value;
-  const qty   = parseFloat($('mov-qty').value);
-  const tipo  = $('mov-tipo').value;
-  if (!matId) { showToast('Selecione um material.', 'error'); return; }
-  if (!qty || qty <= 0) { showToast('Informe uma quantidade válida.', 'error'); return; }
+  const qty   = parseFloat($('mov-qty').value) || 0;
+  if (!matId) { showToast('Selecione o material.', 'error'); return; }
+  if (qty <= 0) { showToast('Informe uma quantidade válida.', 'error'); return; }
 
-  const mat = DB.getMaterialById(matId);
-  if (!mat) return;
+  const tipo = $('mov-tipo').value;
+  const opId = $('mov-op').value;
+  const obs  = $('mov-obs').value.trim();
 
-  if (tipo === 'Saída' && qty > mat.saldo) {
-    showToast(`Saldo insuficiente! Disponível: ${mat.saldo} ${mat.unidade}`, 'error');
-    return;
+  const mat = DB.getMateriais().find(x => x.id === matId);
+  if (tipo === 'Saída' && mat && mat.saldo < qty) {
+    if (!confirm(`Saldo insuficiente (${mat.saldo} ${mat.unidade}). Deseja continuar mesmo assim?`)) return;
   }
 
-  const opId = $('mov-op').value;
-  const op   = opId ? DB.getOpById(opId) : null;
-  DB.addMovimento({
-    materialId:   matId,
-    materialNome: mat.nome,
-    tipo, qty,
-    opId:    op?.id || '',
-    opNumero:op?.numero || '',
-    obs:     $('mov-obs').value.trim(),
-  });
-  showToast(`Movimentação registrada: ${tipo} de ${qty} ${mat.unidade}`);
+  DB.addMovimento({ materialId: matId, tipo, qty, opId, obs });
   closeModalMov();
   renderEstoque();
+  showToast(`Movimentação de ${tipo.toLowerCase()} registrada!`);
 }
 
 // ═══════════════════════════════════════════
-// PROGRAMAÇÃO DE FUNDIÇÃO DE HÉLICE
+// PROGRAMAÇÃO DE FUNDIÇÃO
 // ═══════════════════════════════════════════
-function statusFundicaoChip(s) {
-  const map = {
-    'Agendado':     'chip--blue',
-    'Em Andamento': 'chip--orange',
-    'Concluído':    'chip--green',
-    'Cancelado':    'chip--gray',
-  };
-  return `<span class="chip ${map[s] || 'chip--gray'}">${s}</span>`;
-}
-
 function renderFundicao() {
   const search = ($('fundicao-search')?.value || '').toLowerCase();
-  const filterStatus = $('fundicao-filter-status')?.value || '';
+  const statusFilter = $('fundicao-filter-status')?.value || '';
+
   let list = DB.getFundicoes();
+  if (search) list = list.filter(f => f.modelo.toLowerCase().includes(search) || (f.lote || '').toLowerCase().includes(search));
+  if (statusFilter) list = list.filter(f => f.status === statusFilter);
 
-  if (search) list = list.filter(f =>
-    f.numero.toLowerCase().includes(search) ||
-    f.modelo.toLowerCase().includes(search) ||
-    f.material.toLowerCase().includes(search) ||
-    (f.forno || '').toLowerCase().includes(search)
-  );
-  if (filterStatus) list = list.filter(f => f.status === filterStatus);
-
-  // KPIs
-  const all = DB.getFundicoes();
-  const agora = new Date();
-  const mesAtual = agora.getMonth(); const anoAtual = agora.getFullYear();
-  $('kpi-fund-agendadas').textContent  = all.filter(f => f.status === 'Agendado').length;
-  $('kpi-fund-andamento').textContent  = all.filter(f => f.status === 'Em Andamento').length;
-  $('kpi-fund-concluidas').textContent = all.filter(f => {
-    if (f.status !== 'Concluído') return false;
-    const d = new Date(f.criadoEm);
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
-  }).length;
-  $('kpi-fund-pecas').textContent = all.reduce((acc, f) => acc + (parseInt(f.qty) || 0), 0);
-
-  // Tabela
   const tbody = $('fundicao-body');
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty-cell">Nenhuma programação de fundição cadastrada.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhum lote de fundição agendado.</td></tr>';
     return;
   }
-  tbody.innerHTML = list.slice().reverse().map(f => `<tr>
-    <td><span style="color:var(--accent-orange);font-weight:700">${f.numero}</span></td>
-    <td style="color:var(--text-primary);font-weight:500">${f.modelo || '—'}</td>
-    <td>${f.material || '—'}</td>
-    <td>${f.qty}</td>
-    <td>${f.peso > 0 ? f.peso + ' kg' : '—'}</td>
-    <td>${formatDate(f.data)}</td>
-    <td>${f.forno || '—'}</td>
-    <td>${f.temp ? f.temp + '°C' : '—'}</td>
-    <td>${statusFundicaoChip(f.status)}</td>
-    <td><div class="td-actions">
-      <button class="btn-icon" onclick="openEditFundicao('${f.id}')" title="Editar">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      </button>
-      <button class="btn-icon danger" onclick="deleteFundicao('${f.id}')" title="Excluir">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-      </button>
-    </div></td>
-  </tr>`).join('');
-}
 
-function populateFundicaoModeloSelect() {
-  const modelos = DB.getModelos();
-  const opts = ['<option value="">— Selecione um modelo —</option>',
-    ...modelos.map(m => `<option value="${m.nome}">${m.nome}</option>`)
-  ].join('');
-  const el = $('fundicao-modelo');
-  if (el) el.innerHTML = opts;
+  const statusChips = {
+    'Agendado':    '<span class="chip chip--blue">Agendado</span>',
+    'Em Fusão':    '<span class="chip chip--orange">Em Fusão</span>',
+    'Resfriando':  '<span class="chip chip--purple">Resfriando</span>',
+    'Concluído':   '<span class="chip chip--green">Concluído</span>',
+    'Cancelado':   '<span class="chip chip--gray">Cancelado</span>',
+  };
+
+  tbody.innerHTML = list.map(f => `<tr>
+    <td><span style="color:var(--accent-blue);font-weight:700">${f.lote}</span></td>
+    <td style="color:var(--text-primary);font-weight:500">${f.modelo}</td>
+    <td><strong>${f.qty}</strong> un</td>
+    <td>${f.liga}</td>
+    <td>${formatDate(f.dataPrevista)}</td>
+    <td>${statusChips[f.status] || f.status}</td>
+    <td>
+      <div style="display:flex;gap:4px;justify-content:center">
+        <button class="btn-icon" onclick="openEditFundicao('${f.id}')" title="Editar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn-icon danger" onclick="deleteFundicao('${f.id}')" title="Excluir">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+    </td>
+  </tr>`).join('');
 }
 
 function openNovaFundicao() {
   STATE.editingFundicaoId = null;
-  $('modal-fundicao-title').textContent = 'Nova Programação de Fundição';
+  $('modal-fundicao-title').textContent = 'Novo Agendamento de Fundição';
   $('fundicao-edit-id').value = '';
-  $('fundicao-qty').value = 1;
-  $('fundicao-peso').value = '';
-  $('fundicao-data').value = '';
-  $('fundicao-forno').value = '';
-  $('fundicao-temp').value = '';
-  $('fundicao-obs').value = '';
+  $('fundicao-lote').value = '';
+  $('fundicao-qty').value  = 10;
+  $('fundicao-liga').value = 'Alumínio AlMg5';
+  $('fundicao-data').value = new Date().toISOString().split('T')[0];
   $('fundicao-status').value = 'Agendado';
-  $('fundicao-material').value = 'Alumínio Liga 356';
-  populateFundicaoModeloSelect();
+  $('fundicao-obs').value  = '';
+
+  const modelos = DB.getModelos();
+  const opts = ['<option value="">— Selecione —</option>', ...modelos.map(m => `<option value="${m.nome}">${m.nome}</option>`)].join('');
+  $('fundicao-modelo').innerHTML = opts;
+
   $('modal-fundicao').classList.remove('hidden');
 }
 
@@ -1061,18 +1000,19 @@ function openEditFundicao(id) {
   const f = DB.getFundicoes().find(x => x.id === id);
   if (!f) return;
   STATE.editingFundicaoId = id;
-  $('modal-fundicao-title').textContent = `Editar Programação – ${f.numero}`;
-  $('fundicao-edit-id').value  = id;
-  populateFundicaoModeloSelect();
-  $('fundicao-modelo').value   = f.modelo;
-  $('fundicao-qty').value      = f.qty;
-  $('fundicao-material').value = f.material;
-  $('fundicao-peso').value     = f.peso;
-  $('fundicao-data').value     = f.data;
-  $('fundicao-forno').value    = f.forno;
-  $('fundicao-temp').value     = f.temp;
-  $('fundicao-status').value   = f.status;
-  $('fundicao-obs').value      = f.obs;
+  $('modal-fundicao-title').textContent = 'Editar Agendamento';
+  $('fundicao-edit-id').value = id;
+
+  const modelos = DB.getModelos();
+  const opts = ['<option value="">— Selecione —</option>', ...modelos.map(m => `<option value="${m.nome}">${m.nome}</option>`)].join('');
+  $('fundicao-modelo').innerHTML = opts;
+  $('fundicao-modelo').value = f.modelo;
+  $('fundicao-lote').value   = f.lote;
+  $('fundicao-qty').value    = f.qty;
+  $('fundicao-liga').value   = f.liga;
+  $('fundicao-data').value   = f.dataPrevista;
+  $('fundicao-status').value = f.status;
+  $('fundicao-obs').value    = f.obs;
   $('modal-fundicao').classList.remove('hidden');
 }
 window.openEditFundicao = openEditFundicao;
@@ -1081,611 +1021,175 @@ function closeModalFundicao() { $('modal-fundicao').classList.add('hidden'); }
 
 function saveFundicao() {
   const modelo = $('fundicao-modelo').value;
-  const dataVal = $('fundicao-data').value;
-  if (!modelo)  { showToast('Selecione um modelo de hélice.', 'error'); return; }
-  if (!dataVal) { showToast('Informe a data programada.', 'error'); return; }
+  if (!modelo) { showToast('Selecione o modelo.', 'error'); return; }
   const data = {
     modelo,
-    qty:      parseInt($('fundicao-qty').value) || 1,
-    material: $('fundicao-material').value,
-    peso:     parseFloat($('fundicao-peso').value) || 0,
-    data:     dataVal,
-    forno:    $('fundicao-forno').value.trim(),
-    temp:     $('fundicao-temp').value,
-    status:   $('fundicao-status').value,
-    obs:      $('fundicao-obs').value.trim(),
+    lote:         $('fundicao-lote').value.trim(),
+    qty:          parseInt($('fundicao-qty').value) || 1,
+    liga:         $('fundicao-liga').value,
+    dataPrevista: $('fundicao-data').value,
+    status:       $('fundicao-status').value,
+    obs:          $('fundicao-obs').value.trim(),
   };
   if (STATE.editingFundicaoId) {
     DB.updateFundicao(STATE.editingFundicaoId, data);
-    showToast('Programação de fundição atualizada!');
+    showToast('Agendamento atualizado!');
   } else {
     DB.addFundicao(data);
-    showToast('Programação de fundição criada!');
+    showToast('Agendamento cadastrado!');
   }
   closeModalFundicao();
   renderFundicao();
 }
 
 function deleteFundicao(id) {
-  if (!confirm('Excluir esta programação de fundição?')) return;
+  if (!confirm('Excluir este agendamento de fundição?')) return;
   DB.deleteFundicao(id);
   renderFundicao();
-  showToast('Programação excluída.', 'error');
+  showToast('Agendamento excluído.', 'error');
 }
 window.deleteFundicao = deleteFundicao;
 
 // ═══════════════════════════════════════════
-// MANUTENÇÃO DE FERRAMENTAS
+// RASTREIO DE OPERAÇÕES & PEÇAS
 // ═══════════════════════════════════════════
-
-function statusMntChip(s) {
-  const map = {
-    'Em Manutenção':  'chip--orange',
-    'Aguardando Peça': 'chip--blue',
-    'Interditada':      'chip--red',
-    'Liberada':         'chip--green',
-  };
-  return `<span class="chip ${map[s] || 'chip--gray'}">${s}</span>`;
-}
-
-function prioridadeMntChip(p) {
-  const map = { 'Normal': 'chip--gray', 'Alta': 'chip--orange', 'Urgente': 'chip--red' };
-  return `<span class="chip ${map[p] || 'chip--gray'}">${p}</span>`;
-}
-
-function renderManutencao() {
-  const search      = ($('mnt-search')?.value || '').toLowerCase();
-  const filterStatus= $('mnt-filter-status')?.value || '';
-  const filterTipo  = $('mnt-filter-tipo')?.value   || '';
-  const all         = DB.getManutencoes();
-
-  // KPIs
-  const elAnd  = $('kpi-mnt-andamento');
-  const elInt  = $('kpi-mnt-interditadas');
-  const elAgu  = $('kpi-mnt-aguardando');
-  const elLib  = $('kpi-mnt-liberadas');
-  if (elAnd)  elAnd.textContent  = all.filter(m => m.status === 'Em Manutenção').length;
-  if (elInt)  elInt.textContent  = all.filter(m => m.status === 'Interditada').length;
-  if (elAgu)  elAgu.textContent  = all.filter(m => m.status === 'Aguardando Peça').length;
-  if (elLib)  elLib.textContent  = all.filter(m => m.status === 'Liberada').length;
-
-  // Filtragem
-  let list = all;
-  if (search)       list = list.filter(m =>
-    (m.ferramenta||'').toLowerCase().includes(search) ||
-    (m.motivo||'').toLowerCase().includes(search) ||
-    (m.responsavel||'').toLowerCase().includes(search) ||
-    (m.numero||'').toLowerCase().includes(search)
-  );
-  if (filterStatus) list = list.filter(m => m.status === filterStatus);
-
-  const tbody = $('mnt-body');
-  if (!tbody) return;
-
-  if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-cell">${
-      all.length === 0
-        ? 'Nenhuma ferramenta em manutenção. Clique em "Interditar Ferramenta" para registrar.'
-        : 'Nenhum registro encontrado para os filtros aplicados.'
-    }</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = list.slice().reverse().map(m => {
-    // Calcula dias em manutenção
-    const diasStr = m.dataEntrada
-      ? (() => { const d = Math.floor((Date.now() - new Date(m.dataEntrada).getTime()) / 86400000); return d + 'd'; })()
-      : '—';
-    // Verifica atraso na previsão
-    const atrasado = m.dataPrevisao && m.status !== 'Liberada' && new Date(m.dataPrevisao) < new Date();
-    return `<tr>
-      <td><span style="color:var(--accent-orange);font-weight:700">${m.numero}</span></td>
-      <td style="color:var(--text-primary);font-weight:600">${m.ferramenta}</td>
-      <td><span class="chip chip--gray">${m.tipo}</span></td>
-      <td style="color:var(--text-secondary);font-size:0.76rem">${m.motivo || '—'}</td>
-      <td style="color:var(--text-muted);font-size:0.76rem">${m.responsavel || '—'}</td>
-      <td style="color:var(--text-muted);font-size:0.76rem">${m.dataEntrada ? (formatDate(m.dataEntrada) + ' <span style="color:var(--text-muted);font-size:0.68rem">('+diasStr+')</span>') : '—'}</td>
-      <td style="color:${atrasado ? 'var(--accent-red)' : 'var(--text-muted)'};font-size:0.76rem;font-weight:${atrasado ? '700' : '400'}">${m.dataPrevisao ? formatDate(m.dataPrevisao) + (atrasado ? ' ⚠' : '') : '—'}</td>
-      <td>${prioridadeMntChip(m.prioridade)}</td>
-      <td>${statusMntChip(m.status)}</td>
-      <td><div class="td-actions">
-        <button class="btn-icon" onclick="openEditManutencao('${m.id}')" title="Editar">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>
-        ${m.status !== 'Liberada' ? `<button class="btn-icon success" onclick="liberarManutencao('${m.id}')" title="Liberar ferramenta">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        </button>` : ''}
-        <button class="btn-icon danger" onclick="deleteManutencao('${m.id}')" title="Excluir">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        </button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-function resetMntFerramentaOptions() {
-  const select = $('mnt-ferramenta');
-  if (!select) return;
-  let html = '<option value="">Selecione...</option>';
-  for (let i = 2; i <= 22; i++) {
-    const num = String(i).padStart(2, '0');
-    html += `<option value="COQUILHA ${num}">COQUILHA ${num}</option>`;
-  }
-  select.innerHTML = html;
-}
-
-function openNovaManutencao() {
-  STATE.editingMntId = null;
-  $('modal-mnt-title').textContent = 'Interditar Ferramenta';
-  $('mnt-edit-id').value    = '';
-  resetMntFerramentaOptions();
-  $('mnt-ferramenta').value = '';
-  $('mnt-tipo').value       = 'Coquilha';
-  $('mnt-motivo').value     = '';
-  $('mnt-responsavel').value= '';
-  $('mnt-prioridade').value = 'Normal';
-  $('mnt-status').value     = 'Em Manutenção';
-  $('mnt-obs').value        = '';
-  $('mnt-data-entrada').value   = new Date().toISOString().split('T')[0];
-  $('mnt-data-previsao').value  = '';
-  $('modal-manutencao').classList.remove('hidden');
-}
-
-function openEditManutencao(id) {
-  const m = DB.getManutencoes().find(x => x.id === id);
-  if (!m) return;
-  STATE.editingMntId = id;
-  $('modal-mnt-title').textContent  = `Editar Manutenção – ${m.numero}`;
-  $('mnt-edit-id').value     = id;
-  
-  resetMntFerramentaOptions();
-  const selectFerramenta = $('mnt-ferramenta');
-  if (selectFerramenta && m.ferramenta) {
-    let optionExists = false;
-    for (let i = 0; i < selectFerramenta.options.length; i++) {
-      if (selectFerramenta.options[i].value === m.ferramenta) {
-        optionExists = true;
-        break;
-      }
-    }
-    if (!optionExists) {
-      const opt = document.createElement('option');
-      opt.value = m.ferramenta;
-      opt.textContent = m.ferramenta;
-      selectFerramenta.appendChild(opt);
-    }
-  }
-  $('mnt-ferramenta').value  = m.ferramenta;
-  $('mnt-tipo').value        = m.tipo;
-  $('mnt-motivo').value      = m.motivo;
-  $('mnt-responsavel').value = m.responsavel;
-  $('mnt-prioridade').value  = m.prioridade;
-  $('mnt-status').value      = m.status;
-  $('mnt-obs').value         = m.obs;
-  $('mnt-data-entrada').value   = m.dataEntrada   || '';
-  $('mnt-data-previsao').value  = m.dataPrevisao  || '';
-  $('modal-manutencao').classList.remove('hidden');
-}
-window.openEditManutencao = openEditManutencao;
-
-function closeModalManutencao() { $('modal-manutencao').classList.add('hidden'); }
-
-function saveManutencao() {
-  const ferramenta = $('mnt-ferramenta').value.trim();
-  const motivo     = $('mnt-motivo').value.trim();
-  if (!ferramenta) { showToast('Informe o nome da ferramenta/coquilha.', 'error'); return; }
-  if (!motivo)     { showToast('Informe o motivo da interdição.', 'error'); return; }
-  const data = {
-    ferramenta,
-    tipo:         $('mnt-tipo').value,
-    motivo,
-    responsavel:  $('mnt-responsavel').value.trim(),
-    prioridade:   $('mnt-prioridade').value,
-    status:       $('mnt-status').value,
-    obs:          $('mnt-obs').value.trim(),
-    dataEntrada:  $('mnt-data-entrada').value,
-    dataPrevisao: $('mnt-data-previsao').value,
-  };
-  if (STATE.editingMntId) {
-    DB.updateManutencao(STATE.editingMntId, data);
-    showToast('Registro de manutenção atualizado!');
-  } else {
-    DB.addManutencao(data);
-    showToast('Ferramenta interditada e registrada!');
-  }
-  closeModalManutencao();
-  renderManutencao();
-}
-
-function liberarManutencao(id) {
-  if (!confirm('Liberar esta ferramenta para uso?')) return;
-  DB.updateManutencao(id, { status: 'Liberada' });
-  showToast('✅ Ferramenta liberada para uso!');
-  renderManutencao();
-}
-window.liberarManutencao = liberarManutencao;
-
-function deleteManutencao(id) {
-  if (!confirm('Excluir este registro de manutenção?')) return;
-  DB.deleteManutencao(id);
-  renderManutencao();
-  showToast('Registro removido.', 'error');
-}
-window.deleteManutencao = deleteManutencao;
-
-// ═══════════════════════════════════════════
-// RASTREIO DE OPERAÇÕES (FLUXO)
-// ═══════════════════════════════════════════
-
-// ── OPERAÇÕES DO FLUXO PRODUTIVO (7 etapas) ──
 const OPERACOES = [
-  { codigo: '01', nome: 'Fundição',      cor: '#f97316', icon: '🌱”¥' },
-  { codigo: '02', nome: 'Vulcanização',  cor: '#e11d48', icon: '♨️' },
-  { codigo: '03', nome: 'Polimento',     cor: '#a855f7', icon: '✨' },
-  { codigo: '04', nome: 'Usinagem',      cor: '#3b82f6', icon: '⚙️' },
-  { codigo: '05', nome: 'Pintura',       cor: '#ec4899', icon: '🌱Ž¨' },
-  { codigo: '06', nome: 'Embuchamento',  cor: '#f59e0b', icon: '🌱› ï¸' },
-  { codigo: '07', nome: 'Gravação',      cor: '#14b8a6', icon: 'âœï¸' },
+  { code: '01', name: 'Injeção / Coquilha',     chip: 'chip--orange' },
+  { code: '02', name: 'Esmerilhamento',         chip: 'chip--gray'   },
+  { code: '03', name: 'Polimento',              chip: 'chip--purple' },
+  { code: '04', name: 'Usinagem de Precisão',  chip: 'chip--blue'   },
+  { code: '05', name: 'Pintura Epóxi',          chip: 'chip--purple' },
+  { code: '06', name: 'Embuchamento / Balance', chip: 'chip--teal'   },
+  { code: '07', name: 'Gravação & Embalagem',   chip: 'chip--green'  },
 ];
 
-const ULTIMA_OP = '07'; // Última operação do fluxo
-
-function getOpLabel(codigo) {
-  const op = OPERACOES.find(o => o.codigo === codigo);
-  return op ? `${op.codigo} – ${op.nome}` : codigo;
-}
-
-function getOpCor(codigo) {
-  const op = OPERACOES.find(o => o.codigo === codigo);
-  return op ? op.cor : '#888';
-}
-
-// ── Calcula o status visual de uma peça baseado no tempo na op ──
-function calcularStatus(p) {
-  if (p.status === 'bloqueado') return 'bloqueado';
-  if (p.operacaoAtual === ULTIMA_OP) return 'concluido';
-  if (!p.atualizadoEm) return 'em-producao';
-  const diffH = (Date.now() - new Date(p.atualizadoEm).getTime()) / 3600000;
-  if (diffH > 120) return 'atrasado';   // > 5 dias
-  if (diffH > 48)  return 'atencao';    // > 2 dias
-  return 'em-producao';
-}
-
-function statusBadge(status) {
-  const map = {
-    'em-producao': ['status-em-producao', 'Em Produção'],
-    'atencao':     ['status-atencao',     'Atenção'],
-    'atrasado':    ['status-atrasado',    'Atrasado'],
-    'bloqueado':   ['status-bloqueado',   'Bloqueado'],
-    'concluido':   ['status-concluido',   'Concluído'],
-  };
-  const [cls, label] = map[status] || map['em-producao'];
-  return `<span class="status-badge ${cls}">${label}</span>`;
-}
-
-function calcularPorcentagem(p) {
-  const idx = OPERACOES.findIndex(o => o.codigo === p.operacaoAtual);
-  if (idx < 0) return 0;
-  return Math.round(((idx + 1) / OPERACOES.length) * 100);
-}
-
-function progressBar(pct, status) {
-  const fillClass = status === 'concluido' ? 'progress-fill progress-fill--done' : 'progress-fill';
-  return `<div class="progress-wrap">
-    <div class="progress-pct">${pct}%</div>
-    <div class="progress-bar"><div class="${fillClass}" style="width:${pct}%"></div></div>
-  </div>`;
-}
-
-// ── Render dos KPIs do Rastreio ──
-function renderFluxoKPIs(pecas) {
-  const total      = pecas.length;
-  const atencao    = pecas.filter(p => { const s = calcularStatus(p); return s === 'atencao' || s === 'atrasado'; }).length;
-  const bloqueadas = pecas.filter(p => calcularStatus(p) === 'bloqueado').length;
-  const concluidas = pecas.filter(p => calcularStatus(p) === 'concluido').length;
-  const el = id => document.getElementById(id);
-  if (el('fkpi-total'))      el('fkpi-total').textContent      = total;
-  if (el('fkpi-atencao'))    el('fkpi-atencao').textContent    = atencao;
-  if (el('fkpi-bloqueadas')) el('fkpi-bloqueadas').textContent = bloqueadas;
-  if (el('fkpi-concluidas')) el('fkpi-concluidas').textContent = concluidas;
-  const lbl = el('fluxo-count-label');
-  if (lbl) lbl.textContent = `${total} peça${total !== 1 ? 's' : ''}`;
-}
-
-// ── Pipeline visual com micro-indicadores ──
-function renderPipeline() {
-  const pipeline = $('flow-pipeline');
-  if (!pipeline) return;
-  const pecas = DB.getPecas();
-
-  // Contagens e soma de qty por operação
-  const contagens   = {};
-  const totalQty    = {};
-  const atrasaídas   = {};
-  const bloqueadas  = {};
-  OPERACOES.forEach(op => {
-    contagens[op.codigo]  = 0;
-    totalQty[op.codigo]   = 0;
-    atrasaídas[op.codigo]  = 0;
-    bloqueadas[op.codigo] = 0;
-  });
-  pecas.forEach(p => {
-    if (contagens[p.operacaoAtual] !== undefined) {
-      contagens[p.operacaoAtual]++;
-      totalQty[p.operacaoAtual] += (parseInt(p.qty) || 0);
-      const s = calcularStatus(p);
-      if (s === 'atrasado') atrasaídas[p.operacaoAtual]++;
-      if (s === 'bloqueado') bloqueadas[p.operacaoAtual]++;
-    }
-  });
-
-  pipeline.innerHTML = OPERACOES.map((op, i) => {
-    const count = contagens[op.codigo];
-    const qty   = totalQty[op.codigo];
-    const isActive = count > 0;
-    return `
-      <div class="pipeline-step ${isActive ? 'pipeline-step--active' : ''}" style="--op-color:${op.cor}">
-        <div>
-          <div class="pipeline-icon">${op.icon}</div>
-          <div class="pipeline-code">${op.codigo}</div>
-          <div class="pipeline-name">${op.nome}</div>
-          <div class="pipeline-count" style="color:${isActive ? op.cor : 'var(--text-muted)'}">
-            ${count} lote${count !== 1 ? 's' : ''}
-          </div>
-          <div class="pipeline-qty-total" style="color:${isActive ? op.cor : 'var(--text-muted)'}; opacity:0.85; font-size:0.72rem; font-weight:700; margin-top:2px;">
-            ${qty.toLocaleString('pt-BR')} peças
-          </div>
-          <div class="pipeline-indicators">
-            <div class="pipeline-ind">
-              <span class="pipeline-ind-val" style="color:var(--accent-red)">${atrasaídas[op.codigo]}</span>
-              <span class="pipeline-ind-lbl">Atras.</span>
-            </div>
-            <div class="pipeline-ind">
-              <span class="pipeline-ind-val" style="color:var(--accent-purple)">${bloqueadas[op.codigo]}</span>
-              <span class="pipeline-ind-lbl">Bloq.</span>
-            </div>
-          </div>
-        </div>
-        ${i < OPERACOES.length - 1 ? '<div class="pipeline-arrow">”º</div>' : ''}
-      </div>`;
-  }).join('');
-}
-
-// ── Tabela principal de Rastreio ──
 function renderFluxo() {
-  const allPecas = DB.getPecas();
-  renderPipeline();
-  renderFluxoKPIs(allPecas);
+  const search  = ($('fluxo-search')?.code || $('fluxo-search')?.value || '').toLowerCase();
+  const opFilt  = $('fluxo-filter-op')?.value || '';
 
-  const search       = ($('fluxo-search')?.value || '').toLowerCase();
-  const filterOp     = $('fluxo-filter-op')?.value || '';
-  const filterStatus = $('fluxo-filter-status')?.value || '';
-  let list = allPecas;
+  let list = DB.getPecas();
 
-  if (search)       list = list.filter(p =>
-    (p.numero||'').toLowerCase().includes(search) ||
-    (p.modelo||'').toLowerCase().includes(search)
-  );
-  if (filterOp)     list = list.filter(p => p.operacaoAtual === filterOp);
-  if (filterStatus) list = list.filter(p => calcularStatus(p) === filterStatus);
-
-  const tbody = $('fluxo-body');
-  if (!tbody) return;
-  if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-cell">${
-      allPecas.length === 0
-        ? 'Nenhuma peça em rastreio. Clique em "Nova Peça" para começar.'
-        : 'Nenhuma peça encontrada para os filtros aplicados.'
-    }</td></tr>`;
-    return;
+  if (search) {
+    list = list.filter(p =>
+      p.numero.toLowerCase().includes(search) ||
+      p.modelo.toLowerCase().includes(search) ||
+      (p.opNumero && p.opNumero.toLowerCase().includes(search))
+    );
+  }
+  if (opFilt) {
+    list = list.filter(p => p.operacaoAtual === opFilt);
   }
 
-  tbody.innerHTML = list.map(p => {
-    const op       = OPERACOES.find(o => o.codigo === p.operacaoAtual) || OPERACOES[0];
-    const isUltima = p.operacaoAtual === ULTIMA_OP;
-    const status   = calcularStatus(p);
-    const pct      = calcularPorcentagem(p);
-    const tempoNaOp = tempoDecorrido(p.atualizadoEm);
-    const opLink = p.opNumero
-      ? `<span style="color:var(--accent-blue);font-weight:700;cursor:pointer;font-size:0.76rem" onclick="navigate('ordens')" title="Ver na aba Ordens de Produção">${p.opNumero}</span>`
-      : '<span style="color:var(--text-muted);font-size:0.76rem">—</span>';
-    return `<tr>
-      <td><span style="color:var(--accent-purple);font-weight:700;cursor:pointer" onclick="openHistorico('${p.id}')" title="Ver histórico">${p.numero}</span></td>
-      <td style="color:var(--text-primary);font-weight:500">${p.modelo || '—'}</td>
-      <td>${p.qty}</td>
-      <td>${opLink}</td>
-      <td><span class="op-badge" style="background:${op.cor}22;color:${op.cor};border:1px solid ${op.cor}55">${op.icon} ${op.codigo} – ${op.nome}</span></td>
-      <td style="color:var(--text-muted);font-size:0.76rem">${formatDateTime(p.atualizadoEm)}</td>
-      <td style="color:var(--text-muted);font-size:0.76rem">${tempoNaOp}</td>
-      <td>${statusBadge(status)}</td>
-      <td>${progressBar(pct, status)}</td>
-      <td><div class="td-actions">
-        <button class="btn-icon" onclick="openHistorico('${p.id}')" title="Ver histórico completo">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </button>
-        ${!isUltima ? `<button class="btn-icon success" onclick="avancarOp('${p.id}')" title="Avançar operação">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>` : `<span title="Entrada em Estoque – Concluído" style="color:var(--accent-green);font-size:0.72rem;font-weight:700">✓ Est.</span>`}
-        <button class="btn-icon" onclick="openEditPeca('${p.id}')" title="Editar">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>
-        <button class="btn-icon danger" onclick="deletePeca('${p.id}')" title="Excluir">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        </button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
+  // Render por operações (colunas)
+  OPERACOES.forEach(op => {
+    const colEl = $(`col-op-${op.code}`);
+    if (!colEl) return;
+    const pecasOp = list.filter(p => p.operacaoAtual === op.code);
 
+    // badge count
+    const badge = $(`count-op-${op.code}`);
+    if (badge) badge.textContent = pecasOp.length;
 
-function tempoDecorrido(isoStr) {
-  if (!isoStr) return '—';
-  const diff = Date.now() - new Date(isoStr).getTime();
-  const mins  = Math.floor(diff / 60000);
-  const hours = Math.floor(mins / 60);
-  const days  = Math.floor(hours / 24);
-  if (days > 0)  return `${days}d ${hours % 24}h`;
-  if (hours > 0) return `${hours}h ${mins % 60}m`;
-  return `${mins}m`;
-}
-
-// ── Modal de Histórico da Peça ──
-function openHistorico(id) {
-  const p = DB.getPecas().find(x => x.id === id);
-  if (!p) return;
-  const op     = OPERACOES.find(o => o.codigo === p.operacaoAtual) || OPERACOES[0];
-  const status = calcularStatus(p);
-  const pct    = calcularPorcentagem(p);
-  const hist   = p.historico || [];
-
-  $('modal-historico-title').textContent = `Histórico – ${p.numero}`;
-
-  // Calcula tempo total (desde criação)
-  const tempoTotal = tempoDecorrido(p.criadoEm);
-
-  $('modal-historico-body').innerHTML = `
-    <div class="peca-info-grid">
-      <div class="peca-info-item">
-        <div class="peca-info-label">Nº / Lote</div>
-        <div class="peca-info-value" style="color:var(--accent-purple)">${p.numero}</div>
-      </div>
-      <div class="peca-info-item">
-        <div class="peca-info-label">Modelo</div>
-        <div class="peca-info-value">${p.modelo || '—'}</div>
-      </div>
-      <div class="peca-info-item">
-        <div class="peca-info-label">Quantidade</div>
-        <div class="peca-info-value">${p.qty} peça${p.qty !== 1 ? 's' : ''}</div>
-      </div>
-      <div class="peca-info-item">
-        <div class="peca-info-label">OP Atual</div>
-        <div class="peca-info-value" style="color:${op.cor}">${op.icon} ${op.codigo} – ${op.nome}</div>
-      </div>
-      <div class="peca-info-item">
-        <div class="peca-info-label">Tempo Total</div>
-        <div class="peca-info-value">${tempoTotal}</div>
-      </div>
-      <div class="peca-info-item">
-        <div class="peca-info-label">Status</div>
-        <div class="peca-info-value">${statusBadge(status)}</div>
-      </div>
-    </div>
-    <div style="margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <span style="font-size:0.72rem;color:var(--text-muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase">Progresso no Fluxo</span>
-        <span style="font-size:0.78rem;font-weight:700;color:var(--text-secondary)">${pct}%</span>
-      </div>
-      <div class="progress-bar" style="height:8px">
-        <div class="${status === 'concluido' ? 'progress-fill progress-fill--done' : 'progress-fill'}" style="width:${pct}%"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:4px">
-        <span style="font-size:0.65rem;color:var(--text-muted)">Fundição</span>
-        <span style="font-size:0.65rem;color:var(--accent-teal)">Entrada em Estoque</span>
-      </div>
-    </div>
-    <div style="font-size:0.78rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.75rem">Histórico de Operações</div>
-    ${hist.length === 0
-      ? `<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:1.5rem">Nenhum registro de movimentação.</div>`
-      : `<div class="historico-timeline">${hist.map((h, i) => {
-          const hopData = OPERACOES.find(o => o.codigo === h.op);
-          const isLast = i === hist.length - 1;
-          return `<div class="historico-item">
-            <div class="historico-op-label">${hopData ? `${hopData.icon} ${hopData.codigo} – ${hopData.nome}` : h.op}</div>
-            <div class="historico-data">${formatDateTime(h.data)}</div>
-            ${h.obs ? `<div class="historico-obs">${h.obs}</div>` : ''}
-          </div>`;
-        }).join('')}</div>`
+    if (!pecasOp.length) {
+      colEl.innerHTML = `<div class="kanban-empty">Nenhuma peça nesta etapa</div>`;
+      return;
     }
-    ${p.obs ? `<div style="margin-top:1rem;padding:0.75rem;background:var(--bg-elevated);border-radius:var(--radius);border:1px solid var(--border)">
-      <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.35rem">Observações</div>
-      <div style="font-size:0.83rem;color:var(--text-secondary)">${p.obs}</div>
-    </div>` : ''}
-  `;
 
-  $('modal-historico').classList.remove('hidden');
+    colEl.innerHTML = pecasOp.map(p => {
+      const idxAtual = OPERACOES.findIndex(o => o.code === p.operacaoAtual);
+      const prevOp = idxAtual > 0 ? OPERACOES[idxAtual - 1].code : null;
+      const nextOp = idxAtual < OPERACOES.length - 1 ? OPERACOES[idxAtual + 1].code : null;
+
+      return `
+        <div class="peca-card">
+          <div class="peca-card-header">
+            <span class="peca-num">${p.numero}</span>
+            <span class="chip ${op.chip}">${op.name.split(' ')[0]}</span>
+          </div>
+          <div class="peca-model">${p.modelo}</div>
+          <div class="peca-meta">
+            ${p.opNumero ? `<span>OP: <strong>${p.opNumero}</strong></span>` : ''}
+            <span>Qtd: <strong>${p.qty}</strong></span>
+            <span>Tipo: ${p.tipoFundicao || 'Alumínio'}</span>
+          </div>
+          <div class="peca-actions">
+            ${prevOp ? `<button class="btn-icon" onclick="avancarOpPeca('${p.id}', '${prevOp}')" title="Voltar para Op. ${prevOp}">←</button>` : '<span></span>'}
+            <button class="btn-icon" onclick="verHistoricoPeca('${p.id}')" title="Ver Histórico">📋</button>
+            <button class="btn-icon danger" onclick="deletePeca('${p.id}')" title="Excluir Peça">🗑</button>
+            ${nextOp ? `<button class="btn-icon" onclick="avancarOpPeca('${p.id}', '${nextOp}')" title="Avançar para Op. ${nextOp}">→</button>` : '<span></span>'}
+          </div>
+        </div>
+      `;
+    }).join('');
+  });
 }
-window.openHistorico = openHistorico;
-
-function closeModalHistorico() { $('modal-historico').classList.add('hidden'); }
 
 function openNovaPeca() {
   STATE.editingPecaId = null;
-  $('modal-peca-title').textContent = 'Nova Peça em Rastreio';
+  $('modal-peca-title').textContent = 'Cadastrar Peça / Lote de Produção';
   $('peca-edit-id').value = '';
   $('peca-numero').value = '';
-  $('peca-qty').value = 1;
-  $('peca-obs').value = '';
-  $('peca-op-atual').value = '01';
-  const statusEl = $('peca-status-inicial');
-  if (statusEl) statusEl.value = 'em-producao';
+  $('peca-qty').value    = 1;
+  $('peca-op').value     = '01';
+  $('peca-fundicao').value = 'Alumínio AlMg5';
+  $('peca-obs').value    = '';
+
   populateModeloSelects();
+  populateOpSelectPeca();
   $('modal-peca').classList.remove('hidden');
 }
 
-function openEditPeca(id) {
-  const p = DB.getPecas().find(x => x.id === id);
-  if (!p) return;
-  STATE.editingPecaId = id;
-  $('modal-peca-title').textContent = `Editar Peça – ${p.numero}`;
-  $('peca-edit-id').value = id;
-  populateModeloSelects();
-  $('peca-numero').value        = p.numero;
-  $('peca-modelo').value        = p.modelo;
-  $('peca-tipo-fundicao').value = p.tipoFundicao;
-  $('peca-qty').value           = p.qty;
-  $('peca-op-atual').value      = p.operacaoAtual;
-  $('peca-obs').value           = p.obs;
-  const statusEl = $('peca-status-inicial');
-  if (statusEl) statusEl.value = p.status || 'em-producao';
-  $('modal-peca').classList.remove('hidden');
+function populateOpSelectPeca() {
+  const ops = DB.getOps();
+  const opts = ['<option value="">— Nenhuma (Sem OP vinculada) —</option>',
+    ...ops.map(o => `<option value="${o.id}">${o.numero} – ${o.modelo}</option>`)
+  ].join('');
+  const el = $('peca-op-vinculo');
+  if (el) el.innerHTML = opts;
 }
-window.openEditPeca = openEditPeca;
 
 function closeModalPeca() { $('modal-peca').classList.add('hidden'); }
 
 function savePeca() {
-  const numero = $('peca-numero').value.trim();
   const modelo = $('peca-modelo').value;
-  if (!numero) { showToast('Informe o número/lote da peça.', 'error'); return; }
-  if (!modelo) { showToast('Selecione um modelo.', 'error'); return; }
-  const statusEl = $('peca-status-inicial');
+  if (!modelo) { showToast('Selecione o modelo da hélice.', 'error'); return; }
+
+  const opId = $('peca-op-vinculo').value;
+  const op   = DB.getOps().find(o => o.id === opId);
+
   const data = {
     modelo,
-    tipoFundicao:  $('peca-tipo-fundicao').value,
     qty:           parseInt($('peca-qty').value) || 1,
-    operacaoAtual: $('peca-op-atual').value,
-    status:        statusEl ? statusEl.value : 'em-producao',
+    operacaoAtual: $('peca-op').value,
+    opId:          opId || null,
+    opNumero:      op ? op.numero : null,
+    tipoFundicao:  $('peca-fundicao').value,
     obs:           $('peca-obs').value.trim(),
   };
+
+  const num = $('peca-numero').value.trim();
+  if (num) data.numero = num;
+
   if (STATE.editingPecaId) {
-    const orig = DB.getPecas().find(p => p.id === STATE.editingPecaId);
-    if (orig && orig.operacaoAtual !== data.operacaoAtual) {
-      data.obsMovimento = `Atualizado manualmente para Op. ${data.operacaoAtual}`;
-    }
     DB.updatePeca(STATE.editingPecaId, data);
     showToast('Peça atualizada!');
   } else {
-    DB.addPeca({ ...data, numero });
+    DB.addPeca(data);
     showToast('Peça cadastrada no rastreio!');
   }
+
   closeModalPeca();
   renderFluxo();
 }
 
-function avancarOp(id) {
-  const p = DB.getPecas().find(x => x.id === id);
-  if (!p) return;
-  const idx = OPERACOES.findIndex(o => o.codigo === p.operacaoAtual);
-  if (idx < 0 || idx >= OPERACOES.length - 1) return;
-  const proxOp = OPERACOES[idx + 1];
-  DB.updatePeca(id, {
-    operacaoAtual: proxOp.codigo,
-    obsMovimento: `Avançado para Op. ${proxOp.codigo} – ${proxOp.nome}`,
-  });
-  showToast(`✅ Peça avançada → ${proxOp.codigo} – ${proxOp.nome}`);
+function avancarOpPeca(id, novaOpCode) {
+  const opObj = OPERACOES.find(o => o.code === novaOpCode);
+  const nomeOp = opObj ? opObj.name : novaOpCode;
+  DB.avancarPecaOp(id, novaOpCode, `Avançado manualmente para ${nomeOp}`);
   renderFluxo();
+  showToast(`Peça movida para Op. ${novaOpCode} (${nomeOp})`);
 }
-window.avancarOp = avancarOp;
+window.avancarOpPeca = avancarOpPeca;
 
 function deletePeca(id) {
   if (!confirm('Excluir esta peça do rastreio?')) return;
@@ -1695,155 +1199,267 @@ function deletePeca(id) {
 }
 window.deletePeca = deletePeca;
 
+function verHistoricoPeca(id) {
+  const peca = DB.getPecas().find(p => p.id === id);
+  if (!peca) return;
+
+  $('hist-peca-num').textContent    = peca.numero;
+  $('hist-peca-modelo').textContent = peca.modelo;
+  $('hist-peca-op').textContent     = peca.opNumero || 'Sem OP';
+
+  const container = $('hist-timeline');
+  const hist = peca.historico || [];
+
+  if (!hist.length) {
+    container.innerHTML = '<p class="empty-cell">Nenhum histórico registrado.</p>';
+  } else {
+    container.innerHTML = hist.slice().reverse().map(h => {
+      const opInfo = OPERACOES.find(o => o.code === h.op);
+      const nomeOp = opInfo ? `${h.op} – ${opInfo.name}` : `Operação ${h.op}`;
+      return `
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">${nomeOp}</div>
+            <div class="timeline-time">${formatDateTime(h.data)}</div>
+            ${h.obs ? `<div class="timeline-obs">${h.obs}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  $('modal-historico').classList.remove('hidden');
+}
+window.verHistoricoPeca = verHistoricoPeca;
+
+function closeModalHistorico() { $('modal-historico').classList.add('hidden'); }
+
 // ═══════════════════════════════════════════
-// EXPEDIÇÃO / VENDAS
+// MANUTENÇÃO DE MAQUINÁRIO
+// ═══════════════════════════════════════════
+function renderManutencao() {
+  const search = ($('mnt-search')?.value || '').toLowerCase();
+  const statusFilter = $('mnt-filter-status')?.value || '';
+  const tipoFilter   = $('mnt-filter-tipo')?.value || '';
+
+  let list = DB.getManutencoes();
+  if (search) list = list.filter(m => m.maquina.toLowerCase().includes(search) || m.descricao.toLowerCase().includes(search));
+  if (statusFilter) list = list.filter(m => m.status === statusFilter);
+  if (tipoFilter)   list = list.filter(m => m.tipo === tipoFilter);
+
+  const tbody = $('manutencao-body');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhuma manutenção registrada.</td></tr>';
+    return;
+  }
+
+  const statusChips = {
+    'Pendente':    '<span class="chip chip--orange">Pendente</span>',
+    'Em Andamento':'<span class="chip chip--blue">Em Andamento</span>',
+    'Concluído':   '<span class="chip chip--green">Concluído</span>',
+    'Cancelado':   '<span class="chip chip--gray">Cancelado</span>',
+  };
+
+  const tipoChips = {
+    'Preventiva':  '<span class="chip chip--teal">Preventiva</span>',
+    'Corretiva':   '<span class="chip chip--red">Corretiva</span>',
+    'Preditiva':   '<span class="chip chip--purple">Preditiva</span>',
+  };
+
+  tbody.innerHTML = list.map(m => `<tr>
+    <td style="color:var(--text-primary);font-weight:600">${m.maquina}</td>
+    <td>${tipoChips[m.tipo] || m.tipo}</td>
+    <td style="text-align:left">${m.descricao}</td>
+    <td>${formatDate(m.dataPrevista)}</td>
+    <td>${m.tecnico || '—'}</td>
+    <td>${statusChips[m.status] || m.status}</td>
+    <td>
+      <div style="display:flex;gap:4px;justify-content:center">
+        <button class="btn-icon" onclick="openEditManutencao('${m.id}')" title="Editar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn-icon danger" onclick="deleteManutencao('${m.id}')" title="Excluir">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function openNovaManutencao() {
+  STATE.editingManutencaoId = null;
+  $('modal-mnt-title').textContent = 'Nova Ordem de Manutenção';
+  $('mnt-edit-id').value = '';
+  $('mnt-maquina').value = '';
+  $('mnt-tipo').value    = 'Preventiva';
+  $('mnt-desc').value    = '';
+  $('mnt-data').value    = new Date().toISOString().split('T')[0];
+  $('mnt-tecnico').value = '';
+  $('mnt-status').value  = 'Pendente';
+  $('modal-mnt').classList.remove('hidden');
+}
+
+function openEditManutencao(id) {
+  const m = DB.getManutencoes().find(x => x.id === id);
+  if (!m) return;
+  STATE.editingManutencaoId = id;
+  $('modal-mnt-title').textContent = 'Editar Manutenção';
+  $('mnt-edit-id').value  = id;
+  $('mnt-maquina').value  = m.maquina;
+  $('mnt-tipo').value     = m.tipo;
+  $('mnt-desc').value     = m.descricao;
+  $('mnt-data').value     = m.dataPrevista;
+  $('mnt-tecnico').value  = m.tecnico;
+  $('mnt-status').value   = m.status;
+  $('modal-mnt').classList.remove('hidden');
+}
+window.openEditManutencao = openEditManutencao;
+
+function closeModalManutencao() { $('modal-mnt').classList.add('hidden'); }
+
+function saveManutencao() {
+  const maquina   = $('mnt-maquina').value.trim();
+  const descricao = $('mnt-desc').value.trim();
+  if (!maquina)   { showToast('Informe a máquina/equipamento.', 'error'); return; }
+  if (!descricao) { showToast('Informe a descrição do serviço.', 'error'); return; }
+
+  const data = {
+    maquina,
+    tipo:         $('mnt-tipo').value,
+    descricao,
+    dataPrevista: $('mnt-data').value,
+    tecnico:      $('mnt-tecnico').value.trim(),
+    status:       $('mnt-status').value,
+  };
+
+  if (STATE.editingManutencaoId) {
+    DB.updateManutencao(STATE.editingManutencaoId, data);
+    showToast('Manutenção atualizada!');
+  } else {
+    DB.addManutencao(data);
+    showToast('Manutenção agendada!');
+  }
+
+  closeModalManutencao();
+  renderManutencao();
+}
+
+function deleteManutencao(id) {
+  if (!confirm('Excluir este registro de manutenção?')) return;
+  DB.deleteManutencao(id);
+  renderManutencao();
+  showToast('Registro excluído.', 'error');
+}
+window.deleteManutencao = deleteManutencao;
+
+// ═══════════════════════════════════════════
+// EXPEDIÇÃO & VENDAS
 // ═══════════════════════════════════════════
 function renderExpedicao() {
   const search = ($('expedicao-search')?.value || '').toLowerCase();
-  const allPedidos = DB.getPedidos();
+  let list = DB.getPedidos();
 
-  // Filtered list
-  let list = allPedidos;
   if (search) {
-    list = list.filter(p => 
-      (p.cliente || '').toLowerCase().includes(search) || 
-      (p.modelo || '').toLowerCase().includes(search)
+    list = list.filter(v =>
+      v.cliente.toLowerCase().includes(search) ||
+      v.modelo.toLowerCase().includes(search) ||
+      (v.numeroNota && v.numeroNota.toLowerCase().includes(search))
     );
   }
 
-  // Calculate KPIs
-  const totalItens = allPedidos.reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
-  const mediaVendas = 0.00; // Left at zero as requested
-  const totalPedidos = allPedidos.length;
-
-  const elItens = $('ekpi-total-itens');
-  if (elItens) elItens.textContent = totalItens;
-  const elMedia = $('ekpi-media-vendas');
-  if (elMedia) elMedia.textContent = mediaVendas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const elTotal = $('ekpi-total-pedidos');
-  if (elTotal) elTotal.textContent = totalPedidos;
-
-  // Render Resumo por Modelo
-  const modelos = DB.getModelos();
-  const tbodyModelos = $('expedicao-modelos-body');
-  if (tbodyModelos) {
-    if (!modelos.length) {
-      tbodyModelos.innerHTML = '<tr><td colspan="3" class="empty-cell">Nenhum modelo cadastrado.</td></tr>';
-    } else {
-      tbodyModelos.innerHTML = modelos.map(m => {
-        const totalVendidoModelo = allPedidos
-          .filter(p => p.modelo === m.nome)
-          .reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
-        const mediaVendidoModelo = 0.00; // Left at zero as requested
-        return `<tr>
-          <td style="color:var(--text-primary);font-weight:500">${m.nome}</td>
-          <td>${totalVendidoModelo} un</td>
-          <td>${mediaVendidoModelo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} un</td>
-        </tr>`;
-      }).join('');
-    }
+  const tbody = $('expedicao-body');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhuma venda registrada na expedição.</td></tr>';
+    return;
   }
 
-  // Render Histórico de Vendas
-  const tbodyPedidos = $('expedicao-pedidos-body');
-  if (tbodyPedidos) {
-    if (!list.length) {
-      tbodyPedidos.innerHTML = '<tr><td colspan="6" class="empty-cell">Sem vendas registradas.</td></tr>';
-    } else {
-      tbodyPedidos.innerHTML = list.map(p => {
-        return `<tr>
-          <td><span style="color:var(--accent-purple);font-weight:700">${p.numero}</span></td>
-          <td style="color:var(--text-primary);font-weight:500">${p.cliente || '—'}</td>
-          <td>${p.modelo || '—'}</td>
-          <td>${p.qty}</td>
-          <td>${formatDate(p.criadoEm)}</td>
-          <td><div class="td-actions">
-            <button class="btn-icon" onclick="openEditVenda('${p.id}')" title="Editar">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-            <button class="btn-icon danger" onclick="deleteVenda('${p.id}')" title="Excluir">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-            </button>
-          </div></td>
-        </tr>`;
-      }).join('');
-    }
-  }
+  tbody.innerHTML = list.map(v => `<tr>
+    <td style="color:var(--text-primary);font-weight:600">${v.cliente}</td>
+    <td>${v.modelo}</td>
+    <td><strong>${v.qty}</strong> un</td>
+    <td>${v.numeroNota ? `<span class="chip chip--blue">${v.numeroNota}</span>` : '—'}</td>
+    <td>${statusPedidoChip(v.status)}</td>
+    <td>${formatDate(v.dataEnvio)}</td>
+    <td>
+      <div style="display:flex;gap:4px;justify-content:center">
+        <button class="btn-icon" onclick="openEditVenda('${v.id}')" title="Editar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn-icon danger" onclick="deleteVenda('${v.id}')" title="Excluir">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+    </td>
+  </tr>`).join('');
 }
 
-// Modal open/close & save logic for Vendas
 function openNovaVenda() {
   STATE.editingVendaId = null;
-  $('modal-venda-title').textContent = 'Registrar Venda';
+  $('modal-venda-title').textContent = 'Nova Venda / Expedição';
   $('venda-edit-id').value = '';
   $('venda-cliente').value = '';
-  $('venda-qty').value = 1;
-  $('venda-obs').value = '';
-  $('venda-data').value = new Date().toISOString().split('T')[0];
+  $('venda-qty').value     = 1;
+  $('venda-nota').value    = '';
+  $('venda-status').value  = 'Aguardando';
+  $('venda-data').value    = new Date().toISOString().split('T')[0];
+
   populateModeloSelects();
   $('modal-venda').classList.remove('hidden');
 }
-window.openNovaVenda = openNovaVenda;
 
 function openEditVenda(id) {
-  const p = DB.getPedidos().find(x => x.id === id);
-  if (!p) return;
+  const v = DB.getPedidos().find(x => x.id === id);
+  if (!v) return;
   STATE.editingVendaId = id;
-  $('modal-venda-title').textContent = `Editar Venda – ${p.numero}`;
+  $('modal-venda-title').textContent = 'Editar Registro de Expedição';
   $('venda-edit-id').value = id;
+
   populateModeloSelects();
-  $('venda-cliente').value = p.cliente;
-  $('venda-modelo').value  = p.modelo;
-  $('venda-qty').value      = p.qty;
-  $('venda-obs').value      = p.obs;
-  $('venda-data').value = (p.prazo || p.criadoEm || '').split('T')[0];
+  $('venda-cliente').value = v.cliente;
+  $('venda-modelo').value  = v.modelo;
+  $('venda-qty').value     = v.qty;
+  $('venda-nota').value    = v.numeroNota || '';
+  $('venda-status').value  = v.status;
+  $('venda-data').value    = v.dataEnvio;
   $('modal-venda').classList.remove('hidden');
 }
 window.openEditVenda = openEditVenda;
 
-function closeModalVenda() {
-  $('modal-venda').classList.add('hidden');
-}
-window.closeModalVenda = closeModalVenda;
+function closeModalVenda() { $('modal-venda').classList.add('hidden'); }
 
 function saveVenda() {
   const cliente = $('venda-cliente').value.trim();
-  const modelo = $('venda-modelo').value;
-  const qty = parseInt($('venda-qty').value) || 1;
-  const dataVenda = $('venda-data').value;
-  const obs = $('venda-obs').value.trim();
-
-  if (!cliente) { showToast('Informe o nome do cliente.', 'error'); return; }
-  if (!modelo) { showToast('Selecione um modelo.', 'error'); return; }
-  if (!dataVenda) { showToast('Selecione a data da venda.', 'error'); return; }
+  const modelo  = $('venda-modelo').value;
+  if (!cliente) { showToast('Informe o cliente.', 'error'); return; }
+  if (!modelo)  { showToast('Selecione o modelo.', 'error'); return; }
 
   const data = {
     cliente,
     modelo,
-    qty,
-    prazo: dataVenda,
-    obs,
-    status: 'Faturado'
+    qty:        parseInt($('venda-qty').value) || 1,
+    numeroNota: $('venda-nota').value.trim(),
+    status:     $('venda-status').value,
+    dataEnvio:  $('venda-data').value,
   };
 
   if (STATE.editingVendaId) {
     DB.updatePedido(STATE.editingVendaId, data);
-    showToast('Venda updated!');
+    showToast('Registro de expedição atualizado!');
   } else {
     DB.addPedido(data);
-    showToast('Venda registrada!');
+    showToast('Venda registrada na expedição!');
   }
 
   closeModalVenda();
   renderExpedicao();
 }
-window.saveVenda = saveVenda;
 
 function deleteVenda(id) {
-  if (!confirm('Excluir este registro de venda?')) return;
+  if (!confirm('Excluir este registro de expedição?')) return;
   DB.deletePedido(id);
   renderExpedicao();
-  showToast('Venda removida.', 'error');
+  showToast('Registro excluído.', 'error');
 }
 window.deleteVenda = deleteVenda;
 
@@ -1851,138 +1467,45 @@ window.deleteVenda = deleteVenda;
 // RELATÓRIOS
 // ═══════════════════════════════════════════
 function renderRelatorios() {
-  const ops = DB.getOps();
+  const ops     = DB.getOps();
+  const pecas   = DB.getPecas();
+  const fund    = DB.getFundicoes();
+  const pedidos = DB.getPedidos();
 
-  // Chart 1 – Produção por mês (últimos 6 meses)
-  const meses = [];
-  const counts = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const label = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
-    meses.push(label);
-    const mes = d.getMonth(); const ano = d.getFullYear();
-    counts.push(ops.filter(o => {
-      const c = new Date(o.criadoEm);
-      return c.getMonth() === mes && c.getFullYear() === ano;
-    }).length);
-  }
+  // Média de produção
+  const prontas = ops.filter(o => o.etapa === 'Pronto/Entregue');
+  $('rel-total-prontas').textContent = prontas.length;
 
-  const ctx1 = $('rel-mensal-chart').getContext('2d');
-  if (STATE.charts.mensal) STATE.charts.mensal.destroy();
-  STATE.charts.mensal = new Chart(ctx1, {
-    type: 'line',
-    data: {
-      labels: meses,
-      datasets: [{
-        label: 'OPs abertas',
-        data: counts,
-        borderColor: '#60a5fa',
-        backgroundColor: 'rgba(96,165,250,0.1)',
-        borderWidth: 2,
-        pointBackgroundColor: '#60a5fa',
-        pointRadius: 4,
-        tension: 0.4,
-        fill: true,
-      }]
-    },
-    options: chartBaseOptions(),
-  });
+  // Peças ativas em produção
+  $('rel-pecas-ativas').textContent = pecas.length;
 
-  // Chart 2 – OPs por status (donut)
-  const statusLabels = ETAPAS;
-  const statusCounts = ETAPAS.map(e => ops.filter(o => o.etapa === e).length);
-  const ctx2 = $('rel-status-chart').getContext('2d');
-  if (STATE.charts.status) STATE.charts.status.destroy();
-  STATE.charts.status = new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-      labels: statusLabels,
-      datasets: [{
-        data: statusCounts,
-        backgroundColor: ['#4b5563','#fb923c','#60a5fa','#2dd4bf','#a78bfa','#fb923c','#4ade80'],
-        borderColor: '#151e2d',
-        borderWidth: 2,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#8a96a8', font: { family: 'Inter', size: 10 }, boxWidth: 10 } },
-        tooltip: tooltipStyle(),
-      },
-      cutout: '65%',
-    }
-  });
+  // Lotes de fundição
+  $('rel-lotes-fundicao').textContent = fund.length;
 
-  // Chart 3 – Top modelos
-  const modeloCounts = {};
-  ops.forEach(o => { modeloCounts[o.modelo] = (modeloCounts[o.modelo] || 0) + 1; });
-  const modeloEntries = Object.entries(modeloCounts).sort((a,b) => b[1]-a[1]).slice(0,5);
-  const ctx3 = $('rel-modelos-chart').getContext('2d');
-  if (STATE.charts.modelos) STATE.charts.modelos.destroy();
-  STATE.charts.modelos = new Chart(ctx3, {
-    type: 'bar',
-    data: {
-      labels: modeloEntries.map(e => e[0]),
-      datasets: [{
-        data: modeloEntries.map(e => e[1]),
-        backgroundColor: 'rgba(167,139,250,0.6)',
-        borderColor: 'rgba(167,139,250,0.9)',
-        borderWidth: 1.5,
-        borderRadius: 5,
-        borderSkipped: false,
-      }]
-    },
-    options: { ...chartBaseOptions(), indexAxis: 'y' },
-  });
-
-  // Tabela de atrasos
-  const hoje = new Date();
-  const atrasaídas = ops.filter(o => o.etapa !== 'Pronto/Entregue' && new Date(o.prazo) < hoje);
-  const tbody = $('rel-atraso-body');
-  if (!atrasaídas.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">Sem ordens em atraso. 🌱Ž‰</td></tr>';
-  } else {
-    tbody.innerHTML = atrasaídas.map(o => `<tr>
-      <td><span style="color:var(--accent-blue);font-weight:700">${o.numero}</span></td>
-      <td>${o.modelo}</td>
-      <td style="color:var(--accent-red)">${formatDate(o.prazo)}</td>
-      <td><span class="chip chip--red">${diasAtraso(o.prazo)} dias</span></td>
-    </tr>`).join('');
-  }
+  // Pedidos concluídos
+  $('rel-pedidos-concl').textContent = pedidos.filter(p => p.status === 'Concluído' || p.status === 'Entregue').length;
 }
 
-function chartBaseOptions() {
-  return {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: tooltipStyle() },
-    scales: {
-      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8a96a8', font: { family: 'Inter', size: 11 } } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8a96a8', font: { family: 'Inter', size: 11 }, stepSize: 1 }, beginAtZero: true },
-    }
-  };
-}
-
-function tooltipStyle() {
-  return {
-    backgroundColor: '#1a2235',
-    borderColor: 'rgba(255,255,255,0.1)',
-    borderWidth: 1,
-    titleColor: '#e8edf5',
-    bodyColor: '#8a96a8',
-  };
-}
-
-// Export CSV
+// ═══════════════════════════════════════════
+// EXPORTAR CSV GERAL
+// ═══════════════════════════════════════════
 function exportCSV() {
   const ops = DB.getOps();
-  if (!ops.length) { showToast('Sem dados para exportar.', 'error'); return; }
-  const header = 'Número,Modelo,Cliente,Quantidade,Etapa,Prioridade,Prazo,Criado em';
-  const rows = ops.map(o =>
-    `"${o.numero}","${o.modelo}","${o.cliente}","${o.qty}","${o.etapa}","${o.prioridade}","${formatDate(o.prazo)}","${formatDate(o.criadoEm)}"`
-  );
-  const csv = [header, ...rows].join('\n');
+  if (!ops.length) { showToast('Nenhuma OP cadastrada para exportar.', 'error'); return; }
+
+  const headers = ['Número', 'Modelo', 'Quantidade', 'Cliente', 'Prazo', 'Etapa', 'Prioridade', 'Observações'];
+  const rows = ops.map(o => [
+    o.numero,
+    `"${o.modelo.replace(/"/g, '""')}"`,
+    o.qty,
+    `"${(o.cliente||'').replace(/"/g, '""')}"`,
+    o.prazo,
+    o.etapa,
+    o.prioridade,
+    `"${(o.obs||'').replace(/"/g, '""')}"`
+  ]);
+
+  const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1999,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Controle de Acesso e Sidebar por Perfil ──
   const isOperator = window.PCP_USER_ROLE !== 'admin';
-  const RESTRICTED_PAGES = ['ordens', 'modelos', 'manutencao', 'relatorios', 'estoque', 'vini'];
+  const RESTRICTED_PAGES = ['ordens', 'modelos', 'manutencao', 'relatorios', 'estoque', 'vini', 'usuarios'];
   
   if (isOperator) {
     RESTRICTED_PAGES.forEach(page => {
@@ -2169,4 +1692,120 @@ document.addEventListener('DOMContentLoaded', () => {
   navigate('dashboard');
 });
 
+// ═══════════════════════════════════════════
+// CONTROLE DE ACESSO (USUÁRIOS)
+// ═══════════════════════════════════════════
+function renderUsuarios() {
+  const tbody = $('usuarios-solicitacoes-body');
+  if (!tbody) return;
 
+  const dataRaw = RemoteStorage.getItem('hrn_solicitacoes_acesso');
+  let requests = [];
+  try {
+    requests = dataRaw ? JSON.parse(dataRaw) : [];
+  } catch (e) {
+    console.error("Erro ao ler solicitacoes", e);
+  }
+
+  if (!requests.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">Nenhuma solicitação de acesso registrada.</td></tr>';
+    return;
+  }
+
+  // Ordena por data (mais recente primeiro)
+  requests.sort((a, b) => new Date(b.requestedAt || 0) - new Date(a.requestedAt || 0));
+
+  tbody.innerHTML = requests.map((req) => {
+    let statusStyle = '';
+    let statusLabel = req.status.toUpperCase();
+    
+    if (req.status === 'aprovado') {
+      statusStyle = 'background-color: var(--accent-green-bg); color: var(--accent-green);';
+    } else if (req.status === 'pendente') {
+      statusStyle = 'background-color: var(--accent-orange-bg); color: var(--accent-orange);';
+    } else if (req.status === 'rejeitado') {
+      statusStyle = 'background-color: var(--accent-red-bg); color: var(--accent-red);';
+    }
+
+    const dateStr = req.requestedAt ? new Date(req.requestedAt).toLocaleString('pt-BR') : '—';
+    
+    let actionsHtml = '';
+    if (req.status === 'pendente') {
+      actionsHtml = `
+        <button class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background-color: var(--accent-green); border-color: var(--accent-green); cursor: pointer;" onclick="decidirAcesso('${req.username}', 'aprovado')">Aprovar</button>
+        <button class="btn-ghost" style="padding: 4px 8px; font-size: 0.75rem; border-color: var(--accent-red); color: var(--accent-red); cursor: pointer;" onclick="decidirAcesso('${req.username}', 'rejeitado')">Rejeitar</button>
+      `;
+    } else {
+      actionsHtml = `
+        <button class="btn-ghost" style="padding: 4px 8px; font-size: 0.75rem; border-color: var(--text-muted); color: var(--text-secondary); cursor: pointer;" onclick="excluirSolicitacao('${req.username}')">Excluir</button>
+      `;
+    }
+
+    // Helper simples para escapar HTML inline
+    const cleanUser = req.username.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    return `
+      <tr>
+        <td style="font-weight: 700; color: var(--text-primary);">${cleanUser}</td>
+        <td>${dateStr}</td>
+        <td>
+          <span class="chip" style="${statusStyle} font-weight: 600; font-size: 0.75rem; padding: 4px 8px; border-radius: var(--radius-sm);">
+            ${statusLabel}
+          </span>
+        </td>
+        <td>
+          <div style="display: flex; gap: 8px;">
+            ${actionsHtml}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+window.decidirAcesso = function(username, status) {
+  const dataRaw = RemoteStorage.getItem('hrn_solicitacoes_acesso');
+  let requests = [];
+  try {
+    requests = dataRaw ? JSON.parse(dataRaw) : [];
+  } catch (e) {
+    console.error(e);
+  }
+
+  const req = requests.find(r => r.username.toLowerCase() === username.toLowerCase());
+  if (req) {
+    req.status = status;
+    RemoteStorage.setItem('hrn_solicitacoes_acesso', JSON.stringify(requests));
+    
+    // Dispara SyncManager para salvar no servidor
+    if (typeof SyncManager !== 'undefined' && typeof SyncManager.saveToServer === "function") {
+      SyncManager.saveToServer();
+    }
+    
+    showToast(`Solicitação de ${username} foi ${status}!`, 'success');
+    renderUsuarios();
+  }
+};
+
+window.excluirSolicitacao = function(username) {
+  if (!confirm(`Deseja excluir a solicitação do usuário ${username}?`)) return;
+  
+  const dataRaw = RemoteStorage.getItem('hrn_solicitacoes_acesso');
+  let requests = [];
+  try {
+    requests = dataRaw ? JSON.parse(dataRaw) : [];
+  } catch (e) {
+    console.error(e);
+  }
+
+  const newRequests = requests.filter(r => r.username.toLowerCase() !== username.toLowerCase());
+  RemoteStorage.setItem('hrn_solicitacoes_acesso', JSON.stringify(newRequests));
+  
+  // Dispara SyncManager para salvar no servidor
+  if (typeof SyncManager !== 'undefined' && typeof SyncManager.saveToServer === "function") {
+    SyncManager.saveToServer();
+  }
+  
+  showToast(`Solicitação de ${username} excluída.`, 'success');
+  renderUsuarios();
+};
