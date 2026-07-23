@@ -21,5 +21,7 @@ legacy_import/
 tmp_arquivos/
 dados_pcp.json
 cache_pedidos.json
+database/local_state.json
+_tmp_deploy/
 *.xls
 *.xlsx

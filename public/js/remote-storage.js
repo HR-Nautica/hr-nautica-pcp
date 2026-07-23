@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 const RemoteStorage = {
   data: new Map(),
@@ -22,6 +22,11 @@ const RemoteStorage = {
     const previous = this.data.get(key);
     const unchanged = this.data.has(key) && JSON.stringify(previous) === JSON.stringify(value);
     this.data.set(key, value);
+    try {
+      localStorage.setItem(key, typeof serializedValue === "string" ? serializedValue : JSON.stringify(serializedValue));
+    } catch (err) {
+      console.warn("[BANCO] Nao foi possivel salvar no localStorage local:", err);
+    }
     if (unchanged) return;
     if (key.startsWith("hrn_") && key !== "hrn_sync_timestamp") {
       this.enqueue(key, () => this.persist(key, value));
@@ -29,6 +34,11 @@ const RemoteStorage = {
   },
   removeItem(key) {
     this.data.delete(key);
+    try {
+      localStorage.removeItem(key);
+    } catch (err) {
+      console.warn("[BANCO] Nao foi possivel remover do localStorage local:", err);
+    }
     if (key.startsWith("hrn_")) this.enqueue(key, () => this.persistDelete(key));
   },
   clear() {
@@ -37,6 +47,20 @@ const RemoteStorage = {
   parse(value) {
     if (typeof value !== "string") return value;
     try { return JSON.parse(value); } catch { return value; }
+  },
+  loadFromLocalStorage() {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("hrn_")) {
+          const val = localStorage.getItem(k);
+          this.data.set(k, this.parse(val));
+          this.versions.set(k, 1);
+        }
+      }
+    } catch (err) {
+      console.error("[BANCO] Erro ao carregar dados do localStorage:", err);
+    }
   },
   async init(onUpdate) {
     this.currentUser = window.PCP_CURRENT_USER || "";
@@ -59,8 +83,12 @@ const RemoteStorage = {
       if (!initial && typeof this.onUpdate === "function") this.onUpdate();
     } catch (error) {
       this.setConnectionState(false);
-      if (initial) throw error;
-      console.error("[BANCO] Falha ao atualizar:", error);
+      if (initial) {
+        console.warn("[BANCO] Servidor offline no carregamento inicial. Carregando dados locais do navegador...");
+        this.loadFromLocalStorage();
+      } else {
+        console.error("[BANCO] Falha ao atualizar:", error);
+      }
     }
   },
   enqueue(key, operation) {
@@ -106,26 +134,20 @@ const RemoteStorage = {
     if (typeof this.onUpdate === "function") this.onUpdate();
   },
   setConnectionState(online) {
+    this.online = online;
     const warning = document.getElementById("central-server-warning");
     const container = document.getElementById("net-sync-status");
     const text = document.getElementById("net-sync-text");
     if (container) container.className = `sync-status-container ${online ? "online" : "offline"}`;
-    if (text) text.textContent = online ? "Supabase conectado" : "Banco indisponivel";
+    if (text) text.textContent = online ? "Servidor conectado" : "Modo Local / Offline";
     if (warning && online && !warning.textContent.startsWith("Os dados de")) {
       warning.style.display = "none";
     }
     if (warning && !online) {
-      warning.textContent = "Banco indisponivel. As gravacoes estao bloqueadas.";
+      warning.textContent = "Servidor desconectado. As alterações estao salvas localmente neste navegador.";
       warning.style.display = "block";
     }
   }
 };
 
 window.RemoteStorage = RemoteStorage;
-
-
-
-
-
-
-

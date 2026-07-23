@@ -234,14 +234,18 @@ function requireUserLogin() {
 async function bootstrap() {
   try {
     // 1. Inicializa o RemoteStorage primeiro para leitura/gravação de solicitações
-    await RemoteStorage.init(() => {
-      // Se estiver na tela de login, não recarrega para não atrapalhar o fluxo do usuário
-      const overlay = document.getElementById("login-overlay");
-      if (overlay && !overlay.classList.contains("hidden")) return;
+    try {
+      await RemoteStorage.init(() => {
+        // Se estiver na tela de login, não recarrega para não atrapalhar o fluxo do usuário
+        const overlay = document.getElementById("login-overlay");
+        if (overlay && !overlay.classList.contains("hidden")) return;
 
-      if (document.querySelector(".modal-overlay:not(.hidden)")) return;
-      window.location.reload();
-    });
+        if (document.querySelector(".modal-overlay:not(.hidden)")) return;
+        window.location.reload();
+      });
+    } catch (rsErr) {
+      console.warn("[BOOT] RemoteStorage init alert:", rsErr);
+    }
 
     // 2. Exige o login do usuário
     await requireUserLogin();
@@ -260,7 +264,7 @@ async function bootstrap() {
     console.error("[BOOT]", error);
     const warning = document.getElementById("central-server-warning");
     if (warning) {
-      warning.textContent = "Nao foi possivel iniciar: Banco ou API indisponivel.";
+      warning.textContent = "Aviso ao iniciar: " + (error.message || "Verifique o servidor.");
       warning.style.display = "block";
     }
   }

@@ -1,5 +1,11 @@
-﻿import pg from "pg";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import pg from "pg";
 import { config } from "./config.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const LOCAL_DB_PATH = path.resolve(__dirname, "../database/local_state.json");
 
 // Force pg to ignore certificate validation when connecting to Supabase poolers.
 process.env.PGSSLMODE = "no-verify";
@@ -21,17 +27,39 @@ function usesSupabaseRest() {
   return !hasPostgresUrl() && Boolean(config.supabase.url && supabaseKey());
 }
 
-function requireDatabaseConfig() {
-  if (hasPostgresUrl() || usesSupabaseRest()) return;
-  const error = new Error(
-    "Database not configured. Set DATABASE_URL or SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY."
-  );
-  error.code = "DATABASE_CONFIG_MISSING";
-  throw error;
+function usesLocalFile() {
+  return !hasPostgresUrl() && !usesSupabaseRest();
+}
+
+function isoNow() {
+  return new Date().toISOString();
+}
+
+async function readLocalFile() {
+  try {
+    const raw = await fs.readFile(LOCAL_DB_PATH, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    const initialData = {
+      revision: 0,
+      updated_at: isoNow(),
+      state: {},
+      audit_log: []
+    };
+    await writeLocalFile(initialData);
+    return initialData;
+  }
+}
+
+async function writeLocalFile(data) {
+  await fs.mkdir(path.dirname(LOCAL_DB_PATH), { recursive: true });
+  await fs.writeFile(LOCAL_DB_PATH, JSON.stringify(data, null, 2), "utf8");
 }
 
 function getPool() {
-  requireDatabaseConfig();
+  if (usesLocalFile()) {
+    throw new Error("PostgreSQL pool unavailable in local file mode.");
+  }
   if (usesSupabaseRest()) {
     throw new Error("PostgreSQL pool unavailable when using Supabase REST mode.");
   }
@@ -77,10 +105,6 @@ function parseStoredValue(value) {
 
 function serializeValue(value) {
   return JSON.stringify(value ?? null);
-}
-
-function isoNow() {
-  return new Date().toISOString();
 }
 
 async function withConnection(callback) {
@@ -195,9 +219,10 @@ async function initializePostgres() {
 
 export async function initializeDatabase() {
   if (initialized) return;
-  requireDatabaseConfig();
 
-  if (usesSupabaseRest()) {
+  if (usesLocalFile()) {
+    await readLocalFile();
+  } else if (usesSupabaseRest()) {
     await initializeSupabaseRest();
   } else {
     await initializePostgres();
@@ -208,6 +233,11 @@ export async function initializeDatabase() {
 
 export async function transaction(callback) {
   await initializeDatabase();
+
+  if (usesLocalFile()) {
+    return await callback(null);
+  }
+
   if (usesSupabaseRest()) {
     const error = new Error("Transactions require DATABASE_URL. Supabase REST mode handles state writes directly.");
     error.code = "REST_TRANSACTION_UNAVAILABLE";
@@ -232,6 +262,11 @@ export async function transaction(callback) {
 export async function databaseHealth() {
   await initializeDatabase();
 
+  if (usesLocalFile()) {
+    const db = await readLocalFile();
+    return db.updated_at || isoNow();
+  }
+
   if (usesSupabaseRest()) {
     const rows = await restRequest("app_revision", {
       params: { select: "updated_at", singleton: "eq.main", limit: 1 }
@@ -247,6 +282,22 @@ export async function databaseHealth() {
 
 export async function getStateSnapshot(requestedRevision = 0) {
   await initializeDatabase();
+
+  if (usesLocalFile()) {
+    const db = await readLocalFile();
+    const revision = Number(db.revision || 0);
+    if (requestedRevision && requestedRevision === revision) {
+      return { modified: false, revision };
+    }
+
+    const data = {};
+    const versions = {};
+    for (const [key, item] of Object.entries(db.state || {})) {
+      data[key] = item.value;
+      versions[key] = Number(item.version || 0);
+    }
+    return { modified: true, revision, data, versions };
+  }
 
   if (usesSupabaseRest()) {
     const revisionRows = await restRequest("app_revision", {
@@ -289,6 +340,179 @@ export async function getStateSnapshot(requestedRevision = 0) {
   });
 }
 
+function versionConflict(current) {
+  const error = new Error("VERSION_CONFLICT");
+  error.status = 409;
+  error.currentVersion = current;
+  return error;
+}
+
+export async function upsertState(key, value, expectedVersion, actor = "") {
+  await initializeDatabase();
+
+  if (usesLocalFile()) {
+    const db = await readLocalFile();
+    const currentItem = db.state[key];
+    const current = currentItem ? Number(currentItem.version || 0) : 0;
+    if (current !== expectedVersion) throw versionConflict(current);
+
+    const nextVersion = current + 1;
+    const now = isoNow();
+    db.state[key] = {
+      value,
+      version: nextVersion,
+      updated_at: now
+    };
+    db.revision = Number(db.revision || 0) + 1;
+    db.updated_at = now;
+    if (!Array.isArray(db.audit_log)) db.audit_log = [];
+    db.audit_log.push({
+      id: db.audit_log.length + 1,
+      state_key: key,
+      action: "UPSERT",
+      version: nextVersion,
+      payload: serializeValue(value),
+      actor,
+      created_at: now
+    });
+    await writeLocalFile(db);
+    return { version: nextVersion, revision: db.revision };
+  }
+
+  if (usesSupabaseRest()) return upsertStateRest(key, value, expectedVersion, actor);
+
+  return transaction(async (client) => {
+    const current = await currentVersion(client, key);
+    if (current !== expectedVersion) throw versionConflict(current);
+
+    const nextVersion = current + 1;
+    const now = new Date();
+    const payload = serializeValue(value);
+    if (current === 0) {
+      await client.query(
+        "INSERT INTO app_state (key, value, version, updated_at) VALUES ($1, $2, $3, $4)",
+        [key, payload, nextVersion, now]
+      );
+    } else {
+      await client.query(
+        "UPDATE app_state SET value = $1, version = $2, updated_at = $3 WHERE key = $4",
+        [payload, nextVersion, now, key]
+      );
+    }
+
+    const revision = await incrementRevision(client);
+    await client.query(
+      "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
+      [key, "UPSERT", nextVersion, payload, actor, now]
+    );
+    return { version: nextVersion, revision };
+  });
+}
+
+export async function deleteState(key, expectedVersion, actor = "") {
+  await initializeDatabase();
+
+  if (usesLocalFile()) {
+    const db = await readLocalFile();
+    const currentItem = db.state[key];
+    const current = currentItem ? Number(currentItem.version || 0) : 0;
+    if (current !== expectedVersion) throw versionConflict(current);
+
+    delete db.state[key];
+    db.revision = Number(db.revision || 0) + 1;
+    const now = isoNow();
+    db.updated_at = now;
+    if (!Array.isArray(db.audit_log)) db.audit_log = [];
+    db.audit_log.push({
+      id: db.audit_log.length + 1,
+      state_key: key,
+      action: "DELETE",
+      version: current + 1,
+      actor,
+      created_at: now
+    });
+    await writeLocalFile(db);
+    return { revision: db.revision };
+  }
+
+  if (usesSupabaseRest()) return deleteStateRest(key, expectedVersion, actor);
+
+  return transaction(async (client) => {
+    const current = await currentVersion(client, key);
+    if (current !== expectedVersion) throw versionConflict(current);
+
+    const now = new Date();
+    await client.query("DELETE FROM app_state WHERE key = $1", [key]);
+    const revision = await incrementRevision(client);
+    await client.query(
+      "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
+      [key, "DELETE", current + 1, actor, now]
+    );
+    return { revision };
+  });
+}
+
+export async function importState(entries, actor = "IMPORT") {
+  await initializeDatabase();
+
+  if (usesLocalFile()) {
+    const db = await readLocalFile();
+    const now = isoNow();
+    for (const [key, value] of entries) {
+      const currentItem = db.state[key];
+      const current = currentItem ? Number(currentItem.version || 0) : 0;
+      const nextVersion = current + 1;
+      db.state[key] = {
+        value,
+        version: nextVersion,
+        updated_at: now
+      };
+      if (!Array.isArray(db.audit_log)) db.audit_log = [];
+      db.audit_log.push({
+        id: db.audit_log.length + 1,
+        state_key: key,
+        action: "IMPORT",
+        version: nextVersion,
+        payload: serializeValue(value),
+        actor,
+        created_at: now
+      });
+    }
+    db.revision = Number(db.revision || 0) + 1;
+    db.updated_at = now;
+    await writeLocalFile(db);
+    return { revision: db.revision };
+  }
+
+  if (usesSupabaseRest()) return importStateRest(entries, actor);
+
+  return transaction(async (client) => {
+    const now = new Date();
+    for (const [key, value] of entries) {
+      const current = await currentVersion(client, key);
+      const nextVersion = current + 1;
+      const payload = serializeValue(value);
+      if (current === 0) {
+        await client.query(
+          "INSERT INTO app_state (key, value, version, updated_at) VALUES ($1, $2, $3, $4)",
+          [key, payload, nextVersion, now]
+        );
+      } else {
+        await client.query(
+          "UPDATE app_state SET value = $1, version = $2, updated_at = $3 WHERE key = $4",
+          [payload, nextVersion, now, key]
+        );
+      }
+      await client.query(
+        "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
+        [key, "IMPORT", nextVersion, payload, actor, now]
+      );
+    }
+    return { revision: await incrementRevision(client) };
+  });
+}
+
+// Helpers for REST
 async function incrementRevision(client) {
   const now = new Date();
   await client.query("UPDATE app_revision SET revision = revision + 1, updated_at = $1 WHERE singleton = $2", [now, "main"]);
@@ -321,13 +545,6 @@ async function currentVersionRest(key) {
     params: { select: "version", key: `eq.${key}`, limit: 1 }
   });
   return Number(firstValue(rows?.[0], ["version"], 0));
-}
-
-function versionConflict(current) {
-  const error = new Error("VERSION_CONFLICT");
-  error.status = 409;
-  error.currentVersion = current;
-  return error;
 }
 
 async function insertAuditRest({ stateKey, action, version, payload, actor, createdAt }) {
@@ -373,38 +590,6 @@ async function upsertStateRest(key, value, expectedVersion, actor = "") {
   return { version: nextVersion, revision };
 }
 
-export async function upsertState(key, value, expectedVersion, actor = "") {
-  await initializeDatabase();
-  if (usesSupabaseRest()) return upsertStateRest(key, value, expectedVersion, actor);
-
-  return transaction(async (client) => {
-    const current = await currentVersion(client, key);
-    if (current !== expectedVersion) throw versionConflict(current);
-
-    const nextVersion = current + 1;
-    const now = new Date();
-    const payload = serializeValue(value);
-    if (current === 0) {
-      await client.query(
-        "INSERT INTO app_state (key, value, version, updated_at) VALUES ($1, $2, $3, $4)",
-        [key, payload, nextVersion, now]
-      );
-    } else {
-      await client.query(
-        "UPDATE app_state SET value = $1, version = $2, updated_at = $3 WHERE key = $4",
-        [payload, nextVersion, now, key]
-      );
-    }
-
-    const revision = await incrementRevision(client);
-    await client.query(
-      "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
-      [key, "UPSERT", nextVersion, payload, actor, now]
-    );
-    return { version: nextVersion, revision };
-  });
-}
-
 async function deleteStateRest(key, expectedVersion, actor = "") {
   const current = await currentVersionRest(key);
   if (current !== expectedVersion) throw versionConflict(current);
@@ -418,25 +603,6 @@ async function deleteStateRest(key, expectedVersion, actor = "") {
   const revision = await incrementRevisionRest();
   await insertAuditRest({ stateKey: key, action: "DELETE", version: current + 1, actor, createdAt: now });
   return { revision };
-}
-
-export async function deleteState(key, expectedVersion, actor = "") {
-  await initializeDatabase();
-  if (usesSupabaseRest()) return deleteStateRest(key, expectedVersion, actor);
-
-  return transaction(async (client) => {
-    const current = await currentVersion(client, key);
-    if (current !== expectedVersion) throw versionConflict(current);
-
-    const now = new Date();
-    await client.query("DELETE FROM app_state WHERE key = $1", [key]);
-    const revision = await incrementRevision(client);
-    await client.query(
-      "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
-      [key, "DELETE", current + 1, actor, now]
-    );
-    return { revision };
-  });
 }
 
 async function importStateRest(entries, actor = "IMPORT") {
@@ -466,36 +632,6 @@ async function importStateRest(entries, actor = "IMPORT") {
   return { revision: await incrementRevisionRest() };
 }
 
-export async function importState(entries, actor = "IMPORT") {
-  await initializeDatabase();
-  if (usesSupabaseRest()) return importStateRest(entries, actor);
-
-  return transaction(async (client) => {
-    const now = new Date();
-    for (const [key, value] of entries) {
-      const current = await currentVersion(client, key);
-      const nextVersion = current + 1;
-      const payload = serializeValue(value);
-      if (current === 0) {
-        await client.query(
-          "INSERT INTO app_state (key, value, version, updated_at) VALUES ($1, $2, $3, $4)",
-          [key, payload, nextVersion, now]
-        );
-      } else {
-        await client.query(
-          "UPDATE app_state SET value = $1, version = $2, updated_at = $3 WHERE key = $4",
-          [payload, nextVersion, now, key]
-        );
-      }
-      await client.query(
-        "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
-        [key, "IMPORT", nextVersion, payload, actor, now]
-      );
-    }
-    return { revision: await incrementRevision(client) };
-  });
-}
-
 export async function closeDatabase() {
   if (pool) {
     await pool.end();
@@ -503,4 +639,3 @@ export async function closeDatabase() {
   }
   initialized = false;
 }
-
