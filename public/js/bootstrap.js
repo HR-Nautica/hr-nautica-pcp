@@ -31,9 +31,10 @@ function requireUserLogin() {
     const storageKey = "hrn_login_usuario";
     const userRoleKey = "hrn_usuario_role";
     const session = window.sessionStorage;
+    const local = window.localStorage;
     
-    const cachedUser = session.getItem(storageKey) || "";
-    const cachedRole = session.getItem(userRoleKey) || "";
+    const cachedUser = session.getItem(storageKey) || local.getItem(storageKey) || "";
+    const cachedRole = session.getItem(userRoleKey) || local.getItem(userRoleKey) || "";
     
     if (cachedUser && (cachedUser === "lucas_admin" || cachedRole === "operator" || cachedRole === "admin")) {
       window.PCP_CURRENT_USER = cachedUser;
@@ -204,6 +205,8 @@ function requireUserLogin() {
           if (password === "admin123!" || password === "admin123" || password === "admin" || password === "nautica123" || password.length > 0) {
             session.setItem(storageKey, "lucas_admin");
             session.setItem(userRoleKey, "admin");
+            local.setItem(storageKey, "lucas_admin");
+            local.setItem(userRoleKey, "admin");
             window.PCP_CURRENT_USER = "lucas_admin";
             window.PCP_USER_ROLE = "admin";
             
@@ -232,6 +235,8 @@ function requireUserLogin() {
               if (password === userReq.password || password === "nautica123" || password === "admin123!" || password === "admin123" || password.length > 0) {
                 session.setItem(storageKey, username);
                 session.setItem(userRoleKey, "operator");
+                local.setItem(storageKey, username);
+                local.setItem(userRoleKey, "operator");
                 window.PCP_CURRENT_USER = username;
                 window.PCP_USER_ROLE = "operator";
                 
@@ -258,6 +263,8 @@ function requireUserLogin() {
             // Permite login de operador com qualquer senha informada
             session.setItem(storageKey, username);
             session.setItem(userRoleKey, "operator");
+            local.setItem(storageKey, username);
+            local.setItem(userRoleKey, "operator");
             window.PCP_CURRENT_USER = username;
             window.PCP_USER_ROLE = "operator";
             
@@ -280,9 +287,11 @@ async function bootstrap() {
       await RemoteStorage.init(() => {
         const overlay = document.getElementById("login-overlay");
         if (overlay && !overlay.classList.contains("hidden")) return;
-
         if (document.querySelector(".modal-overlay:not(.hidden)")) return;
-        window.location.reload();
+
+        if (typeof STATE !== "undefined" && STATE.currentPage && typeof navigate === "function") {
+          navigate(STATE.currentPage);
+        }
       });
     } catch (rsErr) {
       console.warn("[BOOT] RemoteStorage init alert:", rsErr);
