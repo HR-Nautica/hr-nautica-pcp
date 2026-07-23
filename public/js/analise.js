@@ -32,7 +32,7 @@ const ANALISE_STATE = {
   loaded: !!RemoteStorage.getItem('hrn_analise_cobertura_data'),
   filterType: 'all', // 'all' | 'critical' | 'warning' | 'ok'
   searchText: '',
-  sortColumn: 'prio2',
+  sortColumn: 'prioridadeGeral',
   sortDirection: 'asc'
 };
 
@@ -248,6 +248,27 @@ function syncRastreioPecas(wb) {
   }
 }
 
+function getExcelRowValue(row, possibleNames, defaultVal = '') {
+  if (!row) return defaultVal;
+  const keys = Object.keys(row);
+  for (const name of possibleNames) {
+    const targetClean = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const matchedKey = keys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '') === targetClean);
+    if (matchedKey !== undefined && row[matchedKey] !== undefined && row[matchedKey] !== null && String(row[matchedKey]).trim() !== '') {
+      return row[matchedKey];
+    }
+  }
+  return defaultVal;
+}
+
+function parseExcelFloat(val, defaultVal = 0) {
+  if (val === null || val === undefined || val === '') return defaultVal;
+  if (typeof val === 'number') return isNaN(val) ? defaultVal : val;
+  const str = String(val).replace(/\s+/g, '').replace(',', '.');
+  const num = parseFloat(str);
+  return isNaN(num) ? defaultVal : num;
+}
+
 // Processa o arquivo Excel e extrai os dados
 function processAnaliseExcel(arrayBuffer) {
   try {
@@ -271,25 +292,34 @@ function processAnaliseExcel(arrayBuffer) {
       throw new Error('Nenhum dado encontrado na aba de Cobertura.');
     }
 
+    let rowIdx = 0;
     const parsedData = rowsJson.map(row => {
-      const produto = String(row['Produto'] || '').trim();
-      const sku = String(row['Código (SKU)'] || row['SKU'] || '').trim().toUpperCase();
-      const codigoBruto = String(row['Código Bruto'] || '').trim();
+      const produto = String(getExcelRowValue(row, ['Produto', 'Descrição', 'Nome', 'Modelo'])).trim();
+      const sku = String(getExcelRowValue(row, ['Código (SKU)', 'Codigo (SKU)', 'SKU', 'Código'])).trim().toUpperCase();
+      const codigoBruto = String(getExcelRowValue(row, ['Código Bruto', 'Codigo Bruto', 'Bruto'])).trim();
       
-      const entradasPrevistas = parseFloat(row['Entradas previstas (em Produção)']) || 0;
-      const saidasPrevistas = parseFloat(row['Saídas previstas (Vendido)']) || 0;
-      const estoqueFisico = parseFloat(row['Estoque físico']) || 0;
-      const estoque1 = parseFloat(row['Estoque 1']) || 0;
-      const estoqueVirtual = parseFloat(row['Estoque virtual']) || 0;
-      const mediaMensal = parseFloat(row['Média mensal']) || 0;
+      const prioridadeGeralRaw = String(getExcelRowValue(row, ['Prioridade GERAL', 'Prioridade', 'Rank', 'Geral'])).trim();
       
-      const prioVal = row['Prio2'] !== undefined && row['Prio2'] !== '' ? parseFloat(row['Prio2']) : null;
-      const coberturaVirtual = parseFloat(row['Cobertura Est. Virtual']) || 0;
-      const localizacao = String(row['Localização'] || '-').trim();
-      const bucha = String(row['bucha'] || '-').trim();
+      const entradasPrevistas = parseExcelFloat(getExcelRowValue(row, ['Entradas previstas (em Produção)', 'Entradas previstas', 'Entradas']), 0);
+      const saidasPrevistas = parseExcelFloat(getExcelRowValue(row, ['Saídas previstas (Vendido)', 'Saidas previstas (Vendido)', 'Saídas previstas', 'Saidas previstas']), 0);
+      const estoqueFisico = parseExcelFloat(getExcelRowValue(row, ['Estoque físico', 'Estoque fisico', 'Físico', 'Fisico']), 0);
+      const estoque1 = parseExcelFloat(getExcelRowValue(row, ['Estoque 1', 'Estoque1']), 0);
+      const estoqueVirtual = parseExcelFloat(getExcelRowValue(row, ['Estoque virtual', 'Estoque Virtual', 'Virtual']), 0);
+      const mediaMensal = parseExcelFloat(getExcelRowValue(row, ['Média mensal', 'Media mensal', 'Média Mensal']), 0);
+      
+      const rawPrio = getExcelRowValue(row, ['Prio2', 'Prio 2', 'Prioridade2'], null);
+      const prioVal = rawPrio !== null && rawPrio !== '' ? parseExcelFloat(rawPrio, null) : null;
+
+      const coberturaVirtual = parseExcelFloat(getExcelRowValue(row, ['Cobertura Est. Virtual', 'Cobertura Est Virtual', 'Cobertura Virtual', 'Cobertura']), 0);
+      const localizacao = String(getExcelRowValue(row, ['Localização', 'Localizacao', 'Loc'], '-')).trim();
+      const bucha = String(getExcelRowValue(row, ['bucha', 'Bucha'], '-')).trim();
+
+      rowIdx++;
+      const prioridadeGeral = prioridadeGeralRaw || String(rowIdx).padStart(2, '0');
 
       return {
-        prioridadeGeral: String(row['Prioridade GERAL'] || '').trim(),
+        originalIndex: rowIdx,
+        prioridadeGeral,
         produto,
         sku,
         codigoBruto,
@@ -300,11 +330,12 @@ function processAnaliseExcel(arrayBuffer) {
         estoqueVirtual,
         mediaMensal,
         prio2: prioVal,
+        prio2Excel: prioVal,
         coberturaVirtual,
         localizacao,
         bucha
       };
-    }).filter(item => item.produto && item.produto !== 'undefined' && item.prioridadeGeral);
+    }).filter(item => item.produto && item.produto !== 'undefined');
 
     ANALISE_STATE.coberturaData = parsedData;
     ANALISE_STATE.loaded = true;
@@ -358,27 +389,31 @@ function renderAnaliseTable() {
     item.estoqueVirtual = item.estoqueFisico + (item.entradasPrevistas || 0) - (item.saidasPrevistas || 0);
     item.coberturaVirtual = item.mediaMensal > 0 ? item.estoqueVirtual / item.mediaMensal : Infinity;
     
-    // Recalcula prio2 utilizando a fórmula física baseada no Excel
-    const estoque1 = item.estoqueFisico - item.saidasPrevistas;
-    if (estoque1 < 0) {
-      item.prio2 = -1.0;
+    // Se o prio2 veio diretamente do Excel (prio2Excel), preserva o valor da planilha
+    if (item.prio2Excel !== undefined && item.prio2Excel !== null) {
+      item.prio2 = item.prio2Excel;
     } else {
-      const hasMax = /max\./i.test(item.produto);
-      if (hasMax) {
-        item.prio2 = null;
+      const estoque1 = item.estoqueFisico - item.saidasPrevistas;
+      if (estoque1 < 0) {
+        item.prio2 = -1.0;
       } else {
-        const mediaMensal = Number(item.mediaMensal) || 0;
-        let rawVal;
-        if (item.estoqueVirtual < 0) {
-          rawVal = mediaMensal > 0 ? (item.estoqueVirtual / mediaMensal) : 0;
+        const hasMax = /max\./i.test(item.produto);
+        if (hasMax) {
+          item.prio2 = null;
         } else {
-          if (mediaMensal < 2) {
-            rawVal = 5.0;
+          const mediaMensal = Number(item.mediaMensal) || 0;
+          let rawVal;
+          if (item.estoqueVirtual < 0) {
+            rawVal = mediaMensal > 0 ? (item.estoqueVirtual / mediaMensal) : 0;
           } else {
-            rawVal = estoque1 / mediaMensal;
+            if (mediaMensal < 2) {
+              rawVal = 5.0;
+            } else {
+              rawVal = estoque1 / mediaMensal;
+            }
           }
+          item.prio2 = excelRoundDown(rawVal, 1);
         }
-        item.prio2 = excelRoundDown(rawVal, 1);
       }
     }
   });
@@ -445,8 +480,13 @@ function renderAnaliseTable() {
 
     switch (ANALISE_STATE.sortColumn) {
       case 'prioridadeGeral':
-        valA = parseInt(a.prioridadeGeral) || 999;
-        valB = parseInt(b.prioridadeGeral) || 999;
+        if (a.originalIndex !== undefined && b.originalIndex !== undefined) {
+          valA = a.originalIndex;
+          valB = b.originalIndex;
+        } else {
+          valA = parseInt(a.prioridadeGeral) || 999;
+          valB = parseInt(b.prioridadeGeral) || 999;
+        }
         break;
       case 'produto':
         return ANALISE_STATE.sortDirection === 'asc'
@@ -907,7 +947,8 @@ function initAnaliseListeners() {
 function seedAnaliseFromMatriz() {
   if (typeof MATRIZ_DATA === 'undefined' || !Array.isArray(MATRIZ_DATA)) return [];
   return MATRIZ_DATA.map((m, idx) => ({
-    prioridadeGeral: String(idx + 1),
+    originalIndex: idx + 1,
+    prioridadeGeral: String(idx + 1).padStart(2, '0'),
     produto: m.nome || 'Produto Sem Nome',
     sku: m.sku || `SKU-${idx + 1}`,
     codigoBruto: m.codigoBruto || '-',
