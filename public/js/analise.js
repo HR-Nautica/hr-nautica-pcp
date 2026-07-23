@@ -927,16 +927,14 @@ function seedAnaliseFromMatriz() {
 function initAnaliseModule() {
   try {
     initAnaliseListeners();
-    if (!ANALISE_STATE.coberturaData || ANALISE_STATE.coberturaData.length === 0) {
-      const cached = safeGetJSON('hrn_analise_cobertura_data', null);
-      if (cached && Array.isArray(cached) && cached.length > 0) {
-        ANALISE_STATE.coberturaData = cached;
-      } else {
-        const seeded = seedAnaliseFromMatriz();
-        if (seeded && seeded.length > 0) {
-          ANALISE_STATE.coberturaData = seeded;
-          RemoteStorage.setItem('hrn_analise_cobertura_data', JSON.stringify(seeded));
-        }
+    const stored = safeGetJSON('hrn_analise_cobertura_data', null);
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      ANALISE_STATE.coberturaData = stored;
+    } else if (!ANALISE_STATE.coberturaData || ANALISE_STATE.coberturaData.length === 0) {
+      const seeded = seedAnaliseFromMatriz();
+      if (seeded && seeded.length > 0) {
+        ANALISE_STATE.coberturaData = seeded;
+        RemoteStorage.setItem('hrn_analise_cobertura_data', JSON.stringify(seeded));
       }
     }
     ANALISE_STATE.loaded = true;

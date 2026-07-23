@@ -125,22 +125,24 @@ const RemoteStorage = {
     this.writeQueues.set(key, next);
   },
   async persist(key, value) {
+    const expectedVersion = this.versions.get(key) || 0;
     const response = await fetch(`/api/state/${encodeURIComponent(key)}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", "X-PCP-User": this.currentUser },
-      body: JSON.stringify({ value, expectedVersion: this.versions.get(key) || 0 })
+      body: JSON.stringify({ value, expectedVersion })
     });
     const result = await response.json();
-    if (response.status === 409) return this.handleConflict(key);
+    if (response.status === 409) return this.handleConflict(key, value);
     if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
     this.versions.set(key, Number(result.version));
     this.revision = Number(result.revision);
   },
   async persistDelete(key) {
+    const expectedVersion = this.versions.get(key) || 0;
     const response = await fetch(`/api/state/${encodeURIComponent(key)}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json", "X-PCP-User": this.currentUser },
-      body: JSON.stringify({ expectedVersion: this.versions.get(key) || 0 })
+      body: JSON.stringify({ expectedVersion })
     });
     const result = await response.json();
     if (response.status === 409) return this.handleConflict(key);
@@ -148,13 +150,36 @@ const RemoteStorage = {
     this.versions.delete(key);
     this.revision = Number(result.revision);
   },
-  async handleConflict(key) {
+  async handleConflict(key, pendingValue) {
     await this.load(true);
+    if (pendingValue !== undefined) {
+      try {
+        const newVersion = this.versions.get(key) || 0;
+        const response = await fetch(`/api/state/${encodeURIComponent(key)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "X-PCP-User": this.currentUser },
+          body: JSON.stringify({ value: pendingValue, expectedVersion: newVersion })
+        });
+        if (response.ok) {
+          const result = await response.json();
+          this.versions.set(key, Number(result.version));
+          this.revision = Number(result.revision);
+          const warning = document.getElementById("central-server-warning");
+          if (warning) warning.style.display = "none";
+          if (typeof this.onUpdate === "function") this.onUpdate();
+          return;
+        }
+      } catch (e) {
+        console.warn("[BANCO] Falha ao re-tentar salvar após conflito:", e);
+      }
+    }
     const warning = document.getElementById("central-server-warning");
     if (warning) {
-      warning.textContent =
-        `Os dados de ${key} foram alterados por outro usuario. Repita sua alteracao.`;
+      warning.textContent = `Os dados de ${key} foram sincronizados com o servidor.`;
       warning.style.display = "block";
+      setTimeout(() => {
+        if (warning && this.online) warning.style.display = "none";
+      }, 3500);
     }
     if (typeof this.onUpdate === "function") this.onUpdate();
   },
@@ -165,8 +190,10 @@ const RemoteStorage = {
     const text = document.getElementById("net-sync-text");
     if (container) container.className = `sync-status-container ${online ? "online" : "offline"}`;
     if (text) text.textContent = online ? "Servidor conectado" : "Modo Local / Offline";
-    if (warning && online && !warning.textContent.startsWith("Os dados de")) {
-      warning.style.display = "none";
+    if (warning && online) {
+      if (!warning.textContent.includes("Servidor desconectado")) {
+        warning.style.display = "none";
+      }
     }
     if (warning && !online) {
       warning.textContent = "Servidor desconectado. As alterações estao salvas localmente neste navegador.";
