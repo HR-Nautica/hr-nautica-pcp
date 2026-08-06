@@ -543,263 +543,161 @@ function saveOp() {
 // ═══════════════════════════════════════════
 // MODELOS DE HÉLICES
 // ═══════════════════════════════════════════
-function handleExcelUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+const CATALOGO_FORM_FIELDS = {
+  nome: 'modelo-nome',
+  sku: 'modelo-sku',
+  codigoBruto: 'modelo-codigo-bruto',
+  diametroTuboAnel: 'modelo-diametro-tubo-anel',
+  descricaoTinyTuboAl: 'modelo-descricao-tubo',
+  skuTinyTuboAl: 'modelo-sku-tubo',
+  comprimentoAnel: 'modelo-comprimento-anel',
+  anel: 'modelo-anel',
+  diametroLataoBucha: 'modelo-diametro-latao',
+  descricaoTinyLatao: 'modelo-descricao-latao',
+  skuTinyLatao: 'modelo-sku-latao',
+  comprimentoBucha: 'modelo-comprimento-bucha',
+  bucha: 'modelo-bucha',
+  cor: 'modelo-cor',
+  alturaBuchas: 'modelo-altura-buchas',
+  modeloBucha: 'modelo-modelo-bucha',
+  descricaoCaixa: 'modelo-descricao-caixa',
+  skuCaixa: 'modelo-sku-caixa',
+};
 
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    try {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      
-      const sheetName = 'MATRIZ';
-      if (!workbook.SheetNames.includes(sheetName)) {
-        showToast(`Planilha inválida! Aba "${sheetName}" não encontrada.`, 'error');
-        return;
-      }
-      
-      const worksheet = workbook.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-      
-      if (!rows.length) {
-        showToast('Nenhum registro encontrado na planilha.', 'error');
-        return;
-      }
-
-      let importCount = 0;
-      let updateCount = 0;
-      const modelos = DB.getModelos();
-
-      rows.forEach(r => {
-        const desc = r["Descrição"] || "";
-        if (!desc) return;
-
-        // Extract diameter and pitch
-        let diametro = "";
-        let passo = "";
-        const match = desc.match(/(\d+(?:\s+\d+\/\d+)?)\s*X\s*(\d+(?:\s+\d+\/\d+)?)/i);
-        if (match) {
-          diametro = match[1];
-          passo = match[2];
-        }
-
-        // Components description
-        const extraDesc = [];
-        if (r["Diâmetro Tubo Anel"] && r["Diâmetro Tubo Anel"] !== "N/A" && r["Diâmetro Tubo Anel"] !== "N/T") {
-          extraDesc.push(`Tubo: ${r["Diâmetro Tubo Anel"]}`);
-        }
-        if (r["Bucha"] && r["Bucha"] !== "N/A") {
-          extraDesc.push(`Bucha: ${r["Bucha"]}`);
-        }
-        if (r["Estria"] && r["Estria"] !== "N/A" && r["Estria"] !== 0 && r["Estria"] !== "0") {
-          extraDesc.push(`Estria: ${r["Estria"]}`);
-        }
-        if (r["Descrição Caixa"] && r["Descrição Caixa"] !== "N/A") {
-          extraDesc.push(`Caixa: ${r["Descrição Caixa"]}`);
-        }
-
-        const modelData = {
-          nome:          desc,
-          pas:           "3",
-          material:      "Alumínio",
-          diametro:      diametro,
-          passo:         passo,
-          peso:          "",
-          desc:          extraDesc.join(" | "),
-          
-          sku:           r["Código (SKU)"] || "",
-          codigoBruto:   r["Código Bruto"] || "",
-          gravacaoBruto: r["Gravação Bruto"] || "",
-          tuboAnel:      r["Diâmetro Tubo Anel"] || "",
-          bucha:         r["Bucha"] || "",
-          cor:           (r["Cor"] || "").trim(),
-          estria:        (r["Estria"] === 0 || r["Estria"] === "0") ? "" : (r["Estria"] || ""),
-          caixa:         r["Descrição Caixa"] || "",
-          skuCaixa:      r["Código SKU Caixa"] || "",
-          buchaModelo:   r["Modelo Bucha"] || ""
-        };
-
-        // Check if model already exists (by name/description or SKU)
-        const existing = modelos.find(m => 
-          m.nome.toLowerCase() === desc.toLowerCase() || 
-          (m.sku && m.sku.toLowerCase() === (modelData.sku || '').toLowerCase())
-        );
-
-        if (existing) {
-          DB.updateModelo(existing.id, modelData);
-          updateCount++;
-        } else {
-          DB.addModelo(modelData);
-          importCount++;
-        }
-      });
-
-      // Clear model inputs, seed materials based on new models, and reload page
-      DB.seed(); // This will auto-register any new materials into Estoque
-      renderModelos();
-      populateModeloSelects();
-      if (STATE.currentPage === 'dashboard') renderDashboard();
-
-      showToast(`Importado: ${importCount} novos, Atualizado: ${updateCount} modelos!`);
-    } catch (err) {
-      console.error(err);
-      showToast('Erro ao processar o arquivo Excel.', 'error');
-    }
-  };
-  reader.readAsArrayBuffer(file);
-  e.target.value = ''; // reset file input
+function escapeCatalogoHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
-function renderModelos() {
-  const search = ($('modelo-search')?.value || '').toLowerCase();
-  let list = DB.getModelos();
-  if (search) list = list.filter(m =>
-    m.nome.toLowerCase().includes(search) ||
-    (m.sku || '').toLowerCase().includes(search) ||
-    m.material.toLowerCase().includes(search) ||
-    (m.codigoBruto || '').toLowerCase().includes(search)
-  );
+function catalogoDimensions(description) {
+  const match = String(description || '').match(/(\d+(?:[.,]\d+|\s+\d+\/\d+)?)\s*[xX]\s*(\d+(?:[.,]\d+|\s+\d+\/\d+)?)/);
+  return match ? { diametro: match[1], passo: match[2] } : { diametro: '', passo: '' };
+}
 
-  const grid = $('modelos-grid');
+function catalogoFillForm(modelo = {}) {
+  Object.entries(CATALOGO_FORM_FIELDS).forEach(([field, id]) => {
+    $(id).value = modelo[field] ?? '';
+  });
+}
+
+function catalogoReadForm() {
+  const data = Object.fromEntries(
+    Object.entries(CATALOGO_FORM_FIELDS).map(([field, id]) => [field, $(id).value.trim()])
+  );
+  return {
+    ...data,
+    pas: '3',
+    material: 'Alumínio',
+    ...catalogoDimensions(data.nome),
+  };
+}
+
+function renderCatalogoModelos() {
+  const all = DB.getModelos();
+  const search = ($('modelo-search').value || '').trim().toLocaleLowerCase('pt-BR');
+  const searchableFields = ['nome', 'sku', 'codigoBruto', 'anel', 'bucha', 'modeloBucha', 'descricaoCaixa'];
+  const list = all
+    .filter((modelo) => !search || searchableFields.some((field) =>
+      String(modelo[field] || '').toLocaleLowerCase('pt-BR').includes(search)
+    ))
+    .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+
+  const meaningfulDistinct = (field) => new Set(
+    all.map((modelo) => String(modelo[field] || '').trim())
+      .filter((value) => value && value !== 'N/A' && value !== 'N/T')
+  ).size;
+
+  $('catalogo-total').textContent = String(all.length);
+  $('catalogo-com-caixa').textContent = String(all.filter((modelo) =>
+    modelo.descricaoCaixa && modelo.descricaoCaixa !== 'N/A'
+  ).length);
+  $('catalogo-tubos').textContent = String(meaningfulDistinct('diametroTuboAnel'));
+  $('catalogo-buchas').textContent = String(meaningfulDistinct('modeloBucha'));
+  $('catalogo-count').textContent = `${list.length} ${list.length === 1 ? 'item' : 'itens'}`;
+
+  const tbody = $('modelos-grid');
   if (!list.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:3rem">
-      Nenhum modelo cadastrado.
-    </div>`;
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">Nenhuma hélice encontrada.</td></tr>';
     return;
   }
 
-  grid.innerHTML = list.map(m => {
-    // Determine card dot/indicator color from the model color
-    let colorDotHtml = '';
-    if (m.cor) {
-      const dotColor = m.cor.toUpperCase() === 'PRETO' ? '#111827' : '#e8edf5';
-      colorDotHtml = `<span class="chip chip--gray" style="font-size:0.68rem;padding:2px 6px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${dotColor};border:1px solid rgba(255,255,255,0.2);margin-right:4px"></span>${m.cor}</span>`;
-    }
-
-    const skuBadge = m.sku 
-      ? `<div style="position:absolute;top:10px;left:10px;"><span class="chip chip--blue" style="font-weight:700;font-size:0.7rem;letter-spacing:0.04em">${m.sku}</span></div>`
-      : '';
-
-    const specsHtml = [
-      `<span class="spec-tag">âš™ ${m.pas} pás</span>`,
-      `<span class="spec-tag">â¬¡ ${m.material}</span>`,
-      m.diametro ? `<span class="spec-tag">âŒ€ ${m.diametro}</span>` : '',
-      m.passo    ? `<span class="spec-tag">â†” ${m.passo}</span>` : '',
-      m.peso     ? `<span class="spec-tag">âš– ${m.peso}kg</span>` : '',
-    ].filter(Boolean).join('');
-
-    // Generate details of raw materials required
-    let rawMaterialsHtml = '';
-    if (m.tuboAnel || m.bucha || m.caixa || m.estria) {
-      rawMaterialsHtml = `
-        <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:4px">
-          ${m.codigoBruto ? `<div><strong>Bruto / Coquilha:</strong> <span style="color:var(--accent-orange)">${m.codigoBruto} ${m.gravacaoBruto ? `(${m.gravacaoBruto})` : ''}</span></div>` : ''}
-          ${m.tuboAnel && m.tuboAnel !== 'N/A' && m.tuboAnel !== 'N/T' ? `<div><strong>Tubo Al.:</strong> ${m.tuboAnel}</div>` : ''}
-          ${m.bucha && m.bucha !== 'N/A' ? `<div><strong>Bucha Latão:</strong> ${m.bucha}</div>` : ''}
-          ${m.estria && m.estria !== 'N/A' ? `<div><strong>Estria:</strong> ${m.estria}</div>` : ''}
-          ${m.caixa && m.caixa !== 'N/A' ? `<div><strong>Caixa:</strong> ${m.caixa}</div>` : ''}
-        </div>
-      `;
-    }
-
-    return `
-      <div class="modelo-card">
-        <div class="modelo-card-header">
-          ${skuBadge}
-          <div class="modelo-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M12 3C7 3 3 7 3 12s4 9 9 9 9-4 9-9-4-9-9-9"/>
-              <path d="M9 9c-1.5 2-1.5 4 0 6"/>
-              <path d="M15 9c1.5 2 1.5 4 0 6"/>
-            </svg>
-          </div>
-          <div style="position:absolute;top:10px;right:10px;display:flex;gap:6px">
-            <button class="btn-icon" onclick="openEditModelo('${m.id}')" title="Editar">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-            <button class="btn-icon danger" onclick="deleteModelo('${m.id}')" title="Excluir">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="modelo-card-body">
-          <div class="modelo-card-name" style="margin-bottom:0.5rem;font-size:0.9rem;font-weight:700;line-height:1.4">${m.nome}</div>
-          <div class="modelo-card-specs" style="margin-bottom:0.5rem">
-            ${specsHtml}
-            ${colorDotHtml}
-          </div>
-          <div class="modelo-card-desc" style="font-size:0.76rem;color:var(--text-muted)">${m.desc || 'Sem descrição.'}</div>
-          ${rawMaterialsHtml}
-        </div>
-      </div>
-    `;
+  tbody.innerHTML = list.map((modelo) => {
+    const cor = modelo.cor || '—';
+    const dotClass = cor.toLocaleUpperCase('pt-BR').includes('PRETO') ? ' catalogo-color-dot--black' : '';
+    return `<tr>
+      <td><span class="catalogo-sku">${escapeCatalogoHtml(modelo.sku)}</span></td>
+      <td><strong class="catalogo-model-name">${escapeCatalogoHtml(modelo.nome)}</strong></td>
+      <td>${escapeCatalogoHtml(modelo.codigoBruto || '—')}</td>
+      <td>${escapeCatalogoHtml(modelo.anel || '—')}</td>
+      <td>${escapeCatalogoHtml(modelo.bucha || '—')}</td>
+      <td><span class="catalogo-color"><i class="catalogo-color-dot${dotClass}"></i>${escapeCatalogoHtml(cor)}</span></td>
+      <td class="catalogo-caixa">${escapeCatalogoHtml(modelo.descricaoCaixa || '—')}</td>
+      <td class="catalogo-row-actions">
+        <button class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Editar
+        </button>
+      </td>
+    </tr>`;
   }).join('');
+}
+
+function renderModelos() {
+  renderCatalogoModelos();
 }
 
 function openNovoModelo() {
   STATE.editingModeloId = null;
-  $('modal-modelo-title').textContent = 'Novo Modelo de Hélice';
   $('modelo-edit-id').value = '';
-  ['modelo-nome','modelo-diametro','modelo-passo','modelo-peso','modelo-desc'].forEach(id => { $(id).value = ''; });
-  $('modelo-pas').value = '3';
-  $('modelo-material').value = 'Alumínio';
+  $('modal-modelo-title').textContent = 'Nova Hélice';
+  catalogoFillForm();
   $('modal-modelo').classList.remove('hidden');
+  $('modelo-nome').focus();
 }
 
 function openEditModelo(id) {
-  const m = DB.getModelos().find(x => x.id === id);
-  if (!m) return;
+  const modelo = DB.getModelos().find((item) => item.id === id);
+  if (!modelo) return;
   STATE.editingModeloId = id;
-  $('modal-modelo-title').textContent = 'Editar Modelo';
   $('modelo-edit-id').value = id;
-  $('modelo-nome').value     = m.nome;
-  $('modelo-pas').value      = m.pas;
-  $('modelo-material').value = m.material;
-  $('modelo-diametro').value = m.diametro;
-  $('modelo-passo').value    = m.passo;
-  $('modelo-peso').value     = m.peso;
-  $('modelo-desc').value     = m.desc;
+  $('modal-modelo-title').textContent = 'Editar Hélice';
+  catalogoFillForm(modelo);
   $('modal-modelo').classList.remove('hidden');
+  $('modelo-nome').focus();
 }
 window.openEditModelo = openEditModelo;
 
 function closeModalModelo() { $('modal-modelo').classList.add('hidden'); }
 
 function saveModelo() {
-  const nome = $('modelo-nome').value.trim();
-  if (!nome) { showToast('Informe o nome do modelo.', 'error'); return; }
-  const data = {
-    nome,
-    pas:      $('modelo-pas').value,
-    material: $('modelo-material').value,
-    diametro: $('modelo-diametro').value.trim(),
-    passo:    $('modelo-passo').value.trim(),
-    peso:     $('modelo-peso').value,
-    desc:     $('modelo-desc').value.trim(),
-  };
-  if (STATE.editingModeloId) {
-    DB.updateModelo(STATE.editingModeloId, data);
-    showToast('Modelo atualizado!');
-  } else {
-    DB.addModelo(data);
-    showToast('Modelo cadastrado!');
+  const catalogData = catalogoReadForm();
+  if (!catalogData.nome) { showToast('Informe a descrição da hélice.', 'error'); return; }
+  if (!catalogData.sku) { showToast('Informe o SKU da hélice.', 'error'); return; }
+  if (!catalogData.codigoBruto) { showToast('Informe o código bruto.', 'error'); return; }
+
+  try {
+    if (STATE.editingModeloId) {
+      DB.updateModelo(STATE.editingModeloId, catalogData);
+      showToast('Hélice atualizada com sucesso!');
+    } else {
+      DB.addModelo(catalogData);
+      showToast('Hélice adicionada ao catálogo!');
+    }
+  } catch (error) {
+    showToast(error.message || 'Não foi possível salvar a hélice.', 'error');
+    return;
   }
+
   closeModalModelo();
   renderModelos();
+  populateModeloSelects();
   if (STATE.currentPage === 'dashboard') renderDashboard();
 }
 
-function deleteModelo(id) {
-  if (!confirm('Excluir este modelo de hélice?')) return;
-  DB.deleteModelo(id);
-  renderModelos();
-  showToast('Modelo excluído.', 'error');
-}
-window.deleteModelo = deleteModelo;
-
-// ═══════════════════════════════════════════
 // ESTOQUE & MOVIMENTAÇÃO
 // ═══════════════════════════════════════════
 function renderEstoque() {
@@ -1578,16 +1476,6 @@ document.addEventListener('DOMContentLoaded', () => {
   $('modal-modelo-close').addEventListener('click', closeModalModelo);
   $('btn-cancel-modelo').addEventListener('click', closeModalModelo);
   $('btn-save-modelo').addEventListener('click', saveModelo);
-
-  // ── Excel Matrix Upload ──
-  const btnImportarMatriz = $('btn-importar-matriz');
-  const inputMatrizExcel = $('input-matriz-excel');
-  if (btnImportarMatriz && inputMatrizExcel) {
-    btnImportarMatriz.addEventListener('click', () => {
-      inputMatrizExcel.click();
-    });
-    inputMatrizExcel.addEventListener('change', handleExcelUpload);
-  }
 
   // ── Modal Material ──
   $('btn-novo-material').addEventListener('click', openNovoMaterial);

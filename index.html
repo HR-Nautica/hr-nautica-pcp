@@ -10,7 +10,7 @@
 
   <script src="/vendor/chart.umd.js"></script>
   <script src="/vendor/xlsx.full.min.js"></script>
-  <script src="/js/matriz_data.js"></script>
+  <script src="/js/catalogo_data.js"></script>
   <script src="/js/itens_producao_data.js"></script>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
@@ -323,25 +323,42 @@
       </div>
     </div>
 
-    <!-- ──── PAGE: MODELOS DE HÉLICES ──── -->
+    <!-- ──── PAGE: CATÁLOGO DE HÉLICES ──── -->
     <div class="page hidden" id="page-modelos">
-      <div class="page-header">
-        <h1 class="page-title">Modelos de Hélices</h1>
+      <div class="page-header catalogo-page-header">
+        <div>
+          <h1 class="page-title">Catálogo de Hélices</h1>
+          <p class="catalogo-subtitle">Cadastro técnico centralizado para consulta, edição e inclusão de modelos.</p>
+        </div>
         <div class="header-actions">
-          <input type="text" class="search-input" id="modelo-search" placeholder="Buscar modelo..." />
-          <button class="btn-secondary" id="btn-importar-matriz">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Subir Matriz
-          </button>
-          <input type="file" id="input-matriz-excel" accept=".xlsx, .xls" style="display: none;" />
           <button class="btn-primary" id="btn-novo-modelo">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Novo Modelo
+            Nova Hélice
           </button>
         </div>
       </div>
-      <div class="modelos-grid" id="modelos-grid">
-        <!-- filled by JS -->
+
+      <div class="catalogo-kpis" aria-label="Resumo do catálogo">
+        <div class="catalogo-kpi"><span id="catalogo-total">0</span><small>hélices cadastradas</small></div>
+        <div class="catalogo-kpi"><span id="catalogo-com-caixa">0</span><small>com caixa definida</small></div>
+        <div class="catalogo-kpi"><span id="catalogo-tubos">0</span><small>tubos distintos</small></div>
+        <div class="catalogo-kpi"><span id="catalogo-buchas">0</span><small>buchas distintas</small></div>
+      </div>
+
+      <div class="card catalogo-card">
+        <div class="catalogo-toolbar">
+          <div class="catalogo-search-wrap">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="modelo-search" placeholder="Buscar por hélice, SKU, bruto, anel ou bucha..." autocomplete="off" />
+          </div>
+          <span class="catalogo-count" id="catalogo-count">0 itens</span>
+        </div>
+        <div class="table-wrap catalogo-table-wrap">
+          <table class="catalogo-table">
+            <thead><tr><th>SKU</th><th>Hélice</th><th>Cód. bruto</th><th>Anel</th><th>Bucha</th><th>Cor</th><th>Caixa</th><th class="catalogo-actions-col">Ações</th></tr></thead>
+            <tbody id="modelos-grid"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -1036,60 +1053,43 @@
     </div>
   </div>
 
-  <!-- Modal: Novo Modelo -->
+  <!-- Modal de cadastro técnico da hélice -->
   <div class="modal-overlay hidden" id="modal-modelo">
-    <div class="modal">
+    <div class="modal modal--catalogo" role="dialog" aria-modal="true" aria-labelledby="modal-modelo-title">
       <div class="modal-header">
-        <h2 class="modal-title" id="modal-modelo-title">Novo Modelo de Hélice</h2>
-        <button class="btn-icon" id="modal-modelo-close">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <div><h2 class="modal-title" id="modal-modelo-title">Nova Hélice</h2><p class="modal-subtitle">Os campos abaixo compõem o cadastro técnico do catálogo.</p></div>
+        <button class="btn-icon" id="modal-modelo-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="modelo-edit-id" />
-        <div class="form-grid">
-          <div class="form-group span-2">
-            <label for="modelo-nome">Nome do Modelo *</label>
-            <input type="text" id="modelo-nome" placeholder="Ex: HÉLICE MERCURY 40/50 HP 10 3/8 X 13" required />
-          </div>
-          <div class="form-group">
-            <label for="modelo-pas">Nº de Pás</label>
-            <select id="modelo-pas">
-              <option value="3">3 pás</option>
-              <option value="4">4 pás</option>
-              <option value="2">2 pás</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="modelo-material">Material Principal</label>
-            <select id="modelo-material">
-              <option value="Alumínio">Alumínio (Silício/Magnésio)</option>
-              <option value="Inox">Aço Inoxidável</option>
-              <option value="Bronze">Bronze Náutico</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="modelo-diametro">Diâmetro</label>
-            <input type="text" id="modelo-diametro" placeholder="Ex: 10 3/8&quot;" />
-          </div>
-          <div class="form-group">
-            <label for="modelo-passo">Passo</label>
-            <input type="text" id="modelo-passo" placeholder="Ex: 13&quot;" />
-          </div>
-          <div class="form-group">
-            <label for="modelo-peso">Peso Estimado (kg)</label>
-            <input type="number" id="modelo-peso" step="0.1" placeholder="Ex: 2.5" />
-          </div>
-          <div class="form-group span-2">
-            <label for="modelo-desc">Componentes / Descrição</label>
-            <textarea id="modelo-desc" rows="2" placeholder="Ex: Tubo: 3.5&quot; | Bucha: 1&quot; x 90mm | Estria: 13 dentes | Caixa: N1"></textarea>
-          </div>
-        </div>
+        <div class="catalogo-form-section"><h4>Identificação</h4><div class="form-row catalogo-form-grid">
+          <div class="form-group catalogo-span-2"><label class="form-label" for="modelo-nome">Descrição da hélice *</label><input type="text" class="form-input" id="modelo-nome" autocomplete="off" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-sku">Código (SKU) *</label><input type="text" class="form-input" id="modelo-sku" autocomplete="off" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-codigo-bruto">Código bruto *</label><input type="text" class="form-input" id="modelo-codigo-bruto" autocomplete="off" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-cor">Cor</label><input type="text" class="form-input" id="modelo-cor" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-altura-buchas">Altura buchas</label><input type="text" class="form-input" id="modelo-altura-buchas" /></div>
+        </div></div>
+        <div class="catalogo-form-section"><h4>Anel e tubo de alumínio</h4><div class="form-row catalogo-form-grid">
+          <div class="form-group"><label class="form-label" for="modelo-diametro-tubo-anel">Diâmetro tubo anel</label><input type="text" class="form-input" id="modelo-diametro-tubo-anel" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-comprimento-anel">Comp. anel</label><input type="text" class="form-input" id="modelo-comprimento-anel" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-anel">Anel</label><input type="text" class="form-input" id="modelo-anel" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-sku-tubo">SKU Tiny tubo Al.</label><input type="text" class="form-input" id="modelo-sku-tubo" /></div>
+          <div class="form-group catalogo-span-2"><label class="form-label" for="modelo-descricao-tubo">Descrição Tiny tubo Al.</label><input type="text" class="form-input" id="modelo-descricao-tubo" /></div>
+        </div></div>
+        <div class="catalogo-form-section"><h4>Bucha e latão</h4><div class="form-row catalogo-form-grid">
+          <div class="form-group"><label class="form-label" for="modelo-diametro-latao">Diâmetro latão bucha</label><input type="text" class="form-input" id="modelo-diametro-latao" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-comprimento-bucha">Comp. bucha</label><input type="text" class="form-input" id="modelo-comprimento-bucha" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-bucha">Bucha</label><input type="text" class="form-input" id="modelo-bucha" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-sku-latao">SKU Tiny latão</label><input type="text" class="form-input" id="modelo-sku-latao" /></div>
+          <div class="form-group catalogo-span-2"><label class="form-label" for="modelo-descricao-latao">Descrição Tiny latão</label><input type="text" class="form-input" id="modelo-descricao-latao" /></div>
+          <div class="form-group catalogo-span-2"><label class="form-label" for="modelo-modelo-bucha">Modelo bucha</label><input type="text" class="form-input" id="modelo-modelo-bucha" /></div>
+        </div></div>
+        <div class="catalogo-form-section"><h4>Embalagem</h4><div class="form-row catalogo-form-grid">
+          <div class="form-group catalogo-span-2"><label class="form-label" for="modelo-descricao-caixa">Descrição caixa</label><input type="text" class="form-input" id="modelo-descricao-caixa" /></div>
+          <div class="form-group"><label class="form-label" for="modelo-sku-caixa">Código SKU caixa</label><input type="text" class="form-input" id="modelo-sku-caixa" /></div>
+        </div></div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-ghost" id="btn-cancel-modelo">Cancelar</button>
-        <button class="btn-primary" id="btn-save-modelo">Salvar Modelo</button>
-      </div>
+      <div class="modal-footer"><button class="btn-ghost" id="btn-cancel-modelo">Cancelar</button><button class="btn-primary" id="btn-save-modelo">Salvar Hélice</button></div>
     </div>
   </div>
 

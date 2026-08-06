@@ -9,11 +9,13 @@
     "dev:web": "vite --host 0.0.0.0",
     "dev:api": "node --watch server/index.js",
     "vendor": "node scripts/copy-vendor.js",
+    "catalog:generate": "node scripts/generate-catalog-data.js",
+    "catalog:test": "node scripts/test-catalog.js",
     "build": "npm run vendor && vite build",
     "start": "node server/index.js",
     "db:init": "node scripts/init-db.js",
     "db:migrate": "node scripts/migrate-json.js",
-    "check": "node --check server/index.js && node --check server/database.js && node --check server/routes/state.js && node --check public/js/remote-storage.js && node --check public/js/bootstrap.js"
+    "check": "node --check server/index.js && node --check server/database.js && node --check server/routes/state.js && node --check public/js/remote-storage.js && node --check public/js/bootstrap.js && node --check public/js/db.js && node --check public/js/app.js && node --check public/js/catalogo_data.js && node --check scripts/generate-catalog-data.js && node --check scripts/test-catalog.js"
   },
   "dependencies": {
     "chart.js": "^4.4.9",

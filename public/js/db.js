@@ -247,32 +247,65 @@ const DB = {
   getModelos()      { return this._get(this.KEYS.modelos); },
   saveModelos(list) { this._set(this.KEYS.modelos, list); },
 
+  normalizeModelo(data, existing = {}) {
+    const value = (field, fallback = '') => {
+      if (Object.prototype.hasOwnProperty.call(data, field)) return String(data[field] ?? '').trim();
+      return String(existing[field] ?? fallback).trim();
+    };
+
+    const diametroTuboAnel = value('diametroTuboAnel', data.tuboAnel ?? existing.tuboAnel ?? '');
+    const descricaoCaixa = value('descricaoCaixa', data.caixa ?? existing.caixa ?? '');
+    const now = this._now();
+
+    return {
+      ...existing,
+      id: existing.id || this._id(),
+      nome: value('nome'),
+      sku: value('sku'),
+      codigoBruto: value('codigoBruto'),
+      diametroTuboAnel,
+      descricaoTinyTuboAl: value('descricaoTinyTuboAl'),
+      skuTinyTuboAl: value('skuTinyTuboAl'),
+      comprimentoAnel: value('comprimentoAnel'),
+      anel: value('anel'),
+      diametroLataoBucha: value('diametroLataoBucha'),
+      descricaoTinyLatao: value('descricaoTinyLatao'),
+      skuTinyLatao: value('skuTinyLatao'),
+      comprimentoBucha: value('comprimentoBucha'),
+      bucha: value('bucha'),
+      cor: value('cor'),
+      alturaBuchas: value('alturaBuchas'),
+      modeloBucha: value('modeloBucha', data.buchaModelo ?? existing.buchaModelo ?? ''),
+      descricaoCaixa,
+      skuCaixa: value('skuCaixa'),
+      pas: value('pas', '3'),
+      material: value('material', 'Alumínio'),
+      diametro: value('diametro'),
+      passo: value('passo'),
+      peso: value('peso'),
+      desc: value('desc'),
+      // Compatibilidade com os módulos de estoque/OP existentes.
+      tuboAnel: diametroTuboAnel,
+      caixa: descricaoCaixa,
+      buchaModelo: value('modeloBucha', data.buchaModelo ?? existing.buchaModelo ?? ''),
+      criadoEm: existing.criadoEm || now,
+      atualizadoEm: now,
+    };
+  },
+
+  validateModeloUnique(data, ignoreId = '') {
+    const sku = String(data.sku || '').trim().toLocaleUpperCase('pt-BR');
+    if (!sku) throw new Error('Informe o SKU da hélice.');
+    const duplicate = this.getModelos().find((modelo) =>
+      modelo.id !== ignoreId && String(modelo.sku || '').trim().toLocaleUpperCase('pt-BR') === sku
+    );
+    if (duplicate) throw new Error(`O SKU ${data.sku} já pertence a ${duplicate.nome}.`);
+  },
+
   addModelo(data) {
     const modelos = this.getModelos();
-    const m = {
-      id:            this._id(),
-      nome:          data.nome          || '',
-      pas:           data.pas           || '3',
-      material:      data.material      || 'Alumínio',
-      diametro:      data.diametro      || '',
-      passo:         data.passo         || '',
-      peso:          data.peso          || '',
-      desc:          data.desc          || '',
-      
-      // Custom metadata fields from matrix
-      sku:           data.sku           || '',
-      codigoBruto:   data.codigoBruto   || '',
-      gravacaoBruto: data.gravacaoBruto || '',
-      tuboAnel:      data.tuboAnel      || '',
-      bucha:         data.bucha         || '',
-      cor:           data.cor           || '',
-      estria:        data.estria        || '',
-      caixa:         data.caixa         || '',
-      skuCaixa:      data.skuCaixa      || '',
-      buchaModelo:   data.buchaModelo   || '',
-      
-      criadoEm:      this._now(),
-    };
+    this.validateModeloUnique(data);
+    const m = this.normalizeModelo(data);
     modelos.push(m);
     this.saveModelos(modelos);
     this.addAtividade(`Novo modelo cadastrado: ${m.nome}`, 'blue');
@@ -280,8 +313,9 @@ const DB = {
   },
 
   updateModelo(id, data) {
+    this.validateModeloUnique(data, id);
     const list = this.getModelos().map(m =>
-      m.id === id ? { ...m, ...data } : m
+      m.id === id ? this.normalizeModelo(data, m) : m
     );
     this.saveModelos(list);
     return list.find(m => m.id === id);
@@ -290,6 +324,31 @@ const DB = {
   deleteModelo(id) {
     this.saveModelos(this.getModelos().filter(m => m.id !== id));
     this.addAtividade('Modelo de hélice removido', 'red');
+  },
+
+  ensureCatalogoAtualizado() {
+    if (typeof CATALOGO_DATA === 'undefined' || !Array.isArray(CATALOGO_DATA)) return false;
+    if (typeof CATALOGO_VERSION === 'undefined') return false;
+
+    const config = this.getConfig();
+    if (config.catalogoVersion === CATALOGO_VERSION) return false;
+
+    const existingBySku = new Map(
+      this.getModelos().map((modelo) => [String(modelo.sku || '').trim().toLocaleUpperCase('pt-BR'), modelo])
+    );
+    const catalogo = CATALOGO_DATA.map((data) => {
+      const key = String(data.sku || '').trim().toLocaleUpperCase('pt-BR');
+      return this.normalizeModelo(data, existingBySku.get(key) || {});
+    });
+
+    this.saveModelos(catalogo);
+    this.setConfig({
+      ...config,
+      catalogoVersion: CATALOGO_VERSION,
+      catalogoAtualizadoEm: this._now(),
+    });
+    this.addAtividade(`Catálogo ${CATALOGO_VERSION} carregado: ${catalogo.length} hélices.`, 'green');
+    return true;
   },
 
   // ═══ MATERIAIS / ESTOQUE ════════════════
@@ -583,14 +642,7 @@ const DB = {
       RemoteStorage.setItem('hrn_cleaned_mock_data_v3', 'true');
     }
 
-    // Auto-seed models from MATRIZ_DATA if models database is empty
-    const modelos = this.getModelos();
-    if (modelos.length === 0 && typeof MATRIZ_DATA !== 'undefined' && Array.isArray(MATRIZ_DATA)) {
-      MATRIZ_DATA.forEach(m => {
-        this.addModelo(m);
-      });
-      this.addAtividade(`Matriz importada automaticamente: ${MATRIZ_DATA.length} modelos de hélices.`, 'green');
-    }
+    this.ensureCatalogoAtualizado();
 
     // Seed/register raw materials in inventory (Estoque) based on standard materials and Excel sheet data
     const materiais = this.getMateriais();

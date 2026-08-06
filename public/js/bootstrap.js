@@ -103,6 +103,9 @@ async function bootstrap() {
     if (RemoteStorage.length === 0 && typeof DB !== "undefined") {
       DB.seed();
     }
+    if (typeof DB !== "undefined") {
+      DB.ensureCatalogoAtualizado();
+    }
 
     // 4. Exige o login do usuário
     await requireUserLogin();

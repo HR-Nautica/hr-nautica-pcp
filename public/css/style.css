@@ -759,6 +759,238 @@ body {
   border-top: 1px solid var(--border);
 }
 
+/* Catálogo técnico de hélices */
+.catalogo-page-header {
+  align-items: flex-start;
+}
+
+.catalogo-subtitle {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.catalogo-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.catalogo-kpi {
+  background: linear-gradient(145deg, var(--bg-card), var(--bg-elevated));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  min-width: 0;
+}
+
+.catalogo-kpi span {
+  display: block;
+  color: var(--text-primary);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.catalogo-kpi small {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.catalogo-card {
+  overflow: hidden;
+}
+
+.catalogo-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.catalogo-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: min(620px, 100%);
+  padding: 0 0.85rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+}
+
+.catalogo-search-wrap:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.catalogo-search-wrap input {
+  width: 100%;
+  height: 40px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.catalogo-search-wrap input::placeholder { color: var(--text-muted); }
+
+.catalogo-count {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.catalogo-table-wrap {
+  max-height: calc(100vh - 340px);
+  overflow: auto;
+}
+
+.catalogo-table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.catalogo-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.75rem 0.85rem;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-hover);
+  color: var(--text-muted);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+  font-size: 0.66rem;
+}
+
+.catalogo-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.catalogo-table tbody tr:hover { background: rgba(37, 99, 235, 0.055); }
+.catalogo-table tbody tr:last-child td { border-bottom: 0; }
+
+.catalogo-table th:nth-child(1),
+.catalogo-table td:nth-child(1) { width: 125px; }
+.catalogo-table th:nth-child(2),
+.catalogo-table td:nth-child(2) { min-width: 315px; }
+.catalogo-table th:nth-child(7),
+.catalogo-table td:nth-child(7) { min-width: 240px; }
+
+.catalogo-sku {
+  display: inline-flex;
+  padding: 0.25rem 0.48rem;
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  border-radius: 6px;
+  background: var(--accent-blue-bg);
+  color: var(--accent-blue);
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.catalogo-model-name {
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.catalogo-caixa {
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.catalogo-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.catalogo-color-dot {
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--border-hover);
+  border-radius: 50%;
+  background: #e8edf5;
+}
+
+.catalogo-color-dot--black { background: #111827; }
+
+.catalogo-actions-col,
+.catalogo-row-actions { text-align: right !important; }
+
+.catalogo-edit-btn {
+  min-height: 32px;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.72rem;
+}
+
+.modal--catalogo { max-width: 920px; }
+
+.modal-subtitle {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.modal--catalogo .modal-body {
+  max-height: min(72vh, 760px);
+  gap: 1.25rem;
+}
+
+.catalogo-form-section {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.catalogo-form-section h4 {
+  margin-bottom: 0.9rem;
+  color: var(--accent-blue);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+}
+
+.catalogo-form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.catalogo-span-2 { grid-column: span 2; }
+
+@media (max-width: 900px) {
+  .catalogo-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .catalogo-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 620px) {
+  .catalogo-page-header,
+  .catalogo-toolbar { align-items: stretch; flex-direction: column; }
+  .catalogo-kpis { grid-template-columns: 1fr 1fr; }
+  .catalogo-count { align-self: flex-end; }
+  .catalogo-form-grid { grid-template-columns: 1fr; }
+  .catalogo-span-2 { grid-column: auto; }
+}
+
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ESTOQUE
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */

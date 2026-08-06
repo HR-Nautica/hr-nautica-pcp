@@ -944,9 +944,9 @@ function initAnaliseListeners() {
   }, 100));
 }
 
-function seedAnaliseFromMatriz() {
-  if (typeof MATRIZ_DATA === 'undefined' || !Array.isArray(MATRIZ_DATA)) return [];
-  return MATRIZ_DATA.map((m, idx) => ({
+function seedAnaliseFromCatalogo() {
+  if (typeof CATALOGO_DATA === 'undefined' || !Array.isArray(CATALOGO_DATA)) return [];
+  return CATALOGO_DATA.map((m, idx) => ({
     originalIndex: idx + 1,
     prioridadeGeral: String(idx + 1).padStart(2, '0'),
     produto: m.nome || 'Produto Sem Nome',
@@ -972,7 +972,7 @@ function initAnaliseModule() {
     if (stored && Array.isArray(stored) && stored.length > 0) {
       ANALISE_STATE.coberturaData = stored;
     } else if (!ANALISE_STATE.coberturaData || ANALISE_STATE.coberturaData.length === 0) {
-      const seeded = seedAnaliseFromMatriz();
+      const seeded = seedAnaliseFromCatalogo();
       if (seeded && seeded.length > 0) {
         ANALISE_STATE.coberturaData = seeded;
         RemoteStorage.setItem('hrn_analise_cobertura_data', JSON.stringify(seeded));
