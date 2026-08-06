@@ -50,6 +50,16 @@ assert.equal(
   JSON.stringify(sourceRows.slice(1).map((row) => String(row[15]).trim())),
   'a descrição da bucha deve corresponder exatamente à coluna Q',
 );
+assert.equal(
+  JSON.stringify(Array.from(catalogData, (record) => record.skuTinyTuboAl)),
+  JSON.stringify(sourceRows.slice(1).map((row) => String(row[5]).trim())),
+  'o SKU do tubo deve corresponder exatamente à coluna G',
+);
+assert.equal(
+  JSON.stringify(Array.from(catalogData, (record) => record.skuCaixa)),
+  JSON.stringify(sourceRows.slice(1).map((row) => String(row[17]).trim())),
+  'o SKU da caixa deve corresponder exatamente à coluna S',
+);
 
 assert.equal(DB.ensureCatalogoAtualizado(), true, 'a primeira carga deve instalar o catálogo');
 assert.equal(DB.getModelos().length, 86, 'o catálogo deve conter as 86 linhas de B:S');
@@ -113,6 +123,9 @@ assert.equal(cssSource.includes('.modal--catalogo'), true, 'o formulário técni
   assert.equal(appSource.includes(`'${id}'`), true, `${id} deve estar conectado aos filtros`);
 });
 assert.equal(appSource.includes('const buchaDescricao = modelo.modeloBucha'), true, 'a bucha exibida deve vir da coluna Q');
+assert.equal(appSource.includes("modelo.skuTinyTuboAl || '—'"), true, 'o SKU do tubo exibido deve vir da coluna G');
+assert.equal(appSource.includes("modelo.skuCaixa || '—'"), true, 'o SKU da caixa exibido deve vir da coluna S');
+assert.equal((indexHtml.match(/class="catalogo-sort-btn"/g) || []).length, 7, 'cada coluna de dados deve permitir ordenação');
 assert.equal(appSource.includes("bucha: $('catalogo-filter-bucha').value"), true, 'a descrição da bucha deve ser filtrável');
 assert.equal(cssSource.includes('overflow-x: hidden'), true, 'o catálogo não deve exibir rolagem horizontal');
 assert.equal(cssSource.includes('min-width: 1120px'), false, 'a tabela não deve forçar largura de desktop');

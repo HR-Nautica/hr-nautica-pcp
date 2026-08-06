@@ -12,6 +12,7 @@
 const STATE = {
   currentPage: 'dashboard',
   charts: {},
+  catalogoSort: { field: 'nome', direction: 'asc' },
   editingOpId: null,
   editingModeloId: null,
   editingMaterialId: null,
@@ -632,7 +633,7 @@ function renderCatalogoModelos() {
     bucha: $('catalogo-filter-bucha').value,
     cor: $('catalogo-filter-cor').value,
   };
-  const searchableFields = ['nome', 'sku', 'codigoBruto', 'anel', 'modeloBucha', 'descricaoCaixa'];
+  const searchableFields = ['nome', 'sku', 'codigoBruto', 'skuTinyTuboAl', 'modeloBucha', 'skuCaixa'];
   const list = all
     .filter((modelo) => !search || searchableFields.some((field) =>
       String(modelo[field] || '').toLocaleLowerCase('pt-BR').includes(search)
@@ -641,7 +642,21 @@ function renderCatalogoModelos() {
     .filter((modelo) => !filters.bruto || modelo.codigoBruto === filters.bruto)
     .filter((modelo) => !filters.bucha || modelo.modeloBucha === filters.bucha)
     .filter((modelo) => !filters.cor || modelo.cor === filters.cor)
-    .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+    .sort((a, b) => {
+      const result = String(a[STATE.catalogoSort.field] || '').localeCompare(
+        String(b[STATE.catalogoSort.field] || ''),
+        'pt-BR',
+        { numeric: true, sensitivity: 'base' }
+      );
+      return STATE.catalogoSort.direction === 'asc' ? result : -result;
+    });
+
+  document.querySelectorAll('.catalogo-sort-btn').forEach((button) => {
+    const active = button.dataset.catalogoSort === STATE.catalogoSort.field;
+    button.textContent = active ? (STATE.catalogoSort.direction === 'asc' ? '↑' : '↓') : '↕';
+    button.classList.toggle('catalogo-sort-btn--active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
 
   const meaningfulDistinct = (field) => new Set(
     all.map((modelo) => String(modelo[field] || '').trim())
@@ -672,13 +687,13 @@ function renderCatalogoModelos() {
       <td>
         <span class="catalogo-mobile-sku">${escapeCatalogoHtml(modelo.sku)}</span>
         <strong class="catalogo-model-name">${escapeCatalogoHtml(modelo.nome)}</strong>
-        <div class="catalogo-mobile-details"><span><b>Bruto:</b> ${escapeCatalogoHtml(modelo.codigoBruto || '—')}</span><span><b>Anel:</b> ${escapeCatalogoHtml(modelo.anel || '—')}</span><span><b>Cor:</b> ${escapeCatalogoHtml(cor)}</span><span><b>Caixa:</b> ${escapeCatalogoHtml(modelo.descricaoCaixa || '—')}</span></div>
+        <div class="catalogo-mobile-details"><span><b>Bruto:</b> ${escapeCatalogoHtml(modelo.codigoBruto || '—')}</span><span><b>SKU tubo:</b> ${escapeCatalogoHtml(modelo.skuTinyTuboAl || '—')}</span><span><b>Cor:</b> ${escapeCatalogoHtml(cor)}</span><span><b>SKU caixa:</b> ${escapeCatalogoHtml(modelo.skuCaixa || '—')}</span></div>
       </td>
       <td class="catalogo-col-bruto">${escapeCatalogoHtml(modelo.codigoBruto || '—')}</td>
-      <td class="catalogo-col-anel">${escapeCatalogoHtml(modelo.anel || '—')}</td>
+      <td class="catalogo-col-tubo">${escapeCatalogoHtml(modelo.skuTinyTuboAl || '—')}</td>
       <td class="catalogo-bucha" title="${escapeCatalogoHtml(buchaDescricao)}">${escapeCatalogoHtml(buchaDescricao)}</td>
       <td class="catalogo-col-cor"><span class="catalogo-color"><i class="catalogo-color-dot${dotClass}"></i>${escapeCatalogoHtml(cor)}</span></td>
-      <td class="catalogo-caixa catalogo-col-caixa">${escapeCatalogoHtml(modelo.descricaoCaixa || '—')}</td>
+      <td class="catalogo-caixa catalogo-col-caixa">${escapeCatalogoHtml(modelo.skuCaixa || '—')}</td>
       <td class="catalogo-row-actions">
         <button class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -1568,6 +1583,15 @@ document.addEventListener('DOMContentLoaded', () => {
   $('modelo-search').addEventListener('input', renderModelos);
   ['catalogo-filter-marca', 'catalogo-filter-bruto', 'catalogo-filter-bucha', 'catalogo-filter-cor'].forEach((id) => {
     $(id).addEventListener('change', renderModelos);
+  });
+  document.querySelectorAll('.catalogo-sort-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      const field = button.dataset.catalogoSort;
+      STATE.catalogoSort = STATE.catalogoSort.field === field
+        ? { field, direction: STATE.catalogoSort.direction === 'asc' ? 'desc' : 'asc' }
+        : { field, direction: 'asc' };
+      renderModelos();
+    });
   });
   $('catalogo-limpar-filtros').addEventListener('click', () => {
     $('modelo-search').value = '';

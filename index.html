@@ -349,7 +349,7 @@
         <div class="catalogo-toolbar">
           <div class="catalogo-search-wrap">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="search" id="modelo-search" placeholder="Buscar por hélice, SKU, bruto, anel ou bucha..." autocomplete="off" />
+            <input type="search" id="modelo-search" placeholder="Buscar por hélice, SKU, bruto, tubo, bucha ou caixa..." autocomplete="off" />
           </div>
           <span class="catalogo-count" id="catalogo-count">0 itens</span>
         </div>
@@ -362,8 +362,17 @@
         </div>
         <div class="table-wrap catalogo-table-wrap">
           <table class="catalogo-table">
-            <colgroup><col class="catalogo-w-sku"><col class="catalogo-w-helice"><col class="catalogo-w-bruto"><col class="catalogo-w-anel"><col class="catalogo-w-bucha"><col class="catalogo-w-cor"><col class="catalogo-w-caixa"><col class="catalogo-w-acoes"></colgroup>
-            <thead><tr><th class="catalogo-col-sku">SKU</th><th>Hélice</th><th class="catalogo-col-bruto">Cód. bruto</th><th class="catalogo-col-anel">Anel</th><th>Bucha (descrição)</th><th class="catalogo-col-cor">Cor</th><th class="catalogo-col-caixa">Caixa</th><th class="catalogo-actions-col">Ações</th></tr></thead>
+            <colgroup><col class="catalogo-w-sku"><col class="catalogo-w-helice"><col class="catalogo-w-bruto"><col class="catalogo-w-tubo"><col class="catalogo-w-bucha"><col class="catalogo-w-cor"><col class="catalogo-w-caixa"><col class="catalogo-w-acoes"></colgroup>
+            <thead><tr>
+              <th class="catalogo-col-sku"><span class="catalogo-heading">SKU <button type="button" class="catalogo-sort-btn" data-catalogo-sort="sku" aria-label="Ordenar por SKU">↕</button></span></th>
+              <th><span class="catalogo-heading">Hélice <button type="button" class="catalogo-sort-btn" data-catalogo-sort="nome" aria-label="Ordenar por hélice">↕</button></span></th>
+              <th class="catalogo-col-bruto"><span class="catalogo-heading">Cód. bruto <button type="button" class="catalogo-sort-btn" data-catalogo-sort="codigoBruto" aria-label="Ordenar por código bruto">↕</button></span></th>
+              <th class="catalogo-col-tubo"><span class="catalogo-heading">SKU tubo <button type="button" class="catalogo-sort-btn" data-catalogo-sort="skuTinyTuboAl" aria-label="Ordenar por SKU do tubo">↕</button></span></th>
+              <th><span class="catalogo-heading">Bucha (descrição) <button type="button" class="catalogo-sort-btn" data-catalogo-sort="modeloBucha" aria-label="Ordenar por descrição da bucha">↕</button></span></th>
+              <th class="catalogo-col-cor"><span class="catalogo-heading">Cor <button type="button" class="catalogo-sort-btn" data-catalogo-sort="cor" aria-label="Ordenar por cor">↕</button></span></th>
+              <th class="catalogo-col-caixa"><span class="catalogo-heading">SKU caixa <button type="button" class="catalogo-sort-btn" data-catalogo-sort="skuCaixa" aria-label="Ordenar por SKU da caixa">↕</button></span></th>
+              <th class="catalogo-actions-col">Ações</th>
+            </tr></thead>
             <tbody id="modelos-grid"></tbody>
           </table>
         </div>
