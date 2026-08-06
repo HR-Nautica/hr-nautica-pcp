@@ -3257,6 +3257,7 @@ body {
 #analise-table thead th:nth-child(9) .analise-th-total { color: #f8fafc; }
 #analise-table thead th:nth-child(10) .analise-th-total { color: #34d399; }
 #analise-table thead th:nth-child(12) .analise-th-total { color: #fbbf24; }
+#analise-table thead th:nth-child(13) .analise-th-total { color: #a78bfa; }
 
 #analise-table tbody tr {
   transition: background 0.16s ease, transform 0.16s ease;
@@ -3269,10 +3270,68 @@ body {
 #analise-table tbody td:nth-child(5) { background: rgba(59, 130, 246, 0.025); }
 #analise-table tbody td:nth-child(8) { background: rgba(167, 139, 250, 0.025); }
 #analise-table tbody td:nth-child(12) { background: rgba(251, 191, 36, 0.025); }
+#analise-table tbody td:nth-child(13) { background: rgba(167, 139, 250, 0.025); }
+
+.analise-op-suggestion {
+  min-width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.analise-op-suggestion input {
+  width: 82px;
+  height: 34px;
+  padding: 0 0.45rem;
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  border-radius: 8px;
+  outline: none;
+  background: rgba(30, 41, 59, 0.78);
+  color: #c4b5fd;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: center;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.analise-op-suggestion input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.16);
+}
+
+.analise-op-suggestion small,
+.analise-standby-caption {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  white-space: nowrap;
+}
+
+.analise-no-suggestion {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.analise-standby-value,
+.analise-standby-caption {
+  display: block;
+  text-align: center;
+}
+
+.analise-standby-value {
+  color: #c4b5fd;
+}
+
+.analise-buffer-ok {
+  color: #34d399;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 .analise-create-op {
-  min-width: 72px;
-  height: 30px;
+  min-width: 88px;
+  height: 32px;
   padding: 0 0.65rem;
   font-size: 0.7rem;
   white-space: nowrap;

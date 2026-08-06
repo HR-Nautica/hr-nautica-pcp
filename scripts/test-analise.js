@@ -47,7 +47,7 @@ const context = vm.createContext({
 });
 
 const source = `${fs.readFileSync('public/js/analise.js', 'utf8')}\n` +
-  'globalThis.__processAnaliseExcel = processAnaliseExcel; globalThis.__ANALISE_STATE = ANALISE_STATE; globalThis.__calculateProductionPriority = calculateProductionPriority; globalThis.__calculateAnaliseProductionNeed = calculateAnaliseProductionNeed; globalThis.__updateAnaliseColumnTotals = updateAnaliseColumnTotals;';
+  'globalThis.__processAnaliseExcel = processAnaliseExcel; globalThis.__ANALISE_STATE = ANALISE_STATE; globalThis.__calculateProductionPriority = calculateProductionPriority; globalThis.__calculateAnaliseProductionNeed = calculateAnaliseProductionNeed; globalThis.__getAnaliseSuggestedQty = getAnaliseSuggestedQty; globalThis.__updateAnaliseColumnTotals = updateAnaliseColumnTotals;';
 vm.runInContext(source, context, { filename: 'analise.js' });
 
 const rows = Array.from({ length: 2 }, () => Array(16).fill(''));
@@ -109,6 +109,11 @@ assert.equal(
   'a quantidade a produzir deve ser arredondada para a próxima dezena',
 );
 
+const editableSuggestionItem = { sku: 'SKU AJUSTE', estoqueVirtual: -100, mediaMensal: 0 };
+assert.equal(context.__getAnaliseSuggestedQty(editableSuggestionItem), 100, 'a OP deve iniciar com a sugestão automática');
+context.__ANALISE_STATE.productionSuggestions['SKU AJUSTE'] = 50;
+assert.equal(context.__getAnaliseSuggestedQty(editableSuggestionItem), 50, 'o ajuste operacional deve prevalecer sobre a sugestão automática');
+
 const summaryElements = new Map();
 context.document.getElementById = id => {
   if (!summaryElements.has(id)) summaryElements.set(id, { textContent: '' });
@@ -124,6 +129,7 @@ assert.equal(summaryElements.get('analise-sum-virtual').textContent, '9');
 assert.equal(summaryElements.get('analise-sum-media').textContent, '4');
 assert.equal(summaryElements.get('analise-sum-cobertura').textContent, '3 meses');
 assert.equal(summaryElements.get('analise-sum-produzir').textContent, '10');
+assert.equal(summaryElements.get('analise-sum-standby').textContent, '19');
 assert.equal(summaryElements.get('analise-sum-acoes').textContent, '1 OP');
 
-console.log('QA análise: importação, indicadores, prioridade, quantidade e totais do cabeçalho validados.');
+console.log('QA análise: importação, prioridade, ajuste manual 100→50, stand-by e totais validados.');

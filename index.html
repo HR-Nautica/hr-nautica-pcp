@@ -261,7 +261,7 @@
         <div class="analise-kpi-card analise-kpi-card--produce" aria-label="Total recomendado para produção">
           <span class="filter-tab-kpi" id="analise-kpi-produce">0</span>
           <div class="filter-tab-label">
-            <span class="filter-tab-title">Total a produzir</span>
+            <span class="filter-tab-title">Total programado</span>
             <span class="filter-tab-desc" id="analise-kpi-produce-desc">0 itens com necessidade</span>
           </div>
         </div>
@@ -322,14 +322,15 @@
                 <th class="sortable-th" data-column="mediaMensal" style="width:95px"><span class="analise-th-label">Média Mensal <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-media">0</strong></th>
                 <th class="sortable-th" data-column="cobertura" style="width:95px"><span class="analise-th-label">Cobertura <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-cobertura">0 meses</strong></th>
                 <th class="sortable-th" data-column="prio2" style="width:95px"><span class="analise-th-label">Prioridade <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-prioridade">Média 0</strong></th>
-                <th class="sortable-th" data-column="colocarOp" style="width:110px"><span class="analise-th-label">Qtd Produzir <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-produzir">0</strong></th>
+                <th class="sortable-th" data-column="colocarOp" style="width:125px"><span class="analise-th-label">OP Sugerida <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-produzir">0</strong></th>
+                <th style="width:95px"><span class="analise-th-label">Stand-by</span><strong class="analise-th-total" id="analise-sum-standby">0</strong></th>
                 <th class="sortable-th" data-column="localizacao" style="width:130px"><span class="analise-th-label">Localização <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-localizacao">0 locais</strong></th>
                 <th style="width:90px"><span class="analise-th-label">Ações</span><strong class="analise-th-total" id="analise-sum-acoes">0 OPs</strong></th>
               </tr>
             </thead>
             <tbody id="analise-body">
               <tr>
-                <td colspan="14" class="empty-cell">Carregando dados de cobertura...</td>
+                <td colspan="15" class="empty-cell">Carregando dados de cobertura...</td>
               </tr>
             </tbody>
           </table>
@@ -1560,13 +1561,14 @@
           <li><strong>Estoque Virtual:</strong> <code>Físico + Entradas - Saídas</code>. Enquanto as operações não forem integradas, Entradas aparece como N/A e vale zero somente neste cálculo.</li>
           <li><strong>Cobertura (meses):</strong> <code>Estoque Físico / Média Mensal</code>. Indica quantos meses o estoque atual durará com base no giro de vendas.</li>
           <li><strong>Prioridade:</strong> se Físico &lt; Saídas, recebe <code>-1</code> (máxima); se Média Mensal &lt; 2, recebe <code>5</code>; nos demais casos, <code>(Físico - Saídas) / Média Mensal</code>.</li>
-          <li><strong>Qtd a Produzir:</strong> Recomendação automática de quantas peças produzir para atingir a <strong>Meta Cobertura</strong> selecionada.</li>
+          <li><strong>OP Sugerida:</strong> começa com a recomendação automática para atingir a <strong>Meta Cobertura</strong>, mas pode ser ajustada conforme a decisão do PCP.</li>
+          <li><strong>Stand-by:</strong> projeção do estoque após a OP, calculada como <code>Virtual + OP Sugerida</code>.</li>
         </ul>
 
         <h4 style="color: var(--text-primary); font-weight: 700; margin-top: 1rem; margin-bottom: 0.4rem;">💡 Funcionalidades Rápidas:</h4>
         <ul style="padding-left: 1.2rem;">
           <li><strong>Slider Meta Cobertura:</strong> Ajuste o horizonte desejado (ex: 3 meses). Os contadores de Críticos/Atenção recalcularão na hora.</li>
-          <li><strong>Criar OP:</strong> Clique no botão de ação da tabela para preencher e abrir automaticamente o formulário de Nova Ordem de Produção com o modelo e a quantidade recomendada.</li>
+          <li><strong>Adicionar OP:</strong> ajuste a quantidade sugerida e clique no botão de ação para abrir a nova ordem com exatamente a quantidade escolhida.</li>
           <li><strong>Sincronizar Cobertura:</strong> Importe a planilha CODAN atualizada para atualizar os estoques e rastreios.</li>
           <li><strong>Exportar Excel:</strong> Gere um arquivo CSV/Excel apenas com as peças que precisam ser produzidas.</li>
         </ul>

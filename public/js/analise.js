@@ -33,7 +33,8 @@ const ANALISE_STATE = {
   filterType: 'all', // 'all' | 'critical' | 'warning' | 'ok'
   searchText: '',
   sortColumn: 'prioridadeGeral',
-  sortDirection: 'asc'
+  sortDirection: 'asc',
+  productionSuggestions: safeGetJSON('hrn_analise_op_sugerida', {})
 };
 
 // Formata cobertura em meses (comportamento similar ao vini.js)
@@ -275,6 +276,28 @@ function calculateAnaliseProductionNeed(item) {
   return diff < 0 ? Math.ceil(Math.abs(diff) / 10) * 10 : 0;
 }
 
+function getAnaliseSuggestedQty(item) {
+  const sku = normalizeSku(item.sku);
+  const automaticQty = calculateAnaliseProductionNeed(item);
+  if (!Object.prototype.hasOwnProperty.call(ANALISE_STATE.productionSuggestions, sku)) return automaticQty;
+  return Math.max(0, Math.floor(Number(ANALISE_STATE.productionSuggestions[sku]) || 0));
+}
+
+function saveAnaliseSuggestedQty(input, sku) {
+  const normalizedSku = normalizeSku(sku);
+  const automaticQty = Math.max(0, Math.floor(Number(input?.dataset?.automatic) || 0));
+  const selectedQty = Math.max(0, Math.floor(Number(input?.value) || 0));
+
+  if (selectedQty === automaticQty) {
+    delete ANALISE_STATE.productionSuggestions[normalizedSku];
+  } else {
+    ANALISE_STATE.productionSuggestions[normalizedSku] = selectedQty;
+  }
+
+  RemoteStorage.setItem('hrn_analise_op_sugerida', JSON.stringify(ANALISE_STATE.productionSuggestions));
+  renderAnaliseTable();
+}
+
 function formatAnaliseTotal(value, maximumFractionDigits = 1) {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits }).format(Number(value) || 0);
 }
@@ -286,16 +309,17 @@ function setAnaliseText(id, value) {
 
 function updateAnaliseColumnTotals(items) {
   const totals = items.reduce((acc, item) => {
-    const productionNeed = calculateAnaliseProductionNeed(item);
+    const suggestedQty = getAnaliseSuggestedQty(item);
     acc.fisico += Number(item.estoqueFisico) || 0;
     acc.saidas += Number(item.saidasPrevistas) || 0;
     acc.virtual += Number(item.estoqueVirtual) || 0;
     acc.media += Number(item.mediaMensal) || 0;
     acc.prioridade += Number(item.prio2) || 0;
-    acc.produzir += productionNeed;
-    if (productionNeed > 0) acc.ops++;
+    acc.produzir += suggestedQty;
+    acc.standBy += (Number(item.estoqueVirtual) || 0) + suggestedQty;
+    if (suggestedQty > 0) acc.ops++;
     return acc;
-  }, { fisico: 0, saidas: 0, virtual: 0, media: 0, prioridade: 0, produzir: 0, ops: 0 });
+  }, { fisico: 0, saidas: 0, virtual: 0, media: 0, prioridade: 0, produzir: 0, standBy: 0, ops: 0 });
 
   const unique = field => new Set(items.map(item => String(item[field] || '').trim()).filter(Boolean)).size;
   const coberturaGeral = totals.media > 0 ? totals.fisico / totals.media : null;
@@ -313,6 +337,7 @@ function updateAnaliseColumnTotals(items) {
   setAnaliseText('analise-sum-cobertura', coberturaGeral === null ? 'Sem giro' : `${formatAnaliseTotal(coberturaGeral)} meses`);
   setAnaliseText('analise-sum-prioridade', `Média ${formatAnaliseTotal(prioridadeMedia)}`);
   setAnaliseText('analise-sum-produzir', formatAnaliseTotal(totals.produzir, 0));
+  setAnaliseText('analise-sum-standby', formatAnaliseTotal(totals.standBy, 0));
   setAnaliseText('analise-sum-localizacao', `${unique('localizacao')} locais`);
   setAnaliseText('analise-sum-acoes', `${totals.ops} ${totals.ops === 1 ? 'OP' : 'OPs'}`);
   setAnaliseText('analise-table-count', `${items.length} ${items.length === 1 ? 'item' : 'itens'}`);
@@ -521,7 +546,7 @@ async function loadAnaliseExcelData() {
   }
   const tbody = document.getElementById('analise-body');
   if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="14" class="empty-cell">Nenhum dado de cobertura no banco central. Use "Sincronizar Cobertura" para importar uma planilha pela aplicação.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="15" class="empty-cell">Nenhum dado de cobertura no banco central. Use "Sincronizar Cobertura" para importar uma planilha pela aplicação.</td></tr>';
   }
   return false;
 }
@@ -553,6 +578,7 @@ function renderAnaliseTable() {
   let countWarning = 0;
   let countOk = 0;
   let totalToProduce = 0;
+  let automaticTotalToProduce = 0;
   let itemsToProduce = 0;
 
   ANALISE_STATE.coberturaData.forEach(item => {
@@ -566,8 +592,10 @@ function renderAnaliseTable() {
       countOk++;
     }
     const productionNeed = calculateAnaliseProductionNeed(item);
-    totalToProduce += productionNeed;
-    if (productionNeed > 0) itemsToProduce++;
+    const suggestedQty = getAnaliseSuggestedQty(item);
+    automaticTotalToProduce += productionNeed;
+    totalToProduce += suggestedQty;
+    if (suggestedQty > 0) itemsToProduce++;
   });
 
   // Atualiza as badges no HTML
@@ -581,7 +609,7 @@ function renderAnaliseTable() {
   if (elWarning) elWarning.textContent = countWarning;
   if (elOk) elOk.textContent = countOk;
   setAnaliseText('analise-kpi-produce', formatAnaliseTotal(totalToProduce, 0));
-  setAnaliseText('analise-kpi-produce-desc', `${itemsToProduce} ${itemsToProduce === 1 ? 'item com necessidade' : 'itens com necessidade'}`);
+  setAnaliseText('analise-kpi-produce-desc', `${itemsToProduce} ${itemsToProduce === 1 ? 'OP planejada' : 'OPs planejadas'} · Auto ${formatAnaliseTotal(automaticTotalToProduce, 0)}`);
 
   // 2. Aplica filtros
   let filtered = ANALISE_STATE.coberturaData;
@@ -612,8 +640,8 @@ function renderAnaliseTable() {
     let valA, valB;
     
     // Calcula valores recomendados dinamicamente para comparação, caso ordene por "Qtd Produzir"
-    const colocarOpA = calculateAnaliseProductionNeed(a);
-    const colocarOpB = calculateAnaliseProductionNeed(b);
+    const colocarOpA = getAnaliseSuggestedQty(a);
+    const colocarOpB = getAnaliseSuggestedQty(b);
 
     switch (ANALISE_STATE.sortColumn) {
       case 'prioridadeGeral':
@@ -703,14 +731,16 @@ function renderAnaliseTable() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="14" class="empty-cell">Nenhum produto encontrado correspondente aos filtros.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="15" class="empty-cell">Nenhum produto encontrado correspondente aos filtros.</td></tr>';
     return;
   }
 
   // Renderiza as linhas
   tbody.innerHTML = filtered.map(item => {
     // Cálculo dinâmico com base na meta de cobertura
-    const need = calculateAnaliseProductionNeed(item);
+    const automaticNeed = calculateAnaliseProductionNeed(item);
+    const suggestedQty = getAnaliseSuggestedQty(item);
+    const standBy = item.estoqueVirtual + suggestedQty;
 
     const status = getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo);
     
@@ -728,14 +758,16 @@ function renderAnaliseTable() {
 
     // Botão de ação
     let actionBtn = '';
-    if (need > 0) {
-      actionBtn = `<button class="btn-primary analise-create-op" onclick="abrirNovaOPPreenchida('${escapeJSString(item.produto)}', ${need}, ${item.prio2})">Criar OP</button>`;
+    if (automaticNeed > 0 || suggestedQty > 0) {
+      actionBtn = `<button class="btn-primary analise-create-op" ${suggestedQty <= 0 ? 'disabled' : ''} onclick="abrirNovaOPDaAnalise(this, '${escapeJSString(item.produto)}', ${item.prio2})">Adicionar OP</button>`;
     } else {
-      actionBtn = `<span style="color:var(--text-muted);font-size:0.7rem;font-weight:600">✓ OK</span>`;
+      actionBtn = `<span class="analise-buffer-ok">✓ Buffer OK</span>`;
     }
 
     const formattedPrio = item.prio2 !== null ? item.prio2.toFixed(1) : '—';
-    const formattedNeed = need > 0 ? `<strong>${need}</strong>` : '0';
+    const suggestionField = automaticNeed > 0 || suggestedQty > 0
+      ? `<div class="analise-op-suggestion"><input type="number" min="0" step="1" value="${suggestedQty}" data-automatic="${automaticNeed}" aria-label="Quantidade sugerida para ${item.sku}" onchange="saveAnaliseSuggestedQty(this, '${escapeJSString(item.sku)}')"><small>Auto: ${automaticNeed}</small></div>`
+      : '<span class="analise-no-suggestion">—</span>';
 
     return `<tr class="${trClass}">
       <td><span style="color:var(--text-muted);font-weight:700">${item.prioridadeGeral || '—'}</span></td>
@@ -749,7 +781,8 @@ function renderAnaliseTable() {
       <td>${item.mediaMensal.toFixed(1)}</td>
       <td>${fmtAnaliseCob(item.coberturaVirtual)}</td>
       <td><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><strong>${formattedPrio}</strong> ${statusBadge}</div></td>
-      <td style="color:${need > 0 ? 'var(--accent-red)' : 'var(--text-primary)'}">${formattedNeed}</td>
+      <td>${suggestionField}</td>
+      <td><strong class="analise-standby-value">${standBy}</strong><small class="analise-standby-caption">após OP</small></td>
       <td style="font-size:0.7rem">${item.localizacao}</td>
       <td>${actionBtn}</td>
     </tr>`;
@@ -776,6 +809,16 @@ function renderAnaliseTable() {
       };
     }
   }, 50);
+}
+
+function abrirNovaOPDaAnalise(button, produto, prio2) {
+  const input = button?.closest('tr')?.querySelector('.analise-op-suggestion input');
+  const selectedQty = Math.max(0, Math.floor(Number(input?.value) || 0));
+  if (selectedQty <= 0) {
+    showToast('Informe uma quantidade maior que zero para adicionar a OP.', 'warning');
+    return;
+  }
+  abrirNovaOPPreenchida(produto, selectedQty, prio2);
 }
 
 // Prefills and opens the Create OP Modal from a recommendation
@@ -848,6 +891,8 @@ function abrirNovaOPPreenchida(produto, qty, prio2) {
   }
 }
 window.abrirNovaOPPreenchida = abrirNovaOPPreenchida;
+window.abrirNovaOPDaAnalise = abrirNovaOPDaAnalise;
+window.saveAnaliseSuggestedQty = saveAnaliseSuggestedQty;
 
 // Exporta a lista de peças com necessidade de produção (Qtd a Produzir > 0) para CSV compatível com Excel
 function exportAnaliseToExcel() {
@@ -858,10 +903,10 @@ function exportAnaliseToExcel() {
 
   const targetCoverage = ANALISE_STATE.coberturaAlvo;
   const itemsToProduce = ANALISE_STATE.coberturaData.map(item => {
-    const diff = item.estoqueVirtual - (item.mediaMensal * targetCoverage);
-    const need = diff < 0 ? Math.ceil(Math.abs(diff) / 10) * 10 : 0;
-    return { ...item, need };
-  }).filter(item => item.need > 0);
+    const automaticNeed = calculateAnaliseProductionNeed(item);
+    const suggestedQty = getAnaliseSuggestedQty(item);
+    return { ...item, automaticNeed, suggestedQty, standBy: item.estoqueVirtual + suggestedQty };
+  }).filter(item => item.suggestedQty > 0);
 
   if (itemsToProduce.length === 0) {
     showToast('Nenhuma peça precisa ser produzida com a meta de cobertura atual.', 'info');
@@ -880,7 +925,9 @@ function exportAnaliseToExcel() {
     'Média Mensal',
     'Cobertura (meses)',
     'Prioridade (Prio2)',
-    'Qtd a Produzir',
+    'Sugestão Automática',
+    'OP Sugerida',
+    'Stand-by após OP',
     'Localização',
     'Bucha'
   ];
@@ -897,7 +944,9 @@ function exportAnaliseToExcel() {
     item.mediaMensal.toFixed(2),
     item.coberturaVirtual.toFixed(2),
     item.prio2 !== null ? item.prio2.toFixed(2) : '—',
-    item.need,
+    item.automaticNeed,
+    item.suggestedQty,
+    item.standBy,
     item.localizacao,
     item.bucha
   ]);
