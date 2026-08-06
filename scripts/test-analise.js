@@ -50,22 +50,22 @@ const source = `${fs.readFileSync('public/js/analise.js', 'utf8')}\n` +
   'globalThis.__processAnaliseExcel = processAnaliseExcel; globalThis.__ANALISE_STATE = ANALISE_STATE;';
 vm.runInContext(source, context, { filename: 'analise.js' });
 
-const rows = Array.from({ length: 7 }, () => Array(14).fill(''));
-rows[5][0] = 'Produto';
-rows[5][1] = 'Código (SKU)';
-rows[5][2] = 'Código Bruto';
-rows[5][7] = 'Saídas';
-rows[5][8] = 'Físico';
-rows[5][13] = 'Média Mensal';
-rows[6][0] = 'NOME DIFERENTE NA PLANILHA';
-rows[6][1] = 'HR TESTE 001';
-rows[6][2] = 'BR PLANILHA';
-rows[6][7] = 3;
-rows[6][8] = 12;
-rows[6][13] = 4;
+const rows = Array.from({ length: 2 }, () => Array(16).fill(''));
+rows[0][0] = 'Produto';
+rows[0][1] = 'Código (SKU)';
+rows[0][2] = 'Cód. no Fornecedor Padrão';
+rows[0][7] = 'Saídas previstas';
+rows[0][8] = 'Estoque físico';
+rows[0][13] = 'Média mensal';
+rows[1][0] = 'NOME DIFERENTE NA PLANILHA';
+rows[1][1] = 'HR TESTE 001';
+rows[1][2] = 'BR PLANILHA';
+rows[1][7] = 3;
+rows[1][8] = 12;
+rows[1][13] = 4;
 
 const workbook = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), '3-Cobertura');
+XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), 'Sheet1');
 const input = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
 
 const syncResult = await context.__processAnaliseExcel(input);

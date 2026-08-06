@@ -269,6 +269,18 @@ function parseExcelFloat(val, defaultVal = 0) {
   return isNaN(num) ? defaultVal : num;
 }
 
+function normalizeSku(str) {
+  return String(str || '').trim().toUpperCase().replace(/\s+/g, ' ');
+}
+
+function normalizeExcelHeader(str) {
+  return String(str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
 function getAnaliseCatalogoItems() {
   if (typeof DB !== 'undefined' && typeof DB.getModelos === 'function') {
     const modelos = DB.getModelos();
@@ -281,14 +293,14 @@ function mergeAnaliseWithCatalogo(sourceItems = []) {
   const bySku = new Map();
   const byName = new Map();
   sourceItems.forEach(item => {
-    const skuKey = String(item.sku || '').trim().toUpperCase();
+    const skuKey = normalizeSku(item.sku);
     const nameKey = normalizeKey(item.produto || item.nome);
     if (skuKey) bySku.set(skuKey, item);
     if (nameKey) byName.set(nameKey, item);
   });
 
   return getAnaliseCatalogoItems().map((modelo, index) => {
-    const sku = String(modelo.sku || '').trim().toUpperCase();
+    const sku = normalizeSku(modelo.sku);
     const source = bySku.get(sku) || byName.get(normalizeKey(modelo.nome)) || {};
     const estoqueFisico = parseExcelFloat(source.estoqueFisico, 0);
     const saidasPrevistas = parseExcelFloat(source.saidasPrevistas, 0);
@@ -374,11 +386,21 @@ async function processAnaliseExcel(arrayBuffer) {
     }
 
     const ws = wb.Sheets[sheetName];
-    // A linha 6 contém os cabeçalhos. H, I e N são lidas pela posição absoluta da coluna.
-    const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, range: 5, defval: '' });
-    const headers = matrix[0] || [];
-    const sourceRows = matrix.slice(1).map(values => ({
+    // Localiza a linha de cabeçalho pelo conteúdo; o nome do arquivo e da aba podem mudar.
+    const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    const headerRowIndex = matrix.findIndex(row => {
+      const normalized = row.map(normalizeExcelHeader);
+      return normalized.includes('produto')
+        && normalized.some(header => header === 'codigosku' || header === 'sku');
+    });
+    if (headerRowIndex < 0) {
+      throw new Error('Cabeçalhos Produto e Código (SKU) não foram encontrados.');
+    }
+
+    const headers = matrix[headerRowIndex] || [];
+    const sourceRows = matrix.slice(headerRowIndex + 1).map((values, index) => ({
       values,
+      sourceRow: headerRowIndex + index + 2,
       row: Object.fromEntries(headers.map((header, index) => [String(header || `COL_${index}`), values[index]]))
     }));
 
@@ -387,7 +409,7 @@ async function processAnaliseExcel(arrayBuffer) {
     }
 
     let rowIdx = 0;
-    const importedData = sourceRows.map(({ row, values }) => {
+    const importedData = sourceRows.map(({ row, values, sourceRow }) => {
       const produto = String(getExcelRowValue(row, ['Produto', 'Descrição', 'Nome', 'Modelo'])).trim();
       const sku = String(getExcelRowValue(row, ['Código (SKU)', 'Codigo (SKU)', 'SKU', 'Código'])).trim().toUpperCase();
       const codigoBruto = String(getExcelRowValue(row, ['Código Bruto', 'Codigo Bruto', 'Bruto'])).trim();
@@ -412,7 +434,7 @@ async function processAnaliseExcel(arrayBuffer) {
       const prioridadeGeral = prioridadeGeralRaw || String(rowIdx).padStart(2, '0');
 
       return {
-        originalIndex: rowIdx,
+        originalIndex: sourceRow,
         prioridadeGeral,
         produto,
         sku,
