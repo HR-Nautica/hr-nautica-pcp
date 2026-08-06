@@ -40,13 +40,16 @@ router.post("/import", async (req, res, next) => {
 
 router.patch("/:id/advance", async (req, res, next) => {
   try {
-    const order = await advanceHeliceProductionOrder(
+    const result = await advanceHeliceProductionOrder(
       req.params.id,
       req.body?.forwardQuantity,
-      actorFromRequest(req)
+      actorFromRequest(req),
+      req.body?.remainingAction || "split"
     );
-    if (!order) return res.status(404).json({ ok: false, error: "OP não encontrada." });
-    return res.json({ ok: true, order });
+    if (!result) return res.status(404).json({ ok: false, error: "OP não encontrada." });
+    const order = result.order || result;
+    const createdOrder = result.createdOrder || null;
+    return res.json({ ok: true, order, createdOrder });
   } catch (error) {
     if (error instanceof TypeError || error instanceof RangeError) {
       return res.status(400).json({ ok: false, error: error.message });

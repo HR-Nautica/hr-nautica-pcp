@@ -696,7 +696,7 @@ export async function importHeliceProductionOrders(rows, actor = "") {
   });
 }
 
-export function buildOperationMovement(order, forwardQuantity, actor, at) {
+export function buildOperationMovement(order, forwardQuantity, actor, at, remainingAction = "split", existingOrders = []) {
   const operations = Array.isArray(order.operations) ? order.operations.map(operation => ({ ...operation })) : [];
   const currentIndex = Math.max(0, Number.parseInt(order.currentOperation, 10) - 1);
   if (currentIndex >= 8) throw new RangeError("A OP já está na última operação. Use Finalizar.");
@@ -706,10 +706,85 @@ export function buildOperationMovement(order, forwardQuantity, actor, at) {
     throw new RangeError(`A quantidade que avança não pode superar ${inputQuantity} peças.`);
   }
 
+  const remainingQuantity = inputQuantity - forwardedQuantity;
+  const isScrap = remainingAction === "scrap" || remainingAction === "refugo";
+
+  let createdOrder = null;
+  let createdOpNumber = null;
+
+  if (remainingQuantity > 0) {
+    const parentOpNum = String(order.opNumber || "OPH-000000");
+    const baseOpNumber = parentOpNum.split(".")[0];
+
+    if (isScrap) {
+      const scrapMatches = (existingOrders || []).filter(row => {
+        const num = String(row.opNumber || row.op_number || "");
+        return num.startsWith(`${baseOpNumber}.REF.`);
+      });
+      const seq = scrapMatches.length + 1;
+      createdOpNumber = `${baseOpNumber}.REF.${seq}`;
+    } else {
+      const splitMatches = (existingOrders || []).filter(row => {
+        const num = String(row.opNumber || row.op_number || "");
+        return num.startsWith(`${baseOpNumber}.`) && !num.includes(".REF.");
+      });
+      const seq = splitMatches.length + 1;
+      createdOpNumber = `${baseOpNumber}.${seq}`;
+    }
+
+    const currentOpObj = operations[currentIndex] || {
+      code: String(currentIndex + 1).padStart(2, "0"),
+      name: order.currentOperationName || "Operação"
+    };
+
+    const newOps = operations.map((op, idx) => {
+      if (idx === currentIndex) return { ...op, quantity: remainingQuantity };
+      if (idx < currentIndex) return { ...op };
+      return { ...op, quantity: null };
+    });
+
+    const uniqueId = String(Date.now()) + String(Math.floor(Math.random() * 1000));
+    createdOrder = {
+      id: uniqueId,
+      opNumber: createdOpNumber,
+      sourceKey: `${isScrap ? "SCRAP" : "SPLIT"}_${parentOpNum}_${uniqueId}`,
+      sourceFile: order.sourceFile || "Rastreio PCP",
+      sourceSheet: order.sourceSheet || "Rastreio",
+      sourceRow: 0,
+      entryDate: order.entryDate || (at ? String(at).slice(0, 10) : null),
+      description: isScrap ? `${order.description} [REFUGO]` : order.description,
+      priority: isScrap ? "Normal" : (order.priority || "Normal"),
+      sku: order.sku,
+      rawCode: order.rawCode || "",
+      operations: newOps,
+      operationHistory: [
+        {
+          type: isScrap ? "scrap_created" : "split_created",
+          fromOp: parentOpNum,
+          quantity: remainingQuantity,
+          at,
+          actor: String(actor || "").slice(0, 100)
+        }
+      ],
+      currentOperation: currentOpObj.code,
+      currentOperationName: isScrap ? `${currentOpObj.name} (Refugo)` : currentOpObj.name,
+      quantity: remainingQuantity,
+      spreadsheetLocation: order.spreadsheetLocation || "",
+      elapsedTime: order.elapsedTime || "",
+      status: isScrap ? "refugada" : "em_producao",
+      finishedAt: isScrap ? at : null,
+      finishedBy: isScrap ? String(actor || "").slice(0, 100) : "",
+      importedBy: String(actor || "").slice(0, 100),
+      importedAt: at,
+      updatedAt: at
+    };
+  }
+
   const nextIndex = currentIndex + 1;
   const nextOperation = operations[nextIndex];
   if (!nextOperation) throw new RangeError("Próxima operação não encontrada.");
   nextOperation.quantity = forwardedQuantity;
+
   const movement = {
     type: "advance",
     fromOperation: operations[currentIndex]?.code || String(currentIndex + 1).padStart(2, "0"),
@@ -719,13 +794,17 @@ export function buildOperationMovement(order, forwardQuantity, actor, at) {
     inputQuantity,
     forwardedQuantity,
     scrapQuantity: inputQuantity - forwardedQuantity,
+    remainingQuantity,
+    remainingAction: isScrap ? "scrap" : "split",
+    createdOpNumber: createdOpNumber || null,
     actor: String(actor || "").slice(0, 100),
     at
   };
-  return { operations, movement, nextOperation, forwardedQuantity };
+
+  return { operations, movement, nextOperation, forwardedQuantity, remainingQuantity, createdOrder };
 }
 
-export async function advanceHeliceProductionOrder(id, forwardQuantity, actor = "") {
+export async function advanceHeliceProductionOrder(id, forwardQuantity, actor = "", remainingAction = "split") {
   await initializeDatabase();
   const orderId = String(id || "").trim();
   if (!/^\d+$/.test(orderId)) throw new TypeError("OP de hélice inválida.");
@@ -737,29 +816,75 @@ export async function advanceHeliceProductionOrder(id, forwardQuantity, actor = 
     const index = list.findIndex(row => String(row.id) === orderId);
     if (index < 0) return null;
     if (list[index].status === "finalizada") throw new RangeError("A OP já foi finalizada.");
-    const result = buildOperationMovement(list[index], forwardQuantity, actor, now);
+    if (list[index].status === "refugada") throw new RangeError("A OP está marcada como refugada.");
+
+    const result = buildOperationMovement(list[index], forwardQuantity, actor, now, remainingAction, list);
     list[index] = {
-      ...list[index], operations: result.operations,
+      ...list[index],
+      operations: result.operations,
       operationHistory: [...(list[index].operationHistory || []), result.movement],
       currentOperation: result.nextOperation.code,
       currentOperationName: result.nextOperation.name,
       quantity: result.forwardedQuantity,
       updatedAt: now
     };
+    if (result.createdOrder) {
+      list.push(result.createdOrder);
+    }
     db.helice_production_orders = list;
     db.updated_at = now;
     await writeLocalFile(db);
-    return mapHeliceProductionRow(list[index]);
+    return {
+      order: mapHeliceProductionRow(list[index]),
+      createdOrder: result.createdOrder ? mapHeliceProductionRow(result.createdOrder) : null
+    };
   }
 
   if (usesSupabaseRest()) {
-    const rows = await restRequest("helice_production_orders", {
-      params: { select: "*", id: `eq.${orderId}`, limit: 1 }
+    const allRows = await restRequest("helice_production_orders", {
+      params: { select: "*" }
     });
-    const order = rows?.[0] ? mapHeliceProductionRow(rows[0]) : null;
+    const order = (allRows || []).map(mapHeliceProductionRow).find(o => String(o.id) === orderId);
     if (!order) return null;
     if (order.status === "finalizada") throw new RangeError("A OP já foi finalizada.");
-    const result = buildOperationMovement(order, forwardQuantity, actor, now);
+    if (order.status === "refugada") throw new RangeError("A OP está marcada como refugada.");
+
+    const existingOrders = (allRows || []).map(mapHeliceProductionRow);
+    const result = buildOperationMovement(order, forwardQuantity, actor, now, remainingAction, existingOrders);
+
+    if (result.createdOrder) {
+      const row = result.createdOrder;
+      await restRequest("helice_production_orders", {
+        method: "POST",
+        body: [{
+          op_number: row.opNumber,
+          source_key: row.sourceKey,
+          source_file: row.sourceFile,
+          source_sheet: row.sourceSheet,
+          source_row: row.sourceRow,
+          entry_date: row.entryDate,
+          description: row.description,
+          priority: row.priority,
+          sku: row.sku,
+          raw_code: row.rawCode,
+          operations: row.operations,
+          operation_history: row.operationHistory,
+          current_operation: row.currentOperation,
+          current_operation_name: row.currentOperationName,
+          quantity: row.quantity,
+          spreadsheet_location: row.spreadsheetLocation,
+          elapsed_time: row.elapsedTime,
+          status: row.status,
+          finished_at: row.finishedAt,
+          finished_by: row.finishedBy,
+          imported_by: row.importedBy,
+          imported_at: row.importedAt,
+          updated_at: now
+        }],
+        prefer: "resolution=merge-duplicates,return=minimal"
+      });
+    }
+
     const updated = await restRequest("helice_production_orders", {
       method: "PATCH", params: { id: `eq.${orderId}` },
       body: {
@@ -772,7 +897,11 @@ export async function advanceHeliceProductionOrder(id, forwardQuantity, actor = 
       },
       prefer: "return=representation"
     });
-    return updated?.[0] ? mapHeliceProductionRow(updated[0]) : null;
+
+    return {
+      order: updated?.[0] ? mapHeliceProductionRow(updated[0]) : null,
+      createdOrder: result.createdOrder ? mapHeliceProductionRow(result.createdOrder) : null
+    };
   }
 
   return transaction(async client => {
@@ -780,7 +909,35 @@ export async function advanceHeliceProductionOrder(id, forwardQuantity, actor = 
     const order = selected.rows[0] ? mapHeliceProductionRow(selected.rows[0]) : null;
     if (!order) return null;
     if (order.status === "finalizada") throw new RangeError("A OP já foi finalizada.");
-    const result = buildOperationMovement(order, forwardQuantity, actor, now);
+    if (order.status === "refugada") throw new RangeError("A OP está marcada como refugada.");
+
+    const baseOpNumber = order.opNumber.split('.')[0];
+    const existingResult = await client.query("SELECT op_number FROM helice_production_orders WHERE op_number LIKE $1", [`${baseOpNumber}.%`]);
+    const existingOrders = existingResult.rows.map(r => ({ opNumber: r.op_number }));
+
+    const result = buildOperationMovement(order, forwardQuantity, actor, now, remainingAction, existingOrders);
+
+    if (result.createdOrder) {
+      const row = result.createdOrder;
+      await client.query(`
+        INSERT INTO helice_production_orders (
+          op_number, source_key, source_file, source_sheet, source_row, entry_date,
+          description, priority, sku, raw_code, operations, operation_history,
+          current_operation, current_operation_name, quantity, spreadsheet_location,
+          elapsed_time, status, finished_at, finished_by, imported_by, imported_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb,
+          $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
+        )
+      `, [
+        row.opNumber, row.sourceKey, row.sourceFile, row.sourceSheet, row.sourceRow, row.entryDate,
+        row.description, row.priority, row.sku, row.rawCode, JSON.stringify(row.operations),
+        JSON.stringify(row.operationHistory), row.currentOperation, row.currentOperationName,
+        row.quantity, row.spreadsheetLocation, row.elapsedTime, row.status, row.finishedAt,
+        row.finishedBy, row.importedBy, row.importedAt, now
+      ]);
+    }
+
     const updated = await client.query(`
       UPDATE helice_production_orders
       SET operations = $1::jsonb, operation_history = operation_history || $2::jsonb,
@@ -790,7 +947,11 @@ export async function advanceHeliceProductionOrder(id, forwardQuantity, actor = 
       JSON.stringify(result.operations), JSON.stringify([result.movement]),
       result.nextOperation.code, result.nextOperation.name, result.forwardedQuantity, now, orderId
     ]);
-    return mapHeliceProductionRow(updated.rows[0]);
+
+    return {
+      order: mapHeliceProductionRow(updated.rows[0]),
+      createdOrder: result.createdOrder ? mapHeliceProductionRow(result.createdOrder) : null
+    };
   });
 }
 

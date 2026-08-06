@@ -68,8 +68,9 @@
   }
 
   function updateKpis() {
-    const active = state.orders.filter(order => order.status !== "finalizada");
+    const active = state.orders.filter(order => order.status === "em_producao");
     const finished = state.orders.filter(order => order.status === "finalizada");
+    const refugadas = state.orders.filter(order => order.status === "refugada");
     const uniqueSkus = new Set(active.map(order => order.sku)).size;
     const activeQuantity = active.reduce((sum, order) => sum + (Number(order.quantity) || 0), 0);
     if (byId("fkpi-total")) byId("fkpi-total").textContent = formatNumber(active.length);
@@ -93,7 +94,10 @@
     tbody.innerHTML = orders.map(order => {
       const operation = currentOperation(order);
       const finalized = order.status === "finalizada";
-      return `<tr class="helice-op-row ${finalized ? "helice-op-row--finished" : ""}" data-order-id="${escapeHtml(order.id)}" tabindex="0">
+      const refugada = order.status === "refugada";
+      let statusChip = `<span class="chip ${finalized ? "chip--green" : refugada ? "chip--red" : "chip--orange"}">${finalized ? "Finalizada" : refugada ? "⚠️ Refugada" : "Em produção"}</span>`;
+
+      return `<tr class="helice-op-row ${finalized ? "helice-op-row--finished" : refugada ? "helice-op-row--refugada" : ""}" data-order-id="${escapeHtml(order.id)}" tabindex="0">
         <td><strong class="helice-op-number">${escapeHtml(order.opNumber)}</strong></td>
         <td><span class="chip chip--blue helice-op-sku">${escapeHtml(order.sku)}</span></td>
         <td class="helice-op-description"><strong>${escapeHtml(order.description)}</strong><small>${escapeHtml(order.rawCode || "Sem código bruto")}</small></td>
@@ -102,8 +106,8 @@
         <td><span class="helice-current-operation"><b>${escapeHtml(operation.code)}</b>${escapeHtml(operation.name.replace(/^\d+\s*-\s*/, ""))}</span></td>
         <td>${renderOperationFlow(order)}</td>
         <td>${formatDate(order.entryDate)}</td>
-        <td><span class="chip ${finalized ? "chip--green" : "chip--orange"}">${finalized ? "Finalizada" : "Em produção"}</span></td>
-        <td><button class="btn-secondary helice-details-btn" data-order-id="${escapeHtml(order.id)}">${finalized ? "Ver histórico" : "Abrir OP"}</button></td>
+        <td>${statusChip}</td>
+        <td><button class="btn-secondary helice-details-btn" data-order-id="${escapeHtml(order.id)}">${finalized ? "Ver histórico" : refugada ? "Ver refugo" : "Abrir OP"}</button></td>
       </tr>`;
     }).join("");
   }
@@ -117,13 +121,15 @@
     if (!order) return;
     const currentIndex = Math.max(0, Number.parseInt(order.currentOperation, 10) - 1);
     const finalized = order.status === "finalizada";
+    const refugada = order.status === "refugada";
+
     byId("helice-op-modal-number").textContent = order.opNumber;
     byId("helice-op-modal-title").textContent = order.description;
-    byId("helice-op-modal-sku").textContent = `${order.sku} · ${formatNumber(order.quantity)} peças na última operação`;
+    byId("helice-op-modal-sku").textContent = `${order.sku} · ${formatNumber(order.quantity)} peças na operação atual`;
 
     byId("helice-operation-stepper").innerHTML = (order.operations || []).map((operation, index) => {
       const registered = operation.quantity !== null && operation.quantity !== undefined;
-      const cssClass = index < currentIndex || finalized ? "is-complete" : index === currentIndex ? "is-current" : "";
+      const cssClass = index < currentIndex || finalized ? "is-complete" : index === currentIndex ? (refugada ? "is-scrap" : "is-current") : "";
       return `<div class="helice-operation-card ${cssClass}">
         <span class="helice-operation-index">${index + 1}</span>
         <div><strong>${escapeHtml(operation.name.replace(/^\d+\s*-\s*/, ""))}</strong><small>${registered ? `${formatNumber(operation.quantity)} peças` : "Aguardando"}</small></div>
@@ -133,23 +139,46 @@
     const operation = currentOperation(order);
     byId("helice-current-operation-title").textContent = `${operation.code} – ${operation.name.replace(/^\d+\s*-\s*/, "")}`;
     byId("helice-current-quantity").textContent = `${formatNumber(order.quantity)} peças`;
+    
     const movementPanel = byId("helice-movement-panel");
     const nextButton = byId("helice-op-next-button");
-    movementPanel.classList.toggle("hidden", finalized || currentIndex >= 8);
-    nextButton.classList.toggle("hidden", finalized);
+    movementPanel.classList.toggle("hidden", finalized || refugada || currentIndex >= 8);
+    nextButton.classList.toggle("hidden", finalized || refugada);
     nextButton.textContent = currentIndex >= 8 ? "Finalizar OP" : "Próxima operação";
     nextButton.disabled = state.savingMovement;
+
     const forwardInput = byId("helice-forward-quantity");
-    forwardInput.max = String(Math.max(0, Number(order.quantity) || 0));
-    forwardInput.value = String(Math.max(0, Number(order.quantity) || 0));
-    byId("helice-scrap-quantity").value = "0";
+    if (forwardInput) {
+      forwardInput.max = String(Math.max(0, Number(order.quantity) || 0));
+      forwardInput.value = String(Math.max(0, Number(order.quantity) || 0));
+    }
+    
+    const remainingActionSelect = byId("helice-remaining-action");
+    if (remainingActionSelect) {
+      remainingActionSelect.value = "split";
+    }
+
+    updateScrapPreview();
 
     const history = Array.isArray(order.operationHistory) ? order.operationHistory : [];
     byId("helice-operation-history").innerHTML = history.length
-      ? history.slice().reverse().map(event => event.type === "finish"
-        ? `<div class="helice-history-event is-finish"><span>✓</span><div><strong>OP finalizada com ${formatNumber(event.quantity)} peças</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`
-        : `<div class="helice-history-event"><span>${escapeHtml(event.toOperation)}</span><div><strong>${formatNumber(event.forwardedQuantity)} avançaram · ${formatNumber(event.scrapQuantity)} de refugo</strong><small>${escapeHtml(event.fromOperationName)} → ${escapeHtml(event.toOperationName)} · ${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`
-      ).join("")
+      ? history.slice().reverse().map(event => {
+        if (event.type === "finish") {
+          return `<div class="helice-history-event is-finish"><span>✓</span><div><strong>OP finalizada com ${formatNumber(event.quantity)} peças</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
+        }
+        if (event.type === "split_created") {
+          return `<div class="helice-history-event"><span>🔄</span><div><strong>Sub-OP gerada por desmembramento da ${escapeHtml(event.fromOp)} (${formatNumber(event.quantity)} peças)</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
+        }
+        if (event.type === "scrap_created") {
+          return `<div class="helice-history-event is-scrap"><span>⚠️</span><div><strong>Registro de Refugo gerado a partir da ${escapeHtml(event.fromOp)} (${formatNumber(event.quantity)} peças)</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
+        }
+        const createdInfo = event.createdOpNumber
+          ? (event.remainingAction === "scrap"
+            ? ` · ⚠️ Refugo: ${escapeHtml(event.createdOpNumber)} (${formatNumber(event.remainingQuantity)} pçs)`
+            : ` · 🔄 Sub-OP: ${escapeHtml(event.createdOpNumber)} (${formatNumber(event.remainingQuantity)} pçs)`)
+          : "";
+        return `<div class="helice-history-event"><span>${escapeHtml(event.toOperation)}</span><div><strong>${formatNumber(event.forwardedQuantity)} avançaram${createdInfo}</strong><small>${escapeHtml(event.fromOperationName)} → ${escapeHtml(event.toOperationName)} · ${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
+      }).join("")
       : '<div class="helice-history-empty">Nenhuma movimentação manual registrada. As quantidades acima vieram da planilha inicial.</div>';
   }
 
@@ -167,8 +196,30 @@
   function updateScrapPreview() {
     const order = selectedOrder();
     if (!order) return;
+    const total = Number(order.quantity) || 0;
     const forwarded = Math.max(0, Number.parseInt(byId("helice-forward-quantity")?.value, 10) || 0);
-    byId("helice-scrap-quantity").value = String(Math.max(0, (Number(order.quantity) || 0) - forwarded));
+    const remaining = Math.max(0, total - forwarded);
+    
+    if (byId("helice-scrap-quantity")) byId("helice-scrap-quantity").value = String(remaining);
+    if (byId("helice-remaining-quantity")) byId("helice-remaining-quantity").value = String(remaining);
+
+    const remainingGroup = byId("helice-remaining-group");
+    const remainingPreview = byId("helice-remaining-preview");
+    const action = byId("helice-remaining-action")?.value || "split";
+
+    if (remainingGroup) {
+      remainingGroup.style.display = remaining > 0 ? "block" : "none";
+    }
+
+    if (remainingPreview) {
+      if (remaining === 0) {
+        remainingPreview.textContent = `✓ Todas as ${formatNumber(total)} peças avançarão para a próxima operação.`;
+      } else if (action === "scrap") {
+        remainingPreview.textContent = `⚠️ Serão registradas ${formatNumber(remaining)} peças como Refugo em uma nova ordem (ex: ${order.opNumber}.REF.1).`;
+      } else {
+        remainingPreview.textContent = `🔄 Serão desmembradas ${formatNumber(remaining)} peças em uma nova Sub-OP (ex: ${order.opNumber}.1) na etapa atual.`;
+      }
+    }
   }
 
   function notifyOrdersUpdated() {
@@ -188,8 +239,20 @@
       showToast(`A quantidade não pode superar ${formatNumber(order.quantity)} peças.`, "error");
       return;
     }
-    const scrap = Number(order.quantity) - forwardQuantity;
-    if (!window.confirm(`Avançar ${forwardQuantity} peças e registrar ${scrap} de refugo?`)) return;
+
+    const remaining = Number(order.quantity) - forwardQuantity;
+    const remainingAction = byId("helice-remaining-action")?.value || "split";
+
+    let confirmMessage = "";
+    if (remaining === 0) {
+      confirmMessage = `Avançar todas as ${forwardQuantity} peças da ${order.opNumber} para a próxima operação?`;
+    } else if (remainingAction === "scrap") {
+      confirmMessage = `Avançar ${forwardQuantity} peças e registrar ${remaining} peças como REFUGO (${order.opNumber}.REF.X)?`;
+    } else {
+      confirmMessage = `Avançar ${forwardQuantity} peças e DESMEMBRAR ${remaining} peças em uma nova Sub-OP (${order.opNumber}.X)?`;
+    }
+
+    if (!window.confirm(confirmMessage)) return;
 
     state.savingMovement = true;
     renderDetailModal();
@@ -197,14 +260,29 @@
       const response = await fetch(`/api/helice-ops/${encodeURIComponent(order.id)}/advance`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", "X-PCP-User": window.PCP_CURRENT_USER || "" },
-        body: JSON.stringify({ forwardQuantity })
+        body: JSON.stringify({ forwardQuantity, remainingAction })
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Não foi possível avançar a OP.");
-      state.orders = state.orders.map(item => String(item.id) === String(order.id) ? payload.order : item);
+      
+      const updatedOrder = payload.order;
+      const createdOrder = payload.createdOrder;
+
+      if (updatedOrder) {
+        state.orders = state.orders.map(item => String(item.id) === String(order.id) ? updatedOrder : item);
+      }
+      if (createdOrder && !state.orders.some(o => String(o.id) === String(createdOrder.id))) {
+        state.orders.push(createdOrder);
+      }
+
       renderRows();
       notifyOrdersUpdated();
-      showToast(`${order.opNumber}: ${forwardQuantity} peças enviadas à próxima operação.`);
+
+      if (createdOrder) {
+        showToast(`${order.opNumber}: ${forwardQuantity} pçs avançaram. Gerada ${createdOrder.opNumber} (${createdOrder.quantity} pçs).`);
+      } else {
+        showToast(`${order.opNumber}: ${forwardQuantity} peças enviadas à próxima operação.`);
+      }
     } catch (error) {
       showToast(error.message, "error");
     } finally {

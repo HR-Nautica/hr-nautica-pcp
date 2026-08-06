@@ -5023,6 +5023,33 @@ body {
   word-break: break-word;
 }
 
+/* Status Refugo em Rastreio OPs */
+.helice-op-row--refugada {
+  opacity: 0.75;
+  background: rgba(239, 68, 68, 0.04) !important;
+}
+
+.helice-op-row--refugada:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+.helice-history-event.is-scrap span {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.helice-operation-card.is-scrap {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+.helice-operation-card.is-scrap .helice-operation-index {
+  background: #ef4444 !important;
+  color: white !important;
+}
+
+
 
 
 

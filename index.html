@@ -771,6 +771,7 @@
             <option value="">Todos os status</option>
             <option value="em_producao">Em produção</option>
             <option value="finalizada">Finalizadas</option>
+            <option value="refugada">Refugadas (Refugo)</option>
           </select>
           <button class="btn-secondary" id="btn-refresh-helice-ops">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0 2 5"/><polyline points="20 4 20 11 13 11"/></svg>
@@ -1364,15 +1365,23 @@
           </div>
           <div class="helice-movement-grid">
             <div class="form-group">
-              <label for="helice-forward-quantity">Quantidade que vai para frente</label>
+              <label for="helice-forward-quantity">Qtd. enviada p/ próxima etapa</label>
               <input type="number" id="helice-forward-quantity" min="0" step="1" />
             </div>
             <div class="form-group">
-              <label for="helice-scrap-quantity">Refugo nesta operação</label>
-              <input type="number" id="helice-scrap-quantity" readonly />
+              <label for="helice-remaining-quantity">Peças restantes na etapa atual</label>
+              <input type="number" id="helice-remaining-quantity" readonly value="0" style="background:var(--bg-elevated);font-weight:700;color:var(--accent-orange);" />
+              <input type="hidden" id="helice-scrap-quantity" />
             </div>
           </div>
-          <p class="helice-movement-hint">O refugo é calculado pela diferença entre a quantidade atual e a quantidade enviada à próxima operação.</p>
+          <div class="form-group" id="helice-remaining-group" style="margin-top:0.75rem;">
+            <label for="helice-remaining-action" style="font-weight:700;color:var(--accent-blue);display:block;margin-bottom:4px;">Destino das peças que ficam para trás:</label>
+            <select id="helice-remaining-action" class="form-input" style="width:100%;height:38px;font-size:0.85rem;background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius-sm);">
+              <option value="split">🔄 Desmembrar em Sub-OP (ex: OPH-000001.1) p/ continuar depois</option>
+              <option value="scrap">⚠️ Registrar como Refugo (ex: OPH-000001.REF.1)</option>
+            </select>
+            <div class="helice-remaining-preview" id="helice-remaining-preview" style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;font-style:italic;"></div>
+          </div>
         </div>
 
         <div class="helice-history-section">
