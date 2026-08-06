@@ -47,7 +47,7 @@ const context = vm.createContext({
 });
 
 const source = `${fs.readFileSync('public/js/analise.js', 'utf8')}\n` +
-  'globalThis.__processAnaliseExcel = processAnaliseExcel; globalThis.__ANALISE_STATE = ANALISE_STATE;';
+  'globalThis.__processAnaliseExcel = processAnaliseExcel; globalThis.__ANALISE_STATE = ANALISE_STATE; globalThis.__calculateProductionPriority = calculateProductionPriority;';
 vm.runInContext(source, context, { filename: 'analise.js' });
 
 const rows = Array.from({ length: 2 }, () => Array(16).fill(''));
@@ -87,4 +87,20 @@ assert.equal(withoutSpreadsheetRow.estoqueFisico, 0);
 assert.equal(withoutSpreadsheetRow.entradasPrevistas, null);
 assert.equal(withoutSpreadsheetRow.saidasPrevistas, 0);
 
-console.log('QA análise: catálogo mestre, colunas H/I/N, Entradas N/A, Virtual e Cobertura validados.');
+assert.equal(
+  context.__calculateProductionPriority({ estoqueFisico: 3, saidasPrevistas: 5, mediaMensal: 4 }),
+  -1,
+  'Físico menor que Saídas deve receber prioridade máxima',
+);
+assert.equal(
+  context.__calculateProductionPriority({ estoqueFisico: 10, saidasPrevistas: 2, mediaMensal: 1.5 }),
+  5,
+  'Média mensal menor que 2 deve receber prioridade 5',
+);
+assert.equal(
+  context.__calculateProductionPriority({ estoqueFisico: 10, saidasPrevistas: 3, mediaMensal: 3 }),
+  7 / 3,
+  'os demais itens devem usar (Físico - Saídas) / Média mensal',
+);
+
+console.log('QA análise: colunas H/I/N, Virtual, Cobertura e regras de Prioridade validadas.');

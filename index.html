@@ -1545,7 +1545,7 @@
         <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
           <li><strong>Estoque Virtual:</strong> <code>Físico + Entradas - Saídas</code>. Enquanto as operações não forem integradas, Entradas aparece como N/A e vale zero somente neste cálculo.</li>
           <li><strong>Cobertura (meses):</strong> <code>Estoque Físico / Média Mensal</code>. Indica quantos meses o estoque atual durará com base no giro de vendas.</li>
-          <li><strong>Prioridade (Prio2):</strong> Quanto menor o valor, mais crítica é a situação do produto. Produtos com Prio2 negativo ou menor que a Meta de Cobertura estão em falta eminente.</li>
+          <li><strong>Prioridade:</strong> se Físico &lt; Saídas, recebe <code>-1</code> (máxima); se Média Mensal &lt; 2, recebe <code>5</code>; nos demais casos, <code>(Físico - Saídas) / Média Mensal</code>.</li>
           <li><strong>Qtd a Produzir:</strong> Recomendação automática de quantas peças produzir para atingir a <strong>Meta Cobertura</strong> selecionada.</li>
         </ul>
 

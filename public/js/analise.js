@@ -42,13 +42,14 @@ function fmtAnaliseCob(valor) {
   return `${Number(valor).toFixed(1)} ${valor === 1 ? 'mês' : 'meses'}`;
 }
 
-function excelRoundDown(val, decimals) {
-  if (val === null || val === undefined || isNaN(val)) return null;
-  const factor = Math.pow(10, decimals);
-  const eps = 1e-9;
-  const sign = Math.sign(val);
-  const absVal = Math.abs(val) + eps;
-  return sign * Math.floor(absVal * factor) / factor;
+function calculateProductionPriority(item) {
+  const estoqueFisico = Number(item.estoqueFisico) || 0;
+  const saidasPrevistas = Number(item.saidasPrevistas) || 0;
+  const mediaMensal = Number(item.mediaMensal) || 0;
+
+  if (estoqueFisico < saidasPrevistas) return -1;
+  if (mediaMensal < 2) return 5;
+  return (estoqueFisico - saidasPrevistas) / mediaMensal;
 }
 
 // Obtém a classificação de criticidade de um item com base na prioridade física (prio2)
@@ -320,8 +321,7 @@ function mergeAnaliseWithCatalogo(sourceItems = []) {
       estoqueVirtual: estoqueFisico - saidasPrevistas,
       mediaMensal,
       coberturaVirtual: mediaMensal > 0 ? estoqueFisico / mediaMensal : Infinity,
-      prio2: source.prio2 ?? null,
-      prio2Excel: source.prio2Excel ?? null,
+      prio2: null,
       localizacao: source.localizacao || '-',
       bucha: modelo.modeloBucha || modelo.bucha || source.bucha || '-'
     };
@@ -423,9 +423,6 @@ async function processAnaliseExcel(arrayBuffer) {
       const estoqueVirtual = estoqueFisico - saidasPrevistas;
       const mediaMensal = parseExcelFloat(values[13], 0); // Coluna N
       
-      const rawPrio = getExcelRowValue(row, ['Prio2', 'Prio 2', 'Prioridade2'], null);
-      const prioVal = rawPrio !== null && rawPrio !== '' ? parseExcelFloat(rawPrio, null) : null;
-
       const coberturaVirtual = mediaMensal > 0 ? estoqueFisico / mediaMensal : Infinity;
       const localizacao = String(getExcelRowValue(row, ['Localização', 'Localizacao', 'Loc'], '-')).trim();
       const bucha = String(getExcelRowValue(row, ['bucha', 'Bucha'], '-')).trim();
@@ -445,8 +442,7 @@ async function processAnaliseExcel(arrayBuffer) {
         estoque1,
         estoqueVirtual,
         mediaMensal,
-        prio2: prioVal,
-        prio2Excel: prioVal,
+        prio2: null,
         coberturaVirtual,
         localizacao,
         bucha
@@ -500,33 +496,7 @@ function renderAnaliseTable() {
     item.estoqueVirtual = item.estoqueFisico - (item.saidasPrevistas || 0);
     item.coberturaVirtual = item.mediaMensal > 0 ? item.estoqueFisico / item.mediaMensal : Infinity;
     
-    // Se o prio2 veio diretamente do Excel (prio2Excel), preserva o valor da planilha
-    if (item.prio2Excel !== undefined && item.prio2Excel !== null) {
-      item.prio2 = item.prio2Excel;
-    } else {
-      const estoque1 = item.estoqueFisico - item.saidasPrevistas;
-      if (estoque1 < 0) {
-        item.prio2 = -1.0;
-      } else {
-        const hasMax = /max\./i.test(item.produto);
-        if (hasMax) {
-          item.prio2 = null;
-        } else {
-          const mediaMensal = Number(item.mediaMensal) || 0;
-          let rawVal;
-          if (item.estoqueVirtual < 0) {
-            rawVal = mediaMensal > 0 ? (item.estoqueVirtual / mediaMensal) : 0;
-          } else {
-            if (mediaMensal < 2) {
-              rawVal = 5.0;
-            } else {
-              rawVal = estoque1 / mediaMensal;
-            }
-          }
-          item.prio2 = excelRoundDown(rawVal, 1);
-        }
-      }
-    }
+    item.prio2 = calculateProductionPriority(item);
   });
 
   // 1. Calcula contadores rápidos de KPIs
