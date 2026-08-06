@@ -47,7 +47,7 @@ const context = vm.createContext({
 });
 
 const source = `${fs.readFileSync('public/js/analise.js', 'utf8')}\n` +
-  'globalThis.__processAnaliseExcel = processAnaliseExcel; globalThis.__ANALISE_STATE = ANALISE_STATE; globalThis.__calculateProductionPriority = calculateProductionPriority;';
+  'globalThis.__processAnaliseExcel = processAnaliseExcel; globalThis.__ANALISE_STATE = ANALISE_STATE; globalThis.__calculateProductionPriority = calculateProductionPriority; globalThis.__calculateAnaliseProductionNeed = calculateAnaliseProductionNeed; globalThis.__updateAnaliseColumnTotals = updateAnaliseColumnTotals;';
 vm.runInContext(source, context, { filename: 'analise.js' });
 
 const rows = Array.from({ length: 2 }, () => Array(16).fill(''));
@@ -103,4 +103,27 @@ assert.equal(
   'os demais itens devem usar (Físico - Saídas) / Média mensal',
 );
 
-console.log('QA análise: colunas H/I/N, Virtual, Cobertura e regras de Prioridade validadas.');
+assert.equal(
+  context.__calculateAnaliseProductionNeed({ estoqueVirtual: 9, mediaMensal: 4 }),
+  10,
+  'a quantidade a produzir deve ser arredondada para a próxima dezena',
+);
+
+const summaryElements = new Map();
+context.document.getElementById = id => {
+  if (!summaryElements.has(id)) summaryElements.set(id, { textContent: '' });
+  return summaryElements.get(id);
+};
+context.__updateAnaliseColumnTotals([
+  { produto: 'A', sku: 'SKU A', codigoBruto: 'BR A', estoqueFisico: 12, saidasPrevistas: 3, estoqueVirtual: 9, mediaMensal: 4, prio2: 2.25, localizacao: 'Estoque' },
+  { produto: 'B', sku: 'SKU B', codigoBruto: 'BR B', estoqueFisico: 0, saidasPrevistas: 0, estoqueVirtual: 0, mediaMensal: 0, prio2: 5, localizacao: 'Inserir na Produção' },
+]);
+assert.equal(summaryElements.get('analise-sum-fisico').textContent, '12');
+assert.equal(summaryElements.get('analise-sum-saidas').textContent, '3');
+assert.equal(summaryElements.get('analise-sum-virtual').textContent, '9');
+assert.equal(summaryElements.get('analise-sum-media').textContent, '4');
+assert.equal(summaryElements.get('analise-sum-cobertura').textContent, '3 meses');
+assert.equal(summaryElements.get('analise-sum-produzir').textContent, '10');
+assert.equal(summaryElements.get('analise-sum-acoes').textContent, '1 OP');
+
+console.log('QA análise: importação, indicadores, prioridade, quantidade e totais do cabeçalho validados.');

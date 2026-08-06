@@ -270,6 +270,54 @@ function parseExcelFloat(val, defaultVal = 0) {
   return isNaN(num) ? defaultVal : num;
 }
 
+function calculateAnaliseProductionNeed(item) {
+  const diff = Number(item.estoqueVirtual || 0) - (Number(item.mediaMensal || 0) * ANALISE_STATE.coberturaAlvo);
+  return diff < 0 ? Math.ceil(Math.abs(diff) / 10) * 10 : 0;
+}
+
+function formatAnaliseTotal(value, maximumFractionDigits = 1) {
+  return new Intl.NumberFormat('pt-BR', { maximumFractionDigits }).format(Number(value) || 0);
+}
+
+function setAnaliseText(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value;
+}
+
+function updateAnaliseColumnTotals(items) {
+  const totals = items.reduce((acc, item) => {
+    const productionNeed = calculateAnaliseProductionNeed(item);
+    acc.fisico += Number(item.estoqueFisico) || 0;
+    acc.saidas += Number(item.saidasPrevistas) || 0;
+    acc.virtual += Number(item.estoqueVirtual) || 0;
+    acc.media += Number(item.mediaMensal) || 0;
+    acc.prioridade += Number(item.prio2) || 0;
+    acc.produzir += productionNeed;
+    if (productionNeed > 0) acc.ops++;
+    return acc;
+  }, { fisico: 0, saidas: 0, virtual: 0, media: 0, prioridade: 0, produzir: 0, ops: 0 });
+
+  const unique = field => new Set(items.map(item => String(item[field] || '').trim()).filter(Boolean)).size;
+  const coberturaGeral = totals.media > 0 ? totals.fisico / totals.media : null;
+  const prioridadeMedia = items.length > 0 ? totals.prioridade / items.length : 0;
+
+  setAnaliseText('analise-sum-geral', `${items.length} itens`);
+  setAnaliseText('analise-sum-produto', `${unique('produto')} produtos`);
+  setAnaliseText('analise-sum-sku', `${unique('sku')} SKUs`);
+  setAnaliseText('analise-sum-bruto', `${unique('codigoBruto')} códigos`);
+  setAnaliseText('analise-sum-fisico', formatAnaliseTotal(totals.fisico));
+  setAnaliseText('analise-sum-entradas', 'N/A');
+  setAnaliseText('analise-sum-saidas', formatAnaliseTotal(totals.saidas));
+  setAnaliseText('analise-sum-virtual', formatAnaliseTotal(totals.virtual));
+  setAnaliseText('analise-sum-media', formatAnaliseTotal(totals.media));
+  setAnaliseText('analise-sum-cobertura', coberturaGeral === null ? 'Sem giro' : `${formatAnaliseTotal(coberturaGeral)} meses`);
+  setAnaliseText('analise-sum-prioridade', `Média ${formatAnaliseTotal(prioridadeMedia)}`);
+  setAnaliseText('analise-sum-produzir', formatAnaliseTotal(totals.produzir, 0));
+  setAnaliseText('analise-sum-localizacao', `${unique('localizacao')} locais`);
+  setAnaliseText('analise-sum-acoes', `${totals.ops} ${totals.ops === 1 ? 'OP' : 'OPs'}`);
+  setAnaliseText('analise-table-count', `${items.length} ${items.length === 1 ? 'item' : 'itens'}`);
+}
+
 function normalizeSku(str) {
   return String(str || '').trim().toUpperCase().replace(/\s+/g, ' ');
 }
@@ -504,6 +552,8 @@ function renderAnaliseTable() {
   let countCritical = 0;
   let countWarning = 0;
   let countOk = 0;
+  let totalToProduce = 0;
+  let itemsToProduce = 0;
 
   ANALISE_STATE.coberturaData.forEach(item => {
     countTotal++;
@@ -515,6 +565,9 @@ function renderAnaliseTable() {
     } else {
       countOk++;
     }
+    const productionNeed = calculateAnaliseProductionNeed(item);
+    totalToProduce += productionNeed;
+    if (productionNeed > 0) itemsToProduce++;
   });
 
   // Atualiza as badges no HTML
@@ -527,6 +580,8 @@ function renderAnaliseTable() {
   if (elCritical) elCritical.textContent = countCritical;
   if (elWarning) elWarning.textContent = countWarning;
   if (elOk) elOk.textContent = countOk;
+  setAnaliseText('analise-kpi-produce', formatAnaliseTotal(totalToProduce, 0));
+  setAnaliseText('analise-kpi-produce-desc', `${itemsToProduce} ${itemsToProduce === 1 ? 'item com necessidade' : 'itens com necessidade'}`);
 
   // 2. Aplica filtros
   let filtered = ANALISE_STATE.coberturaData;
@@ -549,15 +604,16 @@ function renderAnaliseTable() {
     filtered = filtered.filter(item => getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo) === 'ok');
   }
 
+  // Os resumos do cabeçalho sempre acompanham o conjunto visível.
+  updateAnaliseColumnTotals(filtered);
+
   // 3. Aplica ordenação
   filtered = [...filtered].sort((a, b) => {
     let valA, valB;
     
     // Calcula valores recomendados dinamicamente para comparação, caso ordene por "Qtd Produzir"
-    const diffA = a.estoqueVirtual - (a.mediaMensal * ANALISE_STATE.coberturaAlvo);
-    const colocarOpA = diffA < 0 ? Math.ceil(Math.abs(diffA) / 10) * 10 : 0;
-    const diffB = b.estoqueVirtual - (b.mediaMensal * ANALISE_STATE.coberturaAlvo);
-    const colocarOpB = diffB < 0 ? Math.ceil(Math.abs(diffB) / 10) * 10 : 0;
+    const colocarOpA = calculateAnaliseProductionNeed(a);
+    const colocarOpB = calculateAnaliseProductionNeed(b);
 
     switch (ANALISE_STATE.sortColumn) {
       case 'prioridadeGeral':
@@ -654,8 +710,7 @@ function renderAnaliseTable() {
   // Renderiza as linhas
   tbody.innerHTML = filtered.map(item => {
     // Cálculo dinâmico com base na meta de cobertura
-    const diff = item.estoqueVirtual - (item.mediaMensal * ANALISE_STATE.coberturaAlvo);
-    const need = diff < 0 ? Math.ceil(Math.abs(diff) / 10) * 10 : 0;
+    const need = calculateAnaliseProductionNeed(item);
 
     const status = getAnaliseItemStatus(item, ANALISE_STATE.coberturaAlvo);
     
@@ -674,7 +729,7 @@ function renderAnaliseTable() {
     // Botão de ação
     let actionBtn = '';
     if (need > 0) {
-      actionBtn = `<button class="btn-primary" style="padding:4px 8px;font-size:0.7rem;height:auto" onclick="abrirNovaOPPreenchida('${escapeJSString(item.produto)}', ${need}, ${item.prio2})">Criar OP</button>`;
+      actionBtn = `<button class="btn-primary analise-create-op" onclick="abrirNovaOPPreenchida('${escapeJSString(item.produto)}', ${need}, ${item.prio2})">Criar OP</button>`;
     } else {
       actionBtn = `<span style="color:var(--text-muted);font-size:0.7rem;font-weight:600">✓ OK</span>`;
     }
