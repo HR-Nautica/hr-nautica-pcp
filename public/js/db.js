@@ -322,8 +322,12 @@ const DB = {
   },
 
   deleteModelo(id) {
-    this.saveModelos(this.getModelos().filter(m => m.id !== id));
-    this.addAtividade('Modelo de hélice removido', 'red');
+    const modelos = this.getModelos();
+    const modelo = modelos.find(m => m.id === id);
+    if (!modelo) return null;
+    this.saveModelos(modelos.filter(m => m.id !== id));
+    this.addAtividade(`Modelo removido do catálogo: ${modelo.nome}`, 'red');
+    return modelo;
   },
 
   ensureCatalogoAtualizado() {

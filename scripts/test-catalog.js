@@ -94,6 +94,9 @@ const added = DB.addModelo({
 assert.equal(DB.getModelos().length, 87);
 assert.equal(added.diametroTuboAnel, '');
 assert.equal(added.atualizadoEm.length > 0, true);
+const deleted = DB.deleteModelo(added.id);
+assert.equal(deleted.sku, 'HR QA 001', 'a exclusão deve retornar a hélice removida');
+assert.equal(DB.getModelos().length, 86, 'a exclusão deve remover apenas a hélice selecionada');
 
 const indexHtml = fs.readFileSync('index.html', 'utf8');
 const appSource = fs.readFileSync('public/js/app.js', 'utf8');
@@ -126,6 +129,9 @@ assert.equal(appSource.includes('const buchaDescricao = modelo.modeloBucha'), tr
 assert.equal(appSource.includes("modelo.skuTinyTuboAl || '—'"), true, 'o SKU do tubo exibido deve vir da coluna G');
 assert.equal(appSource.includes("modelo.skuCaixa || '—'"), true, 'o SKU da caixa exibido deve vir da coluna S');
 assert.equal((indexHtml.match(/class="catalogo-sort-btn"/g) || []).length, 7, 'cada coluna de dados deve permitir ordenação');
+assert.equal(appSource.includes('function deleteModelo(id)'), true, 'o catálogo deve disponibilizar a exclusão de hélices');
+assert.equal(appSource.includes("window.deleteModelo = deleteModelo"), true, 'a exclusão deve estar conectada aos botões do catálogo');
+assert.equal(appSource.includes('As OPs e os lotes existentes serão preservados'), true, 'a confirmação deve explicar a preservação do histórico');
 assert.equal(appSource.includes("bucha: $('catalogo-filter-bucha').value"), true, 'a descrição da bucha deve ser filtrável');
 assert.equal(cssSource.includes('overflow-x: hidden'), true, 'o catálogo não deve exibir rolagem horizontal');
 assert.equal(cssSource.includes('min-width: 1120px'), false, 'a tabela não deve forçar largura de desktop');

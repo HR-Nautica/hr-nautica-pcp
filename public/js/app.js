@@ -840,9 +840,14 @@ function renderCatalogoModelos() {
               <button type="button" class="btn-secondary btn-sm" onclick="openFichaTecnica('${modelo.id}')">
                 🔍 Ficha Técnica
               </button>
-              <button type="button" class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
-                ✏️ Editar
-              </button>
+              <div class="catalogo-card-actions">
+                <button type="button" class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
+                  ✏️ Editar
+                </button>
+                <button type="button" class="btn-secondary catalogo-delete-btn catalogo-card-delete-btn" onclick="deleteModelo('${modelo.id}')" aria-label="Excluir ${escapeCatalogoHtml(modelo.nome)}">
+                  🗑 Excluir
+                </button>
+              </div>
             </div>
           </div>
         `;
@@ -878,13 +883,16 @@ function renderCatalogoModelos() {
       <td class="catalogo-col-cor"><span class="catalogo-color"><i class="catalogo-color-dot${dotClass}"></i>${escapeCatalogoHtml(cor)}</span></td>
       <td class="catalogo-caixa catalogo-col-caixa">${escapeCatalogoHtml(modelo.skuCaixa || '—')}</td>
       <td class="catalogo-row-actions">
-        <div style="display:flex;gap:4px;justify-content:flex-end;">
-          <button class="btn-secondary btn-icon-sm" onclick="openFichaTecnica('${modelo.id}')" title="Ver Ficha Técnica de ${escapeCatalogoHtml(modelo.nome)}">
+        <div class="catalogo-table-actions">
+          <button class="btn-secondary catalogo-icon-action" onclick="openFichaTecnica('${modelo.id}')" title="Ver ficha técnica de ${escapeCatalogoHtml(modelo.nome)}" aria-label="Ver ficha técnica de ${escapeCatalogoHtml(modelo.nome)}">
             🔍
           </button>
           <button class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Editar
+          </button>
+          <button class="btn-secondary catalogo-icon-action catalogo-delete-btn" onclick="deleteModelo('${modelo.id}')" title="Excluir ${escapeCatalogoHtml(modelo.nome)}" aria-label="Excluir ${escapeCatalogoHtml(modelo.nome)}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
           </button>
         </div>
       </td>
@@ -916,6 +924,29 @@ function openEditModelo(id) {
   $('modelo-nome').focus();
 }
 window.openEditModelo = openEditModelo;
+
+function deleteModelo(id) {
+  const modelo = DB.getModelos().find((item) => item.id === id);
+  if (!modelo) {
+    showToast('Hélice não encontrada no catálogo.', 'error');
+    return;
+  }
+
+  const hasProductionHistory = DB.getOps().some((op) => op.modelo === modelo.nome)
+    || DB.getPecas().some((peca) => peca.modelo === modelo.nome);
+  const historyNotice = hasProductionHistory
+    ? '\n\nAs OPs e os lotes existentes serão preservados no histórico.'
+    : '';
+  if (!confirm(`Excluir a hélice "${modelo.nome}" (${modelo.sku})?\n\nEsta ação não pode ser desfeita.${historyNotice}`)) return;
+
+  DB.deleteModelo(id);
+  if (STATE.editingModeloId === id) closeModalModelo();
+  renderModelos();
+  populateModeloSelects();
+  if (STATE.currentPage === 'dashboard') renderDashboard();
+  showToast('Hélice excluída do catálogo.', 'error');
+}
+window.deleteModelo = deleteModelo;
 
 function closeModalModelo() { $('modal-modelo').classList.add('hidden'); }
 
