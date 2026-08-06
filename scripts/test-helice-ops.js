@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import { parseHeliceProductionWorkbook } from "./helice-ops-parser.js";
+import { buildOperationMovement } from "../server/database.js";
 
 const workbookPath = path.resolve("public", "Novas Planilhas", "Acompanhamento_Helice.xlsx");
 const parsed = parseHeliceProductionWorkbook(workbookPath);
@@ -19,4 +20,18 @@ assert.equal(new Set(repeatedSku.map(order => order.sourceKey)).size, repeatedSk
 const finished = parsed.orders.filter(order => order.status === "finalizada");
 assert.equal(finished.length, 0, "a planilha atual ainda não possui linhas preenchidas na operação 9");
 
-console.log(`QA rastreio: ${parsed.orders.length} OPs ativas, 9 operações e SKUs repetidos preservados.`);
+const sampleOperations = parsed.operationNames.map((name, index) => ({
+  code: String(index + 1).padStart(2, "0"), name, quantity: index === 0 ? 300 : null
+}));
+const movement = buildOperationMovement({
+  operations: sampleOperations,
+  currentOperation: "01",
+  quantity: 300
+}, 200, "QA", "2026-08-06T12:00:00.000Z");
+assert.equal(movement.forwardedQuantity, 200);
+assert.equal(movement.movement.inputQuantity, 300);
+assert.equal(movement.movement.scrapQuantity, 100);
+assert.equal(movement.nextOperation.code, "02");
+assert.equal(movement.operations[1].quantity, 200);
+
+console.log(`QA rastreio: ${parsed.orders.length} OPs, 9 operações, avanço 300→200 e refugo 100 validados.`);

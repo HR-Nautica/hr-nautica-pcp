@@ -34,7 +34,8 @@ const ANALISE_STATE = {
   searchText: '',
   sortColumn: 'prioridadeGeral',
   sortDirection: 'asc',
-  productionSuggestions: safeGetJSON('hrn_analise_op_sugerida', {})
+  productionSuggestions: safeGetJSON('hrn_analise_op_sugerida', {}),
+  productionEntries: {}
 };
 
 // Formata cobertura em meses (comportamento similar ao vini.js)
@@ -311,6 +312,7 @@ function updateAnaliseColumnTotals(items) {
   const totals = items.reduce((acc, item) => {
     const suggestedQty = getAnaliseSuggestedQty(item);
     acc.fisico += Number(item.estoqueFisico) || 0;
+    acc.entradas += Number(item.entradasPrevistas) || 0;
     acc.saidas += Number(item.saidasPrevistas) || 0;
     acc.virtual += Number(item.estoqueVirtual) || 0;
     acc.media += Number(item.mediaMensal) || 0;
@@ -319,7 +321,7 @@ function updateAnaliseColumnTotals(items) {
     acc.standBy += (Number(item.estoqueVirtual) || 0) + suggestedQty;
     if (suggestedQty > 0) acc.ops++;
     return acc;
-  }, { fisico: 0, saidas: 0, virtual: 0, media: 0, prioridade: 0, produzir: 0, standBy: 0, ops: 0 });
+  }, { fisico: 0, entradas: 0, saidas: 0, virtual: 0, media: 0, prioridade: 0, produzir: 0, standBy: 0, ops: 0 });
 
   const unique = field => new Set(items.map(item => String(item[field] || '').trim()).filter(Boolean)).size;
   const coberturaGeral = totals.media > 0 ? totals.fisico / totals.media : null;
@@ -330,7 +332,7 @@ function updateAnaliseColumnTotals(items) {
   setAnaliseText('analise-sum-sku', `${unique('sku')} SKUs`);
   setAnaliseText('analise-sum-bruto', `${unique('codigoBruto')} códigos`);
   setAnaliseText('analise-sum-fisico', formatAnaliseTotal(totals.fisico));
-  setAnaliseText('analise-sum-entradas', 'N/A');
+  setAnaliseText('analise-sum-entradas', formatAnaliseTotal(totals.entradas));
   setAnaliseText('analise-sum-saidas', formatAnaliseTotal(totals.saidas));
   setAnaliseText('analise-sum-virtual', formatAnaliseTotal(totals.virtual));
   setAnaliseText('analise-sum-media', formatAnaliseTotal(totals.media));
@@ -387,11 +389,11 @@ function mergeAnaliseWithCatalogo(sourceItems = []) {
       produto: modelo.nome || source.produto || 'Produto sem nome',
       sku: modelo.sku || source.sku || `SKU-${index + 1}`,
       codigoBruto: modelo.codigoBruto || source.codigoBruto || '-',
-      entradasPrevistas: null,
+      entradasPrevistas: Number(ANALISE_STATE.productionEntries[sku]) || 0,
       saidasPrevistas,
       estoqueFisico,
-      estoque1: estoqueFisico - saidasPrevistas,
-      estoqueVirtual: estoqueFisico - saidasPrevistas,
+      estoque1: estoqueFisico + (Number(ANALISE_STATE.productionEntries[sku]) || 0) - saidasPrevistas,
+      estoqueVirtual: estoqueFisico + (Number(ANALISE_STATE.productionEntries[sku]) || 0) - saidasPrevistas,
       mediaMensal,
       coberturaVirtual: mediaMensal > 0 ? estoqueFisico / mediaMensal : Infinity,
       prio2: null,
@@ -436,11 +438,30 @@ async function loadAnalysisTempFromServer() {
     produto: row.produto || '',
     sku: row.sku || '',
     codigoBruto: row.codigoBruto || '',
-    entradasPrevistas: null,
+    entradasPrevistas: 0,
     saidasPrevistas: Number(row.saidasPrevistas) || 0,
     estoqueFisico: Number(row.estoqueFisico) || 0,
     mediaMensal: Number(row.mediaMensal) || 0
   })) : [];
+}
+
+function aggregateProductionEntries(orders) {
+  const entries = {};
+  (Array.isArray(orders) ? orders : []).forEach(order => {
+    const sku = normalizeSku(order.sku);
+    if (!sku) return;
+    entries[sku] = (entries[sku] || 0) + (Number(order.quantity) || 0);
+  });
+  return entries;
+}
+
+async function loadProductionEntriesFromServer() {
+  const response = await fetch('/api/helice-ops', { cache: 'no-store' });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || `Falha ao carregar entradas de produção (HTTP ${response.status}).`);
+  const entries = aggregateProductionEntries(result.orders);
+  ANALISE_STATE.productionEntries = entries;
+  return entries;
 }
 
 // Processa o arquivo Excel e extrai os dados
@@ -489,7 +510,7 @@ async function processAnaliseExcel(arrayBuffer) {
       
       const prioridadeGeralRaw = String(getExcelRowValue(row, ['Prioridade GERAL', 'Prioridade', 'Rank', 'Geral'])).trim();
       
-      const entradasPrevistas = null;
+      const entradasPrevistas = 0;
       const saidasPrevistas = parseExcelFloat(values[7], 0); // Coluna H
       const estoqueFisico = parseExcelFloat(values[8], 0); // Coluna I
       const estoque1 = estoqueFisico - saidasPrevistas;
@@ -565,8 +586,8 @@ function renderAnaliseTable() {
 
   // Recalcula os indicadores conforme o mapeamento vigente.
   ANALISE_STATE.coberturaData.forEach(item => {
-    item.entradasPrevistas = null;
-    item.estoqueVirtual = item.estoqueFisico - (item.saidasPrevistas || 0);
+    item.entradasPrevistas = Number(ANALISE_STATE.productionEntries[normalizeSku(item.sku)]) || 0;
+    item.estoqueVirtual = item.estoqueFisico + item.entradasPrevistas - (item.saidasPrevistas || 0);
     item.coberturaVirtual = item.mediaMensal > 0 ? item.estoqueFisico / item.mediaMensal : Infinity;
     
     item.prio2 = calculateProductionPriority(item);
@@ -775,7 +796,7 @@ function renderAnaliseTable() {
       <td><span class="chip chip--blue" style="font-size:0.68rem;font-family:monospace;font-weight:700">${item.sku}</span></td>
       <td><span style="color:var(--text-secondary);font-size:0.72rem">${item.codigoBruto || '—'}</span></td>
       <td>${item.estoqueFisico}</td>
-      <td><span style="color:var(--text-muted);font-weight:600">N/A</span></td>
+      <td><strong class="analise-production-entry">${formatAnaliseTotal(item.entradasPrevistas, 0)}</strong></td>
       <td>${item.saidasPrevistas}</td>
       <td><strong style="color:${item.estoqueVirtual < 0 ? 'var(--accent-red)' : 'var(--text-primary)'}">${item.estoqueVirtual}</strong></td>
       <td>${item.mediaMensal.toFixed(1)}</td>
@@ -1153,6 +1174,13 @@ function initAnaliseModule() {
     }).catch(err => {
       console.error('[ANALISE] Não foi possível carregar a tabela temporária:', err);
     });
+
+    loadProductionEntriesFromServer().then(() => {
+      ANALISE_STATE.coberturaData = mergeAnaliseWithCatalogo(ANALISE_STATE.coberturaData);
+      renderAnaliseTable();
+    }).catch(err => {
+      console.error('[ANALISE] Não foi possível carregar as entradas das OPs:', err);
+    });
   } catch (err) {
     console.error('[ANALISE] Erro na inicialização do módulo:', err);
   }
@@ -1163,6 +1191,13 @@ window.loadAnaliseExcelData = loadAnaliseExcelData;
 window.renderAnaliseTable = renderAnaliseTable;
 window.initAnaliseListeners = initAnaliseListeners;
 window.initAnaliseModule = initAnaliseModule;
+
+window.addEventListener('helice-ops-updated', () => {
+  loadProductionEntriesFromServer().then(() => {
+    ANALISE_STATE.coberturaData = mergeAnaliseWithCatalogo(ANALISE_STATE.coberturaData);
+    renderAnaliseTable();
+  }).catch(err => console.error('[ANALISE] Falha ao atualizar entradas das OPs:', err));
+});
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAnaliseModule);

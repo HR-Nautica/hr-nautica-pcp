@@ -30,7 +30,7 @@ const context = vm.createContext({
     getPecas: () => [],
     getOps: () => [],
   },
-  window: {},
+  window: { addEventListener: () => {} },
   fetch: async (_url, options = {}) => ({
     ok: true,
     status: 201,
@@ -47,7 +47,7 @@ const context = vm.createContext({
 });
 
 const source = `${fs.readFileSync('public/js/analise.js', 'utf8')}\n` +
-  'globalThis.__processAnaliseExcel = processAnaliseExcel; globalThis.__ANALISE_STATE = ANALISE_STATE; globalThis.__calculateProductionPriority = calculateProductionPriority; globalThis.__calculateAnaliseProductionNeed = calculateAnaliseProductionNeed; globalThis.__getAnaliseSuggestedQty = getAnaliseSuggestedQty; globalThis.__updateAnaliseColumnTotals = updateAnaliseColumnTotals;';
+  'globalThis.__processAnaliseExcel = processAnaliseExcel; globalThis.__ANALISE_STATE = ANALISE_STATE; globalThis.__calculateProductionPriority = calculateProductionPriority; globalThis.__calculateAnaliseProductionNeed = calculateAnaliseProductionNeed; globalThis.__getAnaliseSuggestedQty = getAnaliseSuggestedQty; globalThis.__aggregateProductionEntries = aggregateProductionEntries; globalThis.__updateAnaliseColumnTotals = updateAnaliseColumnTotals;';
 vm.runInContext(source, context, { filename: 'analise.js' });
 
 const rows = Array.from({ length: 2 }, () => Array(16).fill(''));
@@ -77,14 +77,14 @@ const mapped = data.find(item => item.sku === 'HR TESTE 001');
 assert.equal(mapped.produto, catalogo[0].nome, 'a identificação deve vir do catálogo');
 assert.equal(mapped.saidasPrevistas, 3, 'Saídas deve vir da coluna H');
 assert.equal(mapped.estoqueFisico, 12, 'Físico deve vir da coluna I');
-assert.equal(mapped.entradasPrevistas, null, 'Entradas deve permanecer N/A');
+assert.equal(mapped.entradasPrevistas, 0, 'Entradas deve iniciar em zero quando não houver OP');
 assert.equal(mapped.estoqueVirtual, 9, 'Virtual deve ser Físico + 0 - Saídas');
 assert.equal(mapped.mediaMensal, 4, 'Média mensal deve vir da coluna N');
 assert.equal(mapped.coberturaVirtual, 3, 'Cobertura deve ser Físico / Média mensal');
 
 const withoutSpreadsheetRow = data.find(item => item.sku === 'HR TESTE 002');
 assert.equal(withoutSpreadsheetRow.estoqueFisico, 0);
-assert.equal(withoutSpreadsheetRow.entradasPrevistas, null);
+assert.equal(withoutSpreadsheetRow.entradasPrevistas, 0);
 assert.equal(withoutSpreadsheetRow.saidasPrevistas, 0);
 
 assert.equal(
@@ -113,6 +113,16 @@ const editableSuggestionItem = { sku: 'SKU AJUSTE', estoqueVirtual: -100, mediaM
 assert.equal(context.__getAnaliseSuggestedQty(editableSuggestionItem), 100, 'a OP deve iniciar com a sugestão automática');
 context.__ANALISE_STATE.productionSuggestions['SKU AJUSTE'] = 50;
 assert.equal(context.__getAnaliseSuggestedQty(editableSuggestionItem), 50, 'o ajuste operacional deve prevalecer sobre a sugestão automática');
+
+assert.deepEqual(
+  JSON.parse(JSON.stringify(context.__aggregateProductionEntries([
+    { sku: 'HR HM 005', quantity: 200 },
+    { sku: 'hr hm 005', quantity: 75 },
+    { sku: 'HR HJ 006', quantity: 50 },
+  ]))),
+  { 'HR HM 005': 275, 'HR HJ 006': 50 },
+  'a última quantidade de OPs repetidas deve ser somada por SKU',
+);
 
 const summaryElements = new Map();
 context.document.getElementById = id => {

@@ -316,7 +316,7 @@
                 <th class="sortable-th" data-column="sku" style="width:100px"><span class="analise-th-label">SKU <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-sku">0 SKUs</strong></th>
                 <th class="sortable-th" data-column="codigoBruto" style="width:110px"><span class="analise-th-label">Cód. Bruto <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-bruto">0 códigos</strong></th>
                 <th class="sortable-th" data-column="estoqueFisico" style="width:80px"><span class="analise-th-label">Físico <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-fisico">0</strong></th>
-                <th class="sortable-th" data-column="entradasPrevistas" style="width:90px"><span class="analise-th-label">Entradas <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-entradas">N/A</strong></th>
+                <th class="sortable-th" data-column="entradasPrevistas" style="width:90px"><span class="analise-th-label">Entradas <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-entradas">0</strong></th>
                 <th class="sortable-th" data-column="saidasPrevistas" style="width:80px"><span class="analise-th-label">Saídas <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-saidas">0</strong></th>
                 <th class="sortable-th" data-column="estoqueVirtual" style="width:95px"><span class="analise-th-label">Virtual <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-virtual">0</strong></th>
                 <th class="sortable-th" data-column="mediaMensal" style="width:95px"><span class="analise-th-label">Média Mensal <span class="sort-icon">⇅</span></span><strong class="analise-th-total" id="analise-sum-media">0</strong></th>
@@ -1338,6 +1338,55 @@
     </div>
   </div>
 
+  <!-- Modal: Passo a passo da OP de hélice -->
+  <div class="modal-overlay hidden" id="modal-helice-op-flow">
+    <div class="modal helice-op-modal">
+      <div class="modal-header">
+        <div>
+          <span class="helice-op-modal-eyebrow" id="helice-op-modal-number">OPH-000000</span>
+          <h2 class="modal-title" id="helice-op-modal-title">Acompanhamento da OP</h2>
+          <span class="helice-op-modal-sku" id="helice-op-modal-sku">SKU</span>
+        </div>
+        <button class="btn-icon" id="helice-op-modal-close" aria-label="Fechar acompanhamento">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="helice-operation-stepper" id="helice-operation-stepper"></div>
+
+        <div class="helice-movement-panel" id="helice-movement-panel">
+          <div class="helice-movement-heading">
+            <div>
+              <span>OPERAÇÃO ATUAL</span>
+              <strong id="helice-current-operation-title">—</strong>
+            </div>
+            <span class="chip chip--orange" id="helice-current-quantity">0 peças</span>
+          </div>
+          <div class="helice-movement-grid">
+            <div class="form-group">
+              <label for="helice-forward-quantity">Quantidade que vai para frente</label>
+              <input type="number" id="helice-forward-quantity" min="0" step="1" />
+            </div>
+            <div class="form-group">
+              <label for="helice-scrap-quantity">Refugo nesta operação</label>
+              <input type="number" id="helice-scrap-quantity" readonly />
+            </div>
+          </div>
+          <p class="helice-movement-hint">O refugo é calculado pela diferença entre a quantidade atual e a quantidade enviada à próxima operação.</p>
+        </div>
+
+        <div class="helice-history-section">
+          <div class="helice-history-title">Histórico registrado</div>
+          <div class="helice-history-list" id="helice-operation-history"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="helice-op-modal-cancel">Fechar</button>
+        <button class="btn-primary" id="helice-op-next-button">Próxima operação</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Nova Peça em Rastreio -->
   <div class="modal-overlay hidden" id="modal-peca">
     <div class="modal">
@@ -1560,7 +1609,8 @@
 
         <h4 style="color: var(--text-primary); font-weight: 700; margin-top: 1rem; margin-bottom: 0.4rem;">📊 Conceitos Principais:</h4>
         <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-          <li><strong>Estoque Virtual:</strong> <code>Físico + Entradas - Saídas</code>. Enquanto as operações não forem integradas, Entradas aparece como N/A e vale zero somente neste cálculo.</li>
+          <li><strong>Entradas:</strong> soma da última quantidade registrada em todas as OPs do mesmo SKU, inclusive quando existirem várias OPs para a mesma hélice.</li>
+          <li><strong>Estoque Virtual:</strong> <code>Físico + Entradas - Saídas</code>.</li>
           <li><strong>Cobertura (meses):</strong> <code>Estoque Físico / Média Mensal</code>. Indica quantos meses o estoque atual durará com base no giro de vendas.</li>
           <li><strong>Prioridade:</strong> se Físico &lt; Saídas, recebe <code>-1</code> (máxima); se Média Mensal &lt; 2, recebe <code>5</code>; nos demais casos, <code>(Físico - Saídas) / Média Mensal</code>.</li>
           <li><strong>OP Sugerida:</strong> começa com a recomendação automática para atingir a <strong>Meta Cobertura</strong>, mas pode ser ajustada conforme a decisão do PCP.</li>

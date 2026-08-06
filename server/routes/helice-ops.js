@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  advanceHeliceProductionOrder,
   finalizeHeliceProductionOrder,
   getHeliceProductionOrders,
   importHeliceProductionOrders
@@ -37,13 +38,30 @@ router.post("/import", async (req, res, next) => {
   }
 });
 
+router.patch("/:id/advance", async (req, res, next) => {
+  try {
+    const order = await advanceHeliceProductionOrder(
+      req.params.id,
+      req.body?.forwardQuantity,
+      actorFromRequest(req)
+    );
+    if (!order) return res.status(404).json({ ok: false, error: "OP não encontrada." });
+    return res.json({ ok: true, order });
+  } catch (error) {
+    if (error instanceof TypeError || error instanceof RangeError) {
+      return res.status(400).json({ ok: false, error: error.message });
+    }
+    next(error);
+  }
+});
+
 router.patch("/:id/finalize", async (req, res, next) => {
   try {
     const order = await finalizeHeliceProductionOrder(req.params.id, actorFromRequest(req));
     if (!order) return res.status(404).json({ ok: false, error: "OP não encontrada." });
     return res.json({ ok: true, order });
   } catch (error) {
-    if (error instanceof TypeError) {
+    if (error instanceof TypeError || error instanceof RangeError) {
       return res.status(400).json({ ok: false, error: error.message });
     }
     next(error);

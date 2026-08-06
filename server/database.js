@@ -245,6 +245,7 @@ async function initializePostgres() {
         sku VARCHAR(120) NOT NULL,
         raw_code VARCHAR(120),
         operations JSONB NOT NULL DEFAULT '[]'::JSONB,
+        operation_history JSONB NOT NULL DEFAULT '[]'::JSONB,
         current_operation VARCHAR(2) NOT NULL DEFAULT '01',
         current_operation_name TEXT,
         quantity INTEGER NOT NULL DEFAULT 0,
@@ -260,6 +261,7 @@ async function initializePostgres() {
     `);
 
     await client.query(`ALTER TABLE helice_production_orders ADD COLUMN IF NOT EXISTS finished_by VARCHAR(100)`);
+    await client.query(`ALTER TABLE helice_production_orders ADD COLUMN IF NOT EXISTS operation_history JSONB NOT NULL DEFAULT '[]'::JSONB`);
 
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_helice_production_orders_status
@@ -539,6 +541,10 @@ function mapHeliceProductionRow(row) {
     sku: String(firstValue(row, ["sku"], "")),
     rawCode: String(firstValue(row, ["raw_code", "rawCode"], "")),
     operations: Array.isArray(operations) ? operations : parseStoredValue(operations) || [],
+    operationHistory: (() => {
+      const history = firstValue(row, ["operation_history", "operationHistory"], []);
+      return Array.isArray(history) ? history : parseStoredValue(history) || [];
+    })(),
     currentOperation: String(firstValue(row, ["current_operation", "currentOperation"], "01")),
     currentOperationName: String(firstValue(row, ["current_operation_name", "currentOperationName"], "")),
     quantity: Number(firstValue(row, ["quantity"], 0)),
@@ -587,9 +593,16 @@ export async function importHeliceProductionOrders(rows, actor = "") {
     for (const row of normalized) {
       const previous = existing.get(row.sourceKey);
       if (!previous) sequence++;
+      const hasManualHistory = Array.isArray(previous?.operationHistory) && previous.operationHistory.length > 0;
       existing.set(row.sourceKey, {
         ...previous,
         ...row,
+        ...(hasManualHistory ? {
+          operations: previous.operations,
+          currentOperation: previous.currentOperation,
+          currentOperationName: previous.currentOperationName,
+          quantity: previous.quantity
+        } : {}),
         id: previous?.id || String(sequence),
         opNumber: previous?.opNumber || `OPH-${String(sequence).padStart(6, "0")}`,
         status: previous?.status === "finalizada" ? "finalizada" : row.status,
@@ -607,20 +620,22 @@ export async function importHeliceProductionOrders(rows, actor = "") {
   }
 
   if (usesSupabaseRest()) {
-    const finalized = await restRequest("helice_production_orders", {
-      params: { select: "source_key,status,finished_at", status: "eq.finalizada" }
+    const existingRows = await restRequest("helice_production_orders", {
+      params: { select: "source_key,status,finished_at,operation_history,operations,current_operation,current_operation_name,quantity" }
     });
-    const finalizedByKey = new Map((finalized || []).map(row => [row.source_key, row]));
+    const existingByKey = new Map((existingRows || []).map(row => [row.source_key, row]));
     const records = normalized.map(row => {
-      const previous = finalizedByKey.get(row.sourceKey);
+      const previous = existingByKey.get(row.sourceKey);
+      const hasManualHistory = Array.isArray(previous?.operation_history) && previous.operation_history.length > 0;
       return {
         source_key: row.sourceKey, source_file: row.sourceFile, source_sheet: row.sourceSheet,
         source_row: row.sourceRow, entry_date: row.entryDate, description: row.description,
-        priority: row.priority, sku: row.sku, raw_code: row.rawCode, operations: row.operations,
-        current_operation: row.currentOperation, current_operation_name: row.currentOperationName,
-        quantity: row.quantity, spreadsheet_location: row.spreadsheetLocation,
-        elapsed_time: row.elapsedTime, status: previous ? "finalizada" : row.status,
-        finished_at: previous?.finished_at || row.finishedAt, imported_by: importedBy,
+        priority: row.priority, sku: row.sku, raw_code: row.rawCode, operations: hasManualHistory ? previous.operations : row.operations,
+        current_operation: hasManualHistory ? previous.current_operation : row.currentOperation,
+        current_operation_name: hasManualHistory ? previous.current_operation_name : row.currentOperationName,
+        quantity: hasManualHistory ? previous.quantity : row.quantity, spreadsheet_location: row.spreadsheetLocation,
+        elapsed_time: row.elapsedTime, status: previous?.status === "finalizada" ? "finalizada" : row.status,
+        finished_at: previous?.status === "finalizada" ? previous.finished_at : row.finishedAt, imported_by: importedBy,
         imported_at: importedAt, updated_at: importedAt
       };
     });
@@ -644,8 +659,11 @@ export async function importHeliceProductionOrders(rows, actor = "") {
       const updated = await client.query(`
         UPDATE helice_production_orders SET
           source_file = $2, source_sheet = $3, source_row = $4, entry_date = $5,
-          description = $6, priority = $7, sku = $8, raw_code = $9, operations = $10::jsonb,
-          current_operation = $11, current_operation_name = $12, quantity = $13,
+          description = $6, priority = $7, sku = $8, raw_code = $9,
+          operations = CASE WHEN jsonb_array_length(operation_history) > 0 THEN operations ELSE $10::jsonb END,
+          current_operation = CASE WHEN jsonb_array_length(operation_history) > 0 THEN current_operation ELSE $11 END,
+          current_operation_name = CASE WHEN jsonb_array_length(operation_history) > 0 THEN current_operation_name ELSE $12 END,
+          quantity = CASE WHEN jsonb_array_length(operation_history) > 0 THEN quantity ELSE $13 END,
           spreadsheet_location = $14, elapsed_time = $15,
           status = CASE WHEN status = 'finalizada' THEN 'finalizada' ELSE $16 END,
           finished_at = CASE WHEN status = 'finalizada' THEN finished_at ELSE $17 END,
@@ -678,6 +696,104 @@ export async function importHeliceProductionOrders(rows, actor = "") {
   });
 }
 
+export function buildOperationMovement(order, forwardQuantity, actor, at) {
+  const operations = Array.isArray(order.operations) ? order.operations.map(operation => ({ ...operation })) : [];
+  const currentIndex = Math.max(0, Number.parseInt(order.currentOperation, 10) - 1);
+  if (currentIndex >= 8) throw new RangeError("A OP já está na última operação. Use Finalizar.");
+  const inputQuantity = Math.max(0, Number.parseInt(operations[currentIndex]?.quantity, 10) || Number.parseInt(order.quantity, 10) || 0);
+  const forwardedQuantity = Math.max(0, Number.parseInt(forwardQuantity, 10) || 0);
+  if (forwardedQuantity > inputQuantity) {
+    throw new RangeError(`A quantidade que avança não pode superar ${inputQuantity} peças.`);
+  }
+
+  const nextIndex = currentIndex + 1;
+  const nextOperation = operations[nextIndex];
+  if (!nextOperation) throw new RangeError("Próxima operação não encontrada.");
+  nextOperation.quantity = forwardedQuantity;
+  const movement = {
+    type: "advance",
+    fromOperation: operations[currentIndex]?.code || String(currentIndex + 1).padStart(2, "0"),
+    fromOperationName: operations[currentIndex]?.name || "",
+    toOperation: nextOperation.code,
+    toOperationName: nextOperation.name,
+    inputQuantity,
+    forwardedQuantity,
+    scrapQuantity: inputQuantity - forwardedQuantity,
+    actor: String(actor || "").slice(0, 100),
+    at
+  };
+  return { operations, movement, nextOperation, forwardedQuantity };
+}
+
+export async function advanceHeliceProductionOrder(id, forwardQuantity, actor = "") {
+  await initializeDatabase();
+  const orderId = String(id || "").trim();
+  if (!/^\d+$/.test(orderId)) throw new TypeError("OP de hélice inválida.");
+  const now = isoNow();
+
+  if (usesLocalFile()) {
+    const db = await readLocalFile();
+    const list = db.helice_production_orders || [];
+    const index = list.findIndex(row => String(row.id) === orderId);
+    if (index < 0) return null;
+    if (list[index].status === "finalizada") throw new RangeError("A OP já foi finalizada.");
+    const result = buildOperationMovement(list[index], forwardQuantity, actor, now);
+    list[index] = {
+      ...list[index], operations: result.operations,
+      operationHistory: [...(list[index].operationHistory || []), result.movement],
+      currentOperation: result.nextOperation.code,
+      currentOperationName: result.nextOperation.name,
+      quantity: result.forwardedQuantity,
+      updatedAt: now
+    };
+    db.helice_production_orders = list;
+    db.updated_at = now;
+    await writeLocalFile(db);
+    return mapHeliceProductionRow(list[index]);
+  }
+
+  if (usesSupabaseRest()) {
+    const rows = await restRequest("helice_production_orders", {
+      params: { select: "*", id: `eq.${orderId}`, limit: 1 }
+    });
+    const order = rows?.[0] ? mapHeliceProductionRow(rows[0]) : null;
+    if (!order) return null;
+    if (order.status === "finalizada") throw new RangeError("A OP já foi finalizada.");
+    const result = buildOperationMovement(order, forwardQuantity, actor, now);
+    const updated = await restRequest("helice_production_orders", {
+      method: "PATCH", params: { id: `eq.${orderId}` },
+      body: {
+        operations: result.operations,
+        operation_history: [...order.operationHistory, result.movement],
+        current_operation: result.nextOperation.code,
+        current_operation_name: result.nextOperation.name,
+        quantity: result.forwardedQuantity,
+        updated_at: now
+      },
+      prefer: "return=representation"
+    });
+    return updated?.[0] ? mapHeliceProductionRow(updated[0]) : null;
+  }
+
+  return transaction(async client => {
+    const selected = await client.query("SELECT * FROM helice_production_orders WHERE id = $1 FOR UPDATE", [orderId]);
+    const order = selected.rows[0] ? mapHeliceProductionRow(selected.rows[0]) : null;
+    if (!order) return null;
+    if (order.status === "finalizada") throw new RangeError("A OP já foi finalizada.");
+    const result = buildOperationMovement(order, forwardQuantity, actor, now);
+    const updated = await client.query(`
+      UPDATE helice_production_orders
+      SET operations = $1::jsonb, operation_history = operation_history || $2::jsonb,
+          current_operation = $3, current_operation_name = $4, quantity = $5, updated_at = $6
+      WHERE id = $7 RETURNING *
+    `, [
+      JSON.stringify(result.operations), JSON.stringify([result.movement]),
+      result.nextOperation.code, result.nextOperation.name, result.forwardedQuantity, now, orderId
+    ]);
+    return mapHeliceProductionRow(updated.rows[0]);
+  });
+}
+
 export async function finalizeHeliceProductionOrder(id, actor = "") {
   await initializeDatabase();
   const orderId = String(id || "").trim();
@@ -689,8 +805,11 @@ export async function finalizeHeliceProductionOrder(id, actor = "") {
     const list = db.helice_production_orders || [];
     const index = list.findIndex(row => String(row.id) === orderId);
     if (index < 0) return null;
+    if (list[index].status === "finalizada") throw new RangeError("A OP já foi finalizada.");
+    if (String(list[index].currentOperation) !== "09") throw new RangeError("Avance a OP até a operação 9 antes de finalizar.");
     const finalizedOperations = (list[index].operations || []).map(operation => operation.code === "09" ? { ...operation, quantity: list[index].quantity } : operation);
-    list[index] = { ...list[index], operations: finalizedOperations, status: "finalizada", currentOperation: "09", currentOperationName: "9 - Finalizado", finishedAt: now, updatedAt: now, finishedBy: actor };
+    const finishEvent = { type: "finish", operation: "09", quantity: list[index].quantity, actor: String(actor || "").slice(0, 100), at: now };
+    list[index] = { ...list[index], operations: finalizedOperations, operationHistory: [...(list[index].operationHistory || []), finishEvent], status: "finalizada", currentOperation: "09", currentOperationName: "9 - Finalizado", finishedAt: now, updatedAt: now, finishedBy: actor };
     db.helice_production_orders = list;
     db.updated_at = now;
     await writeLocalFile(db);
@@ -699,27 +818,38 @@ export async function finalizeHeliceProductionOrder(id, actor = "") {
 
   if (usesSupabaseRest()) {
     const currentRows = await restRequest("helice_production_orders", {
-      params: { select: "quantity,operations", id: `eq.${orderId}`, limit: 1 }
+      params: { select: "quantity,operations,current_operation,operation_history,status", id: `eq.${orderId}`, limit: 1 }
     });
     const current = currentRows?.[0];
     if (!current) return null;
+    if (current.status === "finalizada") throw new RangeError("A OP já foi finalizada.");
+    if (String(current.current_operation) !== "09") throw new RangeError("Avance a OP até a operação 9 antes de finalizar.");
     const finalizedOperations = (current.operations || []).map(operation => operation.code === "09" ? { ...operation, quantity: Number(current.quantity) || 0 } : operation);
+    const finishEvent = { type: "finish", operation: "09", quantity: Number(current.quantity) || 0, actor: String(actor || "").slice(0, 100), at: now };
     const rows = await restRequest("helice_production_orders", {
       method: "PATCH", params: { id: `eq.${orderId}` },
-      body: { operations: finalizedOperations, status: "finalizada", current_operation: "09", current_operation_name: "9 - Finalizado", finished_at: now, finished_by: String(actor || "").slice(0, 100), updated_at: now },
+      body: { operations: finalizedOperations, operation_history: [...(current.operation_history || []), finishEvent], status: "finalizada", current_operation: "09", current_operation_name: "9 - Finalizado", finished_at: now, finished_by: String(actor || "").slice(0, 100), updated_at: now },
       prefer: "return=representation"
     });
     return rows?.[0] ? mapHeliceProductionRow(rows[0]) : null;
   }
 
-  return withConnection(async (client) => {
+  return transaction(async (client) => {
+    const selected = await client.query("SELECT current_operation, status FROM helice_production_orders WHERE id = $1 FOR UPDATE", [orderId]);
+    if (!selected.rows.length) return null;
+    if (selected.rows[0].status === "finalizada") throw new RangeError("A OP já foi finalizada.");
+    if (String(selected.rows[0].current_operation) !== "09") {
+      throw new RangeError("Avance a OP até a operação 9 antes de finalizar.");
+    }
+    const finishEvent = { type: "finish", operation: "09", actor: String(actor || "").slice(0, 100), at: now };
     const result = await client.query(`
       UPDATE helice_production_orders
       SET operations = jsonb_set(operations, '{8,quantity}', to_jsonb(quantity), true),
+          operation_history = operation_history || ($1::jsonb || jsonb_build_object('quantity', quantity)),
           status = 'finalizada', current_operation = '09', current_operation_name = '9 - Finalizado',
-          finished_at = $1, finished_by = $2, updated_at = $1
-      WHERE id = $3 RETURNING *
-    `, [now, String(actor || "").slice(0, 100), orderId]);
+          finished_at = $2, finished_by = $3, updated_at = $2
+      WHERE id = $4 RETURNING *
+    `, [JSON.stringify(finishEvent), now, String(actor || "").slice(0, 100), orderId]);
     return result.rows[0] ? mapHeliceProductionRow(result.rows[0]) : null;
   });
 }
