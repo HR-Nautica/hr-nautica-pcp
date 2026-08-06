@@ -7,6 +7,7 @@ const applicationScripts = [
   "/js/producaoComponentes.js",
   "/js/vini.js",
   "/js/analise.js",
+  "/js/rastreio-helices.js",
   "/js/app.js"
 ];
 

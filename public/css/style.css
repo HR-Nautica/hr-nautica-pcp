@@ -1489,6 +1489,159 @@ body {
 .flow-pipeline::-webkit-scrollbar { height: 4px; }
 .flow-pipeline::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
+/* Rastreio de OPs de hélices */
+#page-fluxo .page-header {
+  align-items: flex-end;
+}
+
+#page-fluxo .header-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+#fluxo-table {
+  min-width: 1180px;
+}
+
+#fluxo-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #18243a;
+  white-space: nowrap;
+}
+
+#fluxo-table tbody tr {
+  transition: background 0.16s ease;
+}
+
+#fluxo-table tbody tr:hover {
+  background: rgba(96, 165, 250, 0.055);
+}
+
+.helice-op-row--finished {
+  opacity: 0.72;
+  background: rgba(52, 211, 153, 0.025);
+}
+
+.helice-op-number {
+  color: #c4b5fd;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: nowrap;
+}
+
+.helice-op-sku {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: nowrap;
+}
+
+.helice-op-description {
+  min-width: 245px;
+  text-align: left !important;
+}
+
+.helice-op-description strong,
+.helice-op-description small {
+  display: block;
+}
+
+.helice-op-description small {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+
+.helice-op-priority {
+  display: block;
+  max-width: 170px;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.helice-current-operation {
+  min-width: 150px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.helice-current-operation b {
+  width: 27px;
+  height: 27px;
+  border: 1px solid rgba(96, 165, 250, 0.42);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-blue);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.helice-op-flow {
+  min-width: 218px;
+  display: grid;
+  grid-template-columns: repeat(9, 20px);
+  gap: 4px;
+}
+
+.helice-op-step {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: rgba(15, 23, 42, 0.7);
+  font-size: 0.58rem;
+  font-weight: 800;
+  cursor: help;
+}
+
+.helice-op-step.is-complete {
+  border-color: rgba(52, 211, 153, 0.38);
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.helice-op-step.is-current {
+  border-color: #8b5cf6;
+  color: #ddd6fe;
+  background: rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+}
+
+.helice-finalize-btn {
+  min-width: 78px;
+  height: 32px;
+  padding: 0 0.7rem;
+  font-size: 0.7rem;
+}
+
+.helice-finished-label {
+  color: #34d399;
+  font-size: 0.66rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  #page-fluxo .page-header,
+  #page-fluxo .header-actions {
+    align-items: stretch;
+  }
+
+  #page-fluxo .header-actions > * {
+    flex: 1 1 190px;
+  }
+}
+
 .pipeline-step {
   display: flex;
   align-items: center;

@@ -749,30 +749,32 @@
     <!-- ├├ PAGE: RASTREIO DE OPERAÔ¡Ô¢ES ├├ -->
     <div class="page hidden" id="page-fluxo">
       <div class="page-header">
-        <h1 class="page-title">Rastreio de Operações</h1>
+        <div>
+          <h1 class="page-title">Rastreio OP. Hélices</h1>
+          <p class="catalogo-subtitle">Uma linha por ordem de produção, com nove operações rastreadas.</p>
+        </div>
         <div class="header-actions">
-          <input type="text" class="search-input" id="fluxo-search" placeholder="Buscar peça / lote..." />
+          <input type="text" class="search-input" id="fluxo-search" placeholder="Buscar OP, SKU ou hélice..." />
           <select class="select-sm" id="fluxo-filter-op">
             <option value="">Todas as operações</option>
-            <option value="01">01 â─“ Fundição</option>
-            <option value="02">02 â─“ Vulcanização</option>
-            <option value="03">03 â─“ Polimento</option>
-            <option value="04">04 â─“ Usinagem</option>
-            <option value="05">05 â─“ Pintura</option>
-            <option value="06">06 â─“ Embuchamento</option>
-            <option value="07">07 â─“ Gravação</option>
+            <option value="01">01 – Produzindo Fundido</option>
+            <option value="02">02 – Polimento</option>
+            <option value="03">03 – Estoque Bruto</option>
+            <option value="04">04 – Usinagem</option>
+            <option value="05">05 – Estoque Usinado</option>
+            <option value="06">06 – Pintura</option>
+            <option value="07">07 – Embuchamento</option>
+            <option value="08">08 – Gravação</option>
+            <option value="09">09 – Finalizado</option>
           </select>
           <select class="select-sm" id="fluxo-filter-status">
             <option value="">Todos os status</option>
-            <option value="em-producao">Em Produção</option>
-            <option value="atencao">Atenção</option>
-            <option value="atrasado">Atrasado</option>
-            <option value="bloqueado">Bloqueado</option>
-            <option value="concluido">Concluído</option>
+            <option value="em_producao">Em produção</option>
+            <option value="finalizada">Finalizadas</option>
           </select>
-          <button class="btn-secondary" id="btn-nova-peca" style="background:transparent;border-color:var(--border)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nova Peça
+          <button class="btn-secondary" id="btn-refresh-helice-ops">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0 2 5"/><polyline points="20 4 20 11 13 11"/></svg>
+            Atualizar
           </button>
         </div>
       </div>
@@ -780,24 +782,24 @@
       <!-- KPI Summary bar -->
       <div class="flow-kpi-bar" id="flow-kpi-bar">
         <div class="flow-kpi-item">
-          <span class="flow-kpi-label">Total em Produção</span>
+          <span class="flow-kpi-label">OPs em Produção</span>
           <span class="flow-kpi-value" id="fkpi-total">0</span>
-          <span class="flow-kpi-sub">peças rastreadas</span>
+          <span class="flow-kpi-sub">ordens ativas</span>
         </div>
         <div class="flow-kpi-item">
-          <span class="flow-kpi-label">Em Atenção / Atrasaídas</span>
+          <span class="flow-kpi-label">OPs Finalizadas</span>
           <span class="flow-kpi-value" id="fkpi-atencao" style="color:var(--accent-orange)">0</span>
-          <span class="flow-kpi-sub">requerem acompanhamento</span>
+          <span class="flow-kpi-sub">histórico concluído</span>
         </div>
         <div class="flow-kpi-item">
-          <span class="flow-kpi-label">Bloqueadas</span>
+          <span class="flow-kpi-label">SKUs em Produção</span>
           <span class="flow-kpi-value" id="fkpi-bloqueadas" style="color:var(--accent-purple)">0</span>
-          <span class="flow-kpi-sub">aguardando liberação</span>
+          <span class="flow-kpi-sub">modelos diferentes</span>
         </div>
         <div class="flow-kpi-item">
-          <span class="flow-kpi-label">Concluídas (Estoque)</span>
+          <span class="flow-kpi-label">Quantidade em Processo</span>
           <span class="flow-kpi-value" id="fkpi-concluidas" style="color:var(--accent-green)">0</span>
-          <span class="flow-kpi-sub">prontas para entrega</span>
+          <span class="flow-kpi-sub">hélices nas OPs ativas</span>
         </div>
       </div>
 
@@ -808,9 +810,9 @@
 
       <!-- Section label -->
       <div class="section-label">
-        <span class="section-label-text">Peças em Rastreio</span>
+        <span class="section-label-text">Ordens de Produção</span>
         <span class="section-label-line"></span>
-        <span class="section-label-text" id="fluxo-count-label">0 peças</span>
+        <span class="section-label-text" id="fluxo-count-label">0 OPs</span>
       </div>
 
       <!-- Tabela de peças -->
@@ -819,20 +821,20 @@
           <table class="data-table" id="fluxo-table">
             <thead>
               <tr>
-                <th>Nº Peça / Lote</th>
-                <th>Modelo</th>
+                <th>Nº OP</th>
+                <th>SKU</th>
+                <th>Hélice</th>
                 <th>Qtd</th>
-                <th>OP Vinculada</th>
+                <th>Prioridade</th>
                 <th>Operação Atual</th>
-                <th>Entrada na Op.</th>
-                <th>Tempo na Op.</th>
+                <th>Fluxo F:N</th>
+                <th>Entrada</th>
                 <th>Status</th>
-                <th>% Avanço</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody id="fluxo-body">
-              <tr><td colspan="10" class="empty-cell">Nenhuma peça em rastreio. Clique em "Nova Peça" para começar.</td></tr>
+              <tr><td colspan="10" class="empty-cell">Carregando OPs de hélices do Supabase...</td></tr>
             </tbody>
           </table>
         </div>

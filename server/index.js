@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
 import { databaseHealth } from "./database.js";
 import analysisTempRouter from "./routes/analysis-temp.js";
+import heliceOpsRouter from "./routes/helice-ops.js";
 import integrationsRouter from "./routes/integrations.js";
 import stateRouter from "./routes/state.js";
 
@@ -37,6 +38,7 @@ app.get("/api/status", async (_req, res, next) => {
 
 app.use("/api/state", stateRouter);
 app.use("/api/analysis-temp", analysisTempRouter);
+app.use("/api/helice-ops", heliceOpsRouter);
 app.use("/api", integrationsRouter);
 app.use(express.static(dist, { etag: true, maxAge: "1h" }));
 app.get("*splat", (_req, res) => res.sendFile(path.join(dist, "index.html")));

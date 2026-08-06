@@ -1239,6 +1239,10 @@ const OPERACOES = [
 ];
 
 function renderFluxo() {
+  if (window.RastreioHelices) {
+    window.RastreioHelices.render();
+    return;
+  }
   const search  = ($('fluxo-search')?.code || $('fluxo-search')?.value || '').toLowerCase();
   const opFilt  = $('fluxo-filter-op')?.value || '';
 
@@ -1777,7 +1781,8 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-save-mov').addEventListener('click', saveMov);
 
   // ── Modal Peça (Rastreio) ──
-  $('btn-nova-peca').addEventListener('click', openNovaPeca);
+  const btnNovaPeca = $('btn-nova-peca');
+  if (btnNovaPeca) btnNovaPeca.addEventListener('click', openNovaPeca);
   $('modal-peca-close').addEventListener('click', closeModalPeca);
   $('btn-cancel-peca').addEventListener('click', closeModalPeca);
   $('btn-save-peca').addEventListener('click', savePeca);
