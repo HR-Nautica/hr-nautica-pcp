@@ -3994,10 +3994,300 @@ body {
   color: white !important;
 }
 
+/* ────────────────── CATÁLOGO DE HÉLICES PREMIUM ────────────────── */
+.catalogo-brand-pills-bar {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  scrollbar-width: thin;
+}
 
+.catalogo-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
 
+.catalogo-brand-pill:hover {
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
 
+.catalogo-brand-pill.active {
+  background: var(--accent-blue-bg);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.2);
+}
 
+.catalogo-brand-pill .pill-count {
+  font-size: 0.7rem;
+  opacity: 0.75;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+
+/* Brand Badges */
+.catalogo-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.catalogo-brand-badge.brand-yamaha { background: rgba(96, 165, 250, 0.15); border-color: rgba(96, 165, 250, 0.35); color: #60a5fa; }
+.catalogo-brand-badge.brand-hidea { background: rgba(45, 212, 191, 0.15); border-color: rgba(45, 212, 191, 0.35); color: #2dd4bf; }
+.catalogo-brand-badge.brand-mercury { background: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.35); color: #f87171; }
+.catalogo-brand-badge.brand-suzuki { background: rgba(167, 139, 250, 0.15); border-color: rgba(167, 139, 250, 0.35); color: #a78bfa; }
+.catalogo-brand-badge.brand-tohatsu { background: rgba(251, 146, 60, 0.15); border-color: rgba(251, 146, 60, 0.35); color: #fb923c; }
+
+.catalogo-dim-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  color: var(--accent-green);
+  white-space: nowrap;
+}
+
+.catalogo-hp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(251, 146, 60, 0.1);
+  border: 1px solid rgba(251, 146, 60, 0.25);
+  color: var(--accent-orange);
+}
+
+.catalogo-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Cards View */
+.catalogo-cards-wrap {
+  padding: 1rem 0;
+}
+
+.catalogo-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.catalogo-card-item {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all var(--transition);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.catalogo-card-item:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-blue);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.18);
+}
+
+.catalogo-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.catalogo-card-brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.catalogo-card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 0.25rem;
+}
+
+.catalogo-card-dim {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-green);
+  margin-bottom: 0.5rem;
+}
+
+.catalogo-card-specs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.6rem;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 0.73rem;
+}
+
+.catalogo-card-spec {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.catalogo-card-spec.span-2 {
+  grid-column: span 2;
+}
+
+.catalogo-card-spec span {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+
+.catalogo-card-spec strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.catalogo-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+}
+
+/* Modal Ficha Técnica */
+.modal--ficha-tecnica {
+  max-width: 820px;
+}
+
+.ficha-header-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius);
+  background: var(--accent-blue-bg);
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.ficha-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.catalogo-sku-pill {
+  margin-left: auto;
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--accent-blue);
+  background: rgba(96, 165, 250, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.ficha-sections-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 700px) {
+  .ficha-sections-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ficha-card-section {
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ficha-card-section h4 {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--accent-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ficha-spec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.ficha-spec-row span {
+  color: var(--text-muted);
+}
+
+.ficha-spec-row strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+}
 
 
 

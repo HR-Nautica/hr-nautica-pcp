@@ -13,6 +13,8 @@ const STATE = {
   currentPage: 'dashboard',
   charts: {},
   catalogoSort: { field: 'nome', direction: 'asc' },
+  catalogoViewMode: 'table',
+  selectedBrandFilter: '',
   editingOpId: null,
   editingModeloId: null,
   editingMaterialId: null,
@@ -604,6 +606,16 @@ function catalogoMarca(nome) {
     .split(/\s+/)[0] || 'OUTRA';
 }
 
+function extractHeliceSpecs(nome) {
+  const str = String(nome || '').trim();
+  const brand = catalogoMarca(str);
+  const dimMatch = str.match(/(\d+(?:\s+\d+\/\d+)?\s*[X×]\s*\d+(?:\s+\d+\/\d+)?)/i);
+  const dim = dimMatch ? dimMatch[1].replace(/\s*[X×]\s*/i, ' × ') : '';
+  const hpMatch = str.match(/(\d+(?:[\/\-]\d+)?\s*HP)/i);
+  const hp = hpMatch ? hpMatch[1] : '';
+  return { brand, dim, hp };
+}
+
 function catalogoFillFilter(id, values, placeholder) {
   const select = $(id);
   const selected = select.value;
@@ -622,6 +634,103 @@ function catalogoPopulateFilters(modelos) {
   catalogoFillFilter('catalogo-filter-bucha', modelos.map((modelo) => modelo.modeloBucha), 'Todas as buchas');
   catalogoFillFilter('catalogo-filter-cor', modelos.map((modelo) => modelo.cor), 'Todas as cores');
 }
+
+function openFichaTecnica(id) {
+  const modelo = DB.getModelos().find((m) => m.id === id);
+  if (!modelo) return;
+
+  const { brand, dim, hp } = extractHeliceSpecs(modelo.nome);
+  const cor = modelo.cor || '—';
+  const buchaDesc = modelo.modeloBucha || '—';
+
+  $('ficha-title').textContent = modelo.nome;
+  $('ficha-subtitle').textContent = `SKU: ${modelo.sku} | Código Bruto: ${modelo.codigoBruto || '—'}`;
+
+  const body = $('ficha-body');
+  body.innerHTML = `
+    <div class="ficha-top-bar">
+      <span class="catalogo-brand-badge brand-${brand.toLowerCase()}">${brand}</span>
+      ${hp ? `<span class="catalogo-hp-badge">${hp}</span>` : ''}
+      ${dim ? `<span class="catalogo-dim-badge">${dim}</span>` : ''}
+      <span class="catalogo-sku-pill">${escapeCatalogoHtml(modelo.sku)}</span>
+    </div>
+
+    <div class="ficha-sections-grid">
+      <div class="ficha-card-section">
+        <h4>📌 Identificação Geral</h4>
+        <div class="ficha-spec-row"><span>Descrição da Hélice:</span><strong>${escapeCatalogoHtml(modelo.nome)}</strong></div>
+        <div class="ficha-spec-row"><span>Código SKU:</span><strong>${escapeCatalogoHtml(modelo.sku)}</strong></div>
+        <div class="ficha-spec-row"><span>Código Bruto:</span><strong>${escapeCatalogoHtml(modelo.codigoBruto || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Acabamento/Cor:</span><strong>${escapeCatalogoHtml(cor)}</strong></div>
+        <div class="ficha-spec-row"><span>Altura Buchas:</span><strong>${escapeCatalogoHtml(modelo.alturaBuchas || '—')}</strong></div>
+      </div>
+
+      <div class="ficha-card-section">
+        <h4>🌀 Anel e Tubo de Alumínio</h4>
+        <div class="ficha-spec-row"><span>Diâmetro Tubo Anel:</span><strong>${escapeCatalogoHtml(modelo.diametroTuboAnel || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Comp. Anel:</span><strong>${escapeCatalogoHtml(modelo.comprimentoAnel || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Anel:</span><strong>${escapeCatalogoHtml(modelo.anel || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>SKU Tiny Tubo Al.:</span><strong>${escapeCatalogoHtml(modelo.skuTinyTuboAl || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Descrição Tiny Tubo Al.:</span><strong>${escapeCatalogoHtml(modelo.descricaoTubo || '—')}</strong></div>
+      </div>
+
+      <div class="ficha-card-section">
+        <h4>🔧 Bucha e Latão</h4>
+        <div class="ficha-spec-row"><span>Diâmetro Latão:</span><strong>${escapeCatalogoHtml(modelo.diametroLatao || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Comp. Bucha:</span><strong>${escapeCatalogoHtml(modelo.comprimentoBucha || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Bucha Modelo:</span><strong>${escapeCatalogoHtml(modelo.bucha || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>SKU Tiny Latão:</span><strong>${escapeCatalogoHtml(modelo.skuLatao || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Descrição Tiny Latão:</span><strong>${escapeCatalogoHtml(modelo.descricaoLatao || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Descrição da Bucha:</span><strong>${escapeCatalogoHtml(buchaDesc)}</strong></div>
+      </div>
+
+      <div class="ficha-card-section">
+        <h4>📦 Embalagem</h4>
+        <div class="ficha-spec-row"><span>Código SKU Caixa:</span><strong>${escapeCatalogoHtml(modelo.skuCaixa || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Descrição Caixa:</span><strong>${escapeCatalogoHtml(modelo.descricaoCaixa || '—')}</strong></div>
+      </div>
+    </div>
+  `;
+
+  $('btn-ficha-editar').onclick = () => {
+    closeModalFichaTecnica();
+    openEditModelo(id);
+  };
+
+  $('modal-ficha-tecnica').classList.remove('hidden');
+}
+window.openFichaTecnica = openFichaTecnica;
+
+function closeModalFichaTecnica() {
+  $('modal-ficha-tecnica').classList.add('hidden');
+}
+
+window.filterCatalogoBrand = function(brand) {
+  STATE.selectedBrandFilter = brand;
+  $('catalogo-filter-marca').value = brand;
+  renderModelos();
+};
+
+window.setCatalogoViewMode = function(mode) {
+  STATE.catalogoViewMode = mode;
+  const tableView = $('catalogo-table-view');
+  const cardsView = $('catalogo-cards-view');
+  const btnTable = $('btn-catalogo-view-table');
+  const btnCards = $('btn-catalogo-view-cards');
+
+  if (mode === 'cards') {
+    if (tableView) tableView.classList.add('hidden');
+    if (cardsView) cardsView.classList.remove('hidden');
+    if (btnTable) btnTable.classList.remove('active');
+    if (btnCards) btnCards.classList.add('active');
+  } else {
+    if (cardsView) cardsView.classList.add('hidden');
+    if (tableView) tableView.classList.remove('hidden');
+    if (btnCards) btnCards.classList.remove('active');
+    if (btnTable) btnTable.classList.add('active');
+  }
+  renderModelos();
+};
 
 function renderCatalogoModelos() {
   const all = DB.getModelos();
@@ -672,6 +781,75 @@ function renderCatalogoModelos() {
   $('catalogo-count').textContent = `${list.length} de ${all.length} ${all.length === 1 ? 'item' : 'itens'}`;
   $('catalogo-limpar-filtros').disabled = !search && !Object.values(filters).some(Boolean);
 
+  // Renderizar Barra de Pills por Marca
+  const brandPillsContainer = $('catalogo-brand-pills');
+  if (brandPillsContainer) {
+    const brandsMap = {};
+    all.forEach(m => {
+      const b = catalogoMarca(m.nome);
+      brandsMap[b] = (brandsMap[b] || 0) + 1;
+    });
+    const sortedBrands = Object.keys(brandsMap).sort((a, b) => brandsMap[b] - brandsMap[a]);
+    
+    let pillsHtml = `
+      <button type="button" class="catalogo-brand-pill ${!filters.marca ? 'active' : ''}" onclick="filterCatalogoBrand('')">
+        Todas <span class="pill-count">${all.length}</span>
+      </button>
+    `;
+    sortedBrands.forEach(b => {
+      pillsHtml += `
+        <button type="button" class="catalogo-brand-pill brand-${b.toLowerCase()} ${filters.marca === b ? 'active' : ''}" onclick="filterCatalogoBrand('${b}')">
+          ${b} <span class="pill-count">${brandsMap[b]}</span>
+        </button>
+      `;
+    });
+    brandPillsContainer.innerHTML = pillsHtml;
+  }
+
+  // Renderizar Grade de Cards se estiver no modo Cards
+  const cardsGrid = $('modelos-cards-grid');
+  if (cardsGrid) {
+    if (!list.length) {
+      cardsGrid.innerHTML = '<div class="empty-cell" style="grid-column:1/-1;padding:2rem;">Nenhuma hélice encontrada.</div>';
+    } else {
+      cardsGrid.innerHTML = list.map((modelo) => {
+        const cor = modelo.cor || '—';
+        const buchaDescricao = modelo.modeloBucha || '—';
+        const { brand, dim, hp } = extractHeliceSpecs(modelo.nome);
+        return `
+          <div class="catalogo-card-item">
+            <div class="catalogo-card-header">
+              <div class="catalogo-card-brand-wrap">
+                <span class="catalogo-brand-badge brand-${brand.toLowerCase()}">${brand}</span>
+                ${hp ? `<span class="catalogo-hp-badge">${hp}</span>` : ''}
+              </div>
+              <span class="catalogo-sku">${escapeCatalogoHtml(modelo.sku)}</span>
+            </div>
+            <div class="catalogo-card-body">
+              <h3 class="catalogo-card-title">${escapeCatalogoHtml(modelo.nome)}</h3>
+              ${dim ? `<div class="catalogo-card-dim">📐 ${dim}</div>` : ''}
+              <div class="catalogo-card-specs">
+                <div class="catalogo-card-spec"><span>Bruto:</span><strong>${escapeCatalogoHtml(modelo.codigoBruto || '—')}</strong></div>
+                <div class="catalogo-card-spec"><span>Cor:</span><strong>${escapeCatalogoHtml(cor)}</strong></div>
+                <div class="catalogo-card-spec span-2"><span>Bucha:</span><strong title="${escapeCatalogoHtml(buchaDescricao)}">${escapeCatalogoHtml(buchaDescricao)}</strong></div>
+                <div class="catalogo-card-spec"><span>SKU Tubo:</span><strong>${escapeCatalogoHtml(modelo.skuTinyTuboAl || '—')}</strong></div>
+                <div class="catalogo-card-spec"><span>SKU Caixa:</span><strong>${escapeCatalogoHtml(modelo.skuCaixa || '—')}</strong></div>
+              </div>
+            </div>
+            <div class="catalogo-card-footer">
+              <button type="button" class="btn-secondary btn-sm" onclick="openFichaTecnica('${modelo.id}')">
+                🔍 Ficha Técnica
+              </button>
+              <button type="button" class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
+                ✏️ Editar
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
   const tbody = $('modelos-grid');
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">Nenhuma hélice encontrada.</td></tr>';
@@ -681,12 +859,17 @@ function renderCatalogoModelos() {
   tbody.innerHTML = list.map((modelo) => {
     const cor = modelo.cor || '—';
     const buchaDescricao = modelo.modeloBucha || '—';
+    const { brand, dim } = extractHeliceSpecs(modelo.nome);
     const dotClass = cor.toLocaleUpperCase('pt-BR').includes('PRETO') ? ' catalogo-color-dot--black' : '';
     return `<tr>
       <td class="catalogo-col-sku"><span class="catalogo-sku">${escapeCatalogoHtml(modelo.sku)}</span></td>
       <td>
         <span class="catalogo-mobile-sku">${escapeCatalogoHtml(modelo.sku)}</span>
-        <strong class="catalogo-model-name">${escapeCatalogoHtml(modelo.nome)}</strong>
+        <div class="catalogo-name-row">
+          <span class="catalogo-brand-badge brand-${brand.toLowerCase()}">${brand}</span>
+          <strong class="catalogo-model-name">${escapeCatalogoHtml(modelo.nome)}</strong>
+          ${dim ? `<span class="catalogo-dim-badge">${dim}</span>` : ''}
+        </div>
         <div class="catalogo-mobile-details"><span><b>Bruto:</b> ${escapeCatalogoHtml(modelo.codigoBruto || '—')}</span><span><b>SKU tubo:</b> ${escapeCatalogoHtml(modelo.skuTinyTuboAl || '—')}</span><span><b>Cor:</b> ${escapeCatalogoHtml(cor)}</span><span><b>SKU caixa:</b> ${escapeCatalogoHtml(modelo.skuCaixa || '—')}</span></div>
       </td>
       <td class="catalogo-col-bruto">${escapeCatalogoHtml(modelo.codigoBruto || '—')}</td>
@@ -695,10 +878,15 @@ function renderCatalogoModelos() {
       <td class="catalogo-col-cor"><span class="catalogo-color"><i class="catalogo-color-dot${dotClass}"></i>${escapeCatalogoHtml(cor)}</span></td>
       <td class="catalogo-caixa catalogo-col-caixa">${escapeCatalogoHtml(modelo.skuCaixa || '—')}</td>
       <td class="catalogo-row-actions">
-        <button class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Editar
-        </button>
+        <div style="display:flex;gap:4px;justify-content:flex-end;">
+          <button class="btn-secondary btn-icon-sm" onclick="openFichaTecnica('${modelo.id}')" title="Ver Ficha Técnica de ${escapeCatalogoHtml(modelo.nome)}">
+            🔍
+          </button>
+          <button class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editar
+          </button>
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -1529,11 +1717,21 @@ document.addEventListener('DOMContentLoaded', () => {
   $('op-modelo').addEventListener('change', updateOpInsumosPreview);
   $('op-qty').addEventListener('input', updateOpInsumosPreview);
 
-  // ── Modal Modelo ──
+  // ── Modal Modelo & Ficha Técnica ──
   $('btn-novo-modelo').addEventListener('click', openNovoModelo);
   $('modal-modelo-close').addEventListener('click', closeModalModelo);
   $('btn-cancel-modelo').addEventListener('click', closeModalModelo);
   $('btn-save-modelo').addEventListener('click', saveModelo);
+
+  const btnViewTable = $('btn-catalogo-view-table');
+  const btnViewCards = $('btn-catalogo-view-cards');
+  if (btnViewTable) btnViewTable.addEventListener('click', () => setCatalogoViewMode('table'));
+  if (btnViewCards) btnViewCards.addEventListener('click', () => setCatalogoViewMode('cards'));
+
+  const modalFichaClose = $('modal-ficha-close');
+  const btnFichaFechar = $('btn-ficha-fechar');
+  if (modalFichaClose) modalFichaClose.addEventListener('click', closeModalFichaTecnica);
+  if (btnFichaFechar) btnFichaFechar.addEventListener('click', closeModalFichaTecnica);
 
   // ── Modal Material ──
   $('btn-novo-material').addEventListener('click', openNovoMaterial);

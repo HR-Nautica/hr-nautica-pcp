@@ -331,6 +331,16 @@
           <p class="catalogo-subtitle">Cadastro técnico centralizado para consulta, edição e inclusão de modelos.</p>
         </div>
         <div class="header-actions">
+          <div class="view-toggle-buttons" id="catalogo-view-toggle">
+            <button type="button" class="view-toggle-btn active" id="btn-catalogo-view-table" title="Visualização em Tabela">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              Tabela
+            </button>
+            <button type="button" class="view-toggle-btn" id="btn-catalogo-view-cards" title="Visualização em Cards">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              Cards
+            </button>
+          </div>
           <button class="btn-primary" id="btn-novo-modelo">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nova Hélice
@@ -343,6 +353,11 @@
         <div class="catalogo-kpi"><span id="catalogo-com-caixa">0</span><small>com caixa definida</small></div>
         <div class="catalogo-kpi"><span id="catalogo-tubos">0</span><small>tubos distintos</small></div>
         <div class="catalogo-kpi"><span id="catalogo-buchas">0</span><small>buchas distintas</small></div>
+      </div>
+
+      <!-- Barra de Filtros Rápidos por Marca -->
+      <div class="catalogo-brand-pills-bar" id="catalogo-brand-pills">
+        <!-- Gerado dinamicamente via JS -->
       </div>
 
       <div class="card catalogo-card">
@@ -360,7 +375,9 @@
           <label class="catalogo-filter"><span>Cor</span><select id="catalogo-filter-cor"><option value="">Todas as cores</option></select></label>
           <button type="button" class="btn-secondary catalogo-clear-filters" id="catalogo-limpar-filtros">Limpar filtros</button>
         </div>
-        <div class="table-wrap catalogo-table-wrap">
+        
+        <!-- Visão em Tabela -->
+        <div class="table-wrap catalogo-table-wrap" id="catalogo-table-view">
           <table class="catalogo-table">
             <colgroup><col class="catalogo-w-sku"><col class="catalogo-w-helice"><col class="catalogo-w-bruto"><col class="catalogo-w-tubo"><col class="catalogo-w-bucha"><col class="catalogo-w-cor"><col class="catalogo-w-caixa"><col class="catalogo-w-acoes"></colgroup>
             <thead><tr>
@@ -375,6 +392,13 @@
             </tr></thead>
             <tbody id="modelos-grid"></tbody>
           </table>
+        </div>
+
+        <!-- Visão em Cards -->
+        <div class="catalogo-cards-wrap hidden" id="catalogo-cards-view">
+          <div class="catalogo-cards-grid" id="modelos-cards-grid">
+            <!-- Preenchido via JS -->
+          </div>
         </div>
       </div>
     </div>
@@ -1107,6 +1131,34 @@
         </div></div>
       </div>
       <div class="modal-footer"><button class="btn-ghost" id="btn-cancel-modelo">Cancelar</button><button class="btn-primary" id="btn-save-modelo">Salvar Hélice</button></div>
+    </div>
+  </div>
+
+  <!-- Modal: Ficha Técnica Completa da Hélice -->
+  <div class="modal-overlay hidden" id="modal-ficha-tecnica">
+    <div class="modal modal--ficha-tecnica" role="dialog" aria-modal="true" aria-labelledby="ficha-title">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="ficha-header-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 12L12 3"/><path d="M12 12L19.8 16.5"/><path d="M12 12L4.2 16.5"/></svg>
+          </div>
+          <div>
+            <h2 class="modal-title" id="ficha-title">Ficha Técnica da Hélice</h2>
+            <p class="modal-subtitle" id="ficha-subtitle">Especificações completas de fabricação e insumos</p>
+          </div>
+        </div>
+        <button class="btn-icon" id="modal-ficha-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body" id="ficha-body">
+        <!-- Preenchido dinamicamente pelo JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-ficha-fechar">Fechar</button>
+        <button class="btn-primary" id="btn-ficha-editar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Editar Hélice
+        </button>
+      </div>
     </div>
   </div>
 
