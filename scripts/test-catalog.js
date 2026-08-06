@@ -45,6 +45,11 @@ assert.equal(
   JSON.stringify(sourceRows.slice(1).map((row) => String(row[1]).trim())),
   'a ordem e os SKUs devem corresponder exatamente à planilha',
 );
+assert.equal(
+  JSON.stringify(Array.from(catalogData, (record) => record.modeloBucha)),
+  JSON.stringify(sourceRows.slice(1).map((row) => String(row[15]).trim())),
+  'a descrição da bucha deve corresponder exatamente à coluna Q',
+);
 
 assert.equal(DB.ensureCatalogoAtualizado(), true, 'a primeira carga deve instalar o catálogo');
 assert.equal(DB.getModelos().length, 86, 'o catálogo deve conter as 86 linhas de B:S');
@@ -103,5 +108,14 @@ formIds.forEach((id) => {
 });
 assert.equal(cssSource.includes('.catalogo-table'), true, 'a tabela deve ter estilos próprios');
 assert.equal(cssSource.includes('.modal--catalogo'), true, 'o formulário técnico deve ter layout próprio');
+['catalogo-filter-marca', 'catalogo-filter-bruto', 'catalogo-filter-bucha', 'catalogo-filter-cor', 'catalogo-limpar-filtros'].forEach((id) => {
+  assert.equal((indexHtml.match(new RegExp(`id=["']${id}["']`, 'g')) || []).length, 1, `${id} deve existir uma vez`);
+  assert.equal(appSource.includes(`'${id}'`), true, `${id} deve estar conectado aos filtros`);
+});
+assert.equal(appSource.includes('const buchaDescricao = modelo.modeloBucha'), true, 'a bucha exibida deve vir da coluna Q');
+assert.equal(appSource.includes("bucha: $('catalogo-filter-bucha').value"), true, 'a descrição da bucha deve ser filtrável');
+assert.equal(cssSource.includes('overflow-x: hidden'), true, 'o catálogo não deve exibir rolagem horizontal');
+assert.equal(cssSource.includes('min-width: 1120px'), false, 'a tabela não deve forçar largura de desktop');
+assert.equal(cssSource.includes('table-layout: fixed'), true, 'a tabela deve respeitar a largura disponível');
 
-console.log('QA catálogo: planilha B:S, 86 registros, interface, edição, inclusão e unicidade validadas.');
+console.log('QA catálogo: planilha B:S, coluna Q para bucha, filtros, responsividade, edição, inclusão e unicidade validadas.');

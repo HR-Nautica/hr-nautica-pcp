@@ -353,9 +353,17 @@
           </div>
           <span class="catalogo-count" id="catalogo-count">0 itens</span>
         </div>
+        <div class="catalogo-filters" aria-label="Filtros do catálogo">
+          <label class="catalogo-filter"><span>Marca</span><select id="catalogo-filter-marca"><option value="">Todas as marcas</option></select></label>
+          <label class="catalogo-filter"><span>Código bruto</span><select id="catalogo-filter-bruto"><option value="">Todos os códigos</option></select></label>
+          <label class="catalogo-filter"><span>Bucha (descrição)</span><select id="catalogo-filter-bucha"><option value="">Todas as buchas</option></select></label>
+          <label class="catalogo-filter"><span>Cor</span><select id="catalogo-filter-cor"><option value="">Todas as cores</option></select></label>
+          <button type="button" class="btn-secondary catalogo-clear-filters" id="catalogo-limpar-filtros">Limpar filtros</button>
+        </div>
         <div class="table-wrap catalogo-table-wrap">
           <table class="catalogo-table">
-            <thead><tr><th>SKU</th><th>Hélice</th><th>Cód. bruto</th><th>Anel</th><th>Bucha</th><th>Cor</th><th>Caixa</th><th class="catalogo-actions-col">Ações</th></tr></thead>
+            <colgroup><col class="catalogo-w-sku"><col class="catalogo-w-helice"><col class="catalogo-w-bruto"><col class="catalogo-w-anel"><col class="catalogo-w-bucha"><col class="catalogo-w-cor"><col class="catalogo-w-caixa"><col class="catalogo-w-acoes"></colgroup>
+            <thead><tr><th class="catalogo-col-sku">SKU</th><th>Hélice</th><th class="catalogo-col-bruto">Cód. bruto</th><th class="catalogo-col-anel">Anel</th><th>Bucha (descrição)</th><th class="catalogo-col-cor">Cor</th><th class="catalogo-col-caixa">Caixa</th><th class="catalogo-actions-col">Ações</th></tr></thead>
             <tbody id="modelos-grid"></tbody>
           </table>
         </div>
@@ -1082,7 +1090,7 @@
           <div class="form-group"><label class="form-label" for="modelo-bucha">Bucha</label><input type="text" class="form-input" id="modelo-bucha" /></div>
           <div class="form-group"><label class="form-label" for="modelo-sku-latao">SKU Tiny latão</label><input type="text" class="form-input" id="modelo-sku-latao" /></div>
           <div class="form-group catalogo-span-2"><label class="form-label" for="modelo-descricao-latao">Descrição Tiny latão</label><input type="text" class="form-input" id="modelo-descricao-latao" /></div>
-          <div class="form-group catalogo-span-2"><label class="form-label" for="modelo-modelo-bucha">Modelo bucha</label><input type="text" class="form-input" id="modelo-modelo-bucha" /></div>
+          <div class="form-group catalogo-span-2"><label class="form-label" for="modelo-modelo-bucha">Descrição da bucha (catálogo)</label><input type="text" class="form-input" id="modelo-modelo-bucha" /></div>
         </div></div>
         <div class="catalogo-form-section"><h4>Embalagem</h4><div class="form-row catalogo-form-grid">
           <div class="form-group catalogo-span-2"><label class="form-label" for="modelo-descricao-caixa">Descrição caixa</label><input type="text" class="form-input" id="modelo-descricao-caixa" /></div>
