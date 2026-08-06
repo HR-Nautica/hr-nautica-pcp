@@ -42,6 +42,8 @@ npm start
 
 `db:init` cria/garante as tabelas do Supabase quando `DATABASE_URL` estiver configurada. No Vercel, a API tambem funciona com `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` depois que as tabelas existem.
 
+A importacao do Excel na Analise de Producao usa `temp_analise_producao` como tabela de estagio. Cada sincronizacao grava um novo lote completo e remove o lote anterior somente depois da nova gravacao, evitando dados parciais durante a substituicao.
+
 Depois da migracao, o `dados_pcp.json` nao e consultado automaticamente.
 
 ## Uso nos PCs

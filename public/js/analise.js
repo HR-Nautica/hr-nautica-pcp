@@ -27,9 +27,9 @@ function excelDateToISO(excelDate) {
 }
 
 const ANALISE_STATE = {
-  coberturaData: safeGetJSON('hrn_analise_cobertura_data', []),
+  coberturaData: [],
   coberturaAlvo: Number(RemoteStorage.getItem('hrn_analise_cobertura_alvo')) || 3,
-  loaded: !!RemoteStorage.getItem('hrn_analise_cobertura_data'),
+  loaded: false,
   filterType: 'all', // 'all' | 'critical' | 'warning' | 'ok'
   searchText: '',
   sortColumn: 'prioridadeGeral',
@@ -316,8 +316,50 @@ function mergeAnaliseWithCatalogo(sourceItems = []) {
   });
 }
 
+function analysisTempPayload(items) {
+  return items.map((item, index) => ({
+    sourceRow: item.originalIndex || index + 1,
+    sku: item.sku || '',
+    produto: item.produto || '',
+    codigoBruto: item.codigoBruto || '',
+    saidasPrevistas: Number(item.saidasPrevistas) || 0,
+    estoqueFisico: Number(item.estoqueFisico) || 0,
+    mediaMensal: Number(item.mediaMensal) || 0
+  }));
+}
+
+async function replaceAnalysisTempOnServer(items) {
+  const response = await fetch('/api/analysis-temp', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-PCP-User': window.PCP_CURRENT_USER || ''
+    },
+    body: JSON.stringify({ rows: analysisTempPayload(items) })
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || `Falha ao sincronizar dados temporários (HTTP ${response.status}).`);
+  return result;
+}
+
+async function loadAnalysisTempFromServer() {
+  const response = await fetch('/api/analysis-temp', { cache: 'no-store' });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || `Falha ao carregar dados temporários (HTTP ${response.status}).`);
+  return Array.isArray(result.rows) ? result.rows.map((row, index) => ({
+    originalIndex: row.sourceRow || index + 1,
+    produto: row.produto || '',
+    sku: row.sku || '',
+    codigoBruto: row.codigoBruto || '',
+    entradasPrevistas: null,
+    saidasPrevistas: Number(row.saidasPrevistas) || 0,
+    estoqueFisico: Number(row.estoqueFisico) || 0,
+    mediaMensal: Number(row.mediaMensal) || 0
+  })) : [];
+}
+
 // Processa o arquivo Excel e extrai os dados
-function processAnaliseExcel(arrayBuffer) {
+async function processAnaliseExcel(arrayBuffer) {
   try {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
     
@@ -389,17 +431,16 @@ function processAnaliseExcel(arrayBuffer) {
       };
     }).filter(item => (item.sku || item.produto) && item.produto !== 'undefined');
 
+    const syncResult = await replaceAnalysisTempOnServer(importedData);
     const parsedData = mergeAnaliseWithCatalogo(importedData);
 
     ANALISE_STATE.coberturaData = parsedData;
     ANALISE_STATE.loaded = true;
 
-    RemoteStorage.setItem('hrn_analise_cobertura_data', JSON.stringify(parsedData));
-
     // Sincroniza também as peças em Rastreio (se houver a aba correspondente no mesmo arquivo)
     syncRastreioPecas(wb);
 
-    return true;
+    return syncResult;
   } catch (err) {
     console.error('[ANALISE] Erro ao processar planilha de cobertura:', err);
     throw err;
@@ -935,11 +976,11 @@ function initAnaliseListeners() {
       btnSync.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Sincronizando...`;
 
       const reader = new FileReader();
-      reader.onload = function(evt) {
+      reader.onload = async function(evt) {
         try {
           const data = new Uint8Array(evt.target.result);
-          processAnaliseExcel(data.buffer);
-          showToast('Planilha de Cobertura importada e salva localmente!', 'success');
+          const syncResult = await processAnaliseExcel(data.buffer);
+          showToast(`Planilha sincronizada no Supabase: ${syncResult.count} linhas.`, 'success');
           renderAnaliseTable();
           if (typeof STATE !== 'undefined') {
             if (STATE.currentPage === 'fluxo' && typeof renderFluxo === 'function') {
@@ -950,7 +991,7 @@ function initAnaliseListeners() {
           }
         } catch (err) {
           console.error(err);
-          showToast('Erro ao ler a planilha. Certifique-se de que é a planilha CODAN atualizada.', 'error');
+          showToast(`Erro ao sincronizar a planilha: ${err.message || 'verifique o arquivo e a conexão.'}`, 'error');
         } finally {
           btnSync.disabled = false;
           btnSync.innerHTML = originalHTML;
@@ -999,18 +1040,23 @@ function seedAnaliseFromCatalogo() {
 function initAnaliseModule() {
   try {
     initAnaliseListeners();
-    const stored = safeGetJSON('hrn_analise_cobertura_data', null);
-    if (stored && Array.isArray(stored) && stored.length > 0) {
-      ANALISE_STATE.coberturaData = mergeAnaliseWithCatalogo(stored);
-    } else if (!ANALISE_STATE.coberturaData || ANALISE_STATE.coberturaData.length === 0) {
+    if (!ANALISE_STATE.coberturaData || ANALISE_STATE.coberturaData.length === 0) {
       const seeded = seedAnaliseFromCatalogo();
       if (seeded && seeded.length > 0) {
         ANALISE_STATE.coberturaData = seeded;
-        RemoteStorage.setItem('hrn_analise_cobertura_data', JSON.stringify(seeded));
       }
     }
     ANALISE_STATE.loaded = true;
     renderAnaliseTable();
+
+    loadAnalysisTempFromServer().then(rows => {
+      if (rows.length > 0) {
+        ANALISE_STATE.coberturaData = mergeAnaliseWithCatalogo(rows);
+        renderAnaliseTable();
+      }
+    }).catch(err => {
+      console.error('[ANALISE] Não foi possível carregar a tabela temporária:', err);
+    });
   } catch (err) {
     console.error('[ANALISE] Erro na inicialização do módulo:', err);
   }

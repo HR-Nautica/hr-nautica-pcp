@@ -31,6 +31,11 @@ const context = vm.createContext({
     getOps: () => [],
   },
   window: {},
+  fetch: async (_url, options = {}) => ({
+    ok: true,
+    status: 201,
+    json: async () => ({ ok: true, count: JSON.parse(options.body || '{"rows":[]}').rows.length })
+  }),
   document: {
     readyState: 'loading',
     addEventListener: () => {},
@@ -63,7 +68,8 @@ const workbook = XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), '3-Cobertura');
 const input = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
 
-assert.equal(context.__processAnaliseExcel(input), true);
+const syncResult = await context.__processAnaliseExcel(input);
+assert.equal(syncResult.count, 1, 'a linha importada deve ser enviada para a tabela temporária');
 const data = context.__ANALISE_STATE.coberturaData;
 assert.equal(data.length, 2, 'a análise deve manter todos os itens do catálogo');
 

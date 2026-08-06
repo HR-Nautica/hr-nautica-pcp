@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { config } from "./config.js";
 
@@ -207,6 +208,27 @@ async function initializePostgres() {
       )
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS temp_analise_producao (
+        id BIGSERIAL PRIMARY KEY,
+        batch_id UUID NOT NULL,
+        source_row INTEGER NOT NULL,
+        sku VARCHAR(120),
+        produto TEXT,
+        codigo_bruto VARCHAR(120),
+        saidas_previstas NUMERIC(14, 3) NOT NULL DEFAULT 0,
+        estoque_fisico NUMERIC(14, 3) NOT NULL DEFAULT 0,
+        media_mensal NUMERIC(14, 3) NOT NULL DEFAULT 0,
+        imported_by VARCHAR(100),
+        imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_temp_analise_producao_batch
+      ON temp_analise_producao (batch_id, source_row)
+    `);
+
     const revisionRows = await client.query("SELECT revision FROM app_revision WHERE singleton = $1", ["main"]);
     if (!revisionRows.rows.length) {
       await client.query(
@@ -277,6 +299,151 @@ export async function databaseHealth() {
   return withConnection(async (client) => {
     const rows = await client.query("SELECT revision, updated_at FROM app_revision WHERE singleton = $1", ["main"]);
     return firstValue(rows.rows[0], ["updated_at"], new Date());
+  });
+}
+
+function normalizeAnalysisTempRows(rows) {
+  if (!Array.isArray(rows)) throw new TypeError("Linhas da análise devem ser uma lista.");
+  if (rows.length > 10000) throw new RangeError("A importação excede o limite de 10.000 linhas.");
+
+  const numeric = (value) => {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
+  };
+
+  return rows.map((row, index) => ({
+    sourceRow: Math.max(1, Number.parseInt(row.sourceRow, 10) || index + 1),
+    sku: String(row.sku || "").trim().slice(0, 120),
+    produto: String(row.produto || "").trim(),
+    codigoBruto: String(row.codigoBruto || "").trim().slice(0, 120),
+    saidasPrevistas: numeric(row.saidasPrevistas),
+    estoqueFisico: numeric(row.estoqueFisico),
+    mediaMensal: numeric(row.mediaMensal)
+  })).filter(row => row.sku || row.produto);
+}
+
+function mapAnalysisTempRow(row) {
+  return {
+    sourceRow: Number(firstValue(row, ["source_row"], 0)),
+    sku: String(firstValue(row, ["sku"], "") || ""),
+    produto: String(firstValue(row, ["produto"], "") || ""),
+    codigoBruto: String(firstValue(row, ["codigo_bruto"], "") || ""),
+    saidasPrevistas: Number(firstValue(row, ["saidas_previstas"], 0)),
+    estoqueFisico: Number(firstValue(row, ["estoque_fisico"], 0)),
+    mediaMensal: Number(firstValue(row, ["media_mensal"], 0)),
+    batchId: String(firstValue(row, ["batch_id"], "") || ""),
+    importedBy: String(firstValue(row, ["imported_by"], "") || ""),
+    importedAt: firstValue(row, ["imported_at"], null)
+  };
+}
+
+export async function getAnalysisTempRows() {
+  await initializeDatabase();
+
+  if (usesLocalFile()) {
+    const db = await readLocalFile();
+    return Array.isArray(db.analysis_temp?.rows) ? db.analysis_temp.rows : [];
+  }
+
+  if (usesSupabaseRest()) {
+    const latest = await restRequest("temp_analise_producao", {
+      params: { select: "batch_id", order: "imported_at.desc", limit: 1 }
+    });
+    const batchId = firstValue(latest?.[0], ["batch_id"], "");
+    if (!batchId) return [];
+    const rows = await restRequest("temp_analise_producao", {
+      params: {
+        select: "source_row,sku,produto,codigo_bruto,saidas_previstas,estoque_fisico,media_mensal,batch_id,imported_by,imported_at",
+        batch_id: `eq.${batchId}`,
+        order: "source_row.asc"
+      }
+    });
+    return (rows || []).map(mapAnalysisTempRow);
+  }
+
+  return withConnection(async (client) => {
+    const result = await client.query(`
+      SELECT source_row, sku, produto, codigo_bruto, saidas_previstas,
+             estoque_fisico, media_mensal, batch_id, imported_by, imported_at
+      FROM temp_analise_producao
+      WHERE batch_id = (
+        SELECT batch_id FROM temp_analise_producao ORDER BY imported_at DESC, id DESC LIMIT 1
+      )
+      ORDER BY source_row, id
+    `);
+    return result.rows.map(mapAnalysisTempRow);
+  });
+}
+
+export async function replaceAnalysisTempRows(rows, actor = "") {
+  await initializeDatabase();
+  const normalized = normalizeAnalysisTempRows(rows);
+  if (!normalized.length) throw new RangeError("A importação não possui linhas identificáveis.");
+
+  const batchId = randomUUID();
+  const importedAt = isoNow();
+  const importedBy = String(actor || "").trim().slice(0, 100);
+
+  if (usesLocalFile()) {
+    const db = await readLocalFile();
+    db.analysis_temp = {
+      batchId,
+      importedAt,
+      rows: normalized.map(row => ({ ...row, batchId, importedBy, importedAt }))
+    };
+    db.updated_at = importedAt;
+    await writeLocalFile(db);
+    return { batchId, count: normalized.length, importedAt };
+  }
+
+  const records = normalized.map(row => ({
+    batch_id: batchId,
+    source_row: row.sourceRow,
+    sku: row.sku || null,
+    produto: row.produto || null,
+    codigo_bruto: row.codigoBruto || null,
+    saidas_previstas: row.saidasPrevistas,
+    estoque_fisico: row.estoqueFisico,
+    media_mensal: row.mediaMensal,
+    imported_by: importedBy || null,
+    imported_at: importedAt
+  }));
+
+  if (usesSupabaseRest()) {
+    await restRequest("temp_analise_producao", {
+      method: "POST",
+      body: records,
+      prefer: "return=minimal"
+    });
+    await restRequest("temp_analise_producao", {
+      method: "DELETE",
+      params: { batch_id: `neq.${batchId}` },
+      prefer: "return=minimal"
+    });
+    return { batchId, count: normalized.length, importedAt };
+  }
+
+  return transaction(async (client) => {
+    const columnsPerRow = 10;
+    const values = [];
+    const placeholders = normalized.map((row, rowIndex) => {
+      const offset = rowIndex * columnsPerRow;
+      values.push(
+        batchId, row.sourceRow, row.sku || null, row.produto || null,
+        row.codigoBruto || null, row.saidasPrevistas, row.estoqueFisico,
+        row.mediaMensal, importedBy || null, importedAt
+      );
+      return `(${Array.from({ length: columnsPerRow }, (_, index) => `$${offset + index + 1}`).join(",")})`;
+    });
+
+    await client.query(`
+      INSERT INTO temp_analise_producao (
+        batch_id, source_row, sku, produto, codigo_bruto, saidas_previstas,
+        estoque_fisico, media_mensal, imported_by, imported_at
+      ) VALUES ${placeholders.join(",")}
+    `, values);
+    await client.query("DELETE FROM temp_analise_producao WHERE batch_id <> $1", [batchId]);
+    return { batchId, count: normalized.length, importedAt };
   });
 }
 
