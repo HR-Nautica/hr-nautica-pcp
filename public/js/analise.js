@@ -269,6 +269,53 @@ function parseExcelFloat(val, defaultVal = 0) {
   return isNaN(num) ? defaultVal : num;
 }
 
+function getAnaliseCatalogoItems() {
+  if (typeof DB !== 'undefined' && typeof DB.getModelos === 'function') {
+    const modelos = DB.getModelos();
+    if (Array.isArray(modelos) && modelos.length > 0) return modelos;
+  }
+  return typeof CATALOGO_DATA !== 'undefined' && Array.isArray(CATALOGO_DATA) ? CATALOGO_DATA : [];
+}
+
+function mergeAnaliseWithCatalogo(sourceItems = []) {
+  const bySku = new Map();
+  const byName = new Map();
+  sourceItems.forEach(item => {
+    const skuKey = String(item.sku || '').trim().toUpperCase();
+    const nameKey = normalizeKey(item.produto || item.nome);
+    if (skuKey) bySku.set(skuKey, item);
+    if (nameKey) byName.set(nameKey, item);
+  });
+
+  return getAnaliseCatalogoItems().map((modelo, index) => {
+    const sku = String(modelo.sku || '').trim().toUpperCase();
+    const source = bySku.get(sku) || byName.get(normalizeKey(modelo.nome)) || {};
+    const estoqueFisico = parseExcelFloat(source.estoqueFisico, 0);
+    const saidasPrevistas = parseExcelFloat(source.saidasPrevistas, 0);
+    const mediaMensal = parseExcelFloat(source.mediaMensal, 0);
+
+    return {
+      ...source,
+      originalIndex: index + 1,
+      prioridadeGeral: source.prioridadeGeral || String(index + 1).padStart(2, '0'),
+      produto: modelo.nome || source.produto || 'Produto sem nome',
+      sku: modelo.sku || source.sku || `SKU-${index + 1}`,
+      codigoBruto: modelo.codigoBruto || source.codigoBruto || '-',
+      entradasPrevistas: null,
+      saidasPrevistas,
+      estoqueFisico,
+      estoque1: estoqueFisico - saidasPrevistas,
+      estoqueVirtual: estoqueFisico - saidasPrevistas,
+      mediaMensal,
+      coberturaVirtual: mediaMensal > 0 ? estoqueFisico / mediaMensal : Infinity,
+      prio2: source.prio2 ?? null,
+      prio2Excel: source.prio2Excel ?? null,
+      localizacao: source.localizacao || '-',
+      bucha: modelo.modeloBucha || modelo.bucha || source.bucha || '-'
+    };
+  });
+}
+
 // Processa o arquivo Excel e extrai os dados
 function processAnaliseExcel(arrayBuffer) {
   try {
@@ -285,32 +332,37 @@ function processAnaliseExcel(arrayBuffer) {
     }
 
     const ws = wb.Sheets[sheetName];
-    // sheet_to_json a partir da linha 5 (range: 5) para capturar os cabeçalhos corretos
-    const rowsJson = XLSX.utils.sheet_to_json(ws, { range: 5, defval: '' });
+    // A linha 6 contém os cabeçalhos. H, I e N são lidas pela posição absoluta da coluna.
+    const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, range: 5, defval: '' });
+    const headers = matrix[0] || [];
+    const sourceRows = matrix.slice(1).map(values => ({
+      values,
+      row: Object.fromEntries(headers.map((header, index) => [String(header || `COL_${index}`), values[index]]))
+    }));
 
-    if (!rowsJson || rowsJson.length === 0) {
+    if (sourceRows.length === 0) {
       throw new Error('Nenhum dado encontrado na aba de Cobertura.');
     }
 
     let rowIdx = 0;
-    const parsedData = rowsJson.map(row => {
+    const importedData = sourceRows.map(({ row, values }) => {
       const produto = String(getExcelRowValue(row, ['Produto', 'Descrição', 'Nome', 'Modelo'])).trim();
       const sku = String(getExcelRowValue(row, ['Código (SKU)', 'Codigo (SKU)', 'SKU', 'Código'])).trim().toUpperCase();
       const codigoBruto = String(getExcelRowValue(row, ['Código Bruto', 'Codigo Bruto', 'Bruto'])).trim();
       
       const prioridadeGeralRaw = String(getExcelRowValue(row, ['Prioridade GERAL', 'Prioridade', 'Rank', 'Geral'])).trim();
       
-      const entradasPrevistas = parseExcelFloat(getExcelRowValue(row, ['Entradas previstas (em Produção)', 'Entradas previstas', 'Entradas']), 0);
-      const saidasPrevistas = parseExcelFloat(getExcelRowValue(row, ['Saídas previstas (Vendido)', 'Saidas previstas (Vendido)', 'Saídas previstas', 'Saidas previstas']), 0);
-      const estoqueFisico = parseExcelFloat(getExcelRowValue(row, ['Estoque físico', 'Estoque fisico', 'Físico', 'Fisico']), 0);
-      const estoque1 = parseExcelFloat(getExcelRowValue(row, ['Estoque 1', 'Estoque1']), 0);
-      const estoqueVirtual = parseExcelFloat(getExcelRowValue(row, ['Estoque virtual', 'Estoque Virtual', 'Virtual']), 0);
-      const mediaMensal = parseExcelFloat(getExcelRowValue(row, ['Média mensal', 'Media mensal', 'Média Mensal']), 0);
+      const entradasPrevistas = null;
+      const saidasPrevistas = parseExcelFloat(values[7], 0); // Coluna H
+      const estoqueFisico = parseExcelFloat(values[8], 0); // Coluna I
+      const estoque1 = estoqueFisico - saidasPrevistas;
+      const estoqueVirtual = estoqueFisico - saidasPrevistas;
+      const mediaMensal = parseExcelFloat(values[13], 0); // Coluna N
       
       const rawPrio = getExcelRowValue(row, ['Prio2', 'Prio 2', 'Prioridade2'], null);
       const prioVal = rawPrio !== null && rawPrio !== '' ? parseExcelFloat(rawPrio, null) : null;
 
-      const coberturaVirtual = parseExcelFloat(getExcelRowValue(row, ['Cobertura Est. Virtual', 'Cobertura Est Virtual', 'Cobertura Virtual', 'Cobertura']), 0);
+      const coberturaVirtual = mediaMensal > 0 ? estoqueFisico / mediaMensal : Infinity;
       const localizacao = String(getExcelRowValue(row, ['Localização', 'Localizacao', 'Loc'], '-')).trim();
       const bucha = String(getExcelRowValue(row, ['bucha', 'Bucha'], '-')).trim();
 
@@ -335,7 +387,9 @@ function processAnaliseExcel(arrayBuffer) {
         localizacao,
         bucha
       };
-    }).filter(item => item.produto && item.produto !== 'undefined');
+    }).filter(item => (item.sku || item.produto) && item.produto !== 'undefined');
+
+    const parsedData = mergeAnaliseWithCatalogo(importedData);
 
     ANALISE_STATE.coberturaData = parsedData;
     ANALISE_STATE.loaded = true;
@@ -374,20 +428,14 @@ function renderAnaliseTable() {
     return;
   }
 
-  // Atualiza o estoque físico e recálculos na Análise de Produção
+  // O catálogo é sempre a lista mestre; a planilha apenas alimenta seus valores.
+  ANALISE_STATE.coberturaData = mergeAnaliseWithCatalogo(ANALISE_STATE.coberturaData);
+
+  // Recalcula os indicadores conforme o mapeamento vigente.
   ANALISE_STATE.coberturaData.forEach(item => {
-    const skuNorm = String(item.sku || '').trim().toUpperCase();
-    if (window.EARV) {
-      if (EARV.estoqueLoaded && EARV.estoqueMap) {
-        item.estoqueFisico = EARV.estoqueMap[skuNorm] !== undefined ? EARV.estoqueMap[skuNorm] : item.estoqueFisico;
-      }
-      if (EARV.saidasPrevistasLoaded && EARV.saidasPrevistasMap) {
-        item.saidasPrevistas = EARV.saidasPrevistasMap[skuNorm] !== undefined ? EARV.saidasPrevistasMap[skuNorm] : item.saidasPrevistas;
-      }
-    }
-    
-    item.estoqueVirtual = item.estoqueFisico + (item.entradasPrevistas || 0) - (item.saidasPrevistas || 0);
-    item.coberturaVirtual = item.mediaMensal > 0 ? item.estoqueVirtual / item.mediaMensal : Infinity;
+    item.entradasPrevistas = null;
+    item.estoqueVirtual = item.estoqueFisico - (item.saidasPrevistas || 0);
+    item.coberturaVirtual = item.mediaMensal > 0 ? item.estoqueFisico / item.mediaMensal : Infinity;
     
     // Se o prio2 veio diretamente do Excel (prio2Excel), preserva o valor da planilha
     if (item.prio2Excel !== undefined && item.prio2Excel !== null) {
@@ -607,7 +655,7 @@ function renderAnaliseTable() {
       <td><span class="chip chip--blue" style="font-size:0.68rem;font-family:monospace;font-weight:700">${item.sku}</span></td>
       <td><span style="color:var(--text-secondary);font-size:0.72rem">${item.codigoBruto || '—'}</span></td>
       <td>${item.estoqueFisico}</td>
-      <td>${item.entradasPrevistas}</td>
+      <td><span style="color:var(--text-muted);font-weight:600">N/A</span></td>
       <td>${item.saidasPrevistas}</td>
       <td><strong style="color:${item.estoqueVirtual < 0 ? 'var(--accent-red)' : 'var(--text-primary)'}">${item.estoqueVirtual}</strong></td>
       <td>${item.mediaMensal.toFixed(1)}</td>
@@ -755,7 +803,7 @@ function exportAnaliseToExcel() {
     item.sku,
     item.codigoBruto,
     item.estoqueFisico,
-    item.entradasPrevistas,
+    'N/A',
     item.saidasPrevistas,
     item.estoqueVirtual,
     item.mediaMensal.toFixed(2),
@@ -945,24 +993,7 @@ function initAnaliseListeners() {
 }
 
 function seedAnaliseFromCatalogo() {
-  if (typeof CATALOGO_DATA === 'undefined' || !Array.isArray(CATALOGO_DATA)) return [];
-  return CATALOGO_DATA.map((m, idx) => ({
-    originalIndex: idx + 1,
-    prioridadeGeral: String(idx + 1).padStart(2, '0'),
-    produto: m.nome || 'Produto Sem Nome',
-    sku: m.sku || `SKU-${idx + 1}`,
-    codigoBruto: m.codigoBruto || '-',
-    entradasPrevistas: 0,
-    saidasPrevistas: 0,
-    estoqueFisico: 12,
-    estoque1: 12,
-    estoqueVirtual: 12,
-    mediaMensal: 4,
-    prio2: 3.0,
-    coberturaVirtual: 3.0,
-    localizacao: '01 - Fundição',
-    bucha: m.bucha || '-'
-  }));
+  return mergeAnaliseWithCatalogo([]);
 }
 
 function initAnaliseModule() {
@@ -970,7 +1001,7 @@ function initAnaliseModule() {
     initAnaliseListeners();
     const stored = safeGetJSON('hrn_analise_cobertura_data', null);
     if (stored && Array.isArray(stored) && stored.length > 0) {
-      ANALISE_STATE.coberturaData = stored;
+      ANALISE_STATE.coberturaData = mergeAnaliseWithCatalogo(stored);
     } else if (!ANALISE_STATE.coberturaData || ANALISE_STATE.coberturaData.length === 0) {
       const seeded = seedAnaliseFromCatalogo();
       if (seeded && seeded.length > 0) {
