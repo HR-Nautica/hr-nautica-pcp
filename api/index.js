@@ -5,6 +5,7 @@ import helmet from "helmet";
 import { config } from "../server/config.js";
 import { databaseHealth } from "../server/database.js";
 import analysisTempRouter from "../server/routes/analysis-temp.js";
+import heliceOpsRouter from "../server/routes/helice-ops.js";
 import integrationsRouter from "../server/routes/integrations.js";
 import stateRouter from "../server/routes/state.js";
 
@@ -32,6 +33,7 @@ app.get("/api/status", async (_req, res, next) => {
 
 app.use("/api/state", stateRouter);
 app.use("/api/analysis-temp", analysisTempRouter);
+app.use("/api/helice-ops", heliceOpsRouter);
 app.use("/api", integrationsRouter);
 
 app.use((error, _req, res, _next) => {
