@@ -18,6 +18,7 @@ const DB = {
     config:       'hrn_config',
     manutencoes:  'hrn_manutencoes',
     buchas:       'hrn_buchas',
+    buchasOps:    'hrn_buchas_ops',
   },
 
   // ─── Helpers ────────────────────────────
@@ -447,6 +448,173 @@ const DB = {
       buchasAtualizadasEm: this._now(),
     });
     this.addAtividade(`Catálogo de buchas ${BUCHAS_VERSION} carregado: ${buchas.length} itens.`, 'teal');
+    return true;
+  },
+
+  // ═══ OPs DE BUCHAS ══════════════════════
+  getBuchasOps()      { return this._get(this.KEYS.buchasOps); },
+  saveBuchasOps(list) { this._set(this.KEYS.buchasOps, list); },
+
+  generateBuchaOpNumber() {
+    const ops = this.getBuchasOps();
+    const numbers = ops
+      .map(o => parseInt(String(o.opNumber || '').replace(/\D/g, ''), 10))
+      .filter(n => !isNaN(n));
+    const max = numbers.length ? Math.max(...numbers) : 0;
+    return `OPB-${String(max + 1).padStart(6, '0')}`;
+  },
+
+  addBuchaOp(data) {
+    const buchas = this.getBuchas();
+    const bucha = buchas.find(b => b.sku === data.sku) || {};
+    const opNumber = data.opNumber || this.generateBuchaOpNumber();
+    const qty = parseInt(data.quantity, 10) || 1;
+    const now = this._now();
+
+    const op = {
+      id: `opb_${this._id()}`,
+      opNumber,
+      sku: data.sku || 'DESCONHECIDO',
+      description: bucha.descricao || data.description || 'Bucha sem descrição',
+      quantity: qty,
+      priority: data.priority || 'Normal',
+      currentStage: 'op01', // op01: Retrabalho, op02: Vulcanização, op03: Estoque Final
+      status: 'em_producao', // em_producao | finalizada | refugada
+      entryDate: data.entryDate || now.split(' ')[0],
+      obs: data.obs || '',
+      history: [
+        { date: now, stage: 'Retrabalho', action: 'OP de Bucha gerada', user: 'Sistema' }
+      ],
+      stages: [
+        { code: 'op01', name: 'Retrabalho', quantity: qty },
+        { code: 'op02', name: 'Vulcanização', quantity: 0 },
+        { code: 'op03', name: 'Estoque Final', quantity: 0 }
+      ]
+    };
+
+    const list = [op, ...this.getBuchasOps()];
+    this.saveBuchasOps(list);
+    this.addAtividade(`Nova OP de Bucha criada: ${op.opNumber} (${op.sku} - ${qty} un)`, 'teal');
+    return op;
+  },
+
+  advanceBuchaOp(id, quantityToMove, destinationStage, remainingAction = 'split') {
+    const ops = this.getBuchasOps();
+    const opIndex = ops.findIndex(o => o.id === id);
+    if (opIndex === -1) throw new Error('OP de Bucha não encontrada.');
+
+    const op = ops[opIndex];
+    const qtyMove = Math.min(op.quantity, parseInt(quantityToMove, 10) || op.quantity);
+    const qtyRemaining = op.quantity - qtyMove;
+    const now = this._now();
+    const stageNames = { op01: 'Retrabalho', op02: 'Vulcanização', op03: 'Estoque Final' };
+
+    if (qtyRemaining > 0) {
+      if (remainingAction === 'split') {
+        const subOpNumber = `${op.opNumber}.1`;
+        const subOp = {
+          ...JSON.parse(JSON.stringify(op)),
+          id: `opb_${this._id()}`,
+          opNumber: subOpNumber,
+          quantity: qtyRemaining,
+          history: [
+            ...op.history,
+            { date: now, stage: stageNames[op.currentStage], action: `Desmembrada da OP ${op.opNumber} com ${qtyRemaining} un`, user: 'Operador' }
+          ]
+        };
+        ops.splice(opIndex + 1, 0, subOp);
+      } else if (remainingAction === 'scrap') {
+        const refOpNumber = `${op.opNumber}.REF.1`;
+        const refOp = {
+          ...JSON.parse(JSON.stringify(op)),
+          id: `opb_${this._id()}`,
+          opNumber: refOpNumber,
+          quantity: qtyRemaining,
+          status: 'refugada',
+          history: [
+            ...op.history,
+            { date: now, stage: stageNames[op.currentStage], action: `Refugada com ${qtyRemaining} un`, user: 'Operador' }
+          ]
+        };
+        ops.splice(opIndex + 1, 0, refOp);
+      }
+    }
+
+    op.quantity = qtyMove;
+    op.currentStage = destinationStage;
+    if (destinationStage === 'op03') {
+      op.status = 'finalizada';
+    }
+
+    op.stages = op.stages.map(st => {
+      if (st.code === destinationStage) return { ...st, quantity: qtyMove };
+      return st;
+    });
+
+    op.history.push({
+      date: now,
+      stage: stageNames[destinationStage],
+      action: `Avançou ${qtyMove} peças para ${stageNames[destinationStage]}`,
+      user: 'Operador'
+    });
+
+    this.saveBuchasOps(ops);
+    this.addAtividade(`OP de Bucha ${op.opNumber} avançou para ${stageNames[destinationStage]}`, 'green');
+    return op;
+  },
+
+  deleteBuchaOp(id) {
+    const ops = this.getBuchasOps();
+    const op = ops.find(o => o.id === id);
+    if (!op) return null;
+    this.saveBuchasOps(ops.filter(o => o.id !== id));
+    this.addAtividade(`OP de Bucha removida: ${op.opNumber}`, 'red');
+    return op;
+  },
+
+  ensureBuchasOpsSeed() {
+    const existing = this.getBuchasOps();
+    if (existing && existing.length > 0) return false;
+
+    const buchas = this.getBuchas();
+    if (!buchas.length) return false;
+
+    const seedSpecs = [
+      { sku: 'HR BH 001', qty: 200, stage: 'op01', status: 'em_producao' },
+      { sku: 'HR BH 002', qty: 150, stage: 'op01', status: 'em_producao' },
+      { sku: 'HR BH 003', qty: 100, stage: 'op02', status: 'em_producao' },
+      { sku: 'HR BH 004', qty: 80,  stage: 'op02', status: 'em_producao' },
+      { sku: 'HR BH 005', qty: 250, stage: 'op03', status: 'finalizada' }
+    ];
+
+    const seedOps = seedSpecs.map((spec, i) => {
+      const bucha = buchas.find(b => b.sku === spec.sku) || buchas[i % buchas.length];
+      const opNum = `OPB-${String(i + 1).padStart(6, '0')}`;
+      const stageNames = { op01: 'Retrabalho', op02: 'Vulcanização', op03: 'Estoque Final' };
+      return {
+        id: `opb_seed_${i + 1}`,
+        opNumber: opNum,
+        sku: bucha.sku,
+        description: bucha.descricao,
+        quantity: spec.qty,
+        priority: i % 2 === 0 ? 'Alta' : 'Normal',
+        currentStage: spec.stage,
+        status: spec.status,
+        entryDate: '2026-08-07',
+        obs: 'Lote inicial cadastrado',
+        history: [
+          { date: '2026-08-07 10:00:00', stage: stageNames[spec.stage], action: 'Lote inicial registrado', user: 'Sistema' }
+        ],
+        stages: [
+          { code: 'op01', name: 'Retrabalho', quantity: spec.stage === 'op01' ? spec.qty : 0 },
+          { code: 'op02', name: 'Vulcanização', quantity: spec.stage === 'op02' ? spec.qty : 0 },
+          { code: 'op03', name: 'Estoque Final', quantity: spec.stage === 'op03' ? spec.qty : 0 }
+        ]
+      };
+    });
+
+    this.saveBuchasOps(seedOps);
+    this.addAtividade('Demonstração de OPs de Bucha carregada com sucesso.', 'teal');
     return true;
   },
 

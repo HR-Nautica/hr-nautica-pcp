@@ -184,6 +184,9 @@ function navigate(page) {
       break;
     case 'modelos':     renderModelos();     break;
     case 'buchas':      renderBuchas();      break;
+    case 'estoque-buchas':
+      if (typeof renderEstoqueBuchas === 'function') renderEstoqueBuchas();
+      break;
     case 'estoque':     renderEstoque();     break;
     case 'fundicao':    renderFundicao();    break;
     case 'manutencao':  renderManutencao();  break;

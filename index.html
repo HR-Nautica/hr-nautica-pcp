@@ -57,6 +57,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
         Catálogo de Buchas
       </a>
+      <a href="#" class="nav-item" data-page="estoque-buchas" id="nav-estoque-buchas">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Estoque Buchas
+      </a>
 
       <div class="sidebar-title">Estoque e Componentes</div>
       <a href="#" class="nav-item" data-page="estoque" id="nav-estoque">
@@ -529,6 +533,123 @@
         <!-- Visão Cards -->
         <div class="catalogo-cards-wrap hidden" id="buchas-cards-view">
           <div class="catalogo-cards-grid" id="buchas-cards-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── PAGE: ESTOQUE E RASTREIO DE BUCHAS ──── -->
+    <div class="page hidden" id="page-estoque-buchas">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Estoque & Rastreio de Buchas</h1>
+          <p class="page-subtitle">Acompanhamento de fluxo por etapa: Retrabalho, Vulcanização e Estoque Final Pronta</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-primary" id="btn-nova-op-bucha">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova OP de Bucha
+          </button>
+        </div>
+      </div>
+
+      <!-- KPIs da Produção de Buchas -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">EM RETRABALHO</span>
+            <div class="kpi-icon kpi-icon--orange">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-eb-retrabalho">0 un</div>
+          <div class="kpi-sub">Peças em usinagem / ajuste</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">EM VULCANIZAÇÃO</span>
+            <div class="kpi-icon kpi-icon--blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-eb-vulcanizacao">0 un</div>
+          <div class="kpi-sub">Peças na prensa / borracha</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">ESTOQUE FINAL (PRONTAS)</span>
+            <div class="kpi-icon kpi-icon--green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-eb-final">0 un</div>
+          <div class="kpi-sub">Buchas finalizadas salvas</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">OPS EM PRODUÇÃO</span>
+            <div class="kpi-icon kpi-icon--teal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-eb-ativas">0</div>
+          <div class="kpi-sub">Lotes ativos de buchas</div>
+        </div>
+      </div>
+
+      <!-- Card Tabela de Estoque e Fluxo -->
+      <div class="card catalogo-card" style="margin-top: 1.5rem;">
+        <div class="catalogo-toolbar">
+          <div class="catalogo-search-wrap">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="bucha-op-search" placeholder="Buscar por OP, SKU, descrição da bucha ou lote..." autocomplete="off" />
+          </div>
+          <span class="catalogo-count" id="bucha-op-count">0 OPs</span>
+        </div>
+        <div class="catalogo-filters">
+          <label class="catalogo-filter">
+            <span>Etapa Atual</span>
+            <select id="bucha-op-filter-etapa">
+              <option value="">Todas as Etapas</option>
+              <option value="op01">1 - Retrabalho</option>
+              <option value="op02">2 - Vulcanização</option>
+              <option value="op03">3 - Estoque Final</option>
+            </select>
+          </label>
+          <label class="catalogo-filter">
+            <span>Status</span>
+            <select id="bucha-op-filter-status">
+              <option value="">Todos os Status</option>
+              <option value="em_producao">Em Produção</option>
+              <option value="finalizada">Finalizada (Estoque Final)</option>
+              <option value="refugada">Refugada</option>
+            </select>
+          </label>
+          <button type="button" class="btn-secondary catalogo-clear-filters" id="bucha-op-limpar-filtros">Limpar filtros</button>
+        </div>
+
+        <div class="table-wrap catalogo-table-wrap">
+          <table class="catalogo-table">
+            <thead>
+              <tr>
+                <th>Nº OP Bucha</th>
+                <th>SKU Bucha</th>
+                <th>Descrição da Bucha</th>
+                <th>Quantidade</th>
+                <th>Prioridade</th>
+                <th>Etapa Atual</th>
+                <th>Fluxo das 3 Etapas</th>
+                <th>Data Entrada</th>
+                <th>Status</th>
+                <th class="catalogo-actions-col">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="bucha-op-grid">
+              <tr><td colspan="10" class="empty-cell">Nenhuma OP de bucha cadastrada.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1313,6 +1434,109 @@
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-cancel-bucha">Cancelar</button>
         <button class="btn-primary" id="btn-save-bucha">Salvar Bucha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nova OP de Bucha -->
+  <div class="modal-overlay hidden" id="modal-nova-op-bucha">
+    <div class="modal modal--catalogo" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Nova OP de Bucha</h2>
+          <p class="modal-subtitle">Geração de ordem de produção / lote para acompanhamento do fluxo de buchas</p>
+        </div>
+        <button class="btn-icon" id="modal-nova-bucha-op-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="catalogo-form-section">
+          <h4>Dados da Ordem de Produção</h4>
+          <div class="form-row catalogo-form-grid">
+            <div class="form-group catalogo-span-2">
+              <label class="form-label" for="bucha-op-sku-select">Modelo de Bucha (Catálogo) *</label>
+              <select class="form-input" id="bucha-op-sku-select"><option value="">Carregando catálogo...</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bucha-op-qty">Quantidade (peças) *</label>
+              <input type="number" min="1" class="form-input" id="bucha-op-qty" value="100" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bucha-op-priority">Prioridade</label>
+              <select class="form-input" id="bucha-op-priority">
+                <option value="Normal">Normal</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">Urgente</option>
+              </select>
+            </div>
+            <div class="form-group catalogo-span-2">
+              <label class="form-label" for="bucha-op-obs">Observações do Lote</label>
+              <input type="text" class="form-input" id="bucha-op-obs" placeholder="Ex: Lote emergencial para montagem..." />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-cancel-nova-bucha-op">Cancelar</button>
+        <button class="btn-primary" id="btn-save-nova-bucha-op">Gerar OP de Bucha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Movimentar / Avançar OP de Bucha -->
+  <div class="modal-overlay hidden" id="modal-mov-bucha">
+    <div class="modal modal--catalogo" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="mov-bucha-op-title">Mover OP de Bucha</h2>
+          <p class="modal-subtitle">Avanço de quantidade entre etapas: Retrabalho → Vulcanização → Estoque Final</p>
+        </div>
+        <button class="btn-icon" id="modal-mov-bucha-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div style="background:var(--bg-tertiary); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span>Etapa Atual: <strong id="mov-bucha-current-stage" style="color:var(--text-primary);">—</strong></span>
+            <span>Próxima Etapa: <strong id="mov-bucha-next-stage" style="color:var(--accent-teal);">—</strong></span>
+          </div>
+          <div>Saldo Total na OP: <strong id="mov-bucha-total-qty">0 un</strong></div>
+        </div>
+
+        <div class="form-row catalogo-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="mov-bucha-qty-move">Quantidade a avançar *</label>
+            <input type="number" min="1" class="form-input" id="mov-bucha-qty-move" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="mov-bucha-remaining-action">Ação com peças restantes</label>
+            <select class="form-input" id="mov-bucha-remaining-action">
+              <option value="split">Manter na etapa atual em nova Sub-OP (.1)</option>
+              <option value="scrap">Registrar como Refugo (.REF.1)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-cancel-mov-bucha">Cancelar</button>
+        <button class="btn-primary" id="btn-save-mov-bucha">Avançar Peças</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Histórico da OP de Bucha -->
+  <div class="modal-overlay hidden" id="modal-hist-bucha">
+    <div class="modal modal--catalogo" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="hist-bucha-op-title">Histórico da OP</h2>
+          <p class="modal-subtitle">Registro cronológico de movimentações e saldo</p>
+        </div>
+        <button class="btn-icon" id="modal-hist-bucha-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body" id="hist-bucha-op-list" style="max-height: 400px; overflow-y: auto;">
+        <!-- Preenchido via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" id="btn-close-hist-bucha">Fechar</button>
       </div>
     </div>
   </div>

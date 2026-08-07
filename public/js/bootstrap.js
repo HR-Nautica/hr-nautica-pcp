@@ -9,6 +9,7 @@ const applicationScripts = [
   "/js/vini.js",
   "/js/analise.js",
   "/js/rastreio-helices.js",
+  "/js/estoque-buchas.js",
   "/js/app.js"
 ];
 
@@ -108,6 +109,7 @@ async function bootstrap() {
     if (typeof DB !== "undefined") {
       DB.ensureCatalogoAtualizado();
       DB.ensureBuchasAtualizadas();
+      DB.ensureBuchasOpsSeed();
     }
 
     // 4. Exige o login do usuário
