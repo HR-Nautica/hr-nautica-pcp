@@ -101,7 +101,16 @@ const RemoteStorage = {
       this.setConnectionState(true);
       if (!result.modified) return;
       this.revision = Number(result.revision || 0);
-      this.data = new Map(Object.entries(result.data || {}));
+
+      const newData = new Map(Object.entries(result.data || {}));
+      for (const pendingKey of this.writeQueues.keys()) {
+        if (this.data.has(pendingKey)) {
+          newData.set(pendingKey, this.data.get(pendingKey));
+        } else {
+          newData.delete(pendingKey);
+        }
+      }
+      this.data = newData;
       this.versions = new Map(
         Object.entries(result.versions || {}).map(([key, value]) => [key, Number(value)])
       );
@@ -118,10 +127,18 @@ const RemoteStorage = {
   },
   enqueue(key, operation) {
     const previous = this.writeQueues.get(key) || Promise.resolve();
-    const next = previous.catch(() => {}).then(operation).catch((error) => {
-      this.setConnectionState(false);
-      console.error(`[BANCO] Falha ao gravar ${key}:`, error);
-    });
+    const next = previous
+      .catch(() => {})
+      .then(operation)
+      .finally(() => {
+        if (this.writeQueues.get(key) === next) {
+          this.writeQueues.delete(key);
+        }
+      })
+      .catch((error) => {
+        this.setConnectionState(false);
+        console.error(`[BANCO] Falha ao gravar ${key}:`, error);
+      });
     this.writeQueues.set(key, next);
   },
   async persist(key, value) {
@@ -164,6 +181,10 @@ const RemoteStorage = {
           const result = await response.json();
           this.versions.set(key, Number(result.version));
           this.revision = Number(result.revision);
+          this.data.set(key, pendingValue);
+          try {
+            localStorage.setItem(key, typeof pendingValue === "string" ? pendingValue : JSON.stringify(pendingValue));
+          } catch (e) {}
           const warning = document.getElementById("central-server-warning");
           if (warning) warning.style.display = "none";
           if (typeof this.onUpdate === "function") this.onUpdate();
@@ -171,6 +192,30 @@ const RemoteStorage = {
         }
       } catch (e) {
         console.warn("[BANCO] Falha ao re-tentar salvar após conflito:", e);
+      }
+    } else {
+      try {
+        const newVersion = this.versions.get(key) || 0;
+        const response = await fetch(`/api/state/${encodeURIComponent(key)}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", "X-PCP-User": this.currentUser },
+          body: JSON.stringify({ expectedVersion: newVersion })
+        });
+        if (response.ok) {
+          const result = await response.json();
+          this.versions.delete(key);
+          this.revision = Number(result.revision);
+          this.data.delete(key);
+          try {
+            localStorage.removeItem(key);
+          } catch (e) {}
+          const warning = document.getElementById("central-server-warning");
+          if (warning) warning.style.display = "none";
+          if (typeof this.onUpdate === "function") this.onUpdate();
+          return;
+        }
+      } catch (e) {
+        console.warn("[BANCO] Falha ao re-tentar deletar após conflito:", e);
       }
     }
     const warning = document.getElementById("central-server-warning");
