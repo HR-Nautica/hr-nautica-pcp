@@ -5049,7 +5049,45 @@ body {
   color: white !important;
 }
 
+/* ──── ESTOQUE DE BUCHAS - RESPONSIVIDADE E ADAPTAÇÃO TOTAL ──── */
+#page-estoque-buchas .catalogo-table-wrap {
+  max-height: none;
+  overflow-x: auto !important;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
 
+#page-estoque-buchas .catalogo-table {
+  table-layout: auto !important;
+  width: 100% !important;
+  min-width: 960px !important;
+}
 
+#page-estoque-buchas .catalogo-table th,
+#page-estoque-buchas .catalogo-table td {
+  padding: 0.75rem 0.65rem !important;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: middle;
+}
 
+#page-estoque-buchas .bucha-actions-wrap {
+  display: flex !important;
+  gap: 6px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  white-space: nowrap !important;
+}
 
+#page-estoque-buchas .bucha-actions-wrap button {
+  white-space: nowrap !important;
+  flex: none !important;
+  padding: 5px 10px !important;
+  font-size: 0.82rem !important;
+}
+
+@media (max-width: 1200px) {
+  #page-estoque-buchas .catalogo-table {
+    min-width: 900px !important;
+  }
+}

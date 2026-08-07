@@ -91,11 +91,11 @@
             <td>${badgeAca}</td>
             <td><strong style="color:var(--accent-teal); font-size:1.05rem;">${formatNum(s.saldoTotal)} un</strong></td>
             <td>
-              <div style="display:flex; gap:6px; justify-content:center;">
-                <button class="btn-primary" style="padding: 4px 10px; font-size:0.8rem;" onclick="window.openNovaEntradaBucha('${escapeHtml(s.sku)}')" title="Nova Entrada">
+              <div class="bucha-actions-wrap">
+                <button class="btn-primary" onclick="window.openNovaEntradaBucha('${escapeHtml(s.sku)}')" title="Nova Entrada">
                   ➕ Entrada
                 </button>
-                <button class="btn-secondary" style="padding: 4px 10px; font-size:0.8rem; border-color:var(--accent-orange); color:var(--accent-orange);" onclick="window.openSaidaBucha('${escapeHtml(s.sku)}')" title="Dar Baixa no Estoque Final" ${s.qtdAcabada <= 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                <button class="btn-secondary" style="border-color:var(--accent-orange); color:var(--accent-orange);" onclick="window.openSaidaBucha('${escapeHtml(s.sku)}')" title="Dar Baixa no Estoque Final" ${s.qtdAcabada <= 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
                   ➖ Dar Baixa
                 </button>
               </div>
@@ -134,7 +134,7 @@
             <td>${etapaBadge}</td>
             <td><small>${escapeHtml(e.origemObs || '—')}</small></td>
             <td>
-              <div style="display:flex; gap:6px; justify-content:center;">
+              <div class="bucha-actions-wrap">
                 ${btnAcao}
                 <button class="btn-secondary catalogo-icon-action" onclick="window.openHistoricoLoteBucha('${e.id}')" title="Histórico">📜</button>
               </div>
