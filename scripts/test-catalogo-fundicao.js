@@ -84,4 +84,28 @@ assert.equal(excluiu, true, 'Exclusão deve retornar true');
 const catalogPosDel = DB.getFundicaoCatalog();
 assert.equal(catalogPosDel.length, 74, 'Catálogo deve voltar a 74 itens após exclusão');
 
-console.log('[OK] Todos os testes do Catálogo de Fundição passaram com 100% de sucesso!');
+// 6. Testar renderização do HTML agrupado por Coquilha
+const elements = new Map();
+context.document = {
+  getElementById: (id) => {
+    if (!elements.has(id)) {
+      elements.set(id, { id, value: '', textContent: '', innerHTML: '', classList: { remove() {}, add() {} }, dataset: {} });
+    }
+    return elements.get(id);
+  },
+  addEventListener: () => {}
+};
+
+const catalogoScript = fs.readFileSync('public/js/catalogo-fundicao.js', 'utf8');
+vm.runInContext(catalogoScript, context, { filename: 'catalogo-fundicao.js' });
+
+context.renderCatalogoFundicao();
+const tbody = elements.get('cf-grid');
+assert.ok(tbody.innerHTML.includes('COQUILHA 02'), 'Deve conter a linha de cabeçalho da COQUILHA 02');
+assert.ok(tbody.innerHTML.includes('coquilha-group-header'), 'Deve conter a classe de grupo coquilha-group-header');
+
+// 7. Expandir Coquilha 02 e validar exibição das sub-linhas
+context.toggleCoquilhaExpand('COQUILHA 02');
+assert.ok(tbody.innerHTML.includes('HR HY 012'), 'Após expandir, o modelo HR HY 012 deve ser renderizado');
+
+console.log('[OK] Todos os testes do Catálogo de Fundição com Coquilhas Agrupadas e Expansíveis passaram com 100% de sucesso!');

@@ -5127,3 +5127,60 @@ body {
   box-shadow: 0 2px 10px var(--primary-glow);
 }
 
+/* ──── CATÁLOGO DE FUNDIÇÃO - AGRUPAMENTO POR COQUILHA ──── */
+.coquilha-group-header {
+  background: var(--bg-surface) !important;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.coquilha-group-header:hover {
+  background: var(--bg-elevated) !important;
+}
+
+.coquilha-group-header.expanded {
+  border-bottom: 1px solid var(--border-hover) !important;
+}
+
+.coquilha-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 2px 0;
+}
+
+.coquilha-arrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--accent-blue);
+  transition: transform 0.2s ease;
+  width: 14px;
+  text-align: center;
+}
+
+.coquilha-group-header.expanded .coquilha-arrow {
+  transform: rotate(90deg);
+}
+
+.coquilha-child-row {
+  background: rgba(255, 255, 255, 0.015) !important;
+  transition: background 0.15s ease;
+}
+
+.coquilha-child-row:hover {
+  background: rgba(255, 255, 255, 0.045) !important;
+}
+
+.coquilha-child-row td {
+  padding-top: 0.55rem !important;
+  padding-bottom: 0.55rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+}
+
