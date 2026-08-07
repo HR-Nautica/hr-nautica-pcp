@@ -21,6 +21,8 @@ const DB = {
     buchasOps:    'hrn_buchas_ops',
     buchasEntradas:'hrn_buchas_entradas',
     buchasSaidas:  'hrn_buchas_saidas',
+    fundicaoCatalog: 'hrn_fundicao_catalog',
+    coquilhasCatalog: 'hrn_coquilhas_catalog',
   },
 
   // ─── Helpers ────────────────────────────
@@ -394,6 +396,91 @@ const DB = {
     if (duplicate) {
       throw new Error(`O SKU "${data.sku}" já pertence à bucha "${duplicate.descricao}".`);
     }
+  },
+
+  // ═══ CATÁLOGO DE FUNDIÇÃO (COQUILHAS & APLICAÇÕES) ════
+  getFundicaoCatalog() {
+    let list = this._get(this.KEYS.fundicaoCatalog);
+    if (!list || !list.length) {
+      this.ensureFundicaoCatalogAtualizada();
+      list = this._get(this.KEYS.fundicaoCatalog);
+    }
+    return list || [];
+  },
+
+  saveFundicaoCatalog(list) {
+    this._set(this.KEYS.fundicaoCatalog, list);
+  },
+
+  getCoquilhasCatalog() {
+    let list = this._get(this.KEYS.coquilhasCatalog);
+    if (!list || !list.length) {
+      if (typeof window !== 'undefined' && window.WINDOW_COQUILHAS_DEFAULT) {
+        list = window.WINDOW_COQUILHAS_DEFAULT;
+        this.saveCoquilhasCatalog(list);
+      }
+    }
+    return list || [];
+  },
+
+  saveCoquilhasCatalog(list) {
+    this._set(this.KEYS.coquilhasCatalog, list);
+  },
+
+  ensureFundicaoCatalogAtualizada() {
+    const list = this._get(this.KEYS.fundicaoCatalog);
+    const win = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
+    if (!list.length && win.WINDOW_FUNDICAO_CATALOG_DEFAULT) {
+      this.saveFundicaoCatalog(win.WINDOW_FUNDICAO_CATALOG_DEFAULT);
+      if (win.WINDOW_COQUILHAS_DEFAULT) {
+        this.saveCoquilhasCatalog(win.WINDOW_COQUILHAS_DEFAULT);
+      }
+      this.addAtividade('Catálogo de Fundição importado com sucesso da planilha oficial.', 'teal');
+      return true;
+    }
+    return false;
+  },
+
+  addFundicaoCatalogItem(data) {
+    const catalog = this.getFundicaoCatalog();
+    const item = {
+      id: `fnd_${this._id()}`,
+      coquilha: String(data.coquilha || '').trim(),
+      descricao: String(data.descricao || '').trim(),
+      sku: String(data.sku || '').trim().toUpperCase()
+    };
+    catalog.unshift(item);
+    this.saveFundicaoCatalog(catalog);
+    this.addAtividade(`Novo item adicionado ao Catálogo de Fundição: ${item.coquilha} - ${item.sku}`, 'teal');
+    return item;
+  },
+
+  updateFundicaoCatalogItem(id, data) {
+    const catalog = this.getFundicaoCatalog();
+    const idx = catalog.findIndex(c => c.id === id);
+    if (idx === -1) throw new Error('Item do Catálogo de Fundição não encontrado.');
+
+    catalog[idx] = {
+      ...catalog[idx],
+      coquilha: String(data.coquilha || catalog[idx].coquilha).trim(),
+      descricao: String(data.descricao || catalog[idx].descricao).trim(),
+      sku: String(data.sku || catalog[idx].sku).trim().toUpperCase()
+    };
+
+    this.saveFundicaoCatalog(catalog);
+    this.addAtividade(`Item do Catálogo de Fundição atualizado: ${catalog[idx].sku}`, 'blue');
+    return catalog[idx];
+  },
+
+  deleteFundicaoCatalogItem(id) {
+    const catalog = this.getFundicaoCatalog();
+    const item = catalog.find(c => c.id === id);
+    if (!item) return false;
+
+    const filtered = catalog.filter(c => c.id !== id);
+    this.saveFundicaoCatalog(filtered);
+    this.addAtividade(`Item removido do Catálogo de Fundição: ${item.sku}`, 'red');
+    return true;
   },
 
   addBucha(data) {

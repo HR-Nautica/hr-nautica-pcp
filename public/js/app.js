@@ -189,6 +189,9 @@ function navigate(page) {
       break;
     case 'estoque':     renderEstoque();     break;
     case 'fundicao':    renderFundicao();    break;
+    case 'catalogo-fundicao':
+      if (typeof renderCatalogoFundicao === 'function') renderCatalogoFundicao();
+      break;
     case 'manutencao':  renderManutencao();  break;
     case 'fluxo':       renderFluxo();       break;
     case 'expedicao':   renderExpedicao();   break;

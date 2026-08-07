@@ -43,13 +43,19 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Análise de Produção Hélices
       </a>
-      <a href="#" class="nav-item" data-page="fundicao" id="nav-fundicao">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-        Programação de Fundição
-      </a>
       <a href="#" class="nav-item" data-page="fluxo" id="nav-fluxo">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Rastreio OP. Hélices
+      </a>
+
+      <div class="sidebar-title">Hélices Fundidas</div>
+      <a href="#" class="nav-item" data-page="catalogo-fundicao" id="nav-catalogo-fundicao">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Catálogo de Fundição
+      </a>
+      <a href="#" class="nav-item" data-page="fundicao" id="nav-fundicao">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        Programação de Fundição
       </a>
 
       <div class="sidebar-title">Buchas</div>
@@ -894,6 +900,83 @@
               Selecione uma OP na lista ao lado para gerenciar as operações e visualizar os componentes.
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── PAGE: CATÁLOGO DE FUNDIÇÃO (CÓDIGOS BRUTOS E APLICAÇÕES) ──── -->
+    <div class="page hidden" id="page-catalogo-fundicao">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Catálogo de Fundição</h1>
+          <p class="page-subtitle">Mapeamento oficial de Coquilhas / Códigos Brutos para Hélices Finais</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-primary" id="btn-novo-cf" style="font-size:0.95rem; font-weight:600;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            ➕ Novo Item de Fundição
+          </button>
+        </div>
+      </div>
+
+      <!-- KPIs do Catálogo de Fundição -->
+      <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">COQUILHAS / BRUTOS</span>
+            <div class="kpi-icon kpi-icon--purple">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-cf-coquilhas">0 un</div>
+          <div class="kpi-sub">Moldes e coquilhas ativas</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">APLICAÇÕES MAPEADAS</span>
+            <div class="kpi-icon kpi-icon--blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-cf-aplicacoes">0 skus</div>
+          <div class="kpi-sub">Hélices finais vinculadas</div>
+        </div>
+      </div>
+
+      <!-- Tabela do Catálogo de Fundição -->
+      <div class="card catalogo-card" style="margin-top: 1.5rem;">
+        <div class="catalogo-toolbar">
+          <div class="catalogo-search-wrap">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="cf-search" placeholder="Procurar por Coquilha, SKU ou Descrição..." autocomplete="off" />
+          </div>
+          <span class="catalogo-count" id="cf-count">0 itens</span>
+        </div>
+        <div class="catalogo-filters">
+          <label class="catalogo-filter">
+            <span>Coquilha / Código Bruto</span>
+            <select id="cf-filter-coquilha">
+              <option value="">Todas as coquilhas</option>
+            </select>
+          </label>
+          <button type="button" class="btn-secondary catalogo-clear-filters" id="cf-limpar-filtros">Limpar pesquisa</button>
+        </div>
+
+        <div class="table-wrap catalogo-table-wrap">
+          <table class="catalogo-table">
+            <thead>
+              <tr>
+                <th>Coquilha / Cód. Bruto</th>
+                <th>Código (SKU) Hélice</th>
+                <th>Descrição da Aplicação Hélice</th>
+                <th class="catalogo-actions-col">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="cf-grid">
+              <tr><td colspan="4" class="empty-cell">Carregando catálogo de fundição...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -2125,6 +2208,44 @@
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-cancel-venda">Cancelar</button>
         <button class="btn-primary" id="btn-save-venda">Registrar Venda</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Adicionar/Editar Item do Catálogo de Fundição -->
+  <div class="modal-overlay hidden" id="modal-catalogo-fundicao">
+    <div class="modal modal--catalogo" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="modal-cf-title">Novo Item do Catálogo de Fundição</h2>
+          <p class="modal-subtitle">Vincule a Coquilha / Código Bruto à Hélice e SKU correspondente</p>
+        </div>
+        <button class="btn-icon" id="modal-cf-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cf-form-id" />
+        <div class="catalogo-form-section">
+          <h4>Mapeamento de Coquilha e Hélice</h4>
+          <div class="form-row catalogo-form-grid">
+            <div class="form-group">
+              <label class="form-label" for="cf-form-coquilha">Coquilha / Código Bruto *</label>
+              <input type="text" class="form-input" id="cf-form-coquilha" list="cf-coquilhas-list" placeholder="Ex: COQUILHA 02" />
+              <datalist id="cf-coquilhas-list"></datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cf-form-sku">Código (SKU) da Hélice *</label>
+              <input type="text" class="form-input font-mono" id="cf-form-sku" placeholder="Ex: HR HY 012" />
+            </div>
+            <div class="form-group catalogo-span-2">
+              <label class="form-label" for="cf-form-descricao">Descrição da Aplicação da Hélice *</label>
+              <input type="text" class="form-input" id="cf-form-descricao" placeholder="Ex: HÉLICE YAMAHA 15 HP 9 1/4 X 11" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-cancel-cf">Cancelar</button>
+        <button class="btn-primary" id="btn-save-cf">Salvar Item</button>
       </div>
     </div>
   </div>

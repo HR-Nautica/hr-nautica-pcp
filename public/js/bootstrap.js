@@ -3,6 +3,7 @@
 const applicationScripts = [
   "/js/db.js",
   "/js/buchas_data.js",
+  "/js/fundicao_catalog_data.js",
   "/js/tinyApi.js",
   "/js/estoqueArvore.js",
   "/js/producaoComponentes.js",
@@ -10,6 +11,7 @@ const applicationScripts = [
   "/js/analise.js",
   "/js/rastreio-helices.js",
   "/js/estoque-buchas.js",
+  "/js/catalogo-fundicao.js",
   "/js/app.js"
 ];
 
