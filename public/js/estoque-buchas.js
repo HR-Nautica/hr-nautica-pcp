@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════
-   estoque-buchas.js – Módulo de Estoque e Rastreio de Buchas
+   estoque-buchas.js – Módulo Consolidado de Saldos e Entradas de Buchas
    HR Náutica PCP
    ═══════════════════════════════════════════════════════════════ */
 'use strict';
 
 (() => {
   const state = {
-    selectedOpId: null,
+    selectedEntradaId: null,
   };
 
   const byId = id => document.getElementById(id);
@@ -30,218 +30,322 @@
     return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
   }
 
-  function getStageBadge(stageCode) {
-    switch (stageCode) {
-      case 'op01': return '<span class="chip chip--orange">1 - Retrabalho</span>';
-      case 'op02': return '<span class="chip chip--purple">2 - Vulcanização</span>';
-      case 'op03': return '<span class="chip chip--green">3 - Estoque Final</span>';
-      default: return '<span class="chip chip--blue">—</span>';
-    }
-  }
-
-  function renderStageFlow(op) {
-    const stages = [
-      { code: 'op01', label: '1 - Retrabalho' },
-      { code: 'op02', label: '2 - Vulcanização' },
-      { code: 'op03', label: '3 - Estoque Final' }
-    ];
-
-    const currentIdx = stages.findIndex(s => s.code === op.currentStage);
-
-    return `<div class="helice-op-flow" aria-label="Fluxo das três etapas de bucha">
-      ${stages.map((st, idx) => {
-        const isPast = idx < currentIdx;
-        const isCurrent = idx === currentIdx;
-        const cssClass = isPast ? 'is-complete' : isCurrent ? 'is-current' : '';
-        const stData = (op.stages || []).find(s => s.code === st.code);
-        const qty = stData && stData.quantity ? `${formatNum(stData.quantity)} un` : '0 un';
-        return `<span class="helice-op-step ${cssClass}" title="${st.label}: ${qty}">${idx + 1}</span>`;
-      }).join('')}
-    </div>`;
-  }
-
   function renderEstoqueBuchas() {
     if (typeof DB === 'undefined') return;
 
-    const ops = DB.getBuchasOps();
-    const search = String(byId('bucha-op-search')?.value || '').trim().toLowerCase();
-    const filterStage = byId('bucha-op-filter-etapa')?.value || '';
-    const filterStatus = byId('bucha-op-filter-status')?.value || '';
+    const saldos = DB.getBuchasSaldosConsolidados();
+    const entradas = DB.getBuchasEntradas();
+    const saidas = DB.getBuchasSaidas();
 
-    // Filtragem
-    const filtered = ops.filter(op => {
-      const matchSearch = !search || [op.opNumber, op.sku, op.description, op.obs]
+    const search = String(byId('bucha-op-search')?.value || '').trim().toLowerCase();
+    const filterMotor = byId('bucha-filter-motor-saldo')?.value || '';
+
+    // Filtragem dos modelos consolidado
+    const saldosFiltrados = saldos.filter(s => {
+      const matchSearch = !search || [s.sku, s.descricao, s.dimensoes, s.aplicacao]
         .some(v => String(v || '').toLowerCase().includes(search));
-      const matchStage = !filterStage || op.currentStage === filterStage;
-      const matchStatus = !filterStatus || op.status === filterStatus;
-      return matchSearch && matchStage && matchStatus;
+      const matchMotor = !filterMotor || s.aplicacao === filterMotor;
+      return matchSearch && matchMotor;
     });
 
-    // KPIs
-    const emRetrabalho = ops.filter(o => o.status === 'em_producao' && o.currentStage === 'op01')
-      .reduce((sum, o) => sum + (Number(o.quantity) || 0), 0);
-    const emVulcanizacao = ops.filter(o => o.status === 'em_producao' && o.currentStage === 'op02')
-      .reduce((sum, o) => sum + (Number(o.quantity) || 0), 0);
-    const estoqueFinal = ops.filter(o => o.currentStage === 'op03' || o.status === 'finalizada')
-      .reduce((sum, o) => sum + (Number(o.quantity) || 0), 0);
-    const opsAtivas = ops.filter(o => o.status === 'em_producao').length;
-
-    if (byId('kpi-eb-retrabalho')) byId('kpi-eb-retrabalho').textContent = `${formatNum(emRetrabalho)} un`;
-    if (byId('kpi-eb-vulcanizacao')) byId('kpi-eb-vulcanizacao').textContent = `${formatNum(emVulcanizacao)} un`;
-    if (byId('kpi-eb-final')) byId('kpi-eb-final').textContent = `${formatNum(estoqueFinal)} un`;
-    if (byId('kpi-eb-ativas')) byId('kpi-eb-ativas').textContent = formatNum(opsAtivas);
-    if (byId('bucha-op-count')) byId('bucha-op-count').textContent = `${filtered.length} de ${ops.length} OPs`;
-
-    // Render Tabela
-    const tbody = byId('bucha-op-grid');
-    if (!tbody) return;
-
-    if (!filtered.length) {
-      tbody.innerHTML = '<tr><td colspan="10" class="empty-cell">Nenhuma OP de bucha encontrada para os filtros selecionados.</td></tr>';
-      return;
+    // Popula filtro de motores
+    const motorSelect = byId('bucha-filter-motor-saldo');
+    if (motorSelect && !motorSelect.dataset.populated) {
+      const motores = [...new Set(saldos.map(s => s.aplicacao).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      motorSelect.innerHTML = [
+        '<option value="">Todos os motores</option>',
+        ...motores.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`)
+      ].join('');
+      motorSelect.dataset.populated = 'true';
     }
 
-    tbody.innerHTML = filtered.map(op => {
-      const isFinished = op.status === 'finalizada';
-      const isRefugada = op.status === 'refugada';
-      const statusChip = isFinished
-        ? '<span class="chip chip--green">Estoque Final</span>'
-        : isRefugada
-        ? '<span class="chip chip--red">⚠️ Refugada</span>'
-        : '<span class="chip chip--orange">Em produção</span>';
+    // KPIs Globais de Estoque
+    const totRetrabalho = saldos.reduce((sum, s) => sum + s.qtdRetrabalho, 0);
+    const totVulcanizacao = saldos.reduce((sum, s) => sum + s.qtdVulcanizacao, 0);
+    const totAcabada = saldos.reduce((sum, s) => sum + s.qtdAcabada, 0);
+    const totGeral = saldos.reduce((sum, s) => sum + s.saldoTotal, 0);
 
-      return `<tr class="${isFinished ? 'helice-op-row--finished' : isRefugada ? 'helice-op-row--refugada' : ''}">
-        <td><strong class="helice-op-number">${escapeHtml(op.opNumber)}</strong></td>
-        <td><span class="chip chip--blue">${escapeHtml(op.sku)}</span></td>
-        <td><strong>${escapeHtml(op.description)}</strong></td>
-        <td><strong>${formatNum(op.quantity)} un</strong></td>
-        <td><span class="helice-op-priority">${escapeHtml(op.priority || 'Normal')}</span></td>
-        <td>${getStageBadge(op.currentStage)}</td>
-        <td>${renderStageFlow(op)}</td>
-        <td>${formatDate(op.entryDate)}</td>
-        <td>${statusChip}</td>
-        <td>
-          <div style="display:flex;gap:6px;justify-content:center;">
-            <button class="btn-secondary" onclick="window.openMovBuchaOp('${op.id}')" title="Avançar/Mover Etapa">
-              ${isFinished || isRefugada ? 'Ver detalhes' : 'Avançar OP'}
-            </button>
-            <button class="btn-secondary catalogo-icon-action" onclick="window.openHistoricoBuchaOp('${op.id}')" title="Histórico">
-              📜
-            </button>
-            <button class="btn-secondary catalogo-icon-action catalogo-delete-btn" onclick="window.deleteBuchaOpUI('${op.id}')" title="Excluir OP">
-              🗑
-            </button>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
+    if (byId('kpi-eb-retrabalho')) byId('kpi-eb-retrabalho').textContent = `${formatNum(totRetrabalho)} un`;
+    if (byId('kpi-eb-vulcanizacao')) byId('kpi-eb-vulcanizacao').textContent = `${formatNum(totVulcanizacao)} un`;
+    if (byId('kpi-eb-final')) byId('kpi-eb-final').textContent = `${formatNum(totAcabada)} un`;
+    if (byId('kpi-eb-ativas')) byId('kpi-eb-ativas').textContent = `${formatNum(totGeral)} un`;
+    if (byId('bucha-op-count')) byId('bucha-op-count').textContent = `${saldosFiltrados.length} de ${saldos.length} modelos`;
+
+    // 1. Render Tabela Consolidada de Buchas (Mestre)
+    const gridSaldos = byId('bucha-saldo-grid');
+    if (gridSaldos) {
+      if (!saldosFiltrados.length) {
+        gridSaldos.innerHTML = '<tr><td colspan="8" class="empty-cell">Nenhum modelo de bucha encontrado.</td></tr>';
+      } else {
+        gridSaldos.innerHTML = saldosFiltrados.map(s => {
+          const badgeRet = s.qtdRetrabalho > 0 ? `<span class="chip chip--orange"><b>${formatNum(s.qtdRetrabalho)}</b> un</span>` : '<span style="color:var(--text-secondary)">0</span>';
+          const badgeVul = s.qtdVulcanizacao > 0 ? `<span class="chip chip--purple"><b>${formatNum(s.qtdVulcanizacao)}</b> un</span>` : '<span style="color:var(--text-secondary)">0</span>';
+          const badgeAca = s.qtdAcabada > 0 ? `<span class="chip chip--green"><b>${formatNum(s.qtdAcabada)}</b> un</span>` : '<span style="color:var(--text-secondary)">0</span>';
+
+          return `<tr>
+            <td><strong class="helice-op-number">${escapeHtml(s.sku)}</strong></td>
+            <td><strong>${escapeHtml(s.descricao)}</strong></td>
+            <td><span class="chip chip--teal">${escapeHtml(s.aplicacao || 'Geral')}</span></td>
+            <td>${badgeRet}</td>
+            <td>${badgeVul}</td>
+            <td>${badgeAca}</td>
+            <td><strong style="color:var(--accent-teal); font-size:1.05rem;">${formatNum(s.saldoTotal)} un</strong></td>
+            <td>
+              <div style="display:flex; gap:6px; justify-content:center;">
+                <button class="btn-primary" style="padding: 4px 10px; font-size:0.8rem;" onclick="window.openNovaEntradaBucha('${escapeHtml(s.sku)}')" title="Nova Entrada">
+                  📥 Entrada
+                </button>
+                <button class="btn-secondary" style="padding: 4px 10px; font-size:0.8rem; border-color:var(--accent-orange); color:var(--accent-orange);" onclick="window.openSaidaBucha('${escapeHtml(s.sku)}')" title="Dar Baixa no Estoque Final" ${s.qtdAcabada <= 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                  📤 Dar Baixa
+                </button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    // 2. Render Tabela de Lotes e Entradas em Andamento
+    const gridEntradas = byId('bucha-lote-grid');
+    if (gridEntradas) {
+      const emAndamento = entradas.filter(e => e.status === 'Em Andamento' || e.etapaAtual !== 'Estoque Final');
+      if (!emAndamento.length) {
+        gridEntradas.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhum lote em trânsito no momento (todas no Estoque Final).</td></tr>';
+      } else {
+        gridEntradas.innerHTML = emAndamento.map(e => {
+          let btnAcao = '';
+          let etapaBadge = '';
+          if (e.etapaAtual === 'Retrabalho') {
+            etapaBadge = '<span class="chip chip--orange">1 - Retrabalho</span>';
+            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.openTransicaoLoteBucha('${e.id}')">⏩ Enviar p/ Vulcanização</button>`;
+          } else if (e.etapaAtual === 'Vulcanizacao') {
+            etapaBadge = '<span class="chip chip--purple">2 - Vulcanização</span>';
+            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem; background:var(--accent-green);" onclick="window.openTransicaoLoteBucha('${e.id}')">✅ Enviar p/ Estoque Final</button>`;
+          } else {
+            etapaBadge = '<span class="chip chip--green">3 - Estoque Final</span>';
+            btnAcao = '<span class="chip chip--green">Concluído</span>';
+          }
+
+          return `<tr>
+            <td><strong class="helice-op-number">${escapeHtml(e.codigoEntrada)}</strong></td>
+            <td><span class="chip chip--blue">${escapeHtml(e.sku)}</span></td>
+            <td><strong>${escapeHtml(e.descricao)}</strong></td>
+            <td><strong>${formatNum(e.quantidade)} un</strong></td>
+            <td>${etapaBadge}</td>
+            <td><small>${escapeHtml(e.origemObs || '—')}</small></td>
+            <td>
+              <div style="display:flex; gap:6px; justify-content:center;">
+                ${btnAcao}
+                <button class="btn-secondary catalogo-icon-action" onclick="window.openHistoricoLoteBucha('${e.id}')" title="Histórico">📜</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    // 3. Render Histórico Recente de Transações (Entradas & Saídas)
+    const gridHistGlobal = byId('bucha-historico-transacoes-grid');
+    if (gridHistGlobal) {
+      const allEvents = [];
+
+      entradas.forEach(e => {
+        allEvents.push({
+          codigo: e.codigoEntrada,
+          tipo: 'ENTRADA / LOTE',
+          sku: e.sku,
+          quantidade: e.quantidade,
+          detalhe: `Etapa: ${e.etapaAtual} | ${e.origemObs || ''}`,
+          data: e.dataCriacao,
+          badge: '<span class="chip chip--teal">Entrada</span>'
+        });
+      });
+
+      saidas.forEach(s => {
+        allEvents.push({
+          codigo: s.codigoSaida,
+          tipo: 'SAÍDA / BAIXA',
+          sku: s.sku,
+          quantidade: -s.quantidade,
+          detalhe: `Destino: ${s.destinoObs || ''}`,
+          data: s.dataSaida,
+          badge: '<span class="chip chip--red">Saída</span>'
+        });
+      });
+
+      allEvents.sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+
+      if (!allEvents.length) {
+        gridHistGlobal.innerHTML = '<tr><td colspan="6" class="empty-cell">Nenhuma transação registrada.</td></tr>';
+      } else {
+        gridHistGlobal.innerHTML = allEvents.slice(0, 30).map(ev => `
+          <tr>
+            <td><strong class="helice-op-number">${escapeHtml(ev.codigo)}</strong></td>
+            <td>${ev.badge}</td>
+            <td><span class="chip chip--blue">${escapeHtml(ev.sku)}</span></td>
+            <td><strong style="color:${ev.quantidade > 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${ev.quantidade > 0 ? '+' : ''}${formatNum(ev.quantidade)} un</strong></td>
+            <td><small>${escapeHtml(ev.detalhe)}</small></td>
+            <td><small>${escapeHtml(ev.data || '—')}</small></td>
+          </tr>
+        `).join('');
+      }
+    }
   }
 
-  // --- Modal Nova OP de Bucha ---
-  function openNovaBuchaOp() {
+  // --- Modal Nova Entrada de Bucha ---
+  function openNovaEntradaBucha(preselectSku = '') {
     const catalog = DB.getBuchas();
-    const selectSku = byId('bucha-op-sku-select');
+    const selectSku = byId('entrada-bucha-sku');
     if (selectSku) {
       selectSku.innerHTML = [
-        '<option value="">— Selecione uma Bucha do Catálogo —</option>',
+        '<option value="">— Selecione a Bucha do Catálogo —</option>',
         ...catalog.map(b => `<option value="${escapeHtml(b.sku)}">${escapeHtml(b.sku)} - ${escapeHtml(b.descricao)}</option>`)
       ].join('');
+      if (preselectSku) selectSku.value = preselectSku;
     }
-    if (byId('bucha-op-qty')) byId('bucha-op-qty').value = '100';
-    if (byId('bucha-op-priority')) byId('bucha-op-priority').value = 'Normal';
-    if (byId('bucha-op-obs')) byId('bucha-op-obs').value = '';
 
-    byId('modal-nova-op-bucha')?.classList.remove('hidden');
+    if (byId('entrada-bucha-qty')) byId('entrada-bucha-qty').value = '100';
+    if (byId('entrada-bucha-etapa')) byId('entrada-bucha-etapa').value = 'Retrabalho';
+    if (byId('entrada-bucha-obs')) byId('entrada-bucha-obs').value = '';
+
+    byId('modal-nova-entrada-bucha')?.classList.remove('hidden');
   }
 
-  function closeModalNovaBuchaOp() {
-    byId('modal-nova-op-bucha')?.classList.add('hidden');
+  function closeModalNovaEntradaBucha() {
+    byId('modal-nova-entrada-bucha')?.classList.add('hidden');
   }
 
-  function saveNovaBuchaOp() {
-    const sku = byId('bucha-op-sku-select')?.value;
-    const qty = parseInt(byId('bucha-op-qty')?.value, 10);
-    const priority = byId('bucha-op-priority')?.value || 'Normal';
-    const obs = byId('bucha-op-obs')?.value.trim() || '';
+  function saveNovaEntradaBucha() {
+    const sku = byId('entrada-bucha-sku')?.value;
+    const qty = parseInt(byId('entrada-bucha-qty')?.value, 10);
+    const etapaInicial = byId('entrada-bucha-etapa')?.value || 'Retrabalho';
+    const origemObs = byId('entrada-bucha-obs')?.value.trim() || 'Entrada de lote';
 
     if (!sku) {
       if (typeof showToast === 'function') showToast('Selecione uma bucha do catálogo.', 'error');
       return;
     }
     if (!qty || qty <= 0) {
-      if (typeof showToast === 'function') showToast('Informe uma quantidade válida maior que 0.', 'error');
+      if (typeof showToast === 'function') showToast('Informe uma quantidade maior que 0.', 'error');
       return;
     }
 
-    DB.addBuchaOp({ sku, quantity: qty, priority, obs });
-    if (typeof showToast === 'function') showToast('OP de Bucha criada com sucesso!');
-    closeModalNovaBuchaOp();
+    DB.addBuchaEntrada({ sku, quantidade: qty, etapaInicial, origemObs });
+    if (typeof showToast === 'function') showToast(`Entrada registrada com sucesso!`, 'success');
+
+    closeModalNovaEntradaBucha();
     renderEstoqueBuchas();
   }
 
-  // --- Modal Movimentar/Avançar OP de Bucha ---
-  function openMovBuchaOp(id) {
-    const ops = DB.getBuchasOps();
-    const op = ops.find(o => o.id === id);
-    if (!op) return;
+  // --- Modal Transicionar Lote ---
+  function openTransicaoLoteBucha(id) {
+    const entradas = DB.getBuchasEntradas();
+    const entrada = entradas.find(e => e.id === id);
+    if (!entrada) return;
 
-    state.selectedOpId = id;
-    const nextStage = op.currentStage === 'op01' ? 'op02' : 'op03';
-    const stageNames = { op01: 'Retrabalho', op02: 'Vulcanização', op03: 'Estoque Final' };
+    state.selectedEntradaId = id;
+    const proximaEtapa = entrada.etapaAtual === 'Retrabalho' ? 'Vulcanizacao' : 'Estoque Final';
 
-    if (byId('mov-bucha-op-title')) byId('mov-bucha-op-title').textContent = `Mover OP ${op.opNumber} (${op.sku})`;
-    if (byId('mov-bucha-current-stage')) byId('mov-bucha-current-stage').textContent = stageNames[op.currentStage] || op.currentStage;
-    if (byId('mov-bucha-next-stage')) byId('mov-bucha-next-stage').textContent = stageNames[nextStage] || nextStage;
-    if (byId('mov-bucha-total-qty')) byId('mov-bucha-total-qty').textContent = `${formatNum(op.quantity)} un`;
-    if (byId('mov-bucha-qty-move')) byId('mov-bucha-qty-move').value = op.quantity;
-    if (byId('mov-bucha-remaining-action')) byId('mov-bucha-remaining-action').value = 'split';
+    if (byId('trans-bucha-code-title')) byId('trans-bucha-code-title').textContent = `Mover Lote ${entrada.codigoEntrada} (${entrada.sku})`;
+    if (byId('trans-bucha-etapa-atual')) byId('trans-bucha-etapa-atual').textContent = entrada.etapaAtual;
+    if (byId('trans-bucha-proxima-etapa')) byId('trans-bucha-proxima-etapa').textContent = proximaEtapa;
+    if (byId('trans-bucha-total-qty')) byId('trans-bucha-total-qty').textContent = `${formatNum(entrada.quantidade)} un`;
+    if (byId('trans-bucha-qty-move')) byId('trans-bucha-qty-move').value = entrada.quantidade;
 
-    byId('modal-mov-bucha')?.classList.remove('hidden');
+    byId('modal-transicao-bucha')?.classList.remove('hidden');
   }
 
-  function closeModalMovBuchaOp() {
-    byId('modal-mov-bucha')?.classList.add('hidden');
-    state.selectedOpId = null;
+  function closeModalTransicaoLoteBucha() {
+    byId('modal-transicao-bucha')?.classList.add('hidden');
+    state.selectedEntradaId = null;
   }
 
-  function saveMovBuchaOp() {
-    if (!state.selectedOpId) return;
-    const ops = DB.getBuchasOps();
-    const op = ops.find(o => o.id === state.selectedOpId);
-    if (!op) return;
+  function saveTransicaoLoteBucha() {
+    if (!state.selectedEntradaId) return;
+    const entradas = DB.getBuchasEntradas();
+    const entrada = entradas.find(e => e.id === state.selectedEntradaId);
+    if (!entrada) return;
 
-    const qtyMove = parseInt(byId('mov-bucha-qty-move')?.value, 10);
-    const action = byId('mov-bucha-remaining-action')?.value || 'split';
+    const moveQty = parseInt(byId('trans-bucha-qty-move')?.value, 10);
+    const acaoSaldo = byId('trans-bucha-action-restante')?.value || 'manter';
+    const proximaEtapa = entrada.etapaAtual === 'Retrabalho' ? 'Vulcanizacao' : 'Estoque Final';
 
-    if (!qtyMove || qtyMove <= 0 || qtyMove > op.quantity) {
-      if (typeof showToast === 'function') showToast(`Qtd a mover deve ser entre 1 e ${op.quantity}.`, 'error');
+    if (!moveQty || moveQty <= 0 || moveQty > entrada.quantidade) {
+      if (typeof showToast === 'function') showToast(`Quantidade deve estar entre 1 e ${entrada.quantidade}.`, 'error');
       return;
     }
 
-    const nextStage = op.currentStage === 'op01' ? 'op02' : 'op03';
-    DB.advanceBuchaOp(state.selectedOpId, qtyMove, nextStage, action);
+    DB.moverBuchaEntrada(state.selectedEntradaId, moveQty, proximaEtapa, acaoSaldo);
+    if (typeof showToast === 'function') showToast(`Lote ${entrada.codigoEntrada} transicionado para ${proximaEtapa}!`, 'success');
 
-    if (typeof showToast === 'function') showToast(`OP ${op.opNumber} movida com sucesso!`);
-    closeModalMovBuchaOp();
+    closeModalTransicaoLoteBucha();
     renderEstoqueBuchas();
   }
 
-  // --- Modal Histórico da OP de Bucha ---
-  function openHistoricoBuchaOp(id) {
-    const ops = DB.getBuchasOps();
-    const op = ops.find(o => o.id === id);
-    if (!op) return;
+  // --- Modal Dar Baixa / Registrar Saída ---
+  function openSaidaBucha(preselectSku = '') {
+    const saldos = DB.getBuchasSaldosConsolidados().filter(s => s.qtdAcabada > 0);
+    const selectSku = byId('saida-bucha-sku');
+    if (selectSku) {
+      selectSku.innerHTML = [
+        '<option value="">— Selecione uma Bucha com Estoque Final —</option>',
+        ...saldos.map(b => `<option value="${escapeHtml(b.sku)}">${escapeHtml(b.sku)} (Disponível: ${formatNum(b.qtdAcabada)} un) - ${escapeHtml(b.descricao)}</option>`)
+      ].join('');
+      if (preselectSku) selectSku.value = preselectSku;
+    }
 
-    if (byId('hist-bucha-op-title')) byId('hist-bucha-op-title').textContent = `Histórico da ${op.opNumber} (${op.sku})`;
+    if (byId('saida-bucha-qty')) byId('saida-bucha-qty').value = '10';
+    if (byId('saida-bucha-obs')) byId('saida-bucha-obs').value = '';
+
+    byId('modal-saida-bucha')?.classList.remove('hidden');
+  }
+
+  function closeModalSaidaBucha() {
+    byId('modal-saida-bucha')?.classList.add('hidden');
+  }
+
+  function saveSaidaBucha() {
+    const sku = byId('saida-bucha-sku')?.value;
+    const qty = parseInt(byId('saida-bucha-qty')?.value, 10);
+    const destinoObs = byId('saida-bucha-obs')?.value.trim() || 'Baixa de estoque';
+
+    if (!sku) {
+      if (typeof showToast === 'function') showToast('Selecione uma bucha disponível.', 'error');
+      return;
+    }
+    if (!qty || qty <= 0) {
+      if (typeof showToast === 'function') showToast('Informe uma quantidade válida.', 'error');
+      return;
+    }
+
+    try {
+      DB.addBuchaSaida({ sku, quantidade: qty, destinoObs });
+      if (typeof showToast === 'function') showToast('Saída registrada e saldo abatido com sucesso!');
+    } catch (e) {
+      if (typeof showToast === 'function') showToast(e.message || 'Erro ao registrar saída.', 'error');
+      return;
+    }
+
+    closeModalSaidaBucha();
+    renderEstoqueBuchas();
+  }
+
+  // --- Modal Histórico do Lote ---
+  function openHistoricoLoteBucha(id) {
+    const entradas = DB.getBuchasEntradas();
+    const entrada = entradas.find(e => e.id === id);
+    if (!entrada) return;
+
+    if (byId('hist-bucha-op-title')) byId('hist-bucha-op-title').textContent = `Histórico ${entrada.codigoEntrada} (${entrada.sku})`;
     const list = byId('hist-bucha-op-list');
     if (list) {
-      list.innerHTML = (op.history || []).map(h => `
-        <div style="padding: 10px; border-left: 3px solid var(--accent-primary); background: var(--bg-tertiary); margin-bottom: 8px; border-radius: 4px;">
+      list.innerHTML = (entrada.historico || []).map(h => `
+        <div style="padding: 10px; border-left: 3px solid var(--accent-teal); background: var(--bg-tertiary); margin-bottom: 8px; border-radius: 4px;">
           <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-secondary);">
-            <span>⏱ ${escapeHtml(h.date)}</span>
-            <span>👤 ${escapeHtml(h.user || 'Operador')}</span>
+            <span>⏱ ${escapeHtml(h.data)}</span>
+            <span>👤 ${escapeHtml(h.usuario || 'Operador')}</span>
           </div>
-          <div style="font-weight:600; margin-top:4px;">${escapeHtml(h.stage || '')}: ${escapeHtml(h.action || '')}</div>
+          <div style="font-weight:600; margin-top:4px;">${escapeHtml(h.acao || '')}</div>
         </div>
       `).join('') || '<div class="empty-cell">Nenhum histórico gravado.</div>';
     }
@@ -249,50 +353,34 @@
     byId('modal-hist-bucha')?.classList.remove('hidden');
   }
 
-  function closeModalHistoricoBuchaOp() {
-    byId('modal-hist-bucha')?.classList.add('hidden');
-  }
-
-  function deleteBuchaOpUI(id) {
-    const ops = DB.getBuchasOps();
-    const op = ops.find(o => o.id === id);
-    if (!op) return;
-
-    if (!confirm(`Deseja realmente cancelar/excluir a OP de Bucha ${op.opNumber}?`)) return;
-
-    DB.deleteBuchaOp(id);
-    if (typeof showToast === 'function') showToast('OP de Bucha removida.', 'error');
-    renderEstoqueBuchas();
-  }
-
-  // Exposição de API global
+  // Exposição global
   window.renderEstoqueBuchas = renderEstoqueBuchas;
-  window.openNovaBuchaOp = openNovaBuchaOp;
-  window.openMovBuchaOp = openMovBuchaOp;
-  window.openHistoricoBuchaOp = openHistoricoBuchaOp;
-  window.deleteBuchaOpUI = deleteBuchaOpUI;
+  window.openNovaEntradaBucha = openNovaEntradaBucha;
+  window.openTransicaoLoteBucha = openTransicaoLoteBucha;
+  window.openSaidaBucha = openSaidaBucha;
+  window.openHistoricoLoteBucha = openHistoricoLoteBucha;
 
-  // Listeners DOM
+  // Event Listeners DOM
   document.addEventListener('DOMContentLoaded', () => {
-    byId('btn-nova-op-bucha')?.addEventListener('click', openNovaBuchaOp);
-    byId('modal-nova-bucha-op-close')?.addEventListener('click', closeModalNovaBuchaOp);
-    byId('btn-cancel-nova-bucha-op')?.addEventListener('click', closeModalNovaBuchaOp);
-    byId('btn-save-nova-bucha-op')?.addEventListener('click', saveNovaBuchaOp);
+    byId('btn-nova-entrada-bucha')?.addEventListener('click', () => openNovaEntradaBucha());
+    byId('modal-nova-entrada-bucha-close')?.addEventListener('click', closeModalNovaEntradaBucha);
+    byId('btn-cancel-nova-entrada-bucha')?.addEventListener('click', closeModalNovaEntradaBucha);
+    byId('btn-save-nova-entrada-bucha')?.addEventListener('click', saveNovaEntradaBucha);
 
-    byId('modal-mov-bucha-close')?.addEventListener('click', closeModalMovBuchaOp);
-    byId('btn-cancel-mov-bucha')?.addEventListener('click', closeModalMovBuchaOp);
-    byId('btn-save-mov-bucha')?.addEventListener('click', saveMovBuchaOp);
+    byId('btn-saida-bucha')?.addEventListener('click', () => openSaidaBucha());
+    byId('modal-saida-bucha-close')?.addEventListener('click', closeModalSaidaBucha);
+    byId('btn-cancel-saida-bucha')?.addEventListener('click', closeModalSaidaBucha);
+    byId('btn-save-saida-bucha')?.addEventListener('click', saveSaidaBucha);
 
-    byId('modal-hist-bucha-close')?.addEventListener('click', closeModalHistoricoBuchaOp);
-    byId('btn-close-hist-bucha')?.addEventListener('click', closeModalHistoricoBuchaOp);
+    byId('modal-transicao-bucha-close')?.addEventListener('click', closeModalTransicaoLoteBucha);
+    byId('btn-cancel-transicao-bucha')?.addEventListener('click', closeModalTransicaoLoteBucha);
+    byId('btn-save-transicao-bucha')?.addEventListener('click', saveTransicaoLoteBucha);
 
     byId('bucha-op-search')?.addEventListener('input', renderEstoqueBuchas);
-    byId('bucha-op-filter-etapa')?.addEventListener('change', renderEstoqueBuchas);
-    byId('bucha-op-filter-status')?.addEventListener('change', renderEstoqueBuchas);
+    byId('bucha-filter-motor-saldo')?.addEventListener('change', renderEstoqueBuchas);
     byId('bucha-op-limpar-filtros')?.addEventListener('click', () => {
       if (byId('bucha-op-search')) byId('bucha-op-search').value = '';
-      if (byId('bucha-op-filter-etapa')) byId('bucha-op-filter-etapa').value = '';
-      if (byId('bucha-op-filter-status')) byId('bucha-op-filter-status').value = '';
+      if (byId('bucha-filter-motor-saldo')) byId('bucha-filter-motor-saldo').value = '';
       renderEstoqueBuchas();
     });
   });

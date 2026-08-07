@@ -19,6 +19,8 @@ const DB = {
     manutencoes:  'hrn_manutencoes',
     buchas:       'hrn_buchas',
     buchasOps:    'hrn_buchas_ops',
+    buchasEntradas:'hrn_buchas_entradas',
+    buchasSaidas:  'hrn_buchas_saidas',
   },
 
   // ─── Helpers ────────────────────────────
@@ -615,6 +617,232 @@ const DB = {
 
     this.saveBuchasOps(seedOps);
     this.addAtividade('Demonstração de OPs de Bucha carregada com sucesso.', 'teal');
+    return true;
+  },
+
+  // ═══ ENTRADAS E SAÍDAS DE BUCHAS ════════
+  getBuchasEntradas()      { return this._get(this.KEYS.buchasEntradas); },
+  saveBuchasEntradas(list) { this._set(this.KEYS.buchasEntradas, list); },
+  getBuchasSaidas()        { return this._get(this.KEYS.buchasSaidas); },
+  saveBuchasSaidas(list)   { this._set(this.KEYS.buchasSaidas, list); },
+
+  generateBuchaEntradaCodigo() {
+    const list = this.getBuchasEntradas();
+    const numbers = list
+      .map(e => parseInt(String(e.codigoEntrada || '').replace(/\D/g, ''), 10))
+      .filter(n => !isNaN(n));
+    const max = numbers.length ? Math.max(...numbers) : 0;
+    return `ENT-BCH-${String(max + 1).padStart(6, '0')}`;
+  },
+
+  generateBuchaSaidaCodigo() {
+    const list = this.getBuchasSaidas();
+    const numbers = list
+      .map(s => parseInt(String(s.codigoSaida || '').replace(/\D/g, ''), 10))
+      .filter(n => !isNaN(n));
+    const max = numbers.length ? Math.max(...numbers) : 0;
+    return `SAI-BCH-${String(max + 1).padStart(6, '0')}`;
+  },
+
+  addBuchaEntrada(data) {
+    const buchas = this.getBuchas();
+    const bucha = buchas.find(b => b.sku === data.sku) || {};
+    const codigoEntrada = data.codigoEntrada || this.generateBuchaEntradaCodigo();
+    const qty = parseInt(data.quantidade, 10) || 1;
+    const etapaInicial = data.etapaInicial || 'Retrabalho'; // 'Retrabalho' | 'Vulcanizacao' | 'Estoque Final'
+    const now = this._now();
+
+    const entrada = {
+      id: `ent_${this._id()}`,
+      codigoEntrada,
+      sku: data.sku || 'DESCONHECIDO',
+      descricao: bucha.descricao || data.descricao || 'Bucha sem descrição',
+      quantidade: qty,
+      etapaAtual: etapaInicial,
+      status: etapaInicial === 'Estoque Final' ? 'Concluido' : 'Em Andamento',
+      dataCriacao: now,
+      origemObs: data.origemObs || 'Entrada manual de lote',
+      historico: [
+        { data: now, acao: `Entrada registrada em ${etapaInicial} com ${qty} un`, usuario: 'Operador' }
+      ]
+    };
+
+    const list = [entrada, ...this.getBuchasEntradas()];
+    this.saveBuchasEntradas(list);
+    this.addAtividade(`Nova Entrada de Bucha registrada: ${entrada.codigoEntrada} (${entrada.sku} - ${qty} un em ${etapaInicial})`, 'teal');
+    return entrada;
+  },
+
+  moverBuchaEntrada(id, qtyMover, proximaEtapa, acaoSaldoRestante = 'manter') {
+    const entradas = this.getBuchasEntradas();
+    const idx = entradas.findIndex(e => e.id === id);
+    if (idx === -1) throw new Error('Entrada de bucha não encontrada.');
+
+    const entrada = entradas[idx];
+    const moveQty = Math.min(entrada.quantidade, parseInt(qtyMover, 10) || entrada.quantidade);
+    const remainingQty = entrada.quantidade - moveQty;
+    const now = this._now();
+
+    if (remainingQty > 0) {
+      if (acaoSaldoRestante === 'manter' || acaoSaldoRestante === 'split') {
+        const subCodigo = `${entrada.codigoEntrada}.1`;
+        const subEntrada = {
+          ...JSON.parse(JSON.stringify(entrada)),
+          id: `ent_${this._id()}`,
+          codigoEntrada: subCodigo,
+          quantidade: remainingQty,
+          historico: [
+            ...entrada.historico,
+            { data: now, acao: `Desmembrado de ${entrada.codigoEntrada} mantendo ${remainingQty} un em ${entrada.etapaAtual}`, usuario: 'Operador' }
+          ]
+        };
+        entradas.splice(idx + 1, 0, subEntrada);
+      }
+    }
+
+    entrada.quantidade = moveQty;
+    entrada.etapaAtual = proximaEtapa;
+    if (proximaEtapa === 'Estoque Final') {
+      entrada.status = 'Concluido';
+    }
+
+    entrada.historico.push({
+      data: now,
+      acao: `Avançou ${moveQty} un para ${proximaEtapa}`,
+      usuario: 'Operador'
+    });
+
+    this.saveBuchasEntradas(entradas);
+    this.addAtividade(`Lote de Bucha ${entrada.codigoEntrada} avançou para ${proximaEtapa} (${moveQty} un)`, 'green');
+    return entrada;
+  },
+
+  addBuchaSaida(data) {
+    const buchas = this.getBuchas();
+    const bucha = buchas.find(b => b.sku === data.sku) || {};
+    const codigoSaida = data.codigoSaida || this.generateBuchaSaidaCodigo();
+    const qty = parseInt(data.quantidade, 10) || 1;
+    const now = this._now();
+
+    const saldos = this.getBuchasSaldosConsolidados();
+    const saldoObj = saldos.find(s => s.sku === data.sku);
+    const disponivel = saldoObj ? saldoObj.qtdAcabada : 0;
+
+    if (qty > disponivel) {
+      throw new Error(`Saldo insuficiente no Estoque Final para ${data.sku}. Disponível: ${disponivel} un, Solicitado: ${qty} un.`);
+    }
+
+    const saida = {
+      id: `sai_${this._id()}`,
+      codigoSaida,
+      sku: data.sku,
+      descricao: bucha.descricao || 'Bucha sem descrição',
+      quantidade: qty,
+      destinoObs: data.destinoObs || 'Baixa de estoque',
+      dataSaida: now,
+      usuario: 'Operador'
+    };
+
+    const list = [saida, ...this.getBuchasSaidas()];
+    this.saveBuchasSaidas(list);
+    this.addAtividade(`Saída de Bucha registrada: ${saida.codigoSaida} (${saida.sku} - ${qty} un)`, 'orange');
+    return saida;
+  },
+
+  getBuchasSaldosConsolidados() {
+    const catalog = this.getBuchas();
+    const entradas = this.getBuchasEntradas();
+    const saidas = this.getBuchasSaidas();
+
+    return catalog.map(bucha => {
+      const skuUpper = String(bucha.sku || '').trim().toUpperCase();
+
+      const qtdRetrabalho = entradas
+        .filter(e => String(e.sku || '').trim().toUpperCase() === skuUpper && e.status === 'Em Andamento' && e.etapaAtual === 'Retrabalho')
+        .reduce((sum, e) => sum + (Number(e.quantidade) || 0), 0);
+
+      const qtdVulcanizacao = entradas
+        .filter(e => String(e.sku || '').trim().toUpperCase() === skuUpper && e.status === 'Em Andamento' && e.etapaAtual === 'Vulcanizacao')
+        .reduce((sum, e) => sum + (Number(e.quantidade) || 0), 0);
+
+      const qtdEstoqueEntradas = entradas
+        .filter(e => String(e.sku || '').trim().toUpperCase() === skuUpper && (e.etapaAtual === 'Estoque Final' || e.status === 'Concluido'))
+        .reduce((sum, e) => sum + (Number(e.quantidade) || 0), 0);
+
+      const qtdSaidas = saidas
+        .filter(s => String(s.sku || '').trim().toUpperCase() === skuUpper)
+        .reduce((sum, s) => sum + (Number(s.quantidade) || 0), 0);
+
+      const qtdAcabada = Math.max(0, qtdEstoqueEntradas - qtdSaidas);
+      const saldoTotal = qtdRetrabalho + qtdVulcanizacao + qtdAcabada;
+
+      return {
+        ...bucha,
+        qtdRetrabalho,
+        qtdVulcanizacao,
+        qtdAcabada,
+        qtdSaidas,
+        saldoTotal
+      };
+    });
+  },
+
+  ensureBuchasEntradasSeed() {
+    const existingEntradas = this.getBuchasEntradas();
+    if (existingEntradas && existingEntradas.length > 0) return false;
+
+    const catalog = this.getBuchas();
+    if (!catalog.length) return false;
+
+    const seedEntradasData = [
+      { sku: 'HR BH 001', qty: 120, etapa: 'Retrabalho', obs: 'Ajuste de dimensão interna' },
+      { sku: 'HR BH 001', qty: 80,  etapa: 'Vulcanizacao', obs: 'Prensa de borracha lote 1' },
+      { sku: 'HR BH 001', qty: 250, etapa: 'Estoque Final', obs: 'Lote finalizado pronta entrega' },
+
+      { sku: 'HR BH 002', qty: 150, etapa: 'Retrabalho', obs: 'Retrabalho torneamento' },
+      { sku: 'HR BH 002', qty: 200, etapa: 'Estoque Final', obs: 'Estoque aprovado' },
+
+      { sku: 'HR BH 003', qty: 90,  etapa: 'Vulcanizacao', obs: 'Processo vulcanização borracharia' },
+      { sku: 'HR BH 003', qty: 180, etapa: 'Estoque Final', obs: 'Lote liberado' },
+
+      { sku: 'HR BH 004', qty: 100, etapa: 'Retrabalho', obs: 'Usinagem inicial' },
+      { sku: 'HR BH 005', qty: 300, etapa: 'Estoque Final', obs: 'Lote prontas' }
+    ];
+
+    const seedEntradas = seedEntradasData.map((s, i) => {
+      const bucha = catalog.find(b => b.sku === s.sku) || catalog[i % catalog.length];
+      const cod = `ENT-BCH-${String(i + 1).padStart(6, '0')}`;
+      return {
+        id: `ent_seed_${i + 1}`,
+        codigoEntrada: cod,
+        sku: bucha.sku,
+        descricao: bucha.descricao,
+        quantidade: s.qty,
+        etapaAtual: s.etapa,
+        status: s.etapa === 'Estoque Final' ? 'Concluido' : 'Em Andamento',
+        dataCriacao: '2026-08-07 09:00:00',
+        origemObs: s.obs,
+        historico: [
+          { data: '2026-08-07 09:00:00', acao: `Entrada inicial em ${s.etapa}`, usuario: 'Sistema' }
+        ]
+      };
+    });
+
+    this.saveBuchasEntradas(seedEntradas);
+
+    const seedSaida = {
+      id: 'sai_seed_1',
+      codigoSaida: 'SAI-BCH-000001',
+      sku: 'HR BH 001',
+      descricao: catalog[0]?.descricao || 'BUCHA YAMAHA 15 HP',
+      quantidade: 30,
+      destinoObs: 'Baixa para montagem na Hélice OPH-000001',
+      dataSaida: '2026-08-07 10:30:00',
+      usuario: 'Sistema'
+    };
+    this.saveBuchasSaidas([seedSaida]);
+
+    this.addAtividade('Saldos iniciais de Retrabalho, Vulcanização e Estoque Final carregados com sucesso.', 'teal');
     return true;
   },
 

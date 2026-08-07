@@ -110,6 +110,7 @@ async function bootstrap() {
       DB.ensureCatalogoAtualizado();
       DB.ensureBuchasAtualizadas();
       DB.ensureBuchasOpsSeed();
+      DB.ensureBuchasEntradasSeed();
     }
 
     // 4. Exige o login do usuário
