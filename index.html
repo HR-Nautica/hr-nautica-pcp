@@ -970,11 +970,12 @@
                 <th>Coquilha / Cód. Bruto</th>
                 <th>Código (SKU) Hélice</th>
                 <th>Descrição da Aplicação Hélice</th>
-                <th class="catalogo-actions-col">Ações</th>
+                <th>Peso Est. (kg)</th>
+                <th class="catalogo-actions-col" style="text-align: right;">Ações</th>
               </tr>
             </thead>
             <tbody id="cf-grid">
-              <tr><td colspan="4" class="empty-cell">Carregando catálogo de fundição...</td></tr>
+              <tr><td colspan="5" class="empty-cell">Carregando catálogo de fundição...</td></tr>
             </tbody>
           </table>
         </div>
@@ -2236,9 +2237,13 @@
               <label class="form-label" for="cf-form-sku">Código (SKU) da Hélice *</label>
               <input type="text" class="form-input font-mono" id="cf-form-sku" placeholder="Ex: HR HY 012" />
             </div>
-            <div class="form-group catalogo-span-2">
+            <div class="form-group span-2">
               <label class="form-label" for="cf-form-descricao">Descrição da Aplicação da Hélice *</label>
               <input type="text" class="form-input" id="cf-form-descricao" placeholder="Ex: HÉLICE YAMAHA 15 HP 9 1/4 X 11" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cf-form-peso">Peso Est. (kg)</label>
+              <input type="number" step="0.001" min="0" class="form-input font-mono" id="cf-form-peso" placeholder="0.000 (zerado)" value="0" />
             </div>
           </div>
         </div>

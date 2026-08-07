@@ -61,21 +61,25 @@
     const tbody = byId('cf-grid');
     if (tbody) {
       if (!filtrados.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">Nenhum item de fundição encontrado com os filtros aplicados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Nenhum item de fundição encontrado com os filtros aplicados.</td></tr>';
       } else {
-        tbody.innerHTML = filtrados.map(item => `
+        tbody.innerHTML = filtrados.map(item => {
+          const pesoFormatted = (parseFloat(item.peso) || 0).toFixed(3).replace('.', ',');
+          return `
           <tr>
             <td><span class="chip chip--purple font-mono" style="font-weight:700;">${escapeHtml(item.coquilha)}</span></td>
             <td><strong class="helice-op-number">${escapeHtml(item.sku)}</strong></td>
             <td><strong>${escapeHtml(item.descricao)}</strong></td>
-            <td>
-              <div class="bucha-actions-wrap">
+            <td><span class="font-mono text-muted" style="font-weight:600;">${pesoFormatted} kg</span></td>
+            <td class="catalogo-actions-col" style="text-align: right;">
+              <div class="catalogo-table-actions" style="justify-content: flex-end; gap: 0.4rem;">
                 <button class="btn-secondary catalogo-icon-action" onclick="window.openEditCatalogoFundicao('${item.id}')" title="Editar Item">✏️</button>
                 <button class="btn-secondary catalogo-icon-action" onclick="window.deleteCatalogoFundicao('${item.id}')" title="Excluir Item" style="color:var(--accent-red); border-color:var(--accent-red);">🗑️</button>
               </div>
             </td>
           </tr>
-        `).join('');
+        `;
+        }).join('');
       }
     }
   }
@@ -87,6 +91,7 @@
     if (byId('cf-form-sku')) byId('cf-form-sku').value = '';
     if (byId('cf-form-coquilha')) byId('cf-form-coquilha').value = '';
     if (byId('cf-form-descricao')) byId('cf-form-descricao').value = '';
+    if (byId('cf-form-peso')) byId('cf-form-peso').value = '0';
 
     // Popula sugestão de coquilhas no modal
     const datalist = byId('cf-coquilhas-list');
@@ -110,6 +115,7 @@
     if (byId('cf-form-sku')) byId('cf-form-sku').value = item.sku;
     if (byId('cf-form-coquilha')) byId('cf-form-coquilha').value = item.coquilha;
     if (byId('cf-form-descricao')) byId('cf-form-descricao').value = item.descricao;
+    if (byId('cf-form-peso')) byId('cf-form-peso').value = item.peso !== undefined ? item.peso : 0;
 
     byId('modal-catalogo-fundicao')?.classList.remove('hidden');
   }
@@ -123,6 +129,7 @@
     const coquilha = byId('cf-form-coquilha')?.value.trim();
     const sku = byId('cf-form-sku')?.value.trim().toUpperCase();
     const descricao = byId('cf-form-descricao')?.value.trim();
+    const peso = parseFloat(byId('cf-form-peso')?.value) || 0;
 
     if (!coquilha) {
       if (typeof showToast === 'function') showToast('Informe a Coquilha / Código Bruto.', 'error');
@@ -138,10 +145,10 @@
     }
 
     if (state.editingId) {
-      DB.updateFundicaoCatalogItem(state.editingId, { coquilha, sku, descricao });
+      DB.updateFundicaoCatalogItem(state.editingId, { coquilha, sku, descricao, peso });
       if (typeof showToast === 'function') showToast('Item do Catálogo de Fundição atualizado!', 'success');
     } else {
-      DB.addFundicaoCatalogItem({ coquilha, sku, descricao });
+      DB.addFundicaoCatalogItem({ coquilha, sku, descricao, peso });
       if (typeof showToast === 'function') showToast('Item adicionado ao Catálogo de Fundição com sucesso!', 'success');
     }
 

@@ -447,7 +447,8 @@ const DB = {
       id: `fnd_${this._id()}`,
       coquilha: String(data.coquilha || '').trim(),
       descricao: String(data.descricao || '').trim(),
-      sku: String(data.sku || '').trim().toUpperCase()
+      sku: String(data.sku || '').trim().toUpperCase(),
+      peso: parseFloat(data.peso) || 0
     };
     catalog.unshift(item);
     this.saveFundicaoCatalog(catalog);
@@ -464,7 +465,8 @@ const DB = {
       ...catalog[idx],
       coquilha: String(data.coquilha || catalog[idx].coquilha).trim(),
       descricao: String(data.descricao || catalog[idx].descricao).trim(),
-      sku: String(data.sku || catalog[idx].sku).trim().toUpperCase()
+      sku: String(data.sku || catalog[idx].sku).trim().toUpperCase(),
+      peso: data.peso !== undefined ? (parseFloat(data.peso) || 0) : (catalog[idx].peso || 0)
     };
 
     this.saveFundicaoCatalog(catalog);

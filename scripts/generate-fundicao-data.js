@@ -13,7 +13,8 @@ const aplicacoes = sheet2.map((r, i) => ({
   id: 'fnd_' + String(i + 1).padStart(4, '0'),
   coquilha: String(r['Coluna1'] || '').trim(),
   descricao: String(r['Descrição'] || '').trim(),
-  sku: String(r['Código (SKU)'] || '').trim()
+  sku: String(r['Código (SKU)'] || '').trim(),
+  peso: 0
 })).filter(a => a.coquilha && a.sku);
 
 console.log('Coquilhas count:', coquilhasBrutas.length);

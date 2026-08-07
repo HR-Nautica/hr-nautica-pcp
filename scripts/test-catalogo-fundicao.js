@@ -60,18 +60,22 @@ assert.equal(itemHy012.descricao, 'HÉLICE YAMAHA 15 HP 9 1/4 X 11');
 const novoItem = DB.addFundicaoCatalogItem({
   coquilha: 'COQUILHA 99',
   sku: 'HR TESTE 001',
-  descricao: 'HÉLICE TESTE FUNDIÇÃO 15 HP'
+  descricao: 'HÉLICE TESTE FUNDIÇÃO 15 HP',
+  peso: 0
 });
 assert.ok(novoItem.id.startsWith('fnd_'), 'ID do novo item deve iniciar com fnd_');
+assert.equal(novoItem.peso, 0, 'Peso padrão deve ser 0');
 
 const catalogPosAdd = DB.getFundicaoCatalog();
 assert.equal(catalogPosAdd.length, 75, 'Catálogo deve ter 75 itens após adição');
 
 // 4. Editar o item
 const itemEditado = DB.updateFundicaoCatalogItem(novoItem.id, {
-  descricao: 'HÉLICE TESTE EDITADA'
+  descricao: 'HÉLICE TESTE EDITADA',
+  peso: 1.250
 });
 assert.equal(itemEditado.descricao, 'HÉLICE TESTE EDITADA', 'Descrição deve ter sido alterada');
+assert.equal(itemEditado.peso, 1.250, 'Peso deve ter sido atualizado para 1.25');
 
 // 5. Excluir o item
 const excluiu = DB.deleteFundicaoCatalogItem(novoItem.id);
