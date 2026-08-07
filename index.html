@@ -541,17 +541,17 @@
     <div class="page hidden" id="page-estoque-buchas">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Estoque & Movimentação de Buchas</h1>
-          <p class="page-subtitle">Acompanhamento consolidado por modelo, controle de lotes em trânsito e registro de saídas</p>
+          <h1 class="page-title">Estoque de Buchas</h1>
+          <p class="page-subtitle">Veja a quantidade de cada bucha e acompanhe peças em Retrabalho, Vulcanização e Prontas</p>
         </div>
         <div class="header-actions">
-          <button class="btn-primary" id="btn-nova-entrada-bucha">
+          <button class="btn-primary" id="btn-nova-entrada-bucha" style="font-size:0.95rem; font-weight:600;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            📥 Nova Entrada de Lote
+            ➕ Dar Entrada de Peças
           </button>
-          <button class="btn-secondary" id="btn-saida-bucha" style="border-color:var(--accent-orange); color:var(--accent-orange);">
+          <button class="btn-secondary" id="btn-saida-bucha" style="border-color:var(--accent-orange); color:var(--accent-orange); font-size:0.95rem; font-weight:600;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            📤 Registrar Saída (Dar Baixa)
+            ➖ Dar Baixa (Registrar Saída)
           </button>
         </div>
       </div>
@@ -566,7 +566,7 @@
             </div>
           </div>
           <div class="kpi-value" id="kpi-eb-retrabalho">0 un</div>
-          <div class="kpi-sub">Peças em usinagem / ajuste</div>
+          <div class="kpi-sub">Peças aguardando ajuste</div>
         </div>
 
         <div class="kpi-card">
@@ -577,29 +577,29 @@
             </div>
           </div>
           <div class="kpi-value" id="kpi-eb-vulcanizacao">0 un</div>
-          <div class="kpi-sub">Peças na prensa / borracha</div>
+          <div class="kpi-sub">Peças na borracharia / prensa</div>
         </div>
 
         <div class="kpi-card">
           <div class="kpi-header">
-            <span class="kpi-label">ESTOQUE FINAL (PRONTAS)</span>
+            <span class="kpi-label">ESTOQUE PRONTO (FINAL)</span>
             <div class="kpi-icon kpi-icon--green">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
           </div>
           <div class="kpi-value" id="kpi-eb-final">0 un</div>
-          <div class="kpi-sub">Buchas acabadas prontas</div>
+          <div class="kpi-sub">Buchas acabadas para uso</div>
         </div>
 
         <div class="kpi-card">
           <div class="kpi-header">
-            <span class="kpi-label">TOTAL GERAL DE PEÇAS</span>
+            <span class="kpi-label">TOTAL GERAL EM ESTOQUE</span>
             <div class="kpi-icon kpi-icon--teal">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
             </div>
           </div>
           <div class="kpi-value" id="kpi-eb-ativas">0 un</div>
-          <div class="kpi-sub">Soma geral de saldo no PCP</div>
+          <div class="kpi-sub">Soma de todas as peças</div>
         </div>
       </div>
 
@@ -608,36 +608,36 @@
         <div class="catalogo-toolbar">
           <div class="catalogo-search-wrap">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="search" id="bucha-op-search" placeholder="Buscar por SKU, descrição da bucha ou motor..." autocomplete="off" />
+            <input type="search" id="bucha-op-search" placeholder="Procurar bucha por SKU, nome ou motor..." autocomplete="off" />
           </div>
           <span class="catalogo-count" id="bucha-op-count">0 modelos</span>
         </div>
         <div class="catalogo-filters">
           <label class="catalogo-filter">
-            <span>Aplicação / Motor</span>
+            <span>Filtrar por Motor</span>
             <select id="bucha-filter-motor-saldo">
               <option value="">Todos os motores</option>
             </select>
           </label>
-          <button type="button" class="btn-secondary catalogo-clear-filters" id="bucha-op-limpar-filtros">Limpar filtros</button>
+          <button type="button" class="btn-secondary catalogo-clear-filters" id="bucha-op-limpar-filtros">Limpar pesquisa</button>
         </div>
 
-        <div style="padding:0.75rem 1.25rem 0.25rem 1.25rem; font-weight:700; font-size:1.05rem; color:var(--text-primary);">
-          1. Quadro Geral de Saldos por Modelo de Bucha
+        <div style="padding:0.75rem 1.25rem 0.25rem 1.25rem; font-weight:700; font-size:1.1rem; color:var(--text-primary);">
+          📊 Quantidade de Buchas por Modelo
         </div>
 
         <div class="table-wrap catalogo-table-wrap">
           <table class="catalogo-table">
             <thead>
               <tr>
-                <th>SKU Bucha</th>
+                <th>Código (SKU)</th>
                 <th>Descrição da Bucha</th>
-                <th>Aplicação / Motor</th>
-                <th>🟠 Em Retrabalho</th>
-                <th>🟣 Em Vulcanização</th>
-                <th>🟢 Estoque Final (Prontas)</th>
-                <th>🔵 Saldo Total</th>
-                <th class="catalogo-actions-col">Ações Rápidas</th>
+                <th>Motor / Aplicação</th>
+                <th>🟠 Retrabalho</th>
+                <th>🟣 Vulcanização</th>
+                <th>🟢 Estoque Pronto</th>
+                <th>🔵 Total</th>
+                <th class="catalogo-actions-col">Ações</th>
               </tr>
             </thead>
             <tbody id="bucha-saldo-grid">
@@ -649,25 +649,25 @@
 
       <!-- SEÇÃO 2: Lotes em Trânsito -->
       <div class="card catalogo-card" style="margin-top: 1.5rem;">
-        <div style="padding:1rem 1.25rem 0.5rem 1.25rem; font-weight:700; font-size:1.05rem; color:var(--text-primary);">
-          2. Lotes e Entradas em Trânsito (Retrabalho / Vulcanização)
+        <div style="padding:1rem 1.25rem 0.5rem 1.25rem; font-weight:700; font-size:1.1rem; color:var(--text-primary);">
+          🔄 Lotes de Buchas em Produção (Em Andamento)
         </div>
 
         <div class="table-wrap catalogo-table-wrap">
           <table class="catalogo-table">
             <thead>
               <tr>
-                <th>Cód. Entrada</th>
-                <th>SKU Bucha</th>
-                <th>Descrição</th>
+                <th>Código Lote</th>
+                <th>Código (SKU)</th>
+                <th>Descrição da Bucha</th>
                 <th>Qtd Lote</th>
-                <th>Etapa Atual</th>
-                <th>Origem / Observações</th>
-                <th class="catalogo-actions-col">Ação / Transicionar</th>
+                <th>Onde está a peça?</th>
+                <th>Observação</th>
+                <th class="catalogo-actions-col">O que fazer com o lote?</th>
               </tr>
             </thead>
             <tbody id="bucha-lote-grid">
-              <tr><td colspan="7" class="empty-cell">Nenhum lote pendente em trânsito.</td></tr>
+              <tr><td colspan="7" class="empty-cell">Nenhum lote em produção no momento.</td></tr>
             </tbody>
           </table>
         </div>
@@ -675,8 +675,8 @@
 
       <!-- SEÇÃO 3: Histórico de Movimentações -->
       <div class="card catalogo-card" style="margin-top: 1.5rem;">
-        <div style="padding:1rem 1.25rem 0.5rem 1.25rem; font-weight:700; font-size:1.05rem; color:var(--text-primary);">
-          3. Histórico Recente de Entradas, Transições e Saídas (Baixas)
+        <div style="padding:1rem 1.25rem 0.5rem 1.25rem; font-weight:700; font-size:1.1rem; color:var(--text-primary);">
+          📋 Histórico de Entradas e Baixas
         </div>
 
         <div class="table-wrap catalogo-table-wrap">

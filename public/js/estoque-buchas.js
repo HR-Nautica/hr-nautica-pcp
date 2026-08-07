@@ -93,10 +93,10 @@
             <td>
               <div style="display:flex; gap:6px; justify-content:center;">
                 <button class="btn-primary" style="padding: 4px 10px; font-size:0.8rem;" onclick="window.openNovaEntradaBucha('${escapeHtml(s.sku)}')" title="Nova Entrada">
-                  📥 Entrada
+                  ➕ Entrada
                 </button>
                 <button class="btn-secondary" style="padding: 4px 10px; font-size:0.8rem; border-color:var(--accent-orange); color:var(--accent-orange);" onclick="window.openSaidaBucha('${escapeHtml(s.sku)}')" title="Dar Baixa no Estoque Final" ${s.qtdAcabada <= 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                  📤 Dar Baixa
+                  ➖ Dar Baixa
                 </button>
               </div>
             </td>
@@ -110,19 +110,19 @@
     if (gridEntradas) {
       const emAndamento = entradas.filter(e => e.status === 'Em Andamento' || e.etapaAtual !== 'Estoque Final');
       if (!emAndamento.length) {
-        gridEntradas.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhum lote em trânsito no momento (todas no Estoque Final).</td></tr>';
+        gridEntradas.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhum lote em produção no momento (todas no Estoque Pronto).</td></tr>';
       } else {
         gridEntradas.innerHTML = emAndamento.map(e => {
           let btnAcao = '';
           let etapaBadge = '';
           if (e.etapaAtual === 'Retrabalho') {
-            etapaBadge = '<span class="chip chip--orange">1 - Retrabalho</span>';
-            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.openTransicaoLoteBucha('${e.id}')">⏩ Enviar p/ Vulcanização</button>`;
+            etapaBadge = '<span class="chip chip--orange">1. Retrabalho</span>';
+            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.openTransicaoLoteBucha('${e.id}')">⏩ Vulcanizar</button>`;
           } else if (e.etapaAtual === 'Vulcanizacao') {
-            etapaBadge = '<span class="chip chip--purple">2 - Vulcanização</span>';
-            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem; background:var(--accent-green);" onclick="window.openTransicaoLoteBucha('${e.id}')">✅ Enviar p/ Estoque Final</button>`;
+            etapaBadge = '<span class="chip chip--purple">2. Vulcanização</span>';
+            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem; background:var(--accent-green);" onclick="window.openTransicaoLoteBucha('${e.id}')">✅ Enviar p/ Estoque Pronto</button>`;
           } else {
-            etapaBadge = '<span class="chip chip--green">3 - Estoque Final</span>';
+            etapaBadge = '<span class="chip chip--green">3. Estoque Pronto</span>';
             btnAcao = '<span class="chip chip--green">Concluído</span>';
           }
 

@@ -789,60 +789,16 @@ const DB = {
 
   ensureBuchasEntradasSeed() {
     const existingEntradas = this.getBuchasEntradas();
-    if (existingEntradas && existingEntradas.length > 0) return false;
-
-    const catalog = this.getBuchas();
-    if (!catalog.length) return false;
-
-    const seedEntradasData = [
-      { sku: 'HR BH 001', qty: 120, etapa: 'Retrabalho', obs: 'Ajuste de dimensão interna' },
-      { sku: 'HR BH 001', qty: 80,  etapa: 'Vulcanizacao', obs: 'Prensa de borracha lote 1' },
-      { sku: 'HR BH 001', qty: 250, etapa: 'Estoque Final', obs: 'Lote finalizado pronta entrega' },
-
-      { sku: 'HR BH 002', qty: 150, etapa: 'Retrabalho', obs: 'Retrabalho torneamento' },
-      { sku: 'HR BH 002', qty: 200, etapa: 'Estoque Final', obs: 'Estoque aprovado' },
-
-      { sku: 'HR BH 003', qty: 90,  etapa: 'Vulcanizacao', obs: 'Processo vulcanização borracharia' },
-      { sku: 'HR BH 003', qty: 180, etapa: 'Estoque Final', obs: 'Lote liberado' },
-
-      { sku: 'HR BH 004', qty: 100, etapa: 'Retrabalho', obs: 'Usinagem inicial' },
-      { sku: 'HR BH 005', qty: 300, etapa: 'Estoque Final', obs: 'Lote prontas' }
-    ];
-
-    const seedEntradas = seedEntradasData.map((s, i) => {
-      const bucha = catalog.find(b => b.sku === s.sku) || catalog[i % catalog.length];
-      const cod = `ENT-BCH-${String(i + 1).padStart(6, '0')}`;
-      return {
-        id: `ent_seed_${i + 1}`,
-        codigoEntrada: cod,
-        sku: bucha.sku,
-        descricao: bucha.descricao,
-        quantidade: s.qty,
-        etapaAtual: s.etapa,
-        status: s.etapa === 'Estoque Final' ? 'Concluido' : 'Em Andamento',
-        dataCriacao: '2026-08-07 09:00:00',
-        origemObs: s.obs,
-        historico: [
-          { data: '2026-08-07 09:00:00', acao: `Entrada inicial em ${s.etapa}`, usuario: 'Sistema' }
-        ]
-      };
-    });
-
-    this.saveBuchasEntradas(seedEntradas);
-
-    const seedSaida = {
-      id: 'sai_seed_1',
-      codigoSaida: 'SAI-BCH-000001',
-      sku: 'HR BH 001',
-      descricao: catalog[0]?.descricao || 'BUCHA YAMAHA 15 HP',
-      quantidade: 30,
-      destinoObs: 'Baixa para montagem na Hélice OPH-000001',
-      dataSaida: '2026-08-07 10:30:00',
-      usuario: 'Sistema'
-    };
-    this.saveBuchasSaidas([seedSaida]);
-
-    this.addAtividade('Saldos iniciais de Retrabalho, Vulcanização e Estoque Final carregados com sucesso.', 'teal');
+    // Se contiver dados fictícios antigos de teste, limpa para garantir saldos zerados reais
+    if (Array.isArray(existingEntradas) && existingEntradas.some(e => String(e.id || '').includes('seed'))) {
+      const semSeed = existingEntradas.filter(e => !String(e.id || '').includes('seed'));
+      this.saveBuchasEntradas(semSeed);
+    }
+    const existingSaidas = this.getBuchasSaidas();
+    if (Array.isArray(existingSaidas) && existingSaidas.some(s => String(s.id || '').includes('seed'))) {
+      const semSeedSaidas = existingSaidas.filter(s => !String(s.id || '').includes('seed'));
+      this.saveBuchasSaidas(semSeedSaidas);
+    }
     return true;
   },
 

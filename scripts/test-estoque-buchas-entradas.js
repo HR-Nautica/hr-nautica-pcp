@@ -38,64 +38,67 @@ const DB = context.__DB__;
 
 console.log('Testing Estoque Buchas por Entradas, Transições e Saídas...');
 
-// 1. Inicialização
+// 1. Inicialização Zerada do Catálogo
 DB.ensureBuchasAtualizadas();
-const seeded = DB.ensureBuchasEntradasSeed();
-assert.equal(seeded, true, 'Seed de entradas deve executar na primeira carga');
+DB.ensureBuchasEntradasSeed();
 
-// 2. Saldos Consolidados do Catálogo
-const saldos = DB.getBuchasSaldosConsolidados();
-assert.equal(saldos.length, 15, 'Deve ter saldos consolidados para as 15 buchas do catálogo');
+const saldosIniciais = DB.getBuchasSaldosConsolidados();
+assert.equal(saldosIniciais.length, 15, 'Deve listar 15 modelos de buchas');
 
-const bh001 = saldos.find(s => s.sku === 'HR BH 001');
-assert.ok(bh001, 'HR BH 001 deve estar presente no quadro de saldos');
-assert.equal(bh001.qtdRetrabalho, 120, 'Retrabalho inicial de HR BH 001 deve ser 120 un');
-assert.equal(bh001.qtdVulcanizacao, 80, 'Vulcanização inicial de HR BH 001 deve ser 80 un');
-assert.equal(bh001.qtdAcabada, 220, 'Estoque Final acabado de HR BH 001 deve ser 250 - 30 = 220 un');
-assert.equal(bh001.saldoTotal, 420, 'Saldo Total de HR BH 001 deve ser 120 + 80 + 220 = 420 un');
+const bh001Inicial = saldosIniciais.find(s => s.sku === 'HR BH 001');
+assert.ok(bh001Inicial, 'HR BH 001 deve estar presente no quadro de saldos');
+assert.equal(bh001Inicial.qtdRetrabalho, 0, 'Sem entradas manuais, Retrabalho deve iniciar em 0 un');
+assert.equal(bh001Inicial.qtdVulcanizacao, 0, 'Sem entradas manuais, Vulcanização deve iniciar em 0 un');
+assert.equal(bh001Inicial.qtdAcabada, 0, 'Sem entradas manuais, Estoque Pronto deve iniciar em 0 un');
+assert.equal(bh001Inicial.saldoTotal, 0, 'Saldo Total deve iniciar em 0 un');
 
-// 3. Adicionar Nova Entrada de Lote em Retrabalho
+// 2. Adicionar Entrada Real de 100 peças em Retrabalho
 const novaEntrada = DB.addBuchaEntrada({
   sku: 'HR BH 001',
-  quantidade: 50,
+  quantidade: 100,
   etapaInicial: 'Retrabalho',
-  origemObs: 'Teste lote manual'
+  origemObs: 'Ajuste de dimensão interna'
 });
 assert.ok(novaEntrada.codigoEntrada.startsWith('ENT-BCH-'), 'Código da entrada deve ter formato ENT-BCH-xxxxxx');
 
 const saldosPosEntrada = DB.getBuchasSaldosConsolidados().find(s => s.sku === 'HR BH 001');
-assert.equal(saldosPosEntrada.qtdRetrabalho, 170, 'Retrabalho deve subir de 120 para 170 un');
-assert.equal(saldosPosEntrada.saldoTotal, 470, 'Saldo Total deve subir de 420 para 470 un');
+assert.equal(saldosPosEntrada.qtdRetrabalho, 100, 'Retrabalho deve registrar exatamente 100 un');
+assert.equal(saldosPosEntrada.saldoTotal, 100, 'Saldo Total deve ser exatamente 100 un');
 
-// 4. Mover Lote de Retrabalho para Vulcanização
-const movida = DB.moverBuchaEntrada(novaEntrada.id, 50, 'Vulcanizacao');
+// 3. Mover 80 peças para Vulcanização
+const movida = DB.moverBuchaEntrada(novaEntrada.id, 80, 'Vulcanizacao', 'split');
 assert.equal(movida.etapaAtual, 'Vulcanizacao', 'Etapa deve mudar para Vulcanizacao');
 
 const saldosPosMov = DB.getBuchasSaldosConsolidados().find(s => s.sku === 'HR BH 001');
-assert.equal(saldosPosMov.qtdRetrabalho, 120, 'Retrabalho volta para 120 un');
-assert.equal(saldosPosMov.qtdVulcanizacao, 130, 'Vulcanização sobe de 80 para 130 un');
+assert.equal(saldosPosMov.qtdRetrabalho, 20, 'Retrabalho restante deve ser 20 un');
+assert.equal(saldosPosMov.qtdVulcanizacao, 80, 'Vulcanização deve ser 80 un');
+assert.equal(saldosPosMov.saldoTotal, 100, 'Saldo Total deve permanecer 100 un');
 
-// 5. Mover para Estoque Final
-DB.moverBuchaEntrada(novaEntrada.id, 50, 'Estoque Final');
+// 4. Mover as 80 peças para Estoque Pronto (Final)
+DB.moverBuchaEntrada(novaEntrada.id, 80, 'Estoque Final');
 const saldosPosEstoque = DB.getBuchasSaldosConsolidados().find(s => s.sku === 'HR BH 001');
-assert.equal(saldosPosEstoque.qtdAcabada, 270, 'Estoque Acabado sobe de 220 para 270 un');
+assert.equal(saldosPosEstoque.qtdRetrabalho, 20, 'Retrabalho permanece 20 un');
+assert.equal(saldosPosEstoque.qtdVulcanizacao, 0, 'Vulcanização passa a 0 un');
+assert.equal(saldosPosEstoque.qtdAcabada, 80, 'Estoque Pronto passa a 80 un');
+assert.equal(saldosPosEstoque.saldoTotal, 100, 'Saldo Total permanece 100 un');
 
-// 6. Registrar Saída (Baixa de Estoque)
+// 5. Registrar Saída (Baixa) de 15 peças
 const saida = DB.addBuchaSaida({
   sku: 'HR BH 001',
-  quantidade: 20,
-  destinoObs: 'Baixa para montagem teste'
+  quantidade: 15,
+  destinoObs: 'Baixa para montagem hélice OPH-000001'
 });
 assert.ok(saida.codigoSaida.startsWith('SAI-BCH-'), 'Código de saída deve ser SAI-BCH-xxxxxx');
 
 const saldosPosSaida = DB.getBuchasSaldosConsolidados().find(s => s.sku === 'HR BH 001');
-assert.equal(saldosPosSaida.qtdAcabada, 250, 'Estoque Acabado reduz de 270 para 250 un');
+assert.equal(saldosPosSaida.qtdAcabada, 65, 'Estoque Pronto reduz de 80 para 65 un');
+assert.equal(saldosPosSaida.saldoTotal, 85, 'Saldo Total reduz para 20 + 65 = 85 un');
 
-// 7. Bloqueio de Saída com Saldo Insuficiente
+// 6. Bloqueio de Saída com Saldo Insuficiente
 assert.throws(
-  () => DB.addBuchaSaida({ sku: 'HR BH 001', quantidade: 9999 }),
+  () => DB.addBuchaSaida({ sku: 'HR BH 001', quantidade: 500 }),
   /Saldo insuficiente no Estoque Final/,
-  'Deve rejeitar saída maior do que o saldo acabado disponível'
+  'Deve rejeitar saída maior do que o saldo disponível'
 );
 
-console.log('[OK] Todos os testes de Estoque Buchas por Entradas e Saídas passaram com sucesso!');
+console.log('[OK] Todos os testes do Estoque Buchas passaram com 100% de precisão matemática!');
