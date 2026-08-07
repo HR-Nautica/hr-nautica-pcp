@@ -557,7 +557,18 @@
       </div>
 
       <!-- KPIs Globais da Produção de Buchas -->
-      <div class="kpi-grid">
+      <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">EM USINAGEM</span>
+            <div class="kpi-icon kpi-icon--blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-eb-usinagem">0 un</div>
+          <div class="kpi-sub">Peças em usinagem inicial</div>
+        </div>
+
         <div class="kpi-card">
           <div class="kpi-header">
             <span class="kpi-label">EM RETRABALHO</span>
@@ -582,7 +593,7 @@
 
         <div class="kpi-card">
           <div class="kpi-header">
-            <span class="kpi-label">ESTOQUE PRONTO (FINAL)</span>
+            <span class="kpi-label">ESTOQUE PRONTO</span>
             <div class="kpi-icon kpi-icon--green">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
@@ -603,98 +614,106 @@
         </div>
       </div>
 
-      <!-- SEÇÃO 1: Quadro Geral do Catálogo (Saldos Consolidados) -->
-      <div class="card catalogo-card" style="margin-top: 1.5rem;">
-        <div class="catalogo-toolbar">
-          <div class="catalogo-search-wrap">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="search" id="bucha-op-search" placeholder="Procurar bucha por SKU, nome ou motor..." autocomplete="off" />
-          </div>
-          <span class="catalogo-count" id="bucha-op-count">0 modelos</span>
-        </div>
-        <div class="catalogo-filters">
-          <label class="catalogo-filter">
-            <span>Filtrar por Motor</span>
-            <select id="bucha-filter-motor-saldo">
-              <option value="">Todos os motores</option>
-            </select>
-          </label>
-          <button type="button" class="btn-secondary catalogo-clear-filters" id="bucha-op-limpar-filtros">Limpar pesquisa</button>
-        </div>
-
-        <div style="padding:0.75rem 1.25rem 0.25rem 1.25rem; font-weight:700; font-size:1.1rem; color:var(--text-primary);">
-          📊 Quantidade de Buchas por Modelo
-        </div>
-
-        <div class="table-wrap catalogo-table-wrap">
-          <table class="catalogo-table">
-            <thead>
-              <tr>
-                <th>Código (SKU)</th>
-                <th>Descrição da Bucha</th>
-                <th>Motor / Aplicação</th>
-                <th>🟠 Retrabalho</th>
-                <th>🟣 Vulcanização</th>
-                <th>🟢 Estoque Pronto</th>
-                <th>🔵 Total</th>
-                <th class="catalogo-actions-col">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="bucha-saldo-grid">
-              <tr><td colspan="8" class="empty-cell">Carregando catálogo de buchas...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- SEÇÃO 2: Lotes em Trânsito -->
-      <div class="card catalogo-card" style="margin-top: 1.5rem;">
-        <div style="padding:1rem 1.25rem 0.5rem 1.25rem; font-weight:700; font-size:1.1rem; color:var(--text-primary);">
-          🔄 Lotes de Buchas em Produção (Em Andamento)
-        </div>
-
-        <div class="table-wrap catalogo-table-wrap">
-          <table class="catalogo-table">
-            <thead>
-              <tr>
-                <th>Código Lote</th>
-                <th>Código (SKU)</th>
-                <th>Descrição da Bucha</th>
-                <th>Qtd Lote</th>
-                <th>Onde está a peça?</th>
-                <th>Observação</th>
-                <th class="catalogo-actions-col">O que fazer com o lote?</th>
-              </tr>
-            </thead>
-            <tbody id="bucha-lote-grid">
-              <tr><td colspan="7" class="empty-cell">Nenhum lote em produção no momento.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- SEÇÃO 3: Histórico de Movimentações -->
-      <div class="card catalogo-card" style="margin-top: 1.5rem;">
-        <div style="padding:1rem 1.25rem 0.5rem 1.25rem; font-weight:700; font-size:1.1rem; color:var(--text-primary);">
+      <!-- Sub-Navegação por 3 Abas Clicáveis -->
+      <div class="subnav-tabs-bar">
+        <button type="button" class="subnav-tab-btn active" id="tab-btn-eb-saldos" onclick="window.switchEstoqueBuchasTab('saldos')">
+          📊 Quadro de Saldos por Modelo
+        </button>
+        <button type="button" class="subnav-tab-btn" id="tab-btn-eb-lotes" onclick="window.switchEstoqueBuchasTab('lotes')">
+          🔄 Lotes de Buchas em Produção
+        </button>
+        <button type="button" class="subnav-tab-btn" id="tab-btn-eb-historico" onclick="window.switchEstoqueBuchasTab('historico')">
           📋 Histórico de Entradas e Baixas
-        </div>
+        </button>
+      </div>
 
-        <div class="table-wrap catalogo-table-wrap">
-          <table class="catalogo-table">
-            <thead>
-              <tr>
-                <th>Cód. Movimento</th>
-                <th>Tipo</th>
-                <th>SKU Bucha</th>
-                <th>Quantidade</th>
-                <th>Detalhamento / Destino</th>
-                <th>Data & Hora</th>
-              </tr>
-            </thead>
-            <tbody id="bucha-historico-transacoes-grid">
-              <tr><td colspan="6" class="empty-cell">Nenhum histórico registrado.</td></tr>
-            </tbody>
-          </table>
+      <!-- ABA 1: Quadro Geral do Catálogo (Saldos Consolidados) -->
+      <div class="tab-panel" id="tab-panel-eb-saldos">
+        <div class="card catalogo-card">
+          <div class="catalogo-toolbar">
+            <div class="catalogo-search-wrap">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" id="bucha-op-search" placeholder="Procurar bucha por SKU, nome ou motor..." autocomplete="off" />
+            </div>
+            <span class="catalogo-count" id="bucha-op-count">0 modelos</span>
+          </div>
+          <div class="catalogo-filters">
+            <label class="catalogo-filter">
+              <span>Filtrar por Motor</span>
+              <select id="bucha-filter-motor-saldo">
+                <option value="">Todos os motores</option>
+              </select>
+            </label>
+            <button type="button" class="btn-secondary catalogo-clear-filters" id="bucha-op-limpar-filtros">Limpar pesquisa</button>
+          </div>
+
+          <div class="table-wrap catalogo-table-wrap">
+            <table class="catalogo-table">
+              <thead>
+                <tr>
+                  <th>Código (SKU)</th>
+                  <th>Descrição da Bucha</th>
+                  <th>Motor / Aplicação</th>
+                  <th>🔵 Usinagem</th>
+                  <th>🟠 Retrabalho</th>
+                  <th>🟣 Vulcanização</th>
+                  <th>🟢 Estoque Pronto</th>
+                  <th>🔵 Total</th>
+                  <th class="catalogo-actions-col">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="bucha-saldo-grid">
+                <tr><td colspan="9" class="empty-cell">Carregando catálogo de buchas...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 2: Lotes em Trânsito -->
+      <div class="tab-panel hidden" id="tab-panel-eb-lotes">
+        <div class="card catalogo-card">
+          <div class="table-wrap catalogo-table-wrap">
+            <table class="catalogo-table">
+              <thead>
+                <tr>
+                  <th>Código Lote</th>
+                  <th>Código (SKU)</th>
+                  <th>Descrição da Bucha</th>
+                  <th>Qtd Lote</th>
+                  <th>Onde está a peça?</th>
+                  <th>Observação</th>
+                  <th class="catalogo-actions-col">O que fazer com o lote?</th>
+                </tr>
+              </thead>
+              <tbody id="bucha-lote-grid">
+                <tr><td colspan="7" class="empty-cell">Nenhum lote em produção no momento.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 3: Histórico de Movimentações -->
+      <div class="tab-panel hidden" id="tab-panel-eb-historico">
+        <div class="card catalogo-card">
+          <div class="table-wrap catalogo-table-wrap">
+            <table class="catalogo-table">
+              <thead>
+                <tr>
+                  <th>Cód. Movimento</th>
+                  <th>Tipo</th>
+                  <th>SKU Bucha</th>
+                  <th>Quantidade</th>
+                  <th>Detalhamento / Destino</th>
+                  <th>Data & Hora</th>
+                </tr>
+              </thead>
+              <tbody id="bucha-historico-transacoes-grid">
+                <tr><td colspan="6" class="empty-cell">Nenhum histórico registrado.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1508,9 +1527,10 @@
             <div class="form-group">
               <label class="form-label" for="entrada-bucha-etapa">Etapa Inicial de Entrada *</label>
               <select class="form-input" id="entrada-bucha-etapa">
-                <option value="Retrabalho">1 - Retrabalho</option>
-                <option value="Vulcanizacao">2 - Vulcanização</option>
-                <option value="Estoque Final">3 - Estoque Final (Prontas Direto)</option>
+                <option value="Usinagem">1. Usinagem</option>
+                <option value="Retrabalho">2. Retrabalho</option>
+                <option value="Vulcanizacao">3. Vulcanização</option>
+                <option value="Estoque Final">4. Estoque Pronto (Direto)</option>
               </select>
             </div>
             <div class="form-group catalogo-span-2">
@@ -1533,15 +1553,22 @@
       <div class="modal-header">
         <div>
           <h2 class="modal-title" id="trans-bucha-code-title">Mover Lote de Bucha</h2>
-          <p class="modal-subtitle">Transição entre operações: Retrabalho → Vulcanização → Estoque Final</p>
+          <p class="modal-subtitle">Transição entre operações: Usinagem → Retrabalho → Vulcanização → Estoque Pronto</p>
         </div>
         <button class="btn-icon" id="modal-transicao-bucha-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="modal-body">
         <div style="background:var(--bg-tertiary); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
-          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span>Etapa Atual: <strong id="trans-bucha-etapa-atual" style="color:var(--text-primary);">—</strong></span>
-            <span>Próxima Etapa: <strong id="trans-bucha-proxima-etapa" style="color:var(--accent-teal);">—</strong></span>
+            <div>
+              <label style="font-size:0.85rem; color:var(--text-muted); margin-right:6px;">Próxima Etapa:</label>
+              <select id="trans-bucha-proxima-etapa-select" class="form-input" style="display:inline-block; width:auto; padding:4px 10px;">
+                <option value="Retrabalho">2. Retrabalho</option>
+                <option value="Vulcanizacao">3. Vulcanização</option>
+                <option value="Estoque Final">4. Estoque Pronto</option>
+              </select>
+            </div>
           </div>
           <div>Saldo no Lote: <strong id="trans-bucha-total-qty">0 un</strong></div>
         </div>

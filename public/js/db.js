@@ -649,7 +649,7 @@ const DB = {
     const bucha = buchas.find(b => b.sku === data.sku) || {};
     const codigoEntrada = data.codigoEntrada || this.generateBuchaEntradaCodigo();
     const qty = parseInt(data.quantidade, 10) || 1;
-    const etapaInicial = data.etapaInicial || 'Retrabalho'; // 'Retrabalho' | 'Vulcanizacao' | 'Estoque Final'
+    const etapaInicial = data.etapaInicial || 'Usinagem'; // 'Usinagem' | 'Retrabalho' | 'Vulcanizacao' | 'Estoque Final'
     const now = this._now();
 
     const entrada = {
@@ -757,6 +757,10 @@ const DB = {
     return catalog.map(bucha => {
       const skuUpper = String(bucha.sku || '').trim().toUpperCase();
 
+      const qtdUsinagem = entradas
+        .filter(e => String(e.sku || '').trim().toUpperCase() === skuUpper && e.status === 'Em Andamento' && e.etapaAtual === 'Usinagem')
+        .reduce((sum, e) => sum + (Number(e.quantidade) || 0), 0);
+
       const qtdRetrabalho = entradas
         .filter(e => String(e.sku || '').trim().toUpperCase() === skuUpper && e.status === 'Em Andamento' && e.etapaAtual === 'Retrabalho')
         .reduce((sum, e) => sum + (Number(e.quantidade) || 0), 0);
@@ -774,10 +778,11 @@ const DB = {
         .reduce((sum, s) => sum + (Number(s.quantidade) || 0), 0);
 
       const qtdAcabada = Math.max(0, qtdEstoqueEntradas - qtdSaidas);
-      const saldoTotal = qtdRetrabalho + qtdVulcanizacao + qtdAcabada;
+      const saldoTotal = qtdUsinagem + qtdRetrabalho + qtdVulcanizacao + qtdAcabada;
 
       return {
         ...bucha,
+        qtdUsinagem,
         qtdRetrabalho,
         qtdVulcanizacao,
         qtdAcabada,
