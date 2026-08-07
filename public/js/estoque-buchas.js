@@ -353,12 +353,17 @@
     byId('modal-hist-bucha')?.classList.remove('hidden');
   }
 
+  function closeModalHistoricoLoteBucha() {
+    byId('modal-hist-bucha')?.classList.add('hidden');
+  }
+
   // Exposição global
   window.renderEstoqueBuchas = renderEstoqueBuchas;
   window.openNovaEntradaBucha = openNovaEntradaBucha;
   window.openTransicaoLoteBucha = openTransicaoLoteBucha;
   window.openSaidaBucha = openSaidaBucha;
   window.openHistoricoLoteBucha = openHistoricoLoteBucha;
+  window.closeModalHistoricoLoteBucha = closeModalHistoricoLoteBucha;
 
   // Event Listeners DOM
   document.addEventListener('DOMContentLoaded', () => {
@@ -375,6 +380,19 @@
     byId('modal-transicao-bucha-close')?.addEventListener('click', closeModalTransicaoLoteBucha);
     byId('btn-cancel-transicao-bucha')?.addEventListener('click', closeModalTransicaoLoteBucha);
     byId('btn-save-transicao-bucha')?.addEventListener('click', saveTransicaoLoteBucha);
+
+    byId('modal-hist-bucha-close')?.addEventListener('click', closeModalHistoricoLoteBucha);
+    byId('btn-close-hist-bucha')?.addEventListener('click', closeModalHistoricoLoteBucha);
+
+    // Permite fechar modais ao clicar no fundo escuro (overlay)
+    ['modal-nova-entrada-bucha', 'modal-transicao-bucha', 'modal-saida-bucha', 'modal-hist-bucha'].forEach(id => {
+      const modal = byId(id);
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) modal.classList.add('hidden');
+        });
+      }
+    });
 
     byId('bucha-op-search')?.addEventListener('input', renderEstoqueBuchas);
     byId('bucha-filter-motor-saldo')?.addEventListener('change', renderEstoqueBuchas);
