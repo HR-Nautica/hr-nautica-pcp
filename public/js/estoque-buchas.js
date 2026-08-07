@@ -169,7 +169,7 @@
       entradas.forEach(e => {
         allEvents.push({
           codigo: e.codigoEntrada,
-          tipo: 'ENTRADA / LOTE',
+          tipo: 'Entrada',
           sku: e.sku,
           quantidade: e.quantidade,
           detalhe: `Etapa: ${e.etapaAtual} | ${e.origemObs || ''}`,
@@ -181,7 +181,7 @@
       saidas.forEach(s => {
         allEvents.push({
           codigo: s.codigoSaida,
-          tipo: 'SAÍDA / BAIXA',
+          tipo: 'Saída',
           sku: s.sku,
           quantidade: -s.quantidade,
           detalhe: `Destino: ${s.destinoObs || ''}`,
@@ -192,10 +192,48 @@
 
       allEvents.sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
 
-      if (!allEvents.length) {
-        gridHistGlobal.innerHTML = '<tr><td colspan="6" class="empty-cell">Nenhuma transação registrada.</td></tr>';
+      // Popula filtro de buchas SKUs no histórico
+      const skuHistSelect = byId('hist-bucha-filter-sku');
+      if (skuHistSelect && !skuHistSelect.dataset.populated) {
+        const skus = [...new Set(saldos.map(s => s.sku).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        skuHistSelect.innerHTML = [
+          '<option value="">Todas as buchas</option>',
+          ...skus.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`)
+        ].join('');
+        skuHistSelect.dataset.populated = 'true';
+      }
+
+      // Leitura dos filtros de histórico
+      const hSearch = String(byId('hist-bucha-search')?.value || '').trim().toLowerCase();
+      const hSku = byId('hist-bucha-filter-sku')?.value || '';
+      const hTipo = byId('hist-bucha-filter-tipo')?.value || '';
+      const hDateStart = byId('hist-bucha-date-start')?.value || '';
+      const hDateEnd = byId('hist-bucha-date-end')?.value || '';
+
+      const eventsFiltrados = allEvents.filter(ev => {
+        const matchSearch = !hSearch || [ev.codigo, ev.sku, ev.detalhe, ev.tipo]
+          .some(v => String(v || '').toLowerCase().includes(hSearch));
+        const matchSku = !hSku || String(ev.sku || '').toUpperCase() === String(hSku).toUpperCase();
+        const matchTipo = !hTipo || ev.tipo.toLowerCase().includes(hTipo.toLowerCase());
+
+        let matchDate = true;
+        if (ev.data) {
+          const evDateStr = String(ev.data).slice(0, 10);
+          if (hDateStart && evDateStr < hDateStart) matchDate = false;
+          if (hDateEnd && evDateStr > hDateEnd) matchDate = false;
+        }
+
+        return matchSearch && matchSku && matchTipo && matchDate;
+      });
+
+      if (byId('hist-bucha-count')) {
+        byId('hist-bucha-count').textContent = `${eventsFiltrados.length} de ${allEvents.length} registros`;
+      }
+
+      if (!eventsFiltrados.length) {
+        gridHistGlobal.innerHTML = '<tr><td colspan="6" class="empty-cell">Nenhum registro encontrado com os filtros selecionados.</td></tr>';
       } else {
-        gridHistGlobal.innerHTML = allEvents.slice(0, 30).map(ev => `
+        gridHistGlobal.innerHTML = eventsFiltrados.map(ev => `
           <tr>
             <td><strong class="helice-op-number">${escapeHtml(ev.codigo)}</strong></td>
             <td>${ev.badge}</td>
@@ -436,6 +474,20 @@
     byId('bucha-op-limpar-filtros')?.addEventListener('click', () => {
       if (byId('bucha-op-search')) byId('bucha-op-search').value = '';
       if (byId('bucha-filter-motor-saldo')) byId('bucha-filter-motor-saldo').value = '';
+      renderEstoqueBuchas();
+    });
+
+    byId('hist-bucha-search')?.addEventListener('input', renderEstoqueBuchas);
+    byId('hist-bucha-filter-sku')?.addEventListener('change', renderEstoqueBuchas);
+    byId('hist-bucha-filter-tipo')?.addEventListener('change', renderEstoqueBuchas);
+    byId('hist-bucha-date-start')?.addEventListener('change', renderEstoqueBuchas);
+    byId('hist-bucha-date-end')?.addEventListener('change', renderEstoqueBuchas);
+    byId('hist-bucha-clear-filters')?.addEventListener('click', () => {
+      if (byId('hist-bucha-search')) byId('hist-bucha-search').value = '';
+      if (byId('hist-bucha-filter-sku')) byId('hist-bucha-filter-sku').value = '';
+      if (byId('hist-bucha-filter-tipo')) byId('hist-bucha-filter-tipo').value = '';
+      if (byId('hist-bucha-date-start')) byId('hist-bucha-date-start').value = '';
+      if (byId('hist-bucha-date-end')) byId('hist-bucha-date-end').value = '';
       renderEstoqueBuchas();
     });
   });

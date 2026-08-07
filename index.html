@@ -697,6 +697,40 @@
       <!-- ABA 3: Histórico de Movimentações -->
       <div class="tab-panel hidden" id="tab-panel-eb-historico">
         <div class="card catalogo-card">
+          <div class="catalogo-toolbar">
+            <div class="catalogo-search-wrap">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" id="hist-bucha-search" placeholder="Buscar no histórico por SKU, código ou detalhe..." autocomplete="off" />
+            </div>
+            <span class="catalogo-count" id="hist-bucha-count">0 registros</span>
+          </div>
+
+          <div class="catalogo-filters">
+            <label class="catalogo-filter">
+              <span>Bucha (SKU)</span>
+              <select id="hist-bucha-filter-sku">
+                <option value="">Todas as buchas</option>
+              </select>
+            </label>
+            <label class="catalogo-filter">
+              <span>Tipo de Transação</span>
+              <select id="hist-bucha-filter-tipo">
+                <option value="">Todos os tipos</option>
+                <option value="Entrada">Entrada de Lote</option>
+                <option value="Saída">Saída (Baixa)</option>
+              </select>
+            </label>
+            <label class="catalogo-filter">
+              <span>Data Inicial</span>
+              <input type="date" id="hist-bucha-date-start" class="form-input" style="padding:4px 8px; font-size:0.82rem;" />
+            </label>
+            <label class="catalogo-filter">
+              <span>Data Final</span>
+              <input type="date" id="hist-bucha-date-end" class="form-input" style="padding:4px 8px; font-size:0.82rem;" />
+            </label>
+            <button type="button" class="btn-secondary catalogo-clear-filters" id="hist-bucha-clear-filters">Limpar filtros</button>
+          </div>
+
           <div class="table-wrap catalogo-table-wrap">
             <table class="catalogo-table">
               <thead>
