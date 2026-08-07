@@ -63,13 +63,14 @@ assert.equal(
 
 assert.equal(DB.ensureCatalogoAtualizado(), true, 'a primeira carga deve instalar o catálogo');
 assert.equal(DB.getModelos().length, 86, 'o catálogo deve conter as 86 linhas de B:S');
-assert.equal(DB.getConfig().catalogoVersion, '2026-08-06');
+assert.equal(DB.getConfig().catalogoVersion, '2026-08-07');
 
 const skus = DB.getModelos().map((modelo) => modelo.sku.toLocaleUpperCase('pt-BR'));
 assert.equal(new Set(skus).size, skus.length, 'os SKUs devem ser únicos');
 
 const first = DB.getModelos()[0];
 assert.ok(first.nome && first.codigoBruto && first.anel && first.bucha, 'campos técnicos essenciais devem estar preenchidos');
+assert.equal(first.skuBucha, 'HR BH 002', 'o SKU da bucha deve ter sido preenchido pelo VLOOKUP de Buchas.xlsx');
 assert.equal(first.tuboAnel, first.diametroTuboAnel, 'o alias de compatibilidade do tubo deve ser preservado');
 assert.equal(first.caixa, first.descricaoCaixa, 'o alias de compatibilidade da caixa deve ser preservado');
 

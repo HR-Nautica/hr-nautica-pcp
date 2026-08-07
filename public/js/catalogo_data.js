@@ -1,5 +1,5 @@
 /* Arquivo gerado por scripts/generate-catalog-data.js. Não editar manualmente. */
-const CATALOGO_VERSION = "2026-08-06";
+const CATALOGO_VERSION = "2026-08-07";
 const CATALOGO_DATA = [
   {
     "nome": "HÉLICE HIDEA 30 HP 9 7/8 X 12",
@@ -23,7 +23,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "12"
+    "passo": "12",
+    "skuBucha": "HR BH 002"
   },
   {
     "nome": "HÉLICE HONDA 15 HP 9 1/4 X 10",
@@ -47,7 +48,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10"
+    "passo": "10",
+    "skuBucha": "HR BH 001"
   },
   {
     "nome": "HÉLICE HIDEA 15 HP 9 1/4 X 11",
@@ -71,7 +73,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11"
+    "passo": "11",
+    "skuBucha": "HR BH 001"
   },
   {
     "nome": "HÉLICE HIDEA 20/25 HP 9 1/4 X 11 Geração 1",
@@ -95,7 +98,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11"
+    "passo": "11",
+    "skuBucha": "HR BH 002"
   },
   {
     "nome": "HÉLICE J/E 15 HP 9 1/2 X 10",
@@ -119,7 +123,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/2",
-    "passo": "10"
+    "passo": "10",
+    "skuBucha": "HR BH 011"
   },
   {
     "nome": "HÉLICE J/E 15 HP 9 X 11",
@@ -143,7 +148,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
-    "passo": "11"
+    "passo": "11",
+    "skuBucha": "HR BH 011"
   },
   {
     "nome": "HÉLICE J/E 25/35 HP 10 X 13 STD",
@@ -167,7 +173,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 012"
   },
   {
     "nome": "HÉLICE J/E 25/35 HP 10 X 15",
@@ -191,7 +198,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10",
-    "passo": "15"
+    "passo": "15",
+    "skuBucha": "HR BH 012"
   },
   {
     "nome": "HÉLICE MERCURY 6 /15 HP 9 X 10 1/2 USA",
@@ -215,7 +223,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
-    "passo": "10 1/2"
+    "passo": "10 1/2",
+    "skuBucha": "HR BH 010"
   },
   {
     "nome": "HÉLICE MERCURY 15 SUPER 9 1/4 X 9",
@@ -239,7 +248,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "9"
+    "passo": "9",
+    "skuBucha": "HR BH 008"
   },
   {
     "nome": "HÉLICE MERCURY 15 SUPER 9 1/4 X 10",
@@ -263,7 +273,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10"
+    "passo": "10",
+    "skuBucha": "HR BH 008"
   },
   {
     "nome": "HÉLICE MERCURY 25/30 SEA-PRO 9 7/8 X 13",
@@ -287,7 +298,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 009"
   },
   {
     "nome": "HÉLICE MERCURY 25/30 SEA-PRO 9 7/8 X 12",
@@ -311,7 +323,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "12"
+    "passo": "12",
+    "skuBucha": "HR BH 009"
   },
   {
     "nome": "HÉLICE MERCURY 40 SUPER 10 3/8 X 13",
@@ -335,7 +348,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 1/4 X 17",
@@ -359,7 +373,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17"
+    "passo": "17",
+    "skuBucha": "HR BH 014"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 1/4 X 17",
@@ -383,7 +398,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17"
+    "passo": "17",
+    "skuBucha": "HR BH 014"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 X 19",
@@ -407,7 +423,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
-    "passo": "19"
+    "passo": "19",
+    "skuBucha": "HR BH 014"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 X 19",
@@ -431,7 +448,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
-    "passo": "19"
+    "passo": "19",
+    "skuBucha": "HR BH 014"
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 1/4 X 14",
@@ -455,7 +473,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/4",
-    "passo": "14"
+    "passo": "14",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE MERCURY 30/60 HP 10 3/8 X 13",
@@ -479,7 +498,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 017"
   },
   {
     "nome": "HÉLICE MERCURY 30/60 HP 10 3/8 X 13",
@@ -503,7 +523,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 017"
   },
   {
     "nome": "HÉLICE MERCURY 25/30 HP SEA-PRO 9.6  X 13",
@@ -527,7 +548,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9.6",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 009"
   },
   {
     "nome": "HÉLICE MERCURY 25/30 HP SEA-PRO 9.9  X 13 MT1763",
@@ -551,7 +573,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9.9",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 009"
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP 13 1/2 X 23",
@@ -575,7 +598,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/2",
-    "passo": "23"
+    "passo": "23",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 3/4 X 15",
@@ -599,7 +623,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
-    "passo": "15"
+    "passo": "15",
+    "skuBucha": "HR BH 014"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 3/4 X 15",
@@ -623,7 +648,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
-    "passo": "15"
+    "passo": "15",
+    "skuBucha": "HR BH 014"
   },
   {
     "nome": "HÉLICE MERCURY 6 /15 HP 9 X 9",
@@ -647,7 +673,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
-    "passo": "9"
+    "passo": "9",
+    "skuBucha": "HR BH 010"
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP 14 1/2 X 17",
@@ -671,7 +698,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
-    "passo": "17"
+    "passo": "17",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP V6 14 1/2 X 19",
@@ -695,7 +723,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
-    "passo": "19"
+    "passo": "19",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 1/2 X 13",
@@ -719,7 +748,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 3/8 X 14",
@@ -743,7 +773,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "14"
+    "passo": "14",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE MERCURY 15 SUPER 9 1/4 X 9 MAX TORK",
@@ -767,7 +798,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "9"
+    "passo": "9",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE MERCURY 40 SUPER 10 3/8 X 13 MAX TORK",
@@ -791,7 +823,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP V6 14 1/2 X 19 MAX TORK",
@@ -815,7 +848,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
-    "passo": "19"
+    "passo": "19",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 1/2 X 13 MAX TORK",
@@ -839,7 +873,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 3/8 X 14 MAX TORK",
@@ -863,7 +898,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "14"
+    "passo": "14",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP 14 X 19",
@@ -887,7 +923,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14",
-    "passo": "19"
+    "passo": "19",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE SUZUKI 15 HP 9 1/4 X 11",
@@ -911,7 +948,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11"
+    "passo": "11",
+    "skuBucha": "HR BH 005"
   },
   {
     "nome": "HÉLICE SUZUKI 15 HP 9 1/4 X 10",
@@ -935,7 +973,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10"
+    "passo": "10",
+    "skuBucha": "HR BH 005"
   },
   {
     "nome": "HÉLICE SUZUKI 25/30 HP 10 1/4 X 13 STD",
@@ -959,7 +998,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/4",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 006"
   },
   {
     "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 1/2 X 13",
@@ -983,7 +1023,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/2",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 3/8 X 14",
@@ -1007,7 +1048,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 3/8",
-    "passo": "14"
+    "passo": "14",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE SUZUKI 75/85/115/140 HP 13 1/4 X 17",
@@ -1031,7 +1073,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17"
+    "passo": "17",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE SUZUKI 75/85/115/140 HP 13 X 19",
@@ -1055,7 +1098,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
-    "passo": "19"
+    "passo": "19",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE SUZUKI 25/30 HP 10 1/4 X 12",
@@ -1079,7 +1123,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/4",
-    "passo": "12"
+    "passo": "12",
+    "skuBucha": "HR BH 006"
   },
   {
     "nome": "HÉLICE SUZUKI DF 75/140 HP 14 X 19",
@@ -1103,7 +1148,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14",
-    "passo": "19"
+    "passo": "19",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE SUZUKI DF 75/140 HP 13 1/4 X 17",
@@ -1127,7 +1173,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17"
+    "passo": "17",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 1/4 X 15",
@@ -1151,7 +1198,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/4",
-    "passo": "15"
+    "passo": "15",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE SUZUKI 75/85/115/140 HP 12 1/4 x 15",
@@ -1175,7 +1223,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "12 1/4",
-    "passo": "15"
+    "passo": "15",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 1/2 X 11",
@@ -1199,7 +1248,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/2",
-    "passo": "11"
+    "passo": "11",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE SUZUKI F. 15 HP 9 1/4 X 11",
@@ -1223,7 +1273,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11"
+    "passo": "11",
+    "skuBucha": "HR BH 005"
   },
   {
     "nome": "HÉLICE YAMAHA 4/5 HP 7 1/4 X 7 ESTRIADO",
@@ -1247,7 +1298,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "7 1/4",
-    "passo": "7"
+    "passo": "7",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE YAMAHA 4 / 5 HP 7 1/4 X 6 1/2 PINADO",
@@ -1271,7 +1323,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "7 1/4",
-    "passo": "6 1/2"
+    "passo": "6 1/2",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 10 1/2",
@@ -1295,7 +1348,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10 1/2"
+    "passo": "10 1/2",
+    "skuBucha": "HR BH 001"
   },
   {
     "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 9",
@@ -1319,7 +1373,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "9"
+    "passo": "9",
+    "skuBucha": "HR BH 001"
   },
   {
     "nome": "HELICE YAMAHA 15 HP 9 1/4 X 12",
@@ -1343,7 +1398,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "12"
+    "passo": "12",
+    "skuBucha": "HR BH 001"
   },
   {
     "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 11",
@@ -1367,7 +1423,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11"
+    "passo": "11",
+    "skuBucha": "HR BH 001"
   },
   {
     "nome": "HÉLICE YAMAHA 25/30 HP 9 7/8 X 13",
@@ -1391,7 +1448,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 002"
   },
   {
     "nome": "HÉLICE YAMAHA 40 / 55 HP 11 1/8 X 13",
@@ -1415,7 +1473,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 1/8 X 12",
@@ -1439,7 +1498,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/8",
-    "passo": "12"
+    "passo": "12",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 X 15",
@@ -1463,7 +1523,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11",
-    "passo": "15"
+    "passo": "15",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 1/2 X 13",
@@ -1487,7 +1548,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/2",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 40 HP 3 CIL. 10 3/8 X 13",
@@ -1511,7 +1573,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 60 / 140 HP 13 3/4 X 15",
@@ -1535,7 +1598,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
-    "passo": "15"
+    "passo": "15",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE YAMAHA 60/140 HP 13 1/4 X 17",
@@ -1559,7 +1623,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17"
+    "passo": "17",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE YAMAHA 60/140 HP 13 X 19",
@@ -1583,7 +1648,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
-    "passo": "19"
+    "passo": "19",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE YAMAHA 60/140 HP 12 5/8 X 21",
@@ -1607,7 +1673,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "12 5/8",
-    "passo": "21"
+    "passo": "21",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE YAMAHA 25/30 HP 9 7/8 X 12",
@@ -1631,7 +1698,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "12"
+    "passo": "12",
+    "skuBucha": "HR BH 002"
   },
   {
     "nome": "HÉLICE YAMAHA 40 HP 10 1/8 X 15 3 CIL",
@@ -1655,7 +1723,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/8",
-    "passo": "15"
+    "passo": "15",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 1/4 X 14",
@@ -1679,7 +1748,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/4",
-    "passo": "14"
+    "passo": "14",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 8 HP 8 1/2 X 8 1/2",
@@ -1703,7 +1773,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "8 1/2",
-    "passo": "8 1/2"
+    "passo": "8 1/2",
+    "skuBucha": "HR BH 007"
   },
   {
     "nome": "HÉLICE YAMAHA 150/250 HP 14 1/2 X 17",
@@ -1727,7 +1798,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
-    "passo": "17"
+    "passo": "17",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE YAMAHA 150/250 HP 14 X 19",
@@ -1751,7 +1823,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14",
-    "passo": "19"
+    "passo": "19",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE YAMAHA 150/250 HP 13 3/4 x 21",
@@ -1775,7 +1848,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
-    "passo": "21"
+    "passo": "21",
+    "skuBucha": "HR BH 004"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 13",
@@ -1799,7 +1873,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 1/2 X 13",
@@ -1823,7 +1898,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 14",
@@ -1847,7 +1923,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "14"
+    "passo": "14",
+    "skuBucha": "HR BH 003"
   },
   {
     "nome": "HÉLICE YAMAHA 25/30 HP 9 7/8 X 10 1/2",
@@ -1871,7 +1948,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "10 1/2"
+    "passo": "10 1/2",
+    "skuBucha": "HR BH 002"
   },
   {
     "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 10 1/2 MAX TORK",
@@ -1895,7 +1973,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10 1/2"
+    "passo": "10 1/2",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 1/4 X 14 MAX TORK",
@@ -1919,7 +1998,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/4",
-    "passo": "14"
+    "passo": "14",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 13 MAX TORK",
@@ -1943,7 +2023,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 1/2 X 13 MAX TORK",
@@ -1967,7 +2048,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": ""
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 14 MAX TORK",
@@ -1991,7 +2073,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "14"
+    "passo": "14",
+    "skuBucha": ""
   },
   {
     "nome": "HELICE JOHNSON / MERCURY 3.3 HP 7 1/2 X 6",
@@ -2015,7 +2098,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "7 1/2",
-    "passo": "6"
+    "passo": "6",
+    "skuBucha": ""
   },
   {
     "nome": "HELICE JOHNSON / OMC 4 HP 8 X 7 1/2 CONTRA ROTANTE",
@@ -2039,7 +2123,8 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "8",
-    "passo": "7 1/2"
+    "passo": "7 1/2",
+    "skuBucha": ""
   },
   {
     "nome": "HELICE YAMAHA 40 HP 2T/ F60 4T 11 3/8 X 13",
@@ -2063,6 +2148,7 @@ const CATALOGO_DATA = [
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 3/8",
-    "passo": "13"
+    "passo": "13",
+    "skuBucha": "HR BH 003"
   }
 ];

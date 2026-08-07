@@ -6,7 +6,7 @@ const sourcePath = path.resolve('public/Novas Planilhas/Catalogo_Atualizado.xlsx
 const outputPath = path.resolve('public/js/catalogo_data.js');
 const sheetName = 'Matriz';
 const sourceRange = 'B1:S87';
-const catalogVersion = '2026-08-06';
+const catalogVersion = '2026-08-07';
 
 const expectedHeaders = [
   'Descrição',
@@ -76,6 +76,7 @@ const records = rows
       cor,
       alturaBuchas,
       modeloBucha,
+      skuBucha: '',
       descricaoCaixa,
       skuCaixa,
     ] = values;
