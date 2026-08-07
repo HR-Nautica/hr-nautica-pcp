@@ -39,6 +39,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3C7 3 3 7 3 12s4 9 9 9 9-4 9-9-4-9-9-9"/><path d="M9 9c-1.5 2-1.5 4 0 6"/><path d="M15 9c1.5 2 1.5 4 0 6"/></svg>
         Catálogo de Hélices
       </a>
+      <a href="#" class="nav-item" data-page="buchas" id="nav-buchas">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+        Catálogo de Buchas
+      </a>
       <a href="#" class="nav-item" data-page="ordens" id="nav-ordens">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Análise de Produção Hélices
@@ -414,6 +418,113 @@
           <div class="catalogo-cards-grid" id="modelos-cards-grid">
             <!-- Preenchido via JS -->
           </div>
+        </div>
+      </div>
+    <!-- ──── PAGE: CATÁLOGO DE BUCHAS ──── -->
+    <div class="page hidden" id="page-buchas">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Catálogo de Buchas</h1>
+          <p class="page-subtitle">Especificações técnicas, dimensões, pesos e aplicação dos modelos de buchas em estoque</p>
+        </div>
+        <div class="header-actions">
+          <div class="catalogo-view-toggle">
+            <button type="button" class="btn-icon buchas-view-btn active" id="btn-buchas-view-table" title="Visualização em Tabela" onclick="setBuchasViewMode('table')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <button type="button" class="btn-icon buchas-view-btn" id="btn-buchas-view-cards" title="Visualização em Cards" onclick="setBuchasViewMode('cards')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </button>
+          </div>
+          <button class="btn-primary" id="btn-nova-bucha">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova Bucha
+          </button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">MODELOS DE BUCHA</span>
+            <div class="kpi-icon kpi-icon--blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-bucha-total">0</div>
+          <div class="kpi-sub">Cadastrados no catálogo</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">APLICAÇÕES / MOTORES</span>
+            <div class="kpi-icon kpi-icon--teal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-bucha-marcas">0</div>
+          <div class="kpi-sub">Famílias de motores</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">COMPRIMENTO MÉDIO</span>
+            <div class="kpi-icon kpi-icon--orange">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="2" y2="17"/><line x1="22" y1="7" x2="22" y2="17"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-bucha-comp-medio">0 mm</div>
+          <div class="kpi-sub">Média de dimensão</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">PESO MÉDIO EST.</span>
+            <div class="kpi-icon kpi-icon--green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-bucha-peso-medio">0 kg</div>
+          <div class="kpi-sub">Média por bucha</div>
+        </div>
+      </div>
+
+      <div class="card catalogo-card" style="margin-top: 1.5rem;">
+        <div class="catalogo-toolbar">
+          <div class="catalogo-search-wrap">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="bucha-search" placeholder="Buscar por código SKU, descrição, dimensões ou motor..." autocomplete="off" />
+          </div>
+          <span class="catalogo-count" id="buchas-count">0 itens</span>
+        </div>
+        <div class="catalogo-filters">
+          <label class="catalogo-filter"><span>Aplicação / Motor</span><select id="buchas-filter-motor"><option value="">Todos os motores</option></select></label>
+          <button type="button" class="btn-secondary catalogo-clear-filters" id="buchas-limpar-filtros">Limpar filtros</button>
+        </div>
+
+        <!-- Visão Tabela -->
+        <div class="table-wrap catalogo-table-wrap" id="buchas-table-view">
+          <table class="catalogo-table">
+            <thead>
+              <tr>
+                <th>SKU Bucha</th>
+                <th>Descrição da Bucha</th>
+                <th>Diâmetro x Comp.</th>
+                <th>Comp. (mm)</th>
+                <th>Peso Est. (kg)</th>
+                <th>Aplicação / Motor</th>
+                <th class="catalogo-actions-col">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="buchas-grid">
+              <tr><td colspan="7" class="empty-cell">Nenhuma bucha cadastrada.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Visão Cards -->
+        <div class="catalogo-cards-wrap hidden" id="buchas-cards-view">
+          <div class="catalogo-cards-grid" id="buchas-cards-grid"></div>
         </div>
       </div>
     </div>
@@ -1150,6 +1261,55 @@
         </div></div>
       </div>
       <div class="modal-footer"><button class="btn-ghost" id="btn-cancel-modelo">Cancelar</button><button class="btn-primary" id="btn-save-modelo">Salvar Hélice</button></div>
+    </div>
+  </div>
+
+  <!-- Modal: Nova / Edição de Bucha -->
+  <div class="modal-overlay hidden" id="modal-bucha">
+    <div class="modal modal--catalogo" role="dialog" aria-modal="true" aria-labelledby="modal-bucha-title">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="modal-bucha-title">Nova Bucha</h2>
+          <p class="modal-subtitle">Cadastro de especificações técnicas do modelo de bucha</p>
+        </div>
+        <button class="btn-icon" id="modal-bucha-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="bucha-edit-id" />
+        <div class="catalogo-form-section">
+          <h4>Dados Principais</h4>
+          <div class="form-row catalogo-form-grid">
+            <div class="form-group catalogo-span-2">
+              <label class="form-label" for="bucha-descricao">Descrição da Bucha *</label>
+              <input type="text" class="form-input" id="bucha-descricao" placeholder="Ex: BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bucha-sku">Código SKU *</label>
+              <input type="text" class="form-input" id="bucha-sku" placeholder="Ex: HR BH 001" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bucha-dimensoes">Diâmetro x Comprimento</label>
+              <input type="text" class="form-input" id="bucha-dimensoes" placeholder="Ex: 7/8 x 73,8" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bucha-comprimento">Comprimento (mm)</label>
+              <input type="number" step="0.1" class="form-input" id="bucha-comprimento" placeholder="73.8" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bucha-peso">Peso estimado (kg)</label>
+              <input type="number" step="0.01" class="form-input" id="bucha-peso" placeholder="0.35" />
+            </div>
+            <div class="form-group catalogo-span-2">
+              <label class="form-label" for="bucha-aplicacao">Aplicação / Motor</label>
+              <input type="text" class="form-input" id="bucha-aplicacao" placeholder="Ex: YAMAHA 25 HP / SUZUKI 40 HP" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-cancel-bucha">Cancelar</button>
+        <button class="btn-primary" id="btn-save-bucha">Salvar Bucha</button>
+      </div>
     </div>
   </div>
 

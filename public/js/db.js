@@ -17,6 +17,7 @@ const DB = {
     atividades:   'hrn_atividades',
     config:       'hrn_config',
     manutencoes:  'hrn_manutencoes',
+    buchas:       'hrn_buchas',
   },
 
   // ─── Helpers ────────────────────────────
@@ -353,6 +354,99 @@ const DB = {
       catalogoAtualizadoEm: this._now(),
     });
     this.addAtividade(`Catálogo ${CATALOGO_VERSION} carregado: ${catalogo.length} hélices.`, 'green');
+    return true;
+  },
+
+  // ═══ BUCHAS ═════════════════════════════
+  getBuchas()      { return this._get(this.KEYS.buchas); },
+  saveBuchas(list) { this._set(this.KEYS.buchas, list); },
+
+  normalizeBucha(data, existing = {}) {
+    const value = (field, fallback = '') => {
+      if (Object.prototype.hasOwnProperty.call(data, field)) return String(data[field] ?? '').trim();
+      return String(existing[field] ?? fallback).trim();
+    };
+
+    const now = this._now();
+    return {
+      ...existing,
+      id: existing.id || this._id(),
+      sku: value('sku'),
+      descricao: value('descricao'),
+      dimensoes: value('dimensoes'),
+      comprimento: parseFloat(data.comprimento ?? existing.comprimento) || 0,
+      peso: parseFloat(data.peso ?? existing.peso) || 0,
+      aplicacao: value('aplicacao', 'Geral'),
+      criadoEm: existing.criadoEm || now,
+      atualizadoEm: now,
+    };
+  },
+
+  validateBuchaUnique(data, ignoreId = '') {
+    const sku = String(data.sku || '').trim().toLocaleUpperCase('pt-BR');
+    if (!sku) throw new Error('Informe o SKU da bucha.');
+    const duplicate = this.getBuchas().find((bucha) =>
+      bucha.id !== ignoreId && String(bucha.sku || '').trim().toLocaleUpperCase('pt-BR') === sku
+    );
+    if (duplicate) {
+      throw new Error(`O SKU "${data.sku}" já pertence à bucha "${duplicate.descricao}".`);
+    }
+  },
+
+  addBucha(data) {
+    this.validateBuchaUnique(data);
+    const bucha = this.normalizeBucha(data);
+    const list = [...this.getBuchas(), bucha];
+    this.saveBuchas(list);
+    this.addAtividade(`Bucha adicionada: ${bucha.descricao} (${bucha.sku})`, 'teal');
+    return bucha;
+  },
+
+  updateBucha(id, data) {
+    this.validateBuchaUnique(data, id);
+    let updated = null;
+    const list = this.getBuchas().map((item) => {
+      if (item.id === id) {
+        updated = this.normalizeBucha(data, item);
+        return updated;
+      }
+      return item;
+    });
+    this.saveBuchas(list);
+    return updated;
+  },
+
+  deleteBucha(id) {
+    const buchas = this.getBuchas();
+    const bucha = buchas.find((b) => b.id === id);
+    if (!bucha) return null;
+    this.saveBuchas(buchas.filter((b) => b.id !== id));
+    this.addAtividade(`Bucha removida do catálogo: ${bucha.descricao}`, 'red');
+    return bucha;
+  },
+
+  ensureBuchasAtualizadas() {
+    if (typeof BUCHAS_DATA === 'undefined' || !Array.isArray(BUCHAS_DATA)) return false;
+    if (typeof BUCHAS_VERSION === 'undefined') return false;
+
+    const config = this.getConfig();
+    if (config.buchasVersion === BUCHAS_VERSION) return false;
+
+    const existingBySku = new Map(
+      this.getBuchas().map((bucha) => [String(bucha.sku || '').trim().toLocaleUpperCase('pt-BR'), bucha])
+    );
+    const buchas = BUCHAS_DATA.map((data) => {
+      const key = String(data.sku || '').trim().toLocaleUpperCase('pt-BR');
+      return this.normalizeBucha(data, existingBySku.get(key) || {});
+    });
+
+    this.saveBuchas(buchas);
+    this.setConfig({
+      ...config,
+      buchasVersion: BUCHAS_VERSION,
+      buchasAtualizadasEm: this._now(),
+    });
+    this.addAtividade(`Catálogo de buchas ${BUCHAS_VERSION} carregado: ${buchas.length} itens.`, 'teal');
     return true;
   },
 

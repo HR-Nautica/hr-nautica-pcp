@@ -2,6 +2,7 @@
 
 const applicationScripts = [
   "/js/db.js",
+  "/js/buchas_data.js",
   "/js/tinyApi.js",
   "/js/estoqueArvore.js",
   "/js/producaoComponentes.js",
@@ -106,6 +107,7 @@ async function bootstrap() {
     }
     if (typeof DB !== "undefined") {
       DB.ensureCatalogoAtualizado();
+      DB.ensureBuchasAtualizadas();
     }
 
     // 4. Exige o login do usuário

@@ -21,6 +21,8 @@ const STATE = {
   editingPecaId: null,
   editingFundicaoId: null,
   editingVendaId: null,
+  editingBuchaId: null,
+  buchasViewMode: 'table',
 };
 
 // ═══════════════════════════════════════════
@@ -181,6 +183,7 @@ function navigate(page) {
       else if (typeof renderAnaliseTable === 'function') renderAnaliseTable();
       break;
     case 'modelos':     renderModelos();     break;
+    case 'buchas':      renderBuchas();      break;
     case 'estoque':     renderEstoque();     break;
     case 'fundicao':    renderFundicao();    break;
     case 'manutencao':  renderManutencao();  break;
@@ -977,6 +980,208 @@ function saveModelo() {
   if (STATE.currentPage === 'dashboard') renderDashboard();
 }
 
+// ═══════════════════════════════════════════
+// CATÁLOGO DE BUCHAS
+// ═══════════════════════════════════════════
+function setBuchasViewMode(mode) {
+  STATE.buchasViewMode = mode;
+  const tableView = $('buchas-table-view');
+  const cardsView = $('buchas-cards-view');
+  const btnTable = $('btn-buchas-view-table');
+  const btnCards = $('btn-buchas-view-cards');
+
+  if (mode === 'cards') {
+    if (tableView) tableView.classList.add('hidden');
+    if (cardsView) cardsView.classList.remove('hidden');
+    if (btnTable) btnTable.classList.remove('active');
+    if (btnCards) btnCards.classList.add('active');
+  } else {
+    if (tableView) tableView.classList.remove('hidden');
+    if (cardsView) cardsView.classList.add('hidden');
+    if (btnTable) btnTable.classList.add('active');
+    if (btnCards) btnCards.classList.remove('active');
+  }
+}
+window.setBuchasViewMode = setBuchasViewMode;
+
+function renderBuchas() {
+  const search = ($('bucha-search')?.value || '').toLowerCase().trim();
+  const filterMotor = $('buchas-filter-motor')?.value || '';
+  const allBuchas = DB.getBuchas();
+
+  // Popula filtro de motores
+  const motorSelect = $('buchas-filter-motor');
+  if (motorSelect) {
+    const selectedMotor = motorSelect.value;
+    const motores = [...new Set(allBuchas.map(b => b.aplicacao).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    motorSelect.innerHTML = [
+      '<option value="">Todos os motores</option>',
+      ...motores.map(m => `<option value="${escapeCatalogoHtml(m)}">${escapeCatalogoHtml(m)}</option>`)
+    ].join('');
+    if (motores.includes(selectedMotor)) motorSelect.value = selectedMotor;
+  }
+
+  // Filtragem
+  const list = allBuchas
+    .filter(b => !search || [b.sku, b.descricao, b.dimensoes, b.aplicacao].some(f => String(f || '').toLowerCase().includes(search)))
+    .filter(b => !filterMotor || b.aplicacao === filterMotor);
+
+  // KPIs
+  const totalBuchas = allBuchas.length;
+  const totalMotores = new Set(allBuchas.map(b => b.aplicacao).filter(Boolean)).size;
+  const compMedio = totalBuchas ? Math.round(allBuchas.reduce((s, b) => s + (Number(b.comprimento) || 0), 0) / totalBuchas * 10) / 10 : 0;
+  const pesoMedio = totalBuchas ? Math.round(allBuchas.reduce((s, b) => s + (Number(b.peso) || 0), 0) / totalBuchas * 100) / 100 : 0;
+
+  if ($('kpi-bucha-total')) $('kpi-bucha-total').textContent = String(totalBuchas);
+  if ($('kpi-bucha-marcas')) $('kpi-bucha-marcas').textContent = String(totalMotores);
+  if ($('kpi-bucha-comp-medio')) $('kpi-bucha-comp-medio').textContent = `${compMedio} mm`;
+  if ($('kpi-bucha-peso-medio')) $('kpi-bucha-peso-medio').textContent = `${pesoMedio} kg`;
+  if ($('buchas-count')) $('buchas-count').textContent = `${list.length} de ${totalBuchas} ${totalBuchas === 1 ? 'item' : 'itens'}`;
+
+  // Tabela
+  const tbody = $('buchas-grid');
+  if (tbody) {
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhuma bucha encontrada.</td></tr>';
+    } else {
+      tbody.innerHTML = list.map(b => `
+        <tr>
+          <td><strong class="helice-op-number">${escapeCatalogoHtml(b.sku)}</strong></td>
+          <td><strong>${escapeCatalogoHtml(b.descricao)}</strong></td>
+          <td><span class="chip chip--blue">${escapeCatalogoHtml(b.dimensoes || '—')}</span></td>
+          <td><strong>${Number(b.comprimento) ? `${b.comprimento} mm` : '—'}</strong></td>
+          <td>${Number(b.peso) ? `${b.peso} kg` : '—'}</td>
+          <td><span class="chip chip--teal">${escapeCatalogoHtml(b.aplicacao || 'Geral')}</span></td>
+          <td class="catalogo-actions-col">
+            <div class="catalogo-table-actions">
+              <button class="btn-secondary catalogo-edit-btn" onclick="openEditBucha('${b.id}')" title="Editar ${escapeCatalogoHtml(b.sku)}">
+                ✏️ Editar
+              </button>
+              <button class="btn-secondary catalogo-icon-action catalogo-delete-btn" onclick="deleteBucha('${b.id}')" title="Excluir ${escapeCatalogoHtml(b.sku)}">
+                🗑
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  // Cards
+  const cardsGrid = $('buchas-cards-grid');
+  if (cardsGrid) {
+    if (!list.length) {
+      cardsGrid.innerHTML = '<div class="empty-cell" style="grid-column:1/-1;padding:2rem;">Nenhuma bucha encontrada.</div>';
+    } else {
+      cardsGrid.innerHTML = list.map(b => `
+        <div class="catalogo-card-item">
+          <div class="catalogo-card-header">
+            <span class="chip chip--teal">${escapeCatalogoHtml(b.aplicacao || 'Geral')}</span>
+            <span class="catalogo-sku">${escapeCatalogoHtml(b.sku)}</span>
+          </div>
+          <div class="catalogo-card-body">
+            <h3 class="catalogo-card-title" style="font-size:0.9rem;">${escapeCatalogoHtml(b.descricao)}</h3>
+            <div class="catalogo-card-specs" style="margin-top:0.75rem;">
+              <div class="catalogo-card-spec"><span>Dimensões:</span><strong>${escapeCatalogoHtml(b.dimensoes || '—')}</strong></div>
+              <div class="catalogo-card-spec"><span>Comprimento:</span><strong>${Number(b.comprimento) ? `${b.comprimento} mm` : '—'}</strong></div>
+              <div class="catalogo-card-spec span-2"><span>Peso Estimado:</span><strong>${Number(b.peso) ? `${b.peso} kg` : '—'}</strong></div>
+            </div>
+          </div>
+          <div class="catalogo-card-footer">
+            <button type="button" class="btn-secondary catalogo-edit-btn" onclick="openEditBucha('${b.id}')">
+              ✏️ Editar
+            </button>
+            <button type="button" class="btn-secondary catalogo-delete-btn catalogo-card-delete-btn" onclick="deleteBucha('${b.id}')">
+              🗑 Excluir
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+function openNovaBucha() {
+  STATE.editingBuchaId = null;
+  $('modal-bucha-title').textContent = 'Nova Bucha';
+  $('bucha-edit-id').value = '';
+  $('bucha-descricao').value = '';
+  $('bucha-sku').value = '';
+  $('bucha-dimensoes').value = '';
+  $('bucha-comprimento').value = '';
+  $('bucha-peso').value = '';
+  $('bucha-aplicacao').value = '';
+  $('modal-bucha').classList.remove('hidden');
+  $('bucha-descricao').focus();
+}
+window.openNovaBucha = openNovaBucha;
+
+function openEditBucha(id) {
+  const bucha = DB.getBuchas().find(b => b.id === id);
+  if (!bucha) return;
+  STATE.editingBuchaId = id;
+  $('modal-bucha-title').textContent = 'Editar Bucha';
+  $('bucha-edit-id').value = bucha.id;
+  $('bucha-descricao').value = bucha.descricao || '';
+  $('bucha-sku').value = bucha.sku || '';
+  $('bucha-dimensoes').value = bucha.dimensoes || '';
+  $('bucha-comprimento').value = bucha.comprimento || '';
+  $('bucha-peso').value = bucha.peso || '';
+  $('bucha-aplicacao').value = bucha.aplicacao || '';
+  $('modal-bucha').classList.remove('hidden');
+  $('bucha-descricao').focus();
+}
+window.openEditBucha = openEditBucha;
+
+function closeModalBucha() {
+  $('modal-bucha').classList.add('hidden');
+  STATE.editingBuchaId = null;
+}
+
+function saveBucha() {
+  const descricao = $('bucha-descricao').value.trim();
+  const sku = $('bucha-sku').value.trim();
+  if (!descricao) { showToast('Informe a descrição da bucha.', 'error'); return; }
+  if (!sku) { showToast('Informe o SKU da bucha.', 'error'); return; }
+
+  const data = {
+    descricao,
+    sku,
+    dimensoes: $('bucha-dimensoes').value.trim(),
+    comprimento: parseFloat($('bucha-comprimento').value) || 0,
+    peso: parseFloat($('bucha-peso').value) || 0,
+    aplicacao: $('bucha-aplicacao').value.trim() || 'Geral',
+  };
+
+  try {
+    if (STATE.editingBuchaId) {
+      DB.updateBucha(STATE.editingBuchaId, data);
+      showToast('Bucha atualizada com sucesso!');
+    } else {
+      DB.addBucha(data);
+      showToast('Bucha adicionada ao catálogo!');
+    }
+  } catch (error) {
+    showToast(error.message || 'Não foi possível salvar a bucha.', 'error');
+    return;
+  }
+
+  closeModalBucha();
+  renderBuchas();
+}
+
+function deleteBucha(id) {
+  const bucha = DB.getBuchas().find(b => b.id === id);
+  if (!bucha) return;
+  if (!confirm(`Excluir a bucha "${bucha.descricao}" (${bucha.sku})?\n\nEsta ação não pode ser desfeita.`)) return;
+
+  DB.deleteBucha(id);
+  if (STATE.editingBuchaId === id) closeModalBucha();
+  renderBuchas();
+  showToast('Bucha excluída do catálogo.', 'error');
+}
+window.deleteBucha = deleteBucha;
+
 // ESTOQUE & MOVIMENTAÇÃO
 // ═══════════════════════════════════════════
 function renderEstoque() {
@@ -1769,6 +1974,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnFichaFechar = $('btn-ficha-fechar');
   if (modalFichaClose) modalFichaClose.addEventListener('click', closeModalFichaTecnica);
   if (btnFichaFechar) btnFichaFechar.addEventListener('click', closeModalFichaTecnica);
+
+  // ── Modal & Filtros de Buchas ──
+  const btnNovaBucha = $('btn-nova-bucha');
+  if (btnNovaBucha) btnNovaBucha.addEventListener('click', openNovaBucha);
+  const modalBuchaClose = $('modal-bucha-close');
+  if (modalBuchaClose) modalBuchaClose.addEventListener('click', closeModalBucha);
+  const btnCancelBucha = $('btn-cancel-bucha');
+  if (btnCancelBucha) btnCancelBucha.addEventListener('click', closeModalBucha);
+  const btnSaveBucha = $('btn-save-bucha');
+  if (btnSaveBucha) btnSaveBucha.addEventListener('click', saveBucha);
+
+  const inputBuchaSearch = $('bucha-search');
+  if (inputBuchaSearch) inputBuchaSearch.addEventListener('input', renderBuchas);
+  const selectBuchaFilter = $('buchas-filter-motor');
+  if (selectBuchaFilter) selectBuchaFilter.addEventListener('change', renderBuchas);
+  const btnBuchasLimparFiltros = $('buchas-limpar-filtros');
+  if (btnBuchasLimparFiltros) {
+    btnBuchasLimparFiltros.addEventListener('click', () => {
+      if (inputBuchaSearch) inputBuchaSearch.value = '';
+      if (selectBuchaFilter) selectBuchaFilter.value = '';
+      renderBuchas();
+    });
+  }
 
   // ── Modal Material ──
   $('btn-novo-material').addEventListener('click', openNovoMaterial);
