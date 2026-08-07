@@ -32,7 +32,7 @@
 
   function expandAllCoquilhas() {
     if (typeof DB === 'undefined') return;
-    const catalog = DB.getFundicaoCatalog();
+    const catalog = getCombinedFundicaoItems();
     const coquilhas = DB.getCoquilhasCatalog();
     const all = [...new Set([...coquilhas, ...catalog.map(c => c.coquilha)].filter(Boolean))];
     all.forEach(c => state.expandedCoquilhas.add(c));
@@ -44,11 +44,66 @@
     renderCatalogoFundicao();
   }
 
+  function promptSetCoquilhaPeso(coquilha) {
+    if (typeof DB === 'undefined') return;
+    const currentPeso = DB.getCoquilhaPeso(coquilha);
+    const input = prompt(`Informe o Peso da ${coquilha} em quilos (kg):\n\n(Ex: 1.850)`, currentPeso ? String(currentPeso) : '0');
+    if (input === null) return;
+    const val = parseFloat(input.replace(',', '.'));
+    if (isNaN(val) || val < 0) {
+      if (typeof showToast === 'function') showToast('Informe um valor numérico válido para o peso.', 'error');
+      return;
+    }
+    DB.saveCoquilhaPeso(coquilha, val);
+    if (typeof showToast === 'function') showToast(`Peso da ${coquilha} atualizado para ${val.toFixed(3).replace('.', ',')} kg!`, 'success');
+    renderCatalogoFundicao();
+  }
+
+  function getCombinedFundicaoItems() {
+    if (typeof DB === 'undefined') return [];
+    DB.ensureFundicaoCatalogAtualizada();
+    const catalog = DB.getFundicaoCatalog();
+    const modelos = DB.getModelos();
+
+    const itemsMap = new Map();
+
+    // 1. Prioridade para modelos do Catálogo de Hélices com código bruto / coquilha
+    modelos.forEach(m => {
+      if (m.codigoBruto) {
+        const itemObj = {
+          id: m.id,
+          modeloId: m.id,
+          sku: m.sku,
+          descricao: m.nome,
+          coquilha: String(m.codigoBruto).trim(),
+          isModelo: true
+        };
+        itemsMap.set(`${itemObj.coquilha}|${itemObj.sku}`, itemObj);
+      }
+    });
+
+    // 2. Legado do catálogo de fundição (caso haja algum item não cadastrado em modelos)
+    catalog.forEach(c => {
+      const key = `${c.coquilha}|${c.sku}`;
+      if (!itemsMap.has(key)) {
+        itemsMap.set(key, {
+          id: c.id,
+          modeloId: null,
+          sku: c.sku,
+          descricao: c.descricao,
+          coquilha: c.coquilha,
+          isModelo: false
+        });
+      }
+    });
+
+    return Array.from(itemsMap.values());
+  }
+
   function renderCatalogoFundicao() {
     if (typeof DB === 'undefined') return;
 
-    DB.ensureFundicaoCatalogAtualizada();
-    const catalog = DB.getFundicaoCatalog();
+    const catalog = getCombinedFundicaoItems();
     const coquilhas = DB.getCoquilhasCatalog();
 
     // Lista única de coquilhas registradas e catalogadas
@@ -139,6 +194,10 @@
         );
       }
 
+      // Peso referente à Coquilha
+      const pesoCoquilha = DB.getCoquilhaPeso(coquilhaName);
+      const pesoCoquilhaFormatted = pesoCoquilha ? `${pesoCoquilha.toFixed(3).replace('.', ',')} kg` : '0,000 kg';
+
       // Se houver busca ativa, auto-expande para mostrar o resultado diretamente ao usuário
       const isExpanded = search ? true : state.expandedCoquilhas.has(coquilhaName);
       const skusPreview = items.map(i => i.sku).slice(0, 5).join(', ');
@@ -159,9 +218,14 @@
           <td class="text-muted" style="font-size:0.85rem; font-weight:500;">
             ${escapeHtml(previewText)}
           </td>
-          <td><span class="text-muted font-mono" style="font-size:0.85rem;">—</span></td>
+          <td>
+            <span class="chip chip--purple font-mono" style="font-weight:700; font-size:0.88rem;">${pesoCoquilhaFormatted}</span>
+          </td>
           <td class="catalogo-actions-col" style="text-align: right;" onclick="event.stopPropagation();">
-            <button class="btn-secondary" onclick="window.openNovoCatalogoFundicao('${escapeHtml(coquilhaName)}')" style="font-size:0.8rem; padding:4px 10px; font-weight:600;">➕ Add Modelo</button>
+            <div class="catalogo-table-actions" style="justify-content: flex-end; gap: 0.4rem;">
+              <button class="btn-secondary" onclick="window.promptSetCoquilhaPeso('${escapeHtml(coquilhaName)}')" style="font-size:0.8rem; padding:4px 8px;" title="Editar Peso da Coquilha">⚖️ Peso Coquilha</button>
+              <button class="btn-secondary" onclick="window.openNovoModelo('${escapeHtml(coquilhaName)}')" style="font-size:0.8rem; padding:4px 10px; font-weight:600;" title="Cadastrar nova hélice no Catálogo">➕ Add Hélice</button>
+            </div>
           </td>
         </tr>
       `;
@@ -172,13 +236,19 @@
           html += `
             <tr class="coquilha-child-row">
               <td colspan="5" class="text-muted" style="padding-left: 2.2rem; font-style: italic; font-size:0.85rem;">
-                Nenhum modelo cadastrado para a ${escapeHtml(coquilhaName)}. Clique no botão "+ Add Modelo" à direita para vincular um SKU.
+                Nenhum modelo cadastrado para a ${escapeHtml(coquilhaName)}. Clique no botão "+ Add Hélice" à direita para vincular.
               </td>
             </tr>
           `;
         } else {
           items.forEach(item => {
-            const pesoFormatted = (parseFloat(item.peso) || 0).toFixed(3).replace('.', ',');
+            const editOnClick = item.isModelo 
+              ? `window.openEditModelo('${item.id}')` 
+              : `window.openEditCatalogoFundicao('${item.id}')`;
+            const deleteOnClick = item.isModelo 
+              ? `window.deleteModelo('${item.id}')` 
+              : `window.deleteCatalogoFundicao('${item.id}')`;
+
             html += `
               <tr class="coquilha-child-row">
                 <td style="padding-left: 1.5rem;">
@@ -189,11 +259,11 @@
                 </td>
                 <td><strong class="helice-op-number">${escapeHtml(item.sku)}</strong></td>
                 <td><strong>${escapeHtml(item.descricao)}</strong></td>
-                <td><span class="font-mono text-muted" style="font-weight:600;">${pesoFormatted} kg</span></td>
+                <td><span class="font-mono text-muted" style="font-size:0.82rem;">(Coquilha: ${pesoCoquilhaFormatted})</span></td>
                 <td class="catalogo-actions-col" style="text-align: right;">
                   <div class="catalogo-table-actions" style="justify-content: flex-end; gap: 0.4rem;">
-                    <button class="btn-secondary catalogo-icon-action" onclick="window.openEditCatalogoFundicao('${item.id}')" title="Editar Item">✏️</button>
-                    <button class="btn-secondary catalogo-icon-action" onclick="window.deleteCatalogoFundicao('${item.id}')" title="Excluir Item" style="color:var(--accent-red); border-color:var(--accent-red);">🗑️</button>
+                    <button class="btn-secondary catalogo-icon-action" onclick="${editOnClick}" title="Editar Hélice no Catálogo">✏️</button>
+                    <button class="btn-secondary catalogo-icon-action" onclick="${deleteOnClick}" title="Excluir Hélice do Catálogo" style="color:var(--accent-red); border-color:var(--accent-red);">🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -207,85 +277,26 @@
   }
 
   function openNovoCatalogoFundicao(prefilledCoquilha = '') {
-    state.editingId = null;
-    if (byId('modal-cf-title')) byId('modal-cf-title').textContent = '➕ Novo Item do Catálogo de Fundição';
-    if (byId('cf-form-id')) byId('cf-form-id').value = '';
-    if (byId('cf-form-sku')) byId('cf-form-sku').value = '';
-    if (byId('cf-form-coquilha')) byId('cf-form-coquilha').value = typeof prefilledCoquilha === 'string' ? prefilledCoquilha : '';
-    if (byId('cf-form-descricao')) byId('cf-form-descricao').value = '';
-    if (byId('cf-form-peso')) byId('cf-form-peso').value = '0';
-
-    // Popula sugestão de coquilhas no modal
-    const datalist = byId('cf-coquilhas-list');
-    if (datalist && typeof DB !== 'undefined') {
-      const coqs = DB.getCoquilhasCatalog();
-      datalist.innerHTML = coqs.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+    if (typeof window.openNovoModelo === 'function') {
+      window.openNovoModelo(prefilledCoquilha);
     }
-
-    byId('modal-catalogo-fundicao')?.classList.remove('hidden');
   }
 
   function openEditCatalogoFundicao(id) {
-    if (typeof DB === 'undefined') return;
-    const catalog = DB.getFundicaoCatalog();
-    const item = catalog.find(c => c.id === id);
-    if (!item) return;
-
-    state.editingId = id;
-    if (byId('modal-cf-title')) byId('modal-cf-title').textContent = `✏️ Editar Item: ${item.sku}`;
-    if (byId('cf-form-id')) byId('cf-form-id').value = item.id;
-    if (byId('cf-form-sku')) byId('cf-form-sku').value = item.sku;
-    if (byId('cf-form-coquilha')) byId('cf-form-coquilha').value = item.coquilha;
-    if (byId('cf-form-descricao')) byId('cf-form-descricao').value = item.descricao;
-    if (byId('cf-form-peso')) byId('cf-form-peso').value = item.peso !== undefined ? item.peso : 0;
-
-    byId('modal-catalogo-fundicao')?.classList.remove('hidden');
-  }
-
-  function closeModalCatalogoFundicao() {
-    byId('modal-catalogo-fundicao')?.classList.add('hidden');
-    state.editingId = null;
-  }
-
-  function saveCatalogoFundicao() {
-    const coquilha = byId('cf-form-coquilha')?.value.trim();
-    const sku = byId('cf-form-sku')?.value.trim().toUpperCase();
-    const descricao = byId('cf-form-descricao')?.value.trim();
-    const peso = parseFloat(byId('cf-form-peso')?.value) || 0;
-
-    if (!coquilha) {
-      if (typeof showToast === 'function') showToast('Informe a Coquilha / Código Bruto.', 'error');
-      return;
+    if (typeof window.openEditModelo === 'function') {
+      window.openEditModelo(id);
     }
-    if (!sku) {
-      if (typeof showToast === 'function') showToast('Informe o Código (SKU) da Hélice.', 'error');
-      return;
-    }
-    if (!descricao) {
-      if (typeof showToast === 'function') showToast('Informe a Descrição da Hélice.', 'error');
-      return;
-    }
-
-    if (state.editingId) {
-      DB.updateFundicaoCatalogItem(state.editingId, { coquilha, sku, descricao, peso });
-      if (typeof showToast === 'function') showToast('Item do Catálogo de Fundição atualizado!', 'success');
-    } else {
-      DB.addFundicaoCatalogItem({ coquilha, sku, descricao, peso });
-      if (typeof showToast === 'function') showToast('Item adicionado ao Catálogo de Fundição com sucesso!', 'success');
-    }
-
-    // Auto-expande a coquilha adicionada/editada para o usuário visualizar
-    state.expandedCoquilhas.add(coquilha);
-
-    closeModalCatalogoFundicao();
-    renderCatalogoFundicao();
   }
 
   function deleteCatalogoFundicao(id) {
     if (typeof DB === 'undefined') return;
-    const catalog = DB.getFundicaoCatalog();
-    const item = catalog.find(c => c.id === id);
+    const item = getCombinedFundicaoItems().find(c => c.id === id);
     if (!item) return;
+
+    if (item.isModelo && typeof window.deleteModelo === 'function') {
+      window.deleteModelo(id);
+      return;
+    }
 
     if (confirm(`Tem certeza que deseja excluir o item ${item.sku} (${item.coquilha})?`)) {
       DB.deleteFundicaoCatalogItem(id);
@@ -299,17 +310,14 @@
   window.toggleCoquilhaExpand = toggleCoquilhaExpand;
   window.expandAllCoquilhas = expandAllCoquilhas;
   window.collapseAllCoquilhas = collapseAllCoquilhas;
+  window.promptSetCoquilhaPeso = promptSetCoquilhaPeso;
   window.openNovoCatalogoFundicao = openNovoCatalogoFundicao;
   window.openEditCatalogoFundicao = openEditCatalogoFundicao;
-  window.closeModalCatalogoFundicao = closeModalCatalogoFundicao;
   window.deleteCatalogoFundicao = deleteCatalogoFundicao;
 
   // DOM Event Listeners
   document.addEventListener('DOMContentLoaded', () => {
     byId('btn-novo-cf')?.addEventListener('click', () => openNovoCatalogoFundicao());
-    byId('modal-cf-close')?.addEventListener('click', closeModalCatalogoFundicao);
-    byId('btn-cancel-cf')?.addEventListener('click', closeModalCatalogoFundicao);
-    byId('btn-save-cf')?.addEventListener('click', saveCatalogoFundicao);
 
     byId('cf-expand-all')?.addEventListener('click', expandAllCoquilhas);
     byId('cf-collapse-all')?.addEventListener('click', collapseAllCoquilhas);
@@ -321,13 +329,7 @@
       if (byId('cf-filter-coquilha')) byId('cf-filter-coquilha').value = '';
       renderCatalogoFundicao();
     });
-
-    const modalOverlay = byId('modal-catalogo-fundicao');
-    if (modalOverlay) {
-      modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) closeModalCatalogoFundicao();
-      });
-    }
   });
 })();
+
 

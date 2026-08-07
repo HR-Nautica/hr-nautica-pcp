@@ -915,14 +915,32 @@ function renderModelos() {
   renderCatalogoModelos();
 }
 
-function openNovoModelo() {
+function populateModeloCoquilhasSelect() {
+  const select = $('modelo-codigo-bruto');
+  if (!select) return;
+  const coquilhas = DB.getCoquilhasCatalog();
+  const currentVal = select.value;
+  const options = [...new Set(coquilhas.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+  select.innerHTML = [
+    '<option value="">— Selecione uma Coquilha —</option>',
+    ...options.map(c => `<option value="${escapeCatalogoHtml(c)}">${escapeCatalogoHtml(c)}</option>`)
+  ].join('');
+  if (currentVal && options.includes(currentVal)) select.value = currentVal;
+}
+
+function openNovoModelo(prefilledCoquilha = '') {
   STATE.editingModeloId = null;
   $('modelo-edit-id').value = '';
   $('modal-modelo-title').textContent = 'Nova Hélice';
+  populateModeloCoquilhasSelect();
   catalogoFillForm();
+  if (prefilledCoquilha && $('modelo-codigo-bruto')) {
+    $('modelo-codigo-bruto').value = prefilledCoquilha;
+  }
   $('modal-modelo').classList.remove('hidden');
   $('modelo-nome').focus();
 }
+window.openNovoModelo = openNovoModelo;
 
 function openEditModelo(id) {
   const modelo = DB.getModelos().find((item) => item.id === id);
@@ -930,7 +948,11 @@ function openEditModelo(id) {
   STATE.editingModeloId = id;
   $('modelo-edit-id').value = id;
   $('modal-modelo-title').textContent = 'Editar Hélice';
+  populateModeloCoquilhasSelect();
   catalogoFillForm(modelo);
+  if (modelo.codigoBruto && $('modelo-codigo-bruto')) {
+    $('modelo-codigo-bruto').value = modelo.codigoBruto;
+  }
   $('modal-modelo').classList.remove('hidden');
   $('modelo-nome').focus();
 }
@@ -954,6 +976,7 @@ function deleteModelo(id) {
   if (STATE.editingModeloId === id) closeModalModelo();
   renderModelos();
   populateModeloSelects();
+  if (typeof renderCatalogoFundicao === 'function') renderCatalogoFundicao();
   if (STATE.currentPage === 'dashboard') renderDashboard();
   showToast('Hélice excluída do catálogo.', 'error');
 }
@@ -965,7 +988,7 @@ function saveModelo() {
   const catalogData = catalogoReadForm();
   if (!catalogData.nome) { showToast('Informe a descrição da hélice.', 'error'); return; }
   if (!catalogData.sku) { showToast('Informe o SKU da hélice.', 'error'); return; }
-  if (!catalogData.codigoBruto) { showToast('Informe o código bruto.', 'error'); return; }
+  if (!catalogData.codigoBruto) { showToast('Selecione a coquilha / código bruto.', 'error'); return; }
 
   try {
     if (STATE.editingModeloId) {
@@ -975,6 +998,7 @@ function saveModelo() {
       DB.addModelo(catalogData);
       showToast('Hélice adicionada ao catálogo!');
     }
+    if (typeof renderCatalogoFundicao === 'function') renderCatalogoFundicao();
   } catch (error) {
     showToast(error.message || 'Não foi possível salvar a hélice.', 'error');
     return;

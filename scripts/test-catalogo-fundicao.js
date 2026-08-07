@@ -108,4 +108,11 @@ assert.ok(tbody.innerHTML.includes('coquilha-group-header'), 'Deve conter a clas
 context.toggleCoquilhaExpand('COQUILHA 02');
 assert.ok(tbody.innerHTML.includes('HR HY 012'), 'Após expandir, o modelo HR HY 012 deve ser renderizado');
 
-console.log('[OK] Todos os testes do Catálogo de Fundição com Coquilhas Agrupadas e Expansíveis passaram com 100% de sucesso!');
+// 8. Testar atribuição de peso para a Coquilha 02
+DB.saveCoquilhaPeso('COQUILHA 02', 1.850);
+assert.equal(DB.getCoquilhaPeso('COQUILHA 02'), 1.850, 'Peso da COQUILHA 02 deve ser 1.85 kg');
+
+context.renderCatalogoFundicao();
+assert.ok(tbody.innerHTML.includes('1,850 kg'), 'Renderização deve exibir o peso 1,850 kg na COQUILHA 02');
+
+console.log('[OK] Todos os testes do Catálogo de Fundição vinculados com Catálogo de Hélices e Peso de Coquilha passaram com 100% de sucesso!');

@@ -23,6 +23,7 @@ const DB = {
     buchasSaidas:  'hrn_buchas_saidas',
     fundicaoCatalog: 'hrn_fundicao_catalog',
     coquilhasCatalog: 'hrn_coquilhas_catalog',
+    coquilhasPesos:   'hrn_coquilhas_pesos',
   },
 
   // ─── Helpers ────────────────────────────
@@ -425,6 +426,26 @@ const DB = {
 
   saveCoquilhasCatalog(list) {
     this._set(this.KEYS.coquilhasCatalog, list);
+  },
+
+  getCoquilhasPesos() {
+    try { return JSON.parse(RemoteStorage.getItem(this.KEYS.coquilhasPesos)) || {}; }
+    catch { return {}; }
+  },
+
+  getCoquilhaPeso(coquilha) {
+    if (!coquilha) return 0;
+    const pesos = this.getCoquilhasPesos();
+    return parseFloat(pesos[coquilha]) || 0;
+  },
+
+  saveCoquilhaPeso(coquilha, peso) {
+    if (!coquilha) return;
+    const pesos = this.getCoquilhasPesos();
+    const parsed = parseFloat(peso) || 0;
+    pesos[coquilha] = parsed;
+    RemoteStorage.setItem(this.KEYS.coquilhasPesos, JSON.stringify(pesos));
+    this.addAtividade(`Peso da coquilha ${coquilha} atualizado para ${parsed.toFixed(3)} kg`, 'teal');
   },
 
   ensureFundicaoCatalogAtualizada() {
