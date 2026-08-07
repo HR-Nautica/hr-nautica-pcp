@@ -95,7 +95,7 @@
                 <button class="btn-primary" onclick="window.openNovaEntradaBucha('${escapeHtml(s.sku)}')" title="Nova Entrada">
                   ➕ Entrada
                 </button>
-                <button class="btn-secondary" style="border-color:var(--accent-orange); color:var(--accent-orange);" onclick="window.openSaidaBucha('${escapeHtml(s.sku)}')" title="Dar Baixa no Estoque Final" ${s.qtdAcabada <= 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                <button class="btn-secondary" style="border-color:var(--accent-orange); color:var(--accent-orange);" onclick="window.openSaidaBucha('${escapeHtml(s.sku)}')" title="Dar Baixa no Estoque Pronto">
                   ➖ Dar Baixa
                 </button>
               </div>
@@ -284,17 +284,17 @@
 
   // --- Modal Dar Baixa / Registrar Saída ---
   function openSaidaBucha(preselectSku = '') {
-    const saldos = DB.getBuchasSaldosConsolidados().filter(s => s.qtdAcabada > 0);
+    const saldos = DB.getBuchasSaldosConsolidados();
     const selectSku = byId('saida-bucha-sku');
     if (selectSku) {
       selectSku.innerHTML = [
-        '<option value="">— Selecione uma Bucha com Estoque Final —</option>',
-        ...saldos.map(b => `<option value="${escapeHtml(b.sku)}">${escapeHtml(b.sku)} (Disponível: ${formatNum(b.qtdAcabada)} un) - ${escapeHtml(b.descricao)}</option>`)
+        '<option value="">— Selecione a Bucha do Catálogo —</option>',
+        ...saldos.map(b => `<option value="${escapeHtml(b.sku)}">${escapeHtml(b.sku)} (Estoque Pronto: ${formatNum(b.qtdAcabada)} un) - ${escapeHtml(b.descricao)}</option>`)
       ].join('');
       if (preselectSku) selectSku.value = preselectSku;
     }
 
-    if (byId('saida-bucha-qty')) byId('saida-bucha-qty').value = '10';
+    if (byId('saida-bucha-qty')) byId('saida-bucha-qty').value = '1';
     if (byId('saida-bucha-obs')) byId('saida-bucha-obs').value = '';
 
     byId('modal-saida-bucha')?.classList.remove('hidden');
