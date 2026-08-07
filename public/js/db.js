@@ -276,6 +276,7 @@ const DB = {
       cor: value('cor'),
       alturaBuchas: value('alturaBuchas'),
       modeloBucha: value('modeloBucha', data.buchaModelo ?? existing.buchaModelo ?? ''),
+      skuBucha: value('skuBucha', data.skuTinyBucha ?? existing.skuTinyBucha ?? ''),
       descricaoCaixa,
       skuCaixa: value('skuCaixa'),
       pas: value('pas', '3'),

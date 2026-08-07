@@ -113,7 +113,7 @@ const formIds = [
   'modelo-descricao-tubo', 'modelo-sku-tubo', 'modelo-comprimento-anel', 'modelo-anel',
   'modelo-diametro-latao', 'modelo-descricao-latao', 'modelo-sku-latao',
   'modelo-comprimento-bucha', 'modelo-bucha', 'modelo-cor', 'modelo-altura-buchas',
-  'modelo-modelo-bucha', 'modelo-descricao-caixa', 'modelo-sku-caixa',
+  'modelo-modelo-bucha', 'modelo-sku-bucha', 'modelo-descricao-caixa', 'modelo-sku-caixa',
 ];
 formIds.forEach((id) => {
   assert.equal((indexHtml.match(new RegExp(`id=["']${id}["']`, 'g')) || []).length, 1, `${id} deve existir uma vez`);

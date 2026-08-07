@@ -563,6 +563,7 @@ const CATALOGO_FORM_FIELDS = {
   cor: 'modelo-cor',
   alturaBuchas: 'modelo-altura-buchas',
   modeloBucha: 'modelo-modelo-bucha',
+  skuBucha: 'modelo-sku-bucha',
   descricaoCaixa: 'modelo-descricao-caixa',
   skuCaixa: 'modelo-sku-caixa',
 };
@@ -681,6 +682,7 @@ function openFichaTecnica(id) {
         <div class="ficha-spec-row"><span>Bucha Modelo:</span><strong>${escapeCatalogoHtml(modelo.bucha || '—')}</strong></div>
         <div class="ficha-spec-row"><span>SKU Tiny Latão:</span><strong>${escapeCatalogoHtml(modelo.skuLatao || '—')}</strong></div>
         <div class="ficha-spec-row"><span>Descrição Tiny Latão:</span><strong>${escapeCatalogoHtml(modelo.descricaoLatao || '—')}</strong></div>
+        <div class="ficha-spec-row"><span>Código SKU Bucha:</span><strong>${escapeCatalogoHtml(modelo.skuBucha || '—')}</strong></div>
         <div class="ficha-spec-row"><span>Descrição da Bucha:</span><strong>${escapeCatalogoHtml(buchaDesc)}</strong></div>
       </div>
 
@@ -742,7 +744,7 @@ function renderCatalogoModelos() {
     bucha: $('catalogo-filter-bucha').value,
     cor: $('catalogo-filter-cor').value,
   };
-  const searchableFields = ['nome', 'sku', 'codigoBruto', 'skuTinyTuboAl', 'modeloBucha', 'skuCaixa'];
+  const searchableFields = ['nome', 'sku', 'codigoBruto', 'skuTinyTuboAl', 'modeloBucha', 'skuBucha', 'skuCaixa'];
   const list = all
     .filter((modelo) => !search || searchableFields.some((field) =>
       String(modelo[field] || '').toLocaleLowerCase('pt-BR').includes(search)
@@ -875,7 +877,7 @@ function renderCatalogoModelos() {
           <strong class="catalogo-model-name">${escapeCatalogoHtml(modelo.nome)}</strong>
           ${dim ? `<span class="catalogo-dim-badge">${dim}</span>` : ''}
         </div>
-        <div class="catalogo-mobile-details"><span><b>Bruto:</b> ${escapeCatalogoHtml(modelo.codigoBruto || '—')}</span><span><b>SKU tubo:</b> ${escapeCatalogoHtml(modelo.skuTinyTuboAl || '—')}</span><span><b>Cor:</b> ${escapeCatalogoHtml(cor)}</span><span><b>SKU caixa:</b> ${escapeCatalogoHtml(modelo.skuCaixa || '—')}</span></div>
+        <div class="catalogo-mobile-details"><span><b>Bruto:</b> ${escapeCatalogoHtml(modelo.codigoBruto || '—')}</span><span><b>SKU tubo:</b> ${escapeCatalogoHtml(modelo.skuTinyTuboAl || '—')}</span><span><b>SKU bucha:</b> ${escapeCatalogoHtml(modelo.skuBucha || '—')}</span><span><b>Cor:</b> ${escapeCatalogoHtml(cor)}</span><span><b>SKU caixa:</b> ${escapeCatalogoHtml(modelo.skuCaixa || '—')}</span></div>
       </td>
       <td class="catalogo-col-bruto">${escapeCatalogoHtml(modelo.codigoBruto || '—')}</td>
       <td class="catalogo-col-tubo">${escapeCatalogoHtml(modelo.skuTinyTuboAl || '—')}</td>
