@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-console.log('Testing Central de Sincronização Geral (syncManagerPage.js)...');
+console.log('Testing Central de Sincronização Geral (Focus nas 2 abas de estoque & Prevenção de Leitura Dupla)...');
 
 const store = new Map();
 const RemoteStorage = {
@@ -22,6 +22,7 @@ const context = vm.createContext({
   Array,
   Object,
   RemoteStorage,
+  localStorage: RemoteStorage,
   fetch: () => Promise.resolve({ ok: false, json: () => Promise.resolve({}) })
 });
 
@@ -32,7 +33,16 @@ const elements = new Map();
 context.document = {
   getElementById: (id) => {
     if (!elements.has(id)) {
-      elements.set(id, { id, value: '', textContent: '', innerHTML: '', classList: { remove() {}, add() {} }, style: {}, dataset: {}, addEventListener: () => {} });
+      elements.set(id, {
+        id,
+        value: '',
+        textContent: '',
+        innerHTML: '',
+        classList: { remove() {}, add() {} },
+        style: {},
+        dataset: {},
+        addEventListener: () => {}
+      });
     }
     return elements.get(id);
   },
@@ -51,4 +61,4 @@ assert.ok(typeof context.distributeMasterExcel === 'function', 'distributeMaster
 // Simular inicialização da página
 context.initSyncManagerPage();
 
-console.log('[OK] Todos os testes da Central de Sincronização Geral passaram com 100% de sucesso!');
+console.log('[OK] Todos os testes da Central de Sincronização Geral (2 abas de estoque) passaram com 100% de sucesso!');

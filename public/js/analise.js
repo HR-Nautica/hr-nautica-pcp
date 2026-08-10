@@ -1069,43 +1069,7 @@ function initAnaliseListeners() {
     });
   }
 
-  // 6. Botão de sincronização de planilha
-  const btnSync = document.getElementById('btn-analise-sync');
-  const inpFile = document.getElementById('input-analise-excel');
 
-  if (btnSync && inpFile) {
-    btnSync.addEventListener('click', (e) => {
-      e.preventDefault();
-      inpFile.click();
-    });
-
-    inpFile.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      btnSync.disabled = true;
-      const originalHTML = btnSync.innerHTML;
-      btnSync.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Sincronizando...`;
-
-      try {
-        if (typeof distributeMasterExcel === 'function') {
-          await distributeMasterExcel(file);
-        } else {
-          const data = new Uint8Array(await file.arrayBuffer());
-          const syncResult = await processAnaliseExcel(data.buffer);
-          showToast(`Planilha sincronizada no Supabase: ${syncResult.count} linhas.`, 'success');
-          renderAnaliseTable();
-        }
-      } catch (err) {
-        console.error(err);
-        showToast(`Erro ao sincronizar a planilha: ${err.message || 'verifique o arquivo e a conexão.'}`, 'error');
-      } finally {
-        btnSync.disabled = false;
-        btnSync.innerHTML = originalHTML;
-      }
-      e.target.value = '';
-    });
-  }
 
   // 7. Botão de ajuda / explicação da aba
   const btnAjuda = document.getElementById('btn-analise-ajuda');

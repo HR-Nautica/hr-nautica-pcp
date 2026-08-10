@@ -265,59 +265,39 @@
         </div>
       </div>
 
-      <!-- Status dos Módulos Sincronizados -->
+      <!-- Status dos Módulos Sincronizados de Estoque -->
       <div style="margin-bottom: 1.5rem;">
         <h2 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 8px;">
-          <span>Status da Distribuição de Dados</span>
-          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">(Atualização automática multi-módulo)</span>
+          <span>Status da Sincronização de Estoque</span>
+          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">(Reescrita direta de dados pelas abas)</span>
         </h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;" id="sync-module-cards">
-          <!-- Card 1: Análise de Produção & Fundição -->
-          <div class="card" style="padding: 1.2rem;" id="sync-card-analise">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <span style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Análise & Fundição</span>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;" id="sync-module-cards">
+          <!-- Card 1: Análise de Produção Hélices -->
+          <div class="card" style="padding: 1.35rem; border-left: 4px solid #38bdf8;" id="sync-card-analise">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <span style="font-size: 0.88rem; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.03em;">Análise de Produção Hélices</span>
               <span class="chip chip--gray" id="sync-badge-analise">Aguardando</span>
             </div>
-            <div style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;" id="sync-val-analise">—</div>
-            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="sync-sub-analise">Hélices usinadas e brutas (3-Cobertura)</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #38bdf8;" id="sync-val-analise">—</div>
+            <div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 0.4rem;" id="sync-sub-analise">Sincronização de estoque físico usinado/bruto e médias mensais</div>
           </div>
 
-          <!-- Card 2: Rastreio de OPs -->
-          <div class="card" style="padding: 1.2rem;" id="sync-card-rastreio">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <span style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Rastreio de OPs</span>
-              <span class="chip chip--gray" id="sync-badge-rastreio">Aguardando</span>
-            </div>
-            <div style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;" id="sync-val-rastreio">—</div>
-            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="sync-sub-rastreio">Avanço de etapas e refugo por OP</div>
-          </div>
-
-          <!-- Card 3: Estoque de Componentes & Buchas -->
-          <div class="card" style="padding: 1.2rem;" id="sync-card-componentes">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <span style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Componentes & Buchas</span>
+          <!-- Card 2: Estoque Componentes -->
+          <div class="card" style="padding: 1.35rem; border-left: 4px solid #a855f7;" id="sync-card-componentes">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <span style="font-size: 0.88rem; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.03em;">Estoque Componentes</span>
               <span class="chip chip--gray" id="sync-badge-componentes">Aguardando</span>
             </div>
-            <div style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;" id="sync-val-componentes">—</div>
-            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="sync-sub-componentes">Saldos de estoque e saídas previstas</div>
-          </div>
-
-          <!-- Card 4: Planejamento V.I.N.I. -->
-          <div class="card" style="padding: 1.2rem;" id="sync-card-vini">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <span style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Planejamento V.I.N.I.</span>
-              <span class="chip chip--gray" id="sync-badge-vini">Aguardando</span>
-            </div>
-            <div style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;" id="sync-val-vini">—</div>
-            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="sync-sub-vini">Fornecedores, sub-itens e fabricação</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #c084fc;" id="sync-val-componentes">—</div>
+            <div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 0.4rem;" id="sync-sub-componentes">Sincronização de saldos de estoque e saídas previstas da estrutura</div>
           </div>
         </div>
       </div>
 
-      <!-- Histórico de Sincronizações Centralizadas -->
+      <!-- Registro da Última Sincronização Realizada -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Histórico de Sincronizações Centralizadas</h2>
+          <h2 class="card-title">Última Sincronização Realizada</h2>
         </div>
         <div class="table-wrap">
           <table class="data-table">
@@ -325,13 +305,13 @@
               <tr>
                 <th>Data / Hora</th>
                 <th>Arquivo Excel</th>
-                <th>Abas Processadas</th>
-                <th>Registros Atualizados</th>
-                <th>Status</th>
+                <th>Análise de Produção Hélices</th>
+                <th>Estoque Componentes</th>
+                <th>Status Geral</th>
               </tr>
             </thead>
             <tbody id="sync-history-body">
-              <tr><td colspan="5" class="empty-cell">Nenhum histórico de sincronização registrado até o momento.</td></tr>
+              <tr><td colspan="5" class="empty-cell">Nenhuma planilha sincronizada nesta sessão.</td></tr>
             </tbody>
           </table>
         </div>
@@ -409,11 +389,6 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Exportar Excel
           </button>
-          <button class="btn-secondary btn-sync-pcp" id="btn-analise-sync" title="Sincronizar Cobertura" style="height: 38px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            Sincronizar Cobertura
-          </button>
-          <input type="file" id="input-analise-excel" accept=".xlsx, .xls" style="display: none;" />
         </div>
       </div>
 
@@ -893,35 +868,14 @@
           <span class="earv-count-badge" id="estoque-arv-count" style="font-size: 0.72rem; padding: 4px 10px;">0 itens</span>
         </div>
 
-        <div class="vini-toolbar-right">
-          <!-- Dropdown Ações -->
-          <div class="earv-dropdown">
-            <button class="btn-secondary btn-export" style="height: 38px; gap: 6px; cursor: pointer;" onclick="event.stopPropagation(); earv_toggleDropdown()">
-              Ações ⚙️
-            </button>
-            <div class="earv-dropdown-menu hidden" id="earv-actions-menu">
-              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-estoque-sync-estoque').click();">
-                🔄 Sincronizar Estoque
-              </a>
-              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-estoque-sync-saidas-previstas').click();">
-                📈 Sincronizar Saídas
-              </a>
-              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-estoque-arv-sync').click();">
-                🌳 Sincronizar Árvore
-              </a>
-              <div class="earv-dropdown-divider"></div>
-              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-earv-expand-all').click();">
-                ➕ Expandir Tudo
-              </a>
-              <a href="#" class="earv-dropdown-item" onclick="event.preventDefault(); document.getElementById('btn-earv-collapse-all').click();">
-                ➖ Recolher Tudo
-              </a>
-            </div>
-          </div>
-
-          <!-- Hidden original buttons to preserve existing JS selectors and event listeners -->
-          <button id="btn-earv-expand-all" style="display:none;"></button>
-          <button id="btn-earv-collapse-all" style="display:none;"></button>
+        <div class="vini-toolbar-right" style="display:flex; gap:8px;">
+          <button type="button" class="btn-secondary" id="btn-earv-expand-all" style="height: 38px; padding: 0 12px; font-weight: 600;" title="Expandir toda a árvore de componentes">
+            ➕ Expandir Tudo
+          </button>
+          <button type="button" class="btn-secondary" id="btn-earv-collapse-all" style="height: 38px; padding: 0 12px; font-weight: 600;" title="Recolher toda a árvore de componentes">
+            ➖ Recolher Tudo
+          </button>
+          <!-- Hidden fallback elements to prevent JS errors if referenced -->
           <button id="btn-estoque-sync-estoque" style="display:none;"></button>
           <button id="btn-estoque-sync-saidas-previstas" style="display:none;"></button>
           <button id="btn-estoque-arv-sync" style="display:none;"></button>
