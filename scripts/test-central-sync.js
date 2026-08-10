@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-console.log('Testing Central de Sincronização Geral (Focus nas 2 abas de estoque & Prevenção de Leitura Dupla)...');
+console.log('Testing Sincronizar Estoque & Sincronizar Saídas (V.I.N.I.)...');
 
 const store = new Map();
 const RemoteStorage = {
@@ -57,8 +57,11 @@ vm.runInContext(fs.readFileSync('public/js/syncManagerPage.js', 'utf8'), context
 
 assert.ok(typeof context.initSyncManagerPage === 'function', 'initSyncManagerPage deve ser exportado globalmente');
 assert.ok(typeof context.distributeMasterExcel === 'function', 'distributeMasterExcel deve ser exportado globalmente');
+assert.ok(typeof context.initSyncViniPage === 'function', 'initSyncViniPage deve ser exportado globalmente');
+assert.ok(typeof context.distributeViniSaidasExcel === 'function', 'distributeViniSaidasExcel deve ser exportado globalmente');
 
-// Simular inicialização da página
+// Simular inicialização das duas páginas de sincronização
 context.initSyncManagerPage();
+context.initSyncViniPage();
 
-console.log('[OK] Todos os testes da Central de Sincronização Geral (2 abas de estoque) passaram com 100% de sucesso!');
+console.log('[OK] Todos os testes das Centrais de Sincronização (Estoque e Saídas V.I.N.I.) passaram com 100% de sucesso!');

@@ -181,6 +181,9 @@ function navigate(page) {
     case 'sync':
       if (typeof initSyncManagerPage === 'function') initSyncManagerPage();
       break;
+    case 'sync-vini':
+      if (typeof initSyncViniPage === 'function') initSyncViniPage();
+      break;
     case 'ordens':
       if (typeof initAnaliseModule === 'function') initAnaliseModule();
       else if (typeof renderAnaliseTable === 'function') renderAnaliseTable();

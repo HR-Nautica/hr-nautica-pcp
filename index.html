@@ -37,6 +37,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
         Sincronizar Estoque
       </a>
+      <a href="#" class="nav-item" data-page="sync-vini" id="nav-sync-vini">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Sincronizar Saídas
+      </a>
 
       <div class="sidebar-title">Hélices</div>
       <a href="#" class="nav-item" data-page="modelos" id="nav-modelos">
@@ -312,6 +316,77 @@
             </thead>
             <tbody id="sync-history-body">
               <tr><td colspan="5" class="empty-cell">Nenhuma planilha sincronizada nesta sessão.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── PAGE: CENTRAL DE SINCRONIZAÇÃO DE SAÍDAS (V.I.N.I.) ──── -->
+    <div class="page hidden" id="page-sync-vini">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Sincronizar Saídas (V.I.N.I.)</h1>
+          <p class="page-subtitle" style="color:var(--text-muted); font-size:0.88rem; margin-top:0.25rem;">
+            Importe a planilha de saídas previstas e fornecedores para abastecer o Planejamento V.I.N.I.
+          </p>
+        </div>
+      </div>
+
+      <!-- Dropzone Central de Upload de Saídas -->
+      <div class="card" style="padding: 2.25rem 2rem; margin-bottom: 1.5rem; text-align: center; background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.95) 100%); border: 2px dashed rgba(168,85,247,0.4); border-radius: 12px; transition: all 0.2s ease;" id="sync-vini-dropzone">
+        <input type="file" id="sync-vini-file-input" accept=".xlsx, .xls, .csv" style="display: none;" />
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(168,85,247,0.15); display: flex; align-items: center; justify-content: center; color: #c084fc; box-shadow: 0 0 15px rgba(168,85,247,0.2);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; margin-bottom: 0.35rem;">Arraste e solte sua Planilha de Saídas V.I.N.I. aqui</h2>
+            <p style="font-size: 0.88rem; color: #94a3b8; max-width: 580px; margin: 0 auto;">Formatos suportados: .xlsx, .xls (Planilhas de Saídas Previstas, Fornecedores e Fabricação V.I.N.I.)</p>
+          </div>
+          <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+            <button type="button" class="btn-primary" id="btn-select-sync-vini-file" style="padding: 0.75rem 1.8rem; font-weight: 800; font-size: 0.95rem; border-radius: 8px; background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); border: none; box-shadow: 0 4px 12px rgba(168,85,247,0.4);">
+              📁 Selecionar Planilha de Saídas
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status dos Módulos Sincronizados de Saídas -->
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 8px;">
+          <span>Status da Sincronização V.I.N.I.</span>
+          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">(Vínculos com fornecedores e matriz de fabricação)</span>
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;" id="sync-vini-module-cards">
+          <div class="card" style="padding: 1.35rem; border-left: 4px solid #c084fc;" id="sync-vini-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <span style="font-size: 0.88rem; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.03em;">Planejamento V.I.N.I. & Fornecedores</span>
+              <span class="chip chip--gray" id="sync-vini-badge">Aguardando</span>
+            </div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #c084fc;" id="sync-vini-val">—</div>
+            <div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 0.4rem;" id="sync-vini-sub">Sincronização de saídas previstas e vínculos de fornecedores</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registro da Última Sincronização Realizada -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Última Sincronização de Saídas Realizada</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data / Hora</th>
+                <th>Arquivo Excel</th>
+                <th>V.I.N.I. & Fornecedores</th>
+                <th>Status Geral</th>
+              </tr>
+            </thead>
+            <tbody id="sync-vini-history-body">
+              <tr><td colspan="4" class="empty-cell">Nenhuma planilha de saídas sincronizada nesta sessão.</td></tr>
             </tbody>
           </table>
         </div>

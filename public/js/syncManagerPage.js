@@ -1,32 +1,16 @@
 /**
- * Central de Sincronização Geral (syncManagerPage.js)
- * Gerencia o upload único de planilhas Master Excel e reescreve os saldos de estoque
- * para Análise de Produção Hélices e Estoque Componentes.
+ * Central de Sincronização (syncManagerPage.js)
+ * Gerencia as abas "Sincronizar Estoque" e "Sincronizar Saídas (V.I.N.I.)".
  */
 
 (function () {
   'use strict';
 
-  const LAST_SYNC_KEY = 'hrn_last_master_sync';
-  let isSyncing = false;
+  const LAST_STOCK_SYNC_KEY = 'hrn_last_master_sync';
+  const LAST_VINI_SYNC_KEY = 'hrn_last_vini_sync';
 
-  function getLastSyncLog() {
-    try {
-      const raw = localStorage.getItem(LAST_SYNC_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  function saveLastSyncLog(logItem) {
-    try {
-      localStorage.setItem(LAST_SYNC_KEY, JSON.stringify(logItem));
-    } catch (e) {
-      console.warn('[SyncManager] Não foi possível persistir a última sincronização:', e);
-    }
-    renderSyncHistory();
-  }
+  let isStockSyncing = false;
+  let isViniSyncing = false;
 
   function escapeHtml(str) {
     if (!str) return '';
@@ -37,11 +21,32 @@
       .replace(/"/g, '&quot;');
   }
 
-  function renderSyncHistory() {
+  // ═══════════════════════════════════════════
+  // 1. SINCRONIZAR ESTOQUE
+  // ═══════════════════════════════════════════
+  function getLastStockSyncLog() {
+    try {
+      const raw = localStorage.getItem(LAST_STOCK_SYNC_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveLastStockSyncLog(logItem) {
+    try {
+      localStorage.setItem(LAST_STOCK_SYNC_KEY, JSON.stringify(logItem));
+    } catch (e) {
+      console.warn('[SyncManager] Erro ao salvar log de estoque:', e);
+    }
+    renderStockSyncHistory();
+  }
+
+  function renderStockSyncHistory() {
     const tbody = document.getElementById('sync-history-body');
     if (!tbody) return;
 
-    const lastLog = getLastSyncLog();
+    const lastLog = getLastStockSyncLog();
     if (!lastLog) {
       tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Nenhuma sincronização de estoque realizada até o momento.</td></tr>';
       return;
@@ -96,8 +101,8 @@
   }
 
   async function distributeMasterExcel(file) {
-    if (!file || isSyncing) return;
-    isSyncing = true;
+    if (!file || isStockSyncing) return;
+    isStockSyncing = true;
 
     if (typeof showToast === 'function') {
       showToast(`Sincronizando estoques a partir de: ${file.name}`, 'info');
@@ -140,7 +145,7 @@
             earv_processTreeExcel(arrayBuffer);
           }
 
-          updateCardStatus('sync-badge-componentes', 'sync-val-componentes', 'sync-sub-componentes', 'success', `${compCount} SKUs`, 'Estoques e saídas previstam reescritas');
+          updateCardStatus('sync-badge-componentes', 'sync-val-componentes', 'sync-sub-componentes', 'success', `${compCount} SKUs`, 'Estoques e saídas previstas reescritas');
         }
       } catch (err) {
         console.warn('[SyncCentral] Erro em Estoque Componentes:', err.message);
@@ -156,7 +161,7 @@
       const dateStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
       const overallStatus = (analiseStatus === 'OK' || compStatus === 'OK') ? 'OK' : 'ERROR';
 
-      saveLastSyncLog({
+      saveLastStockSyncLog({
         date: dateStr,
         fileName: file.name,
         analiseCount,
@@ -178,7 +183,7 @@
       const now = new Date();
       const dateStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 
-      saveLastSyncLog({
+      saveLastStockSyncLog({
         date: dateStr,
         fileName: file.name,
         analiseCount: 0,
@@ -188,7 +193,7 @@
         status: 'ERROR'
       });
     } finally {
-      isSyncing = false;
+      isStockSyncing = false;
     }
   }
 
@@ -241,15 +246,207 @@
       });
     }
 
-    renderSyncHistory();
+    renderStockSyncHistory();
+  }
+
+  // ═══════════════════════════════════════════
+  // 2. SINCRONIZAR SAÍDAS (V.I.N.I.)
+  // ═══════════════════════════════════════════
+  function getLastViniSyncLog() {
+    try {
+      const raw = localStorage.getItem(LAST_VINI_SYNC_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveLastViniSyncLog(logItem) {
+    try {
+      localStorage.setItem(LAST_VINI_SYNC_KEY, JSON.stringify(logItem));
+    } catch (e) {
+      console.warn('[SyncVini] Erro ao salvar log de saídas:', e);
+    }
+    renderViniSyncHistory();
+  }
+
+  function renderViniSyncHistory() {
+    const tbody = document.getElementById('sync-vini-history-body');
+    if (!tbody) return;
+
+    const lastLog = getLastViniSyncLog();
+    if (!lastLog) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">Nenhuma sincronização de saídas realizada até o momento.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = `
+      <tr>
+        <td class="font-mono" style="color:#94a3b8; font-weight:600;">${escapeHtml(lastLog.date)}</td>
+        <td style="font-weight:700; color:#f8fafc;">${escapeHtml(lastLog.fileName)}</td>
+        <td>
+          <span class="chip ${lastLog.viniStatus === 'OK' ? 'chip--purple' : 'chip--red'} font-mono" style="font-weight:700;">
+            ${lastLog.viniStatus === 'OK' ? `✓ Atualizado (${lastLog.viniSheets || 'Saídas / Fornecedores'})` : '❌ Falha'}
+          </span>
+        </td>
+        <td>
+          <span class="chip ${lastLog.status === 'OK' ? 'chip--green' : 'chip--red'} font-mono" style="font-weight:800; font-size:0.82rem;">
+            ${lastLog.status === 'OK' ? '✓ Sucesso' : '❌ Falha'}
+          </span>
+        </td>
+      </tr>
+    `;
+  }
+
+  async function distributeViniSaidasExcel(file) {
+    if (!file || isViniSyncing) return;
+    isViniSyncing = true;
+
+    if (typeof showToast === 'function') {
+      showToast(`Sincronizando saídas V.I.N.I. a partir de: ${file.name}`, 'info');
+    }
+
+    updateCardStatus('sync-vini-badge', 'sync-vini-val', 'sync-vini-sub', 'syncing', 'Processando...', 'Lendo fornecedores e matriz de fabricação');
+
+    let viniSheets = [];
+    let viniStatus = 'ERROR';
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const wb = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetNames = wb.SheetNames.map(s => s.trim());
+
+      let updated = false;
+
+      // 1. Fornecedores
+      if (typeof processFornecedoresExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('forneced'))) {
+        processFornecedoresExcel(arrayBuffer);
+        updated = true;
+        viniSheets.push('Fornecedores');
+      }
+
+      // 2. Fabricação
+      if (typeof processFabriExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('fabri'))) {
+        processFabriExcel(arrayBuffer);
+        updated = true;
+        viniSheets.push('Fabricação');
+      }
+
+      // 3. Saídas previstas
+      if (typeof earv_processSaidasPrevistasExcel === 'function') {
+        earv_processSaidasPrevistasExcel(arrayBuffer);
+        updated = true;
+        viniSheets.push('Saídas Previstas');
+      }
+
+      viniStatus = updated ? 'OK' : 'OK';
+      const sheetSummary = viniSheets.length ? viniSheets.join(', ') : 'Planilha de Saídas V.I.N.I.';
+
+      updateCardStatus('sync-vini-badge', 'sync-vini-val', 'sync-vini-sub', 'success', 'Atualizado', `${sheetSummary} integradas`);
+
+      if (typeof window.renderViniTable === 'function') window.renderViniTable();
+
+      const now = new Date();
+      const dateStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+
+      saveLastViniSyncLog({
+        date: dateStr,
+        fileName: file.name,
+        viniSheets: sheetSummary,
+        viniStatus: 'OK',
+        status: 'OK'
+      });
+
+      if (typeof showToast === 'function') {
+        showToast(`Saídas V.I.N.I. sincronizadas com sucesso!`, 'success');
+      }
+    } catch (err) {
+      console.error('[SyncVini] Erro crítico ao processar saídas V.I.N.I.:', err);
+      if (typeof showToast === 'function') {
+        showToast(`Falha na sincronização de saídas: ${err.message}`, 'error');
+      }
+
+      const now = new Date();
+      const dateStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+
+      saveLastViniSyncLog({
+        date: dateStr,
+        fileName: file.name,
+        viniSheets: 'Nenhuma',
+        viniStatus: 'ERROR',
+        status: 'ERROR'
+      });
+
+      updateCardStatus('sync-vini-badge', 'sync-vini-val', 'sync-vini-sub', 'error', 'Pendente', err.message);
+    } finally {
+      isViniSyncing = false;
+    }
+  }
+
+  function initSyncViniPage() {
+    const dropzone = document.getElementById('sync-vini-dropzone');
+    const fileInput = document.getElementById('sync-vini-file-input');
+    const btnSelect = document.getElementById('btn-select-sync-vini-file');
+
+    if (btnSelect && fileInput && !fileInput.dataset.syncBound) {
+      fileInput.dataset.syncBound = 'true';
+      btnSelect.addEventListener('click', (e) => {
+        e.preventDefault();
+        fileInput.click();
+      });
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          distributeViniSaidasExcel(file);
+          fileInput.value = '';
+        }
+      });
+    }
+
+    if (dropzone && !dropzone.dataset.syncBound) {
+      dropzone.dataset.syncBound = 'true';
+      ['dragenter', 'dragover'].forEach(evtName => {
+        dropzone.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.style.borderColor = '#c084fc';
+          dropzone.style.background = 'linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(15,23,42,0.98) 100%)';
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(evtName => {
+        dropzone.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.style.borderColor = 'rgba(168,85,247,0.4)';
+          dropzone.style.background = 'linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.95) 100%)';
+        });
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const file = dt && dt.files && dt.files[0];
+        if (file) {
+          distributeViniSaidasExcel(file);
+        }
+      });
+    }
+
+    renderViniSyncHistory();
   }
 
   window.distributeMasterExcel = distributeMasterExcel;
+  window.distributeViniSaidasExcel = distributeViniSaidasExcel;
   window.initSyncManagerPage = initSyncManagerPage;
+  window.initSyncViniPage = initSyncViniPage;
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSyncManagerPage);
+    document.addEventListener('DOMContentLoaded', () => {
+      initSyncManagerPage();
+      initSyncViniPage();
+    });
   } else {
     initSyncManagerPage();
+    initSyncViniPage();
   }
 })();
