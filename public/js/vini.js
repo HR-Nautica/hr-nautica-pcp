@@ -511,7 +511,7 @@ function processExcelWorkbook(arrayBuffer) {
 // Carrega dados da planilha via Fetch
 async function loadViniExcelData() {
   if (VINI_STATE.loaded && VINI_STATE.necessidadeData?.length > 0) return true;
-  const tbody = document.getElementById('vini-body');
+  const tbody = document.getElementById('vini-table-body');
   if (tbody) {
     tbody.innerHTML = '<tr><td colspan="13" class="empty-cell">Nenhum planejamento V.I.N.I no banco central. Use "Sincronizar" para importar dados pela aplicação.</td></tr>';
   }
@@ -520,7 +520,7 @@ async function loadViniExcelData() {
 
 // Renderiza a tabela do VINI e atualiza contadores/KPIs
 function renderViniTable() {
-  const tbody = document.getElementById('vini-body');
+  const tbody = document.getElementById('vini-table-body');
   if (!tbody) return;
 
   if (!VINI_STATE.loaded) {
