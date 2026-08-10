@@ -300,15 +300,11 @@
                 <div class="pf-rank-badge ${rankBadgeClass}">${rankNum}</div>
               </td>
               <td>
-                <div style="display:flex; flex-direction:column; gap:3px; white-space:nowrap;">
-                  <strong style="color:#ffffff; font-weight:800; font-size:0.98rem; letter-spacing:0.02em;">${escapeHtml(item.coquilha)}</strong>
-                  <button type="button" class="pf-toggle-btn" onclick="window.toggleCoquilhaDetails('${escapeHtml(item.coquilha)}')">
-                    <span style="white-space:nowrap;">${skusCount} modelo(s)</span>
-                    <span class="pf-arrow" style="white-space:nowrap;">${isExpanded ? '▲ recolher' : '▼ ver detalhes'}</span>
-                  </button>
-                </div>
+                <button type="button" class="pf-toggle-btn" onclick="window.toggleCoquilhaDetails('${escapeHtml(item.coquilha)}')" title="Clique para expandir/recolher modelos de ${escapeHtml(item.coquilha)}">
+                  <strong style="color:#ffffff; font-weight:800; font-size:1.02rem; letter-spacing:0.02em;">${escapeHtml(item.coquilha)}</strong>
+                  <span class="pf-arrow" style="font-size:0.85rem; color:#38bdf8; margin-left:6px;">${isExpanded ? '▲' : '▼'}</span>
+                </button>
               </td>
-              <td class="font-mono" style="color:#e2e8f0; font-weight:600; white-space:nowrap;">${skusCount} hélice(s)</td>
               <td class="font-mono" style="color:#38bdf8; font-weight:700; white-space:nowrap;">${fmtNumber(item.mediaTotal, 1)} <span style="font-size:0.75rem; color:#94a3b8">pçs/mês</span></td>
               <td class="font-mono" style="color:#f8fafc; font-weight:700; font-size:0.95rem; white-space:nowrap;">${fmtNumber(item.estoqueFisicoTotal, 0)}</td>
               <td>
@@ -335,11 +331,11 @@
             </tr>
             ${isExpanded ? `
               <tr class="pf-details-row">
-                <td colspan="14" style="background: rgba(15, 23, 42, 0.9); padding: 1.25rem 1.5rem; border-bottom: 2px solid rgba(56, 189, 248, 0.3); border-radius:0 0 8px 8px;">
+                <td colspan="13" style="background: rgba(15, 23, 42, 0.9); padding: 1.25rem 1.5rem; border-bottom: 2px solid rgba(56, 189, 248, 0.3); border-radius:0 0 8px 8px;">
                   <div style="display:flex; flex-direction:column; gap:1rem;">
                     <div>
                       <div style="font-size:0.8rem; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem; display:flex; align-items:center; gap:6px;">
-                        <span>↳ ANÁLISE DE PRODUÇÃO — OP NECESSÁRIA POR HÉLICE</span>
+                        <span>↳ ANÁLISE DE PRODUÇÃO — OP NECESSÁRIA POR HÉLICE (${skusCount} MODELO(S))</span>
                       </div>
                       <div style="display:flex; flex-wrap:wrap; gap:8px;">
                         ${opsChipsHtml || '<span style="color:#94a3b8; font-size:0.85rem;">Nenhuma necessidade calculada.</span>'}
