@@ -5268,20 +5268,23 @@ body {
   background: none;
   border: none;
   color: #38bdf8;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   padding: 0;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 .pf-toggle-btn:hover {
   text-decoration: underline;
   color: #7dd3fc;
 }
 .pf-arrow {
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
 }
 
 /* Hover e borda nas linhas */
@@ -5295,6 +5298,7 @@ body {
   padding: 0.85rem 0.75rem !important;
   vertical-align: middle !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  white-space: nowrap !important;
 }
 
 /* Container de tabela com scroll horizontal responsivo e espaçoso */
@@ -5308,6 +5312,7 @@ body {
   min-width: 1450px !important;
   width: 100% !important;
   border-collapse: collapse !important;
+  table-layout: auto !important;
 }
 
 .catalogo-table-wrap .catalogo-table th {
@@ -5320,6 +5325,7 @@ body {
   padding: 0.9rem 0.85rem !important;
   border-bottom: 2px solid rgba(255, 255, 255, 0.08) !important;
   white-space: nowrap !important;
+  position: static !important;
 }
 
 .catalogo-table-wrap .catalogo-table td {
@@ -5328,5 +5334,6 @@ body {
   vertical-align: middle !important;
   white-space: nowrap !important;
   font-size: 0.88rem !important;
+  position: static !important;
 }
 
