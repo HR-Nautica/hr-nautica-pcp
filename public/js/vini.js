@@ -1247,9 +1247,15 @@ if (!document.getElementById('hrn-vini-spin-styles')) {
 }
 
 window.addEventListener('hrn:estoque-componentes-sync', () => {
-  reprocessNecessidadeData({ persist: true });
-  renderViniTable();
+  if (typeof renderViniTable === 'function') renderViniTable();
 });
+
+window.VINI_STATE = VINI_STATE;
+window.processExcelWorkbook = processExcelWorkbook;
+window.processViniExcel = processExcelWorkbook;
+window.processFornecedoresExcel = processFornecedoresExcel;
+window.processFabriExcel = processFabriExcel;
+window.renderViniTable = renderViniTable;
 
 
 

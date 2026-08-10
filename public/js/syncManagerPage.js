@@ -317,22 +317,32 @@
       const sheetNames = wb.SheetNames.map(s => s.trim());
 
       let updated = false;
+      let viniCount = 0;
 
-      // 1. Fornecedores
+      // 1. Necessidades PCP / Saídas V.I.N.I.
+      const viniProc = window.processExcelWorkbook || (typeof processExcelWorkbook === 'function' ? processExcelWorkbook : null);
+      if (viniProc) {
+        viniProc(arrayBuffer);
+        updated = true;
+        viniSheets.push('Necessidades / Saídas');
+        viniCount = window.VINI_STATE?.necessidadeData?.length || 0;
+      }
+
+      // 2. Fornecedores
       if (typeof processFornecedoresExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('forneced'))) {
         processFornecedoresExcel(arrayBuffer);
         updated = true;
         viniSheets.push('Fornecedores');
       }
 
-      // 2. Fabricação
+      // 3. Fabricação
       if (typeof processFabriExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('fabri'))) {
         processFabriExcel(arrayBuffer);
         updated = true;
         viniSheets.push('Fabricação');
       }
 
-      // 3. Saídas previstas
+      // 4. Saídas previstas em Componentes
       if (typeof earv_processSaidasPrevistasExcel === 'function') {
         earv_processSaidasPrevistasExcel(arrayBuffer);
         updated = true;
@@ -341,8 +351,9 @@
 
       viniStatus = updated ? 'OK' : 'OK';
       const sheetSummary = viniSheets.length ? viniSheets.join(', ') : 'Planilha de Saídas V.I.N.I.';
+      const displayVal = viniCount > 0 ? `${viniCount} itens` : 'Atualizado';
 
-      updateCardStatus('sync-vini-badge', 'sync-vini-val', 'sync-vini-sub', 'success', 'Atualizado', `${sheetSummary} integradas`);
+      updateCardStatus('sync-vini-badge', 'sync-vini-val', 'sync-vini-sub', 'success', displayVal, `${sheetSummary} integradas com sucesso`);
 
       if (typeof window.renderViniTable === 'function') window.renderViniTable();
 
