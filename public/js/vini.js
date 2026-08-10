@@ -340,12 +340,37 @@ function updateMaterialUnit(key, val) {
 }
 window.updateMaterialUnit = updateMaterialUnit;
 
+function seedViniFromCatalogo() {
+  const modelos = typeof DB !== 'undefined' && typeof DB.getModelos === 'function' ? DB.getModelos() : [];
+  const map = {};
+
+  modelos.forEach(m => {
+    const sku = String(m.sku || '').trim().toUpperCase();
+    if (!sku) return;
+    map[sku] = {
+      produto: m.nome || m.modelo || sku,
+      sku: sku,
+      entradasPrevistas: 0,
+      saidasPrevistas: 0,
+      estoqueFisico: Number(m.estoque) || 0,
+      estoqueVirtual: Number(m.estoque) || 0,
+      saidasPeriodo: 0,
+      mediaMensal: 0,
+      prio2: '—',
+      coberturaFisica: Infinity,
+      coberturaVirtual: Infinity
+    };
+  });
+
+  return Object.values(map);
+}
+
 // Processa dados do Excel e extrai as abas Necessidade e Entradas
 function processExcelWorkbook(arrayBuffer) {
   try {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
 
-    // 1. Carrega aba EntradasPrevistas
+    // 1. Carrega aba EntradasPrevistas se existir
     const epSheetName = 'EntradasPrevistas';
     let epData = [];
     if (wb.SheetNames.includes(epSheetName)) {
@@ -353,88 +378,126 @@ function processExcelWorkbook(arrayBuffer) {
       epData = XLSX.utils.sheet_to_json(ws, { defval: '' });
     }
 
-    // Mapeçamento auxiliar de Entradas Previstas somadas por SKU
     const epMap = {};
     epData.forEach(item => {
-      const sku = String(item['Código (SKU)'] || '').trim().toUpperCase();
-      const qty = parseInt(item['Qtde']) || 0;
+      const sku = String(item['Código (SKU)'] || item['SKU'] || '').trim().toUpperCase();
+      const qty = parseInt(item['Qtde'] || item['Quantidade']) || 0;
       if (sku) {
         epMap[sku] = (epMap[sku] || 0) + qty;
       }
     });
 
-    // 2. Carrega aba de Necessidade PCP
+    // 2. Carrega aba de Necessidade PCP ou Relatório de Vendas
     let pcpSheetName = 'NECESSIDADE PCP (3)';
     if (!wb.SheetNames.includes(pcpSheetName)) {
-      pcpSheetName = wb.SheetNames.find(name => name.toUpperCase().includes('NECESSIDADE')) || wb.SheetNames[0];
+      pcpSheetName = wb.SheetNames.find(name => name.toUpperCase().includes('NECESSIDADE') || name.toUpperCase().includes('VENDAS') || name.toUpperCase().includes('SAÍDAS') || name.toUpperCase().includes('SAIDAS')) || wb.SheetNames[0];
     }
 
     if (!wb.SheetNames.includes(pcpSheetName)) {
-      throw new Error('Aba de Necessidade não localizada na planilha.');
+      throw new Error('Aba de Necessidade/Saídas não localizada na planilha.');
     }
 
     const ws = wb.Sheets[pcpSheetName];
     const rawNecessidade = XLSX.utils.sheet_to_json(ws, { defval: '' });
     
-    // Obtém os cabeçalhos reais (linha 1) para descobrir o nome da coluna M (índice 12)
     const headersArray = XLSX.utils.sheet_to_json(ws, { header: 1 })[0] || [];
     const colM_Header = headersArray[12]; // Coluna M
 
-    const necessidadeData = rawNecessidade.map(row => {
-      const sku = String(row['Código (SKU)'] || '').trim().toUpperCase();
-      const produto = row['Produto'] || 'Produto sem nome';
-      const entradasPrevistas = 0; // Zerado conforme solicitação do usuário (virá apenas de Produção de Componentes)
+    const parsedItems = rawNecessidade.map(row => {
+      const skuKey = Object.keys(row).find(k => {
+        const u = k.toUpperCase();
+        return u.includes('SKU') || u === 'CÓDIGO' || u === 'CODIGO' || u.startsWith('COD ');
+      });
+      const sku = skuKey ? String(row[skuKey] || '').trim().toUpperCase() : '';
+      if (!sku || sku === 'UNDEFINED' || sku === '—') return null;
 
-      const saidasPrevistas = parseViniNumber(row['Saídas previstas']);
-      const estoqueFisico = parseViniNumber(row['Estoque físico']);
-      
-      // Lê o valor utilizando a chave que corresponde à coluna M (índice 12)
-      const rawSaidasPeriodoVal = colM_Header && row[colM_Header] !== undefined ? row[colM_Header] : 0;
+      const prodKey = Object.keys(row).find(k => {
+        const u = k.toUpperCase();
+        return u.includes('PRODUTO') || u.includes('DESCRIÇÃO') || u.includes('DESCRICAO') || u.includes('NOME');
+      });
+      const produto = prodKey && row[prodKey] ? String(row[prodKey]).trim() : 'Produto sem nome';
+
+      const saidasPrevKey = Object.keys(row).find(k => {
+        const u = k.toUpperCase();
+        return u.includes('SAÍDAS PREVISTAS') || u.includes('SAIDAS PREVISTAS') || u.includes('PREVISTAS') || u.includes('VENDID') || u.includes('SAÍDAS') || u.includes('SAIDAS');
+      });
+      const saidasPrevistas = saidasPrevKey ? parseViniNumber(row[saidasPrevKey]) : 0;
+
+      const estFisKey = Object.keys(row).find(k => {
+        const u = k.toUpperCase();
+        return u.includes('ESTOQUE FÍSICO') || u.includes('ESTOQUE FISICO') || u === 'ESTOQUE' || u.includes('SALDO');
+      });
+      const estoqueFisico = estFisKey ? parseViniNumber(row[estFisKey]) : 0;
+
+      const rawSaidasPeriodoVal = colM_Header && row[colM_Header] !== undefined ? row[colM_Header] : (row['Saídas no período'] || row['Saidas no periodo'] || 0);
       const saidasPeriodo = parseViniNumber(rawSaidasPeriodoVal);
-      
-      const prio2 = row['Prio 2'] !== undefined && row['Prio 2'] !== '' ? parseViniNumber(row['Prio 2']) : '—';
 
-      const estoqueVirtual = estoqueFisico + entradasPrevistas - saidasPrevistas;
-
-      // Parse robusto da Média Mensal (garante que strings erradas ou nulas virem números corretos)
+      const mediaKey = Object.keys(row).find(k => {
+        const u = k.toUpperCase();
+        return u.includes('MÉDIA MENSAL') || u.includes('MEDIA MENSAL') || u.includes('MÉDIA') || u.includes('MEDIA');
+      });
       let mediaMensal = 0;
-      const rawMedia = row['Média mensal'];
-      if (rawMedia !== undefined && rawMedia !== null && rawMedia !== '') {
-        const parsedMedia = parseViniNumber(rawMedia);
-        if (!isNaN(parsedMedia)) {
-          mediaMensal = parsedMedia;
-        }
+      if (mediaKey && row[mediaKey] !== undefined && row[mediaKey] !== null && row[mediaKey] !== '') {
+        mediaMensal = parseViniNumber(row[mediaKey]);
       } else {
-        mediaMensal = saidasPeriodo / 3;
+        mediaMensal = Number((saidasPeriodo / 3).toFixed(2));
       }
-      mediaMensal = Number(mediaMensal.toFixed(2));
 
-      // Coberturas baseadas em fórmulas seguras
-      const coberturaFisica = mediaMensal > 0 ? Number((estoqueFisico / mediaMensal).toFixed(2)) : Infinity;
-      const coberturaVirtual = mediaMensal > 0 ? Number(((estoqueFisico + entradasPrevistas - saidasPeriodo) / mediaMensal).toFixed(2)) : Infinity;
+      const prio2Key = Object.keys(row).find(k => k.toUpperCase().includes('PRIO 2') || k.toUpperCase().includes('PRIORIDADE'));
+      const prio2 = prio2Key && row[prio2Key] !== undefined && row[prio2Key] !== '' ? parseViniNumber(row[prio2Key]) : '—';
 
       return {
         produto,
-        sku: sku || '—',  // Usa a variável local já normalizada (trim + toUpperCase)
-        entradasPrevistas: 0, // Zerado conforme solicitação
+        sku,
+        entradasPrevistas: 0,
         saidasPrevistas,
         estoqueFisico,
-        estoqueVirtual,
+        estoqueVirtual: estoqueFisico - saidasPrevistas,
         saidasPeriodo,
         mediaMensal,
         prio2,
-        coberturaFisica,
-        coberturaVirtual
+        coberturaFisica: mediaMensal > 0 ? Number((estoqueFisico / mediaMensal).toFixed(2)) : Infinity,
+        coberturaVirtual: mediaMensal > 0 ? Number(((estoqueFisico - saidasPrevistas) / mediaMensal).toFixed(2)) : Infinity
       };
+    }).filter(Boolean);
+
+    // Garante que VINI_STATE.necessidadeData existe e contem os SKUs pai
+    if (!VINI_STATE.necessidadeData || VINI_STATE.necessidadeData.length === 0) {
+      const seeded = seedViniFromCatalogo();
+      VINI_STATE.necessidadeData = seeded.length > 0 ? seeded : parsedItems;
+    }
+
+    // Faz MERGE por SKU para atualizar as saídas sem remover SKUs pai
+    const existingMap = {};
+    VINI_STATE.necessidadeData.forEach(item => {
+      if (item && item.sku) {
+        existingMap[String(item.sku).trim().toUpperCase()] = item;
+      }
     });
 
-    // Salva no estado
-    VINI_STATE.necessidadeData = necessidadeData;
+    parsedItems.forEach(newItem => {
+      const skuKey = String(newItem.sku).trim().toUpperCase();
+      if (existingMap[skuKey]) {
+        const target = existingMap[skuKey];
+        if (newItem.produto && newItem.produto !== 'Produto sem nome') target.produto = newItem.produto;
+        target.saidasPrevistas = newItem.saidasPrevistas;
+        target.saidasPeriodo = newItem.saidasPeriodo;
+        target.mediaMensal = newItem.mediaMensal;
+        if (newItem.prio2 !== '—') target.prio2 = newItem.prio2;
+        if (newItem.estoqueFisico > 0 && (!target.estoqueFisico || target.estoqueFisico === 0)) {
+          target.estoqueFisico = newItem.estoqueFisico;
+        }
+      } else {
+        existingMap[skuKey] = newItem;
+        VINI_STATE.necessidadeData.push(newItem);
+      }
+    });
+
     VINI_STATE.entradasPrevistasData = epData;
     VINI_STATE.loaded = true;
 
-    // Persiste
-    RemoteStorage.setItem('hrn_vini_necessidades', JSON.stringify(necessidadeData));
+    // Persiste no RemoteStorage
+    RemoteStorage.setItem('hrn_vini_necessidades', JSON.stringify(VINI_STATE.necessidadeData));
     RemoteStorage.setItem('hrn_vini_entradas', JSON.stringify(epData));
 
     updatePrio2FilterOptions();

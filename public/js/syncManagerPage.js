@@ -156,6 +156,7 @@
       if (typeof window.renderAnaliseTable === 'function') window.renderAnaliseTable();
       if (typeof window.renderProgramacaoFundicao === 'function') window.renderProgramacaoFundicao();
       if (typeof window.earv_renderTable === 'function') window.earv_renderTable();
+      if (typeof window.renderViniTable === 'function') window.renderViniTable();
 
       const now = new Date();
       const dateStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
