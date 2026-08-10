@@ -13,6 +13,7 @@ const applicationScripts = [
   "/js/estoque-buchas.js",
   "/js/catalogo-fundicao.js",
   "/js/programacao-fundicao.js",
+  "/js/syncManagerPage.js",
   "/js/app.js"
 ];
 

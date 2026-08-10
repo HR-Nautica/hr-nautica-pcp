@@ -1036,12 +1036,10 @@ function initAnaliseListeners() {
         e.preventDefault();
         ANALISE_STATE.filterType = type;
         
-        // Remove class active de todos
         Object.keys(filterTabs).forEach(keyId => {
           document.getElementById(keyId)?.classList.remove('active');
         });
         
-        // Adiciona active no clicado
         el.classList.add('active');
         renderAnaliseTable();
       });
@@ -1053,7 +1051,6 @@ function initAnaliseListeners() {
     th.addEventListener('click', () => {
       const col = th.dataset.column;
       if (ANALISE_STATE.sortColumn === col) {
-        // Inverte direção
         ANALISE_STATE.sortDirection = ANALISE_STATE.sortDirection === 'asc' ? 'desc' : 'asc';
       } else {
         ANALISE_STATE.sortColumn = col;
@@ -1072,7 +1069,7 @@ function initAnaliseListeners() {
     });
   }
 
-  // 6. Botão de sincronização de planilha (Abre seletor de arquivos para importação manual)
+  // 6. Botão de sincronização de planilha
   const btnSync = document.getElementById('btn-analise-sync');
   const inpFile = document.getElementById('input-analise-excel');
 
@@ -1086,35 +1083,26 @@ function initAnaliseListeners() {
       const file = e.target.files[0];
       if (!file) return;
 
-      showToast('Lendo e processando planilha local...', 'info');
-
       btnSync.disabled = true;
       const originalHTML = btnSync.innerHTML;
       btnSync.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Sincronizando...`;
 
-      const reader = new FileReader();
-      reader.onload = async function(evt) {
-        try {
-          const data = new Uint8Array(evt.target.result);
+      try {
+        if (typeof distributeMasterExcel === 'function') {
+          await distributeMasterExcel(file);
+        } else {
+          const data = new Uint8Array(await file.arrayBuffer());
           const syncResult = await processAnaliseExcel(data.buffer);
           showToast(`Planilha sincronizada no Supabase: ${syncResult.count} linhas.`, 'success');
           renderAnaliseTable();
-          if (typeof STATE !== 'undefined') {
-            if (STATE.currentPage === 'fluxo' && typeof renderFluxo === 'function') {
-              renderFluxo();
-            } else if (STATE.currentPage === 'relatorios' && typeof renderRelatorios === 'function') {
-              renderRelatorios();
-            }
-          }
-        } catch (err) {
-          console.error(err);
-          showToast(`Erro ao sincronizar a planilha: ${err.message || 'verifique o arquivo e a conexão.'}`, 'error');
-        } finally {
-          btnSync.disabled = false;
-          btnSync.innerHTML = originalHTML;
         }
-      };
-      reader.readAsArrayBuffer(file);
+      } catch (err) {
+        console.error(err);
+        showToast(`Erro ao sincronizar a planilha: ${err.message || 'verifique o arquivo e a conexão.'}`, 'error');
+      } finally {
+        btnSync.disabled = false;
+        btnSync.innerHTML = originalHTML;
+      }
       e.target.value = '';
     });
   }
@@ -1153,7 +1141,6 @@ function initAnaliseListeners() {
 function seedAnaliseFromCatalogo() {
   return mergeAnaliseWithCatalogo([]);
 }
-
 function initAnaliseModule() {
   try {
     initAnaliseListeners();

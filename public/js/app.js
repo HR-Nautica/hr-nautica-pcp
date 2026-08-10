@@ -178,6 +178,9 @@ function navigate(page) {
   // Renderiza a página
   switch (page) {
     case 'dashboard':   renderDashboard();   break;
+    case 'sync':
+      if (typeof initSyncManagerPage === 'function') initSyncManagerPage();
+      break;
     case 'ordens':
       if (typeof initAnaliseModule === 'function') initAnaliseModule();
       else if (typeof renderAnaliseTable === 'function') renderAnaliseTable();

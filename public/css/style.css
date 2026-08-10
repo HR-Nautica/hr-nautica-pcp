@@ -5337,3 +5337,9 @@ body {
   position: static !important;
 }
 
+/* ─── Central de Sincronização Geral ─── */
+#sync-dropzone:hover {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.15);
+}
+

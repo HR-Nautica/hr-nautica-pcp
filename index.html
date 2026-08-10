@@ -33,6 +33,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Painel de Controle
       </a>
+      <a href="#" class="nav-item" data-page="sync" id="nav-sync">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        Sincronizar
+      </a>
 
       <div class="sidebar-title">Hélices</div>
       <a href="#" class="nav-item" data-page="modelos" id="nav-modelos">
@@ -225,6 +229,109 @@
             </thead>
             <tbody id="ops-recentes-body">
               <tr><td colspan="6" class="empty-cell">Nenhuma ordem de produção cadastrada.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── PAGE: CENTRAL DE SINCRONIZAÇÃO GERAL ──── -->
+    <div class="page hidden" id="page-sync">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Central de Sincronização Geral</h1>
+          <p class="page-subtitle" style="color:var(--text-muted); font-size:0.88rem; margin-top:0.25rem;">
+            Importe a planilha master Excel para atualizar automaticamente a Análise de Produção, Fundição, Componentes, V.I.N.I. e Rastreio de OPs.
+          </p>
+        </div>
+      </div>
+
+      <!-- Dropzone Central de Upload -->
+      <div class="card" style="padding: 2.25rem 2rem; margin-bottom: 1.5rem; text-align: center; background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.95) 100%); border: 2px dashed rgba(56,189,248,0.4); border-radius: 12px; transition: all 0.2s ease;" id="sync-dropzone">
+        <input type="file" id="sync-master-file-input" accept=".xlsx, .xls, .csv" style="display: none;" />
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(56,189,248,0.15); display: flex; align-items: center; justify-content: center; color: #38bdf8; box-shadow: 0 0 15px rgba(56,189,248,0.2);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; margin-bottom: 0.35rem;">Arraste e solte sua Planilha Master aqui</h2>
+            <p style="font-size: 0.88rem; color: #94a3b8; max-width: 580px; margin: 0 auto;">Formatos suportados: .xlsx, .xls (Planilhas PCP CODAN, Análise de Produção, Buchas, Estrutura, VINI)</p>
+          </div>
+          <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+            <button type="button" class="btn-primary" id="btn-select-sync-file" style="padding: 0.75rem 1.8rem; font-weight: 800; font-size: 0.95rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.4);">
+              📁 Selecionar Arquivo Excel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status dos Módulos Sincronizados -->
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 8px;">
+          <span>Status da Distribuição de Dados</span>
+          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">(Atualização automática multi-módulo)</span>
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;" id="sync-module-cards">
+          <!-- Card 1: Análise de Produção & Fundição -->
+          <div class="card" style="padding: 1.2rem;" id="sync-card-analise">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Análise & Fundição</span>
+              <span class="chip chip--gray" id="sync-badge-analise">Aguardando</span>
+            </div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;" id="sync-val-analise">—</div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="sync-sub-analise">Hélices usinadas e brutas (3-Cobertura)</div>
+          </div>
+
+          <!-- Card 2: Rastreio de OPs -->
+          <div class="card" style="padding: 1.2rem;" id="sync-card-rastreio">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Rastreio de OPs</span>
+              <span class="chip chip--gray" id="sync-badge-rastreio">Aguardando</span>
+            </div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;" id="sync-val-rastreio">—</div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="sync-sub-rastreio">Avanço de etapas e refugo por OP</div>
+          </div>
+
+          <!-- Card 3: Estoque de Componentes & Buchas -->
+          <div class="card" style="padding: 1.2rem;" id="sync-card-componentes">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Componentes & Buchas</span>
+              <span class="chip chip--gray" id="sync-badge-componentes">Aguardando</span>
+            </div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;" id="sync-val-componentes">—</div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="sync-sub-componentes">Saldos de estoque e saídas previstas</div>
+          </div>
+
+          <!-- Card 4: Planejamento V.I.N.I. -->
+          <div class="card" style="padding: 1.2rem;" id="sync-card-vini">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Planejamento V.I.N.I.</span>
+              <span class="chip chip--gray" id="sync-badge-vini">Aguardando</span>
+            </div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;" id="sync-val-vini">—</div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="sync-sub-vini">Fornecedores, sub-itens e fabricação</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Histórico de Sincronizações Centralizadas -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Histórico de Sincronizações Centralizadas</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data / Hora</th>
+                <th>Arquivo Excel</th>
+                <th>Abas Processadas</th>
+                <th>Registros Atualizados</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="sync-history-body">
+              <tr><td colspan="5" class="empty-cell">Nenhum histórico de sincronização registrado até o momento.</td></tr>
             </tbody>
           </table>
         </div>
