@@ -35,7 +35,7 @@
       </a>
       <a href="#" class="nav-item" data-page="sync" id="nav-sync">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-        Sincronizar
+        Sincronizar Estoque
       </a>
 
       <div class="sidebar-title">Hélices</div>
@@ -235,13 +235,13 @@
       </div>
     </div>
 
-    <!-- ──── PAGE: CENTRAL DE SINCRONIZAÇÃO GERAL ──── -->
+    <!-- ──── PAGE: CENTRAL DE SINCRONIZAÇÃO DE ESTOQUE ──── -->
     <div class="page hidden" id="page-sync">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Central de Sincronização Geral</h1>
+          <h1 class="page-title">Central de Sincronização de Estoque</h1>
           <p class="page-subtitle" style="color:var(--text-muted); font-size:0.88rem; margin-top:0.25rem;">
-            Importe a planilha master Excel para atualizar automaticamente a Análise de Produção, Fundição, Componentes, V.I.N.I. e Rastreio de OPs.
+            Importe a planilha master Excel para reescrever e atualizar o estoque na Análise de Produção de Hélices e no Estoque de Componentes.
           </p>
         </div>
       </div>
@@ -874,6 +874,9 @@
           </button>
           <button type="button" class="btn-secondary" id="btn-earv-collapse-all" style="height: 38px; padding: 0 12px; font-weight: 600;" title="Recolher toda a árvore de componentes">
             ➖ Recolher Tudo
+          </button>
+          <button type="button" class="btn-secondary" id="btn-earv-adjust-tree" style="height: 38px; padding: 0 12px; font-weight: 600;" title="Carregar planilha Excel com a estrutura da árvore de componentes atualizada">
+            🌳 Ajustar Árvore
           </button>
           <!-- Hidden fallback elements to prevent JS errors if referenced -->
           <button id="btn-estoque-sync-estoque" style="display:none;"></button>

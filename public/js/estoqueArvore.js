@@ -691,6 +691,33 @@ function earv_initEvents() {
   document.getElementById("btn-earv-expand-all")?.addEventListener("click", earv_expandAll);
   document.getElementById("btn-earv-collapse-all")?.addEventListener("click", earv_collapseAll);
 
+  const btnAdjustTree = document.getElementById("btn-earv-adjust-tree");
+  const inputTreeFile = document.getElementById("input-estoque-arv-file");
+  if (btnAdjustTree && inputTreeFile) {
+    btnAdjustTree.addEventListener("click", (e) => {
+      e.preventDefault();
+      inputTreeFile.click();
+    });
+
+    inputTreeFile.addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      try {
+        if (typeof showToast === "function") showToast(`Lendo planilha de árvore: ${file.name}...`, "info");
+        const arrayBuffer = await file.arrayBuffer();
+        const count = earv_processTreeExcel(arrayBuffer);
+        if (typeof showToast === "function") showToast(`Árvore de componentes ajustada com sucesso! (${count} itens)`, "success");
+        earv_render();
+      } catch (err) {
+        console.error("[EARV] Erro ao ajustar árvore:", err);
+        if (typeof showToast === "function") showToast(`Erro ao ajustar árvore: ${err.message}`, "error");
+      } finally {
+        inputTreeFile.value = "";
+      }
+    });
+  }
+
   let debounceTimer;
   document.getElementById("estoque-arv-search")?.addEventListener("input", () => {
     clearTimeout(debounceTimer);
