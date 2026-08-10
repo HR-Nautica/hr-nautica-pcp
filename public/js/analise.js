@@ -1204,3 +1204,5 @@ if (document.readyState === 'loading') {
 } else {
   initAnaliseModule();
 }
+
+window.ANALISE_STATE = ANALISE_STATE;

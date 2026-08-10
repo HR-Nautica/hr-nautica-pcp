@@ -1349,45 +1349,9 @@ function saveMov() {
 // PROGRAMAÇÃO DE FUNDIÇÃO
 // ═══════════════════════════════════════════
 function renderFundicao() {
-  const search = ($('fundicao-search')?.value || '').toLowerCase();
-  const statusFilter = $('fundicao-filter-status')?.value || '';
-
-  let list = DB.getFundicoes();
-  if (search) list = list.filter(f => f.modelo.toLowerCase().includes(search) || (f.lote || '').toLowerCase().includes(search));
-  if (statusFilter) list = list.filter(f => f.status === statusFilter);
-
-  const tbody = $('fundicao-body');
-  if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhum lote de fundição agendado.</td></tr>';
-    return;
+  if (typeof window.renderProgramacaoFundicao === 'function') {
+    window.renderProgramacaoFundicao();
   }
-
-  const statusChips = {
-    'Agendado':    '<span class="chip chip--blue">Agendado</span>',
-    'Em Fusão':    '<span class="chip chip--orange">Em Fusão</span>',
-    'Resfriando':  '<span class="chip chip--purple">Resfriando</span>',
-    'Concluído':   '<span class="chip chip--green">Concluído</span>',
-    'Cancelado':   '<span class="chip chip--gray">Cancelado</span>',
-  };
-
-  tbody.innerHTML = list.map(f => `<tr>
-    <td><span style="color:var(--accent-blue);font-weight:700">${f.lote}</span></td>
-    <td style="color:var(--text-primary);font-weight:500">${f.modelo}</td>
-    <td><strong>${f.qty}</strong> un</td>
-    <td>${f.liga}</td>
-    <td>${formatDate(f.dataPrevista)}</td>
-    <td>${statusChips[f.status] || f.status}</td>
-    <td>
-      <div style="display:flex;gap:4px;justify-content:center">
-        <button class="btn-icon" onclick="openEditFundicao('${f.id}')" title="Editar">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>
-        <button class="btn-icon danger" onclick="deleteFundicao('${f.id}')" title="Excluir">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        </button>
-      </div>
-    </td>
-  </tr>`).join('');
 }
 
 function openNovaFundicao() {

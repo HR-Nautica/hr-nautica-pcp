@@ -5184,3 +5184,45 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
 }
 
+/* ─── Programação de Fundição – Ranking de Criticidade ─── */
+.pf-rank-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.pf-rank-badge--red {
+  background: radial-gradient(circle, #ef4444 0%, #dc2626 100%);
+}
+.pf-rank-badge--orange {
+  background: radial-gradient(circle, #f97316 0%, #ea580c 100%);
+}
+.pf-rank-badge--green {
+  background: radial-gradient(circle, #22c55e 0%, #16a34a 100%);
+}
+
+.pf-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--accent-blue);
+  font-size: 0.78rem;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pf-toggle-btn:hover {
+  text-decoration: underline;
+}
+.pf-arrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+

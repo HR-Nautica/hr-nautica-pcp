@@ -989,15 +989,17 @@
     <!-- ──── PAGE: PROGRAMAÇÃO DE FUNDIÇÃO DE HÉLICE ──── -->
     <div class="page hidden" id="page-fundicao">
       <div class="page-header">
-        <h1 class="page-title">Programação de Fundição de Hélice</h1>
+        <div>
+          <h1 class="page-title">Programação de Produção — Ranking por Criticidade</h1>
+          <p class="modal-subtitle">Correlação de Coquilhas Brutas com Análise de Produção de Hélices Usinadas</p>
+        </div>
         <div class="header-actions">
-          <input type="text" class="search-input" id="fundicao-search" placeholder="Buscar programação..." />
+          <input type="text" class="search-input" id="fundicao-search" placeholder="Buscar por coquilha/modelo..." />
           <select class="select-sm" id="fundicao-filter-status">
             <option value="">Todos os status</option>
-            <option value="Agendado">Agendado</option>
-            <option value="Em Andamento">Em Andamento</option>
-            <option value="Concluído">Concluído</option>
-            <option value="Cancelado">Cancelado</option>
+            <option value="CRÍTICO">Crítico</option>
+            <option value="ALERTA">Alerta</option>
+            <option value="SEGURO">Seguro</option>
           </select>
           <button class="btn-primary" id="btn-nova-fundicao">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1009,67 +1011,104 @@
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-header">
-            <span class="kpi-label">AGENDADAS</span>
-            <div class="kpi-icon kpi-icon--blue">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="kpi-label">COQUILHAS BRUTAS</span>
+            <div class="kpi-icon kpi-icon--purple">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </div>
           </div>
           <div class="kpi-value" id="kpi-fund-agendadas">0</div>
-          <div class="kpi-sub">Programações futuras</div>
+          <div class="kpi-sub">Total registradas</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header">
-            <span class="kpi-label">EM ANDAMENTO</span>
+            <span class="kpi-label">CRÍTICAS / ALERTA</span>
             <div class="kpi-icon kpi-icon--orange">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
           </div>
           <div class="kpi-value" id="kpi-fund-andamento">0</div>
-          <div class="kpi-sub">Em execução</div>
+          <div class="kpi-sub">Necessitam produção</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header">
-            <span class="kpi-label">CONCLUÃDAS</span>
-            <div class="kpi-icon kpi-icon--green">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="kpi-fund-concluidas">0</div>
-          <div class="kpi-sub">Este mês</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-label">TOTAL PEÔ¡AS</span>
-            <div class="kpi-icon kpi-icon--teal">
+            <span class="kpi-label">PRODUÇÃO NECESSÁRIA</span>
+            <div class="kpi-icon kpi-icon--blue">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><circle cx="12" cy="12" r="3"/></svg>
             </div>
           </div>
+          <div class="kpi-value" id="kpi-fund-concluidas">0</div>
+          <div class="kpi-sub">Hélices brutas a fundir</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">TOTAL LIGA A FUNDIR</span>
+            <div class="kpi-icon kpi-icon--teal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            </div>
+          </div>
           <div class="kpi-value" id="kpi-fund-pecas">0</div>
-          <div class="kpi-sub">Hélices programadas</div>
+          <div class="kpi-sub">Peso total estimado (kg)</div>
         </div>
       </div>
 
-      <div class="card" style="margin-top:1.5rem">
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Nº Prog.</th>
-                <th>Modelo de Hélice</th>
-                <th>Material</th>
-                <th>Qtd (peças)</th>
-                <th>Peso Est. (kg)</th>
-                <th>Data Programada</th>
-                <th>Forno / Equip.</th>
-                <th>Temp. (Â°C)</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="fundicao-body">
-              <tr><td colspan="10" class="empty-cell">Nenhuma programação de fundição cadastrada.</td></tr>
-            </tbody>
-          </table>
+      <!-- Tab Switcher -->
+      <div class="pf-tab-switcher" style="margin-top: 1.5rem; display: flex; gap: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">
+        <button type="button" class="btn-secondary pf-tab-btn active" id="pf-tab-ranking-btn">🏆 Ranking por Criticidade</button>
+        <button type="button" class="btn-secondary pf-tab-btn" id="pf-tab-agendados-btn">📋 Lotes Agendados & Histórico</button>
+      </div>
+
+      <!-- Seção 1: Ranking por Criticidade -->
+      <div id="pf-sec-ranking" style="margin-top:1rem;">
+        <div class="card">
+          <div class="table-wrap catalogo-table-wrap">
+            <table class="catalogo-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">#</th>
+                  <th>Cód. Bruto (Coquilha)</th>
+                  <th>Hélices Vinculadas</th>
+                  <th>Média (vendas/mês)</th>
+                  <th>Estoque Físico</th>
+                  <th>Cobertura</th>
+                  <th>Status</th>
+                  <th>Prod. Nec. (un)</th>
+                  <th>Peso (kg)</th>
+                  <th>Tot. Liga (kg)</th>
+                  <th>Início</th>
+                  <th>Fim</th>
+                  <th>Dias</th>
+                  <th style="text-align: right;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="pf-ranking-body">
+                <tr><td colspan="14" class="empty-cell">Carregando dados da programação de fundição...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção 2: Lotes Agendados & Histórico -->
+      <div id="pf-sec-agendados" style="margin-top:1rem; display:none;">
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nº Prog. / Lote</th>
+                  <th>Coquilha / Modelo</th>
+                  <th>Qtd (peças)</th>
+                  <th>Liga Metálica</th>
+                  <th>Data Programada</th>
+                  <th>Status</th>
+                  <th style="text-align: center;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="fundicao-body">
+                <tr><td colspan="7" class="empty-cell">Nenhuma programação de fundição agendada.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
