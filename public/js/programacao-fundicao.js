@@ -283,72 +283,74 @@
 
           // Sub-linha expansível de detalhes por modelo de hélice
           const opsChipsHtml = item.skus.map(s => `
-            <span class="chip chip--blue font-mono" style="font-size:0.8rem; padding:4px 8px;">
-              ${escapeHtml(s.sku)}: <strong>${s.opNecessaria} pc</strong>
+            <span class="chip chip--blue font-mono" style="font-size:0.82rem; padding:5px 10px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8;">
+              ${escapeHtml(s.sku)}: <strong style="color:#ffffff;">${s.opNecessaria} pc</strong>
             </span>
           `).join('');
 
           const estoqueChipsHtml = item.skus.map(s => `
-            <span class="chip chip--gray font-mono" style="font-size:0.8rem; padding:4px 8px;">
-              ${escapeHtml(s.sku)}: <strong>${s.estoqueFisico} un</strong>
+            <span class="chip chip--gray font-mono" style="font-size:0.82rem; padding:5px 10px; background:rgba(148,163,184,0.12); border:1px solid rgba(148,163,184,0.3); color:#cbd5e1;">
+              ${escapeHtml(s.sku)}: <strong style="color:#ffffff;">${s.estoqueFisico} un</strong>
             </span>
           `).join('');
 
           return `
             <tr class="pf-row ${isExpanded ? 'expanded' : ''}">
-              <td>
+              <td style="text-align: center;">
                 <div class="pf-rank-badge ${rankBadgeClass}">${rankNum}</div>
               </td>
               <td>
-                <div style="display:flex; flex-direction:column; gap:2px;">
-                  <strong style="color:var(--text-primary); font-size:0.95rem;">${escapeHtml(item.coquilha)}</strong>
+                <div style="display:flex; flex-direction:column; gap:3px; white-space:nowrap;">
+                  <strong style="color:#ffffff; font-weight:800; font-size:0.98rem; letter-spacing:0.02em;">${escapeHtml(item.coquilha)}</strong>
                   <button type="button" class="pf-toggle-btn" onclick="window.toggleCoquilhaDetails('${escapeHtml(item.coquilha)}')">
-                    <span>${skusCount} modelo(s)</span>
-                    <span class="pf-arrow">${isExpanded ? '▲ recolher' : '▼ ver detalhes'}</span>
+                    <span style="white-space:nowrap;">${skusCount} modelo(s)</span>
+                    <span class="pf-arrow" style="white-space:nowrap;">${isExpanded ? '▲ recolher' : '▼ ver detalhes'}</span>
                   </button>
                 </div>
               </td>
-              <td class="font-mono text-muted">${skusCount} hélice(s)</td>
-              <td class="font-mono">${fmtNumber(item.mediaTotal, 1)} <span style="font-size:0.75rem; color:var(--text-muted)">pçs/mês</span></td>
-              <td class="font-mono" style="font-weight:600;">${fmtNumber(item.estoqueFisicoTotal, 0)}</td>
+              <td class="font-mono" style="color:#e2e8f0; font-weight:600; white-space:nowrap;">${skusCount} hélice(s)</td>
+              <td class="font-mono" style="color:#38bdf8; font-weight:700; white-space:nowrap;">${fmtNumber(item.mediaTotal, 1)} <span style="font-size:0.75rem; color:#94a3b8">pçs/mês</span></td>
+              <td class="font-mono" style="color:#f8fafc; font-weight:700; font-size:0.95rem; white-space:nowrap;">${fmtNumber(item.estoqueFisicoTotal, 0)}</td>
               <td>
-                <span class="chip ${statusBadgeClass} font-mono" style="font-weight:700;">${cobText}</span>
+                <span class="pf-status-badge ${statusBadgeClass} font-mono" style="font-weight:800; white-space:nowrap;">${cobText}</span>
               </td>
               <td>
-                <span class="chip ${statusBadgeClass}" style="font-weight:800; letter-spacing:0.04em;">${item.status}</span>
+                <span class="pf-status-badge ${statusBadgeClass}" style="font-weight:900; letter-spacing:0.05em; white-space:nowrap;">${item.status}</span>
               </td>
               <td>
-                <strong class="font-mono" style="font-size:1.05rem; color:var(--accent-blue);">${fmtNumber(item.prodNecTotal, 0)}</strong>
+                ${item.prodNecTotal > 0 
+                  ? `<strong class="font-mono" style="font-size:1.15rem; color:#38bdf8; text-shadow:0 0 10px rgba(56,189,248,0.3); font-weight:800; white-space:nowrap;">${fmtNumber(item.prodNecTotal, 0)}</strong>` 
+                  : `<span class="font-mono" style="color:#64748b; font-weight:700; white-space:nowrap;">0</span>`}
               </td>
-              <td class="font-mono text-muted">${pesoUnitStr}</td>
-              <td class="font-mono" style="font-weight:700;">${totLigaStr}</td>
-              <td class="font-mono" style="color:var(--accent-orange); font-weight:600;">${dtInicioStr}</td>
-              <td class="font-mono" style="color:var(--accent-orange); font-weight:600;">${dtFimStr}</td>
-              <td class="font-mono text-muted" style="font-weight:600;">${diasStr}</td>
-              <td class="catalogo-actions-col" style="text-align: right;">
-                <button type="button" class="btn-primary btn-sm" onclick="window.openCriarLoteFundicao('${escapeHtml(item.coquilha)}', ${item.prodNecTotal}, ${item.pesoUnitario})" title="Gerar Ordem de Fundição">
+              <td class="font-mono" style="color:#cbd5e1; font-weight:600; white-space:nowrap;">${pesoUnitStr}</td>
+              <td class="font-mono" style="color:#f8fafc; font-weight:800; white-space:nowrap;">${totLigaStr}</td>
+              <td class="font-mono" style="color:#fb923c; font-weight:700; white-space:nowrap;">${dtInicioStr}</td>
+              <td class="font-mono" style="color:#fb923c; font-weight:700; white-space:nowrap;">${dtFimStr}</td>
+              <td class="font-mono" style="color:#cbd5e1; font-weight:700; white-space:nowrap;">${diasStr}</td>
+              <td class="catalogo-actions-col" style="text-align: right; white-space:nowrap;">
+                <button type="button" class="btn-primary btn-sm pf-action-btn" onclick="window.openCriarLoteFundicao('${escapeHtml(item.coquilha)}', ${item.prodNecTotal}, ${item.pesoUnitario})" title="Gerar Ordem de Fundição">
                   🔥 Agendar
                 </button>
               </td>
             </tr>
             ${isExpanded ? `
               <tr class="pf-details-row">
-                <td colspan="14" style="background: rgba(15, 23, 42, 0.65); padding: 1rem 1.5rem; border-bottom: 2px solid var(--border-color);">
-                  <div style="display:flex; flex-direction:column; gap:0.85rem;">
+                <td colspan="14" style="background: rgba(15, 23, 42, 0.9); padding: 1.25rem 1.5rem; border-bottom: 2px solid rgba(56, 189, 248, 0.3); border-radius:0 0 8px 8px;">
+                  <div style="display:flex; flex-direction:column; gap:1rem;">
                     <div>
-                      <div style="font-size:0.78rem; font-weight:700; color:var(--accent-blue); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
-                        ↳ ANÁLISE DE PRODUÇÃO — OP NECESSÁRIA POR HÉLICE
+                      <div style="font-size:0.8rem; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem; display:flex; align-items:center; gap:6px;">
+                        <span>↳ ANÁLISE DE PRODUÇÃO — OP NECESSÁRIA POR HÉLICE</span>
                       </div>
                       <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                        ${opsChipsHtml || '<span class="text-muted" style="font-size:0.82rem;">Nenhuma necessidade calculada.</span>'}
+                        ${opsChipsHtml || '<span style="color:#94a3b8; font-size:0.85rem;">Nenhuma necessidade calculada.</span>'}
                       </div>
                     </div>
                     <div>
-                      <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                      <div style="font-size:0.8rem; font-weight:800; color:#cbd5e1; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
                         Estoque Físico em Usinagem / Acabado (${fmtNumber(item.estoqueFisicoTotal, 0)} un):
                       </div>
                       <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                        ${estoqueChipsHtml || '<span class="text-muted" style="font-size:0.82rem;">Sem estoque físico.</span>'}
+                        ${estoqueChipsHtml || '<span style="color:#94a3b8; font-size:0.85rem;">Sem estoque físico.</span>'}
                       </div>
                     </div>
                   </div>
