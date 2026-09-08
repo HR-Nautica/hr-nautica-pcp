@@ -448,16 +448,27 @@ function updateOpInsumosPreview() {
 
   if (reqs.bruto) {
     const bruto = reqs.bruto;
-    const badgeClass = bruto.insuficiente ? 'chip--red' : 'chip--green';
+    const badgeClass = bruto.insuficiente ? 'op-insumo-badge--warn' : 'op-insumo-badge--ok';
     const badgeText = bruto.insuficiente ? `Falta ${bruto.falta} un` : 'Estoque OK';
+    const cardClass = bruto.insuficiente ? 'op-insumo-card--warn' : 'op-insumo-card--ok';
+    const statusAction = bruto.insuficiente
+      ? `<div class="op-insumo-action op-insumo-action--warn">⚠ Fundir / Produzir Bruto</div>`
+      : `<div class="op-insumo-action op-insumo-action--ok">✓ Disponível para Usinagem</div>`;
+
     listDiv.innerHTML += `
-      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;display:flex;flex-direction:column;gap:4px">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text-primary)">Peça bruta</div>
-        <div style="font-size:0.72rem;color:var(--text-secondary)">${bruto.nome}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-          <span style="font-size:0.72rem;color:var(--text-muted)">Necessário: <strong>${qty}</strong> | Saldo: <strong>${bruto.saldo}</strong></span>
-          <span class="chip ${badgeClass}" style="font-size:0.65rem;padding:2px 6px">${badgeText}</span>
+      <div class="op-insumo-card ${cardClass}" title="${bruto.nome}">
+        <div class="op-insumo-type">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 3h12l4 6-10 12L2 9l4-6z"/>
+          </svg>
+          Peça Bruta
         </div>
+        <div class="op-insumo-name" title="${bruto.nome}">${bruto.nome}</div>
+        <div class="op-insumo-metrics">
+          <span>Qtd: <strong>${qty}</strong> | Saldo: <strong>${bruto.saldo}</strong></span>
+          <span class="op-insumo-badge ${badgeClass}">${badgeText}</span>
+        </div>
+        ${statusAction}
       </div>
     `;
   }
@@ -465,27 +476,34 @@ function updateOpInsumosPreview() {
   // Render Bucha
   if (reqs.bucha) {
     const b = reqs.bucha;
-    const badgeClass = b.insuficiente ? 'chip--red' : 'chip--green';
+    const badgeClass = b.insuficiente ? 'op-insumo-badge--warn' : 'op-insumo-badge--ok';
     const badgeText = b.insuficiente ? `Falta ${b.falta} un` : 'Estoque OK';
-    const statusText = b.insuficiente 
-      ? `<span style="color:var(--accent-red);font-weight:600;font-size:0.72rem">⚠ Produzir Bucha</span>`
-      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">✓ Estoque Disponível</span>`;
+    const cardClass = b.insuficiente ? 'op-insumo-card--warn' : 'op-insumo-card--ok';
+    const statusAction = b.insuficiente 
+      ? `<div class="op-insumo-action op-insumo-action--warn">⚠ Produzir Bucha</div>`
+      : `<div class="op-insumo-action op-insumo-action--ok">✓ Estoque Disponível</div>`;
       
     listDiv.innerHTML += `
-      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;display:flex;flex-direction:column;gap:4px">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${b.nome}">⚙ Bucha</div>
-        <div style="font-size:0.68rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${b.nome}">${b.nome}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-          <span style="font-size:0.72rem;color:var(--text-muted)">Qtd: <strong>${qty}</strong> | Saldo: <strong>${b.saldo}</strong></span>
-          <span class="chip ${badgeClass}" style="font-size:0.65rem;padding:2px 6px">${badgeText}</span>
+      <div class="op-insumo-card ${cardClass}" title="${b.nome}">
+        <div class="op-insumo-type">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Bucha
         </div>
-        <div style="margin-top:2px">${statusText}</div>
+        <div class="op-insumo-name" title="${b.nome}">${b.nome}</div>
+        <div class="op-insumo-metrics">
+          <span>Qtd: <strong>${qty}</strong> | Saldo: <strong>${b.saldo}</strong></span>
+          <span class="op-insumo-badge ${badgeClass}">${badgeText}</span>
+        </div>
+        ${statusAction}
       </div>
     `;
   } else {
     listDiv.innerHTML += `
-      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;color:var(--text-muted);font-size:0.78rem;display:flex;align-items:center;justify-content:center">
-        Sem Bucha vinculada
+      <div class="op-insumo-card op-insumo-card--empty">
+        <span>Sem bucha vinculada</span>
       </div>
     `;
   }
@@ -493,27 +511,35 @@ function updateOpInsumosPreview() {
   // Render Caixa
   if (reqs.caixa) {
     const c = reqs.caixa;
-    const badgeClass = c.insuficiente ? 'chip--red' : 'chip--green';
+    const badgeClass = c.insuficiente ? 'op-insumo-badge--warn' : 'op-insumo-badge--ok';
     const badgeText = c.insuficiente ? `Falta ${c.falta} un` : 'Estoque OK';
-    const statusText = c.insuficiente 
-      ? `<span style="color:var(--accent-red);font-weight:600;font-size:0.72rem">⚠ Comprar Caixa</span>`
-      : `<span style="color:var(--accent-green);font-weight:600;font-size:0.72rem">✓ Estoque Disponível</span>`;
+    const cardClass = c.insuficiente ? 'op-insumo-card--warn' : 'op-insumo-card--ok';
+    const statusAction = c.insuficiente 
+      ? `<div class="op-insumo-action op-insumo-action--warn">⚠ Comprar Caixa</div>`
+      : `<div class="op-insumo-action op-insumo-action--ok">✓ Estoque Disponível</div>`;
       
     listDiv.innerHTML += `
-      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;display:flex;flex-direction:column;gap:4px">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.nome}">🌱“¦ Caixa</div>
-        <div style="font-size:0.68rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.nome}">${c.nome}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-          <span style="font-size:0.72rem;color:var(--text-muted)">Qtd: <strong>${qty}</strong> | Saldo: <strong>${c.saldo}</strong></span>
-          <span class="chip ${badgeClass}" style="font-size:0.65rem;padding:2px 6px">${badgeText}</span>
+      <div class="op-insumo-card ${cardClass}" title="${c.nome}">
+        <div class="op-insumo-type">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+          Caixa
         </div>
-        <div style="margin-top:2px">${statusText}</div>
+        <div class="op-insumo-name" title="${c.nome}">${c.nome}</div>
+        <div class="op-insumo-metrics">
+          <span>Qtd: <strong>${qty}</strong> | Saldo: <strong>${c.saldo}</strong></span>
+          <span class="op-insumo-badge ${badgeClass}">${badgeText}</span>
+        </div>
+        ${statusAction}
       </div>
     `;
   } else {
     listDiv.innerHTML += `
-      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;color:var(--text-muted);font-size:0.78rem;display:flex;align-items:center;justify-content:center">
-        Sem Caixa vinculada
+      <div class="op-insumo-card op-insumo-card--empty">
+        <span>Sem caixa vinculada</span>
       </div>
     `;
   }

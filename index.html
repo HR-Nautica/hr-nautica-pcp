@@ -1642,37 +1642,59 @@
 
   <!-- Modal: Nova OP -->
   <div class="modal-overlay hidden" id="modal-op">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 class="modal-title" id="modal-op-title">Nova Ordem de Produção</h2>
-        <button class="btn-icon" id="modal-op-close">
+    <div class="modal modal--op-creative" role="dialog" aria-modal="true" aria-labelledby="modal-op-title">
+      <div class="modal-header modal-header--op">
+        <div class="modal-header--op-info">
+          <div class="modal-header--op-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div>
+            <h2 class="modal-title" id="modal-op-title">Nova Ordem de Produção</h2>
+            <p class="modal-subtitle">Planejamento e alocação de insumos para fabricação</p>
+          </div>
+        </div>
+        <button class="modal-close" id="modal-op-close" aria-label="Fechar modal">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="op-edit-id" />
-        <div class="form-grid">
-          <div class="form-group span-2">
-            <label for="op-modelo">Modelo da Hélice *</label>
-            <select id="op-modelo" required>
+        <div class="op-form-grid">
+          <div class="form-group span-2 op-field">
+            <label class="form-label" for="op-modelo">Modelo da Hélice <span class="req">*</span></label>
+            <select class="form-input op-input-control" id="op-modelo" required>
               <option value="">— Selecione um modelo —</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="op-qty">Quantidade (un) *</label>
-            <input type="number" id="op-qty" min="1" value="1" required />
+          <div class="form-group op-field">
+            <label class="form-label" for="op-qty">Quantidade (un) <span class="req">*</span></label>
+            <input type="number" class="form-input op-input-control" id="op-qty" min="1" value="1" required />
           </div>
-          <div class="form-group">
-            <label for="op-cliente">Cliente / Destino</label>
-            <input type="text" id="op-cliente" placeholder="Ex: Náutica Silva / Estoque" />
+          <div class="form-group op-field">
+            <label class="form-label" for="op-prazo">Prazo de Entrega <span class="req">*</span></label>
+            <input type="date" class="form-input op-input-control" id="op-prazo" required />
           </div>
-          <div class="form-group">
-            <label for="op-prazo">Prazo de Entrega *</label>
-            <input type="date" id="op-prazo" required />
+          <div class="form-group op-field">
+            <label class="form-label" for="op-cliente">Cliente / Destino</label>
+            <input type="text" class="form-input op-input-control" id="op-cliente" placeholder="Ex: Náutica Silva / Estoque" />
           </div>
-          <div class="form-group">
-            <label for="op-etapa">Etapa Inicial</label>
-            <select id="op-etapa">
+          <div class="form-group op-field">
+            <label class="form-label" for="op-prioridade">Prioridade</label>
+            <select class="form-input op-input-control" id="op-prioridade">
+              <option value="Normal">Normal</option>
+              <option value="Alta">Alta</option>
+              <option value="Urgente">Urgente</option>
+            </select>
+          </div>
+          <div class="form-group span-2 op-field">
+            <label class="form-label" for="op-etapa">Etapa Inicial</label>
+            <select class="form-input op-input-control" id="op-etapa">
               <option value="Fila de Espera">Fila de Espera</option>
               <option value="Injeção/Fundição">Injeção/Fundição</option>
               <option value="Usinagem">Usinagem</option>
@@ -1681,32 +1703,42 @@
               <option value="Qualidade">Qualidade</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="op-prioridade">Prioridade</label>
-            <select id="op-prioridade">
-              <option value="Normal">Normal</option>
-              <option value="Alta">Alta</option>
-              <option value="Urgente">Urgente</option>
-            </select>
-          </div>
-          <div class="form-group span-2">
-            <label for="op-obs">Observações</label>
-            <textarea id="op-obs" rows="2" placeholder="Especificações técnicas, lote de matéria-prima..."></textarea>
+          <div class="form-group span-2 op-field">
+            <label class="form-label" for="op-obs">Observações</label>
+            <textarea class="form-input form-textarea op-input-control" id="op-obs" rows="2" placeholder="Especificações técnicas, lote de matéria-prima, orientações..."></textarea>
           </div>
         </div>
 
         <!-- Preview de Insumos Necessários -->
-        <div id="op-insumos-preview" style="margin-top:1rem;display:none">
-          <div style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);margin-bottom:0.5rem;display:flex;align-items:center;gap:6px">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            Insumos / Componentes Necessários
+        <div id="op-insumos-preview" class="op-insumos-section" style="display:none">
+          <div class="op-insumos-header">
+            <div class="op-insumos-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+              <span>Insumos &amp; Componentes Necessários</span>
+            </div>
+            <span class="op-insumos-tag">Verificação Automática</span>
           </div>
-          <div id="op-insumos-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+          <div id="op-insumos-list" class="op-insumos-grid"></div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-ghost" id="btn-cancel-op">Cancelar</button>
-        <button class="btn-primary" id="btn-save-op">Salvar OP</button>
+      <div class="modal-footer modal-footer--op">
+        <button type="button" class="btn-ghost op-btn-cancel" id="btn-cancel-op">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Cancelar
+        </button>
+        <button type="button" class="btn-primary op-btn-save" id="btn-save-op">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Salvar OP
+        </button>
       </div>
     </div>
   </div>
