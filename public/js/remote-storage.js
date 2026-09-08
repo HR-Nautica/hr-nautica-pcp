@@ -73,6 +73,14 @@ const RemoteStorage = {
     if (typeof value !== "string") return value;
     try { return JSON.parse(value); } catch { return value; }
   },
+  applyServerState(key, value, version, revision) {
+    this.data.set(key, value);
+    this.versions.set(key, Number(version) || 0);
+    this.revision = Math.max(this.revision, Number(revision) || 0);
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (err) {
+      console.warn("[BANCO] Nao foi possivel atualizar o cache local:", err);
+    }
+  },
   loadFromLocalStorage() {
     try {
       for (let i = 0; i < localStorage.length; i++) {

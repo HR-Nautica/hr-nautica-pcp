@@ -9,6 +9,9 @@
   const state = {
     expandedCoquilhas: new Set(),
     activeTab: 'ranking', // 'ranking' | 'agendados'
+    rawStock: new Map(),
+    rawStockVersion: 0,
+    rawStockLoading: false
   };
 
   const byId = id => document.getElementById(id);
@@ -26,6 +29,52 @@
     const val = Number(num) || 0;
     if (val === 0) return '0';
     return val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+  }
+
+  const normalizeRawCode = value => String(value || '').trim().toLocaleUpperCase('pt-BR').replace(/\s+/g, ' ');
+
+  async function refreshRawStock() {
+    if (state.rawStockLoading) return;
+    state.rawStockLoading = true;
+    try {
+      const response = await fetch('/api/raw-stock', { cache: 'no-store' });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Falha ao carregar estoque bruto (HTTP ${response.status}).`);
+      state.rawStock = new Map((result.items || []).map(item => [normalizeRawCode(item.rawCode), item]));
+      state.rawStockVersion = Number(result.version) || 0;
+      renderProgramacaoFundicao();
+    } catch (error) {
+      if (typeof showToast === 'function') showToast(error.message, 'error');
+    } finally {
+      state.rawStockLoading = false;
+    }
+  }
+
+  async function editRawStock(rawCode) {
+    const code = normalizeRawCode(rawCode);
+    const current = Number(state.rawStock.get(code)?.quantity) || 0;
+    const input = window.prompt(`Informe o novo estoque físico de ${code}:`, String(current));
+    if (input === null) return;
+    const quantity = Number(String(input).replace(',', '.'));
+    if (!Number.isFinite(quantity) || quantity < 0) {
+      if (typeof showToast === 'function') showToast('Informe uma quantidade maior ou igual a zero.', 'error');
+      return;
+    }
+    try {
+      const response = await fetch(`/api/raw-stock/${encodeURIComponent(code)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
+        body: JSON.stringify({ quantity, expectedVersion: state.rawStockVersion })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Falha ao atualizar estoque (HTTP ${response.status}).`);
+      state.rawStock = new Map((result.items || []).map(item => [normalizeRawCode(item.rawCode), item]));
+      state.rawStockVersion = Number(result.version) || state.rawStockVersion;
+      renderProgramacaoFundicao();
+      if (typeof showToast === 'function') showToast(`Estoque de ${code} atualizado para ${quantity}.`, 'success');
+    } catch (error) {
+      if (typeof showToast === 'function') showToast(error.message, 'error');
+    }
   }
 
   function formatDatePt(dateStr) {
@@ -102,7 +151,7 @@
         coquilha: coq,
         skus: [],
         mediaTotal: 0,
-        estoqueFisicoTotal: 0,
+        estoqueFisicoTotal: Number(state.rawStock.get(normalizeRawCode(coq))?.quantity) || 0,
         prodNecTotal: 0,
         pesoUnitario: DB.getCoquilhaPeso(coq) || 0,
       });
@@ -130,7 +179,7 @@
           coquilha: rawCoq,
           skus: [],
           mediaTotal: 0,
-          estoqueFisicoTotal: 0,
+          estoqueFisicoTotal: Number(state.rawStock.get(normalizeRawCode(rawCoq))?.quantity) || 0,
           prodNecTotal: 0,
           pesoUnitario: DB.getCoquilhaPeso(rawCoq) || 0,
         });
@@ -159,7 +208,6 @@
       });
 
       coqData.mediaTotal += media;
-      coqData.estoqueFisicoTotal += est;
       coqData.prodNecTotal += Math.max(0, Math.floor(suggested));
     });
 
@@ -293,6 +341,13 @@
               ${escapeHtml(s.sku)}: <strong style="color:#ffffff;">${s.estoqueFisico} un</strong>
             </span>
           `).join('');
+          const rawMovements = state.rawStock.get(normalizeRawCode(item.coquilha))?.movements || [];
+          const rawMovementsHtml = rawMovements.slice(0, 5).map(movement => `
+            <div style="display:flex;justify-content:space-between;gap:12px;color:#cbd5e1;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(148,163,184,.12)">
+              <span><strong>${escapeHtml(movement.tipo)}</strong> ${fmtNumber(movement.qty, 0)} un ${movement.opNumero ? `· ${escapeHtml(movement.opNumero)}` : ''}</span>
+              <span>${escapeHtml(movement.usuario || 'Usuário')} · ${new Date(movement.data).toLocaleString('pt-BR')}</span>
+            </div>
+          `).join('');
 
           return `
             <tr class="pf-row ${isExpanded ? 'expanded' : ''}">
@@ -306,7 +361,11 @@
                 </button>
               </td>
               <td class="font-mono" style="min-width: 140px; color:#38bdf8; font-weight:700; white-space:nowrap;">${fmtNumber(item.mediaTotal, 1)} <span style="font-size:0.75rem; color:#94a3b8">pçs/mês</span></td>
-              <td class="font-mono" style="min-width: 110px; color:#f8fafc; font-weight:700; font-size:0.95rem; white-space:nowrap;">${fmtNumber(item.estoqueFisicoTotal, 0)}</td>
+              <td class="font-mono" style="min-width: 110px; color:#f8fafc; font-weight:700; font-size:0.95rem; white-space:nowrap;">
+                <button type="button" class="btn-secondary btn-sm" onclick="window.editRawStock('${escapeHtml(item.coquilha)}')" title="Definir estoque físico no banco">
+                  ${fmtNumber(item.estoqueFisicoTotal, 0)} ✎
+                </button>
+              </td>
               <td style="min-width: 100px; white-space: nowrap;">
                 <span class="pf-status-badge ${statusBadgeClass} font-mono" style="font-weight:800; white-space:nowrap;">${cobText}</span>
               </td>
@@ -343,11 +402,17 @@
                     </div>
                     <div>
                       <div style="font-size:0.8rem; font-weight:800; color:#cbd5e1; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
-                        Estoque Físico em Usinagem / Acabado (${fmtNumber(item.estoqueFisicoTotal, 0)} un):
+                        Estoque de hélices acabadas do Tiny (apenas informativo):
                       </div>
                       <div style="display:flex; flex-wrap:wrap; gap:8px;">
                         ${estoqueChipsHtml || '<span style="color:#94a3b8; font-size:0.85rem;">Sem estoque físico.</span>'}
                       </div>
+                    </div>
+                    <div>
+                      <div style="font-size:0.8rem;font-weight:800;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">
+                        Últimas movimentações do bruto
+                      </div>
+                      ${rawMovementsHtml || '<span style="color:#94a3b8;font-size:0.85rem;">Nenhuma movimentação registrada.</span>'}
                     </div>
                   </div>
                 </td>
@@ -433,9 +498,13 @@
   window.setProgramacaoTab = setProgramacaoTab;
   window.openCriarLoteFundicao = openCriarLoteFundicao;
   window.getProgramacaoData = getProgramacaoData;
+  window.editRawStock = editRawStock;
+  window.refreshRawStock = refreshRawStock;
+  window.getRawStockItem = rawCode => state.rawStock.get(normalizeRawCode(rawCode)) || null;
 
   // Listeners DOM
   document.addEventListener('DOMContentLoaded', () => {
+    refreshRawStock();
     byId('pf-tab-ranking-btn')?.addEventListener('click', () => setProgramacaoTab('ranking'));
     byId('pf-tab-agendados-btn')?.addEventListener('click', () => setProgramacaoTab('agendados'));
 

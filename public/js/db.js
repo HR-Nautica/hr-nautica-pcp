@@ -73,9 +73,22 @@ const DB = {
     if (!model) return null;
 
     const result = {
+      bruto: null,
       bucha: null,
       caixa: null
     };
+
+    if (model.codigoBruto && typeof window !== 'undefined' && typeof window.getRawStockItem === 'function') {
+      const raw = window.getRawStockItem(model.codigoBruto);
+      const saldo = Number(raw?.quantity) || 0;
+      result.bruto = {
+        nome: model.codigoBruto,
+        saldo,
+        necessario: qty,
+        insuficiente: saldo < qty,
+        falta: Math.max(0, qty - saldo)
+      };
+    }
 
     const materiais = this.getMateriais();
 

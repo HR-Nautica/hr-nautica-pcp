@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TIMESTAMP NOT NULL
 );
 
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at
+  ON audit_log (created_at);
+
 -- Tabela de estágio: o lote mais recente substitui os dados da importação anterior.
 CREATE TABLE IF NOT EXISTS temp_analise_producao (
   id BIGSERIAL PRIMARY KEY,

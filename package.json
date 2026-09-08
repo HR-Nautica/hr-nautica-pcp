@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "PCP multiusuario local com Vite, Express e Microsoft Access",
+  "description": "PCP multiusuario com Vite, Express e Supabase/PostgreSQL",
   "scripts": {
     "dev": "concurrently -k \"vite --host 0.0.0.0\" \"node --watch server/index.js\"",
     "dev:web": "vite --host 0.0.0.0",
@@ -18,8 +18,12 @@
     "build": "npm run vendor && vite build",
     "start": "node server/index.js",
     "db:init": "node scripts/init-db.js",
+    "db:audit": "node scripts/audit-database.js",
+    "db:compact-audit": "node scripts/compact-audit-log.js --apply",
+    "raw-stock:init": "node scripts/init-raw-stock.js --reset",
+    "raw-stock:test": "node scripts/test-raw-stock-db.js",
     "db:migrate": "node scripts/migrate-json.js",
-    "check": "node --check api/index.js && node --check server/index.js && node --check server/database.js && node --check server/routes/state.js && node --check server/routes/analysis-temp.js && node --check server/routes/helice-ops.js && node --check public/js/remote-storage.js && node --check public/js/bootstrap.js && node --check public/js/db.js && node --check public/js/app.js && node --check public/js/analise.js && node --check public/js/rastreio-helices.js && node --check public/js/catalogo_data.js && node --check scripts/generate-catalog-data.js && node --check scripts/import-helice-ops.js && node --check scripts/test-catalog.js && node --check scripts/test-analise.js && node --check scripts/test-helice-ops.js && node --check scripts/test-helice-ops-db.js"
+    "check": "node --check api/index.js && node --check server/index.js && node --check server/database.js && node --check server/routes/state.js && node --check server/routes/analysis-temp.js && node --check server/routes/helice-ops.js && node --check server/routes/integrations.js && node --check server/routes/production-ops.js && node --check server/routes/raw-stock.js && node --check public/js/remote-storage.js && node --check public/js/bootstrap.js && node --check public/js/db.js && node --check public/js/app.js && node --check public/js/analise.js && node --check public/js/programacao-fundicao.js && node --check public/js/rastreio-helices.js && node --check public/js/catalogo_data.js && node --check scripts/audit-database.js && node --check scripts/compact-audit-log.js && node --check scripts/init-raw-stock.js && node --check scripts/test-raw-stock-db.js && node --check scripts/generate-catalog-data.js && node --check scripts/import-helice-ops.js && node --check scripts/test-catalog.js && node --check scripts/test-analise.js && node --check scripts/test-helice-ops.js && node --check scripts/test-helice-ops-db.js"
   },
   "dependencies": {
     "chart.js": "^4.4.9",
@@ -36,6 +40,8 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true
   }
 }
-

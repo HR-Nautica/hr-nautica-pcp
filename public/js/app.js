@@ -133,7 +133,8 @@ function populateModeloSelects() {
 
 // ── Preenche select de materiais ──────────
 function populateMaterialSelect() {
-  const mats = DB.getMateriais();
+  // Pecas brutas so podem ser movimentadas pelo fluxo transacional dedicado.
+  const mats = DB.getMateriais().filter(material => !material.rawCode);
   const opts = ['<option value="">— Selecione —</option>',
     ...mats.map(m => `<option value="${m.id}">${m.nome} (saldo: ${m.saldo} ${m.unidade})</option>`)
   ].join('');
@@ -399,12 +400,24 @@ function kanbanCard(op) {
   </div>`;
 }
 
-function deleteOp(id) {
+async function deleteOp(id) {
   if (!confirm('Excluir esta Ordem de Produção?')) return;
-  DB.deleteOp(id);
-  renderOrdens();
-  if (STATE.currentPage === 'dashboard') renderDashboard();
-  showToast('Ordem de produção excluída.', 'error');
+  try {
+    const response = await fetch(`/api/production-ops/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
+      body: JSON.stringify({ expectedVersion: RemoteStorage.versions.get(DB.KEYS.ops) || 0 })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || `Falha ao cancelar OP (HTTP ${response.status}).`);
+    RemoteStorage.applyServerState(DB.KEYS.ops, result.operations, result.version, result.revision);
+    renderOrdens();
+    if (typeof window.refreshRawStock === 'function') await window.refreshRawStock();
+    if (STATE.currentPage === 'dashboard') renderDashboard();
+    showToast('Ordem cancelada e estoque bruto estornado.', 'success');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
 }
 window.deleteOp = deleteOp;
 
@@ -425,13 +438,29 @@ function updateOpInsumosPreview() {
   }
 
   const reqs = DB.getOpRequirements(modelo, qty);
-  if (!reqs || (!reqs.bucha && !reqs.caixa)) {
+  if (!reqs || (!reqs.bruto && !reqs.bucha && !reqs.caixa)) {
     previewDiv.style.display = 'none';
     return;
   }
 
   previewDiv.style.display = 'block';
   listDiv.innerHTML = '';
+
+  if (reqs.bruto) {
+    const bruto = reqs.bruto;
+    const badgeClass = bruto.insuficiente ? 'chip--red' : 'chip--green';
+    const badgeText = bruto.insuficiente ? `Falta ${bruto.falta} un` : 'Estoque OK';
+    listDiv.innerHTML += `
+      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem;display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text-primary)">Peça bruta</div>
+        <div style="font-size:0.72rem;color:var(--text-secondary)">${bruto.nome}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span style="font-size:0.72rem;color:var(--text-muted)">Necessário: <strong>${qty}</strong> | Saldo: <strong>${bruto.saldo}</strong></span>
+          <span class="chip ${badgeClass}" style="font-size:0.65rem;padding:2px 6px">${badgeText}</span>
+        </div>
+      </div>
+    `;
+  }
 
   // Render Bucha
   if (reqs.bucha) {
@@ -526,7 +555,7 @@ function openEditOp(id) {
 
 function closeModalOp() { $('modal-op').classList.add('hidden'); }
 
-function saveOp() {
+async function saveOp() {
   const modelo = $('op-modelo').value.trim();
   const prazo  = $('op-prazo').value;
   if (!modelo) { showToast('Selecione um modelo de hélice.', 'error'); return; }
@@ -542,12 +571,25 @@ function saveOp() {
     obs:        $('op-obs').value.trim(),
   };
 
-  if (STATE.editingOpId) {
-    DB.updateOp(STATE.editingOpId, data);
-    showToast('Ordem de produção atualizada!');
-  } else {
-    DB.addOp(data);
-    showToast('Ordem de produção criada!');
+  const saveButton = $('btn-save-op');
+  if (saveButton) saveButton.disabled = true;
+  try {
+    const editingId = STATE.editingOpId;
+    const response = await fetch(editingId ? `/api/production-ops/${encodeURIComponent(editingId)}` : '/api/production-ops', {
+      method: editingId ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
+      body: JSON.stringify({ data, expectedVersion: RemoteStorage.versions.get(DB.KEYS.ops) || 0 })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || `Falha ao salvar OP (HTTP ${response.status}).`);
+    RemoteStorage.applyServerState(DB.KEYS.ops, result.operations, result.version, result.revision);
+    if (typeof window.refreshRawStock === 'function') await window.refreshRawStock();
+    showToast(editingId ? 'Ordem de produção atualizada!' : `Ordem criada e ${data.qty} unidade(s) do bruto consumida(s).`);
+  } catch (error) {
+    showToast(error.message, 'error');
+    return;
+  } finally {
+    if (saveButton) saveButton.disabled = false;
   }
 
   closeModalOp();
@@ -1274,6 +1316,10 @@ function openNovoMaterial() {
 function openEditMaterial(id) {
   const m = DB.getMateriais().find(x => x.id === id);
   if (!m) return;
+  if (m.rawCode) {
+    window.editRawStock?.(m.rawCode);
+    return;
+  }
   STATE.editingMaterialId = id;
   $('modal-material-title').textContent = 'Editar Item';
   $('material-edit-id').value = id;
@@ -1310,6 +1356,11 @@ function saveMaterial() {
 }
 
 function deleteMaterial(id) {
+  const material = DB.getMateriais().find(item => item.id === id);
+  if (material?.rawCode) {
+    showToast('Peças brutas são permanentes. Ajuste apenas o saldo físico.', 'warning');
+    return;
+  }
   if (!confirm('Excluir este item do estoque?')) return;
   DB.deleteMaterial(id);
   renderEstoque();

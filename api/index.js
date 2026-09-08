@@ -7,6 +7,8 @@ import { databaseHealth } from "../server/database.js";
 import analysisTempRouter from "../server/routes/analysis-temp.js";
 import heliceOpsRouter from "../server/routes/helice-ops.js";
 import integrationsRouter from "../server/routes/integrations.js";
+import productionOpsRouter from "../server/routes/production-ops.js";
+import rawStockRouter from "../server/routes/raw-stock.js";
 import stateRouter from "../server/routes/state.js";
 
 const app = express();
@@ -34,6 +36,8 @@ app.get("/api/status", async (_req, res, next) => {
 app.use("/api/state", stateRouter);
 app.use("/api/analysis-temp", analysisTempRouter);
 app.use("/api/helice-ops", heliceOpsRouter);
+app.use("/api/production-ops", productionOpsRouter);
+app.use("/api/raw-stock", rawStockRouter);
 app.use("/api", integrationsRouter);
 
 app.use((error, _req, res, _next) => {
@@ -43,13 +47,7 @@ app.use((error, _req, res, _next) => {
     ok: false,
     error: dbError
       ? "Banco de dados indisponivel."
-      : "Erro interno. Nenhuma transacao parcial foi mantida.",
-    debugMessage: error.message,
-    debugStack: error.stack,
-    debugCode: error.code,
-    envDatabaseUrlExists: !!process.env.DATABASE_URL,
-    envSupabaseUrlExists: !!process.env.SUPABASE_URL,
-    envSupabaseServiceRoleExists: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+      : "Erro interno. Nenhuma transacao parcial foi mantida."
   });
 });
 

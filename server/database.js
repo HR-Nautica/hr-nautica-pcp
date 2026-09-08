@@ -8,9 +8,6 @@ import { config } from "./config.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOCAL_DB_PATH = path.resolve(__dirname, "../database/local_state.json");
 
-// Force pg to ignore certificate validation when connecting to Supabase poolers.
-process.env.PGSSLMODE = "no-verify";
-
 const { Pool } = pg;
 
 let pool;
@@ -75,14 +72,14 @@ function getPool() {
         host: params.hostname,
         port: params.port ? Number(params.port) : 5432,
         database: params.pathname ? params.pathname.split("/")[1] : undefined,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: config.database.sslRejectUnauthorized }
       });
     } catch (err) {
       let cleanedString = connectionString || "";
       cleanedString = cleanedString.replace(/[?&]sslmode=[^&]+/g, "");
       pool = new Pool({
         connectionString: cleanedString,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: config.database.sslRejectUnauthorized }
       });
     }
   }
@@ -175,6 +172,26 @@ async function initializeSupabaseRest() {
       prefer: "resolution=ignore-duplicates,return=minimal"
     });
   }
+
+  await pruneAuditLogRest();
+}
+
+function auditCutoff() {
+  return new Date(Date.now() - config.auditRetentionDays * 24 * 60 * 60 * 1000);
+}
+
+async function pruneAuditLogRest() {
+  if (!config.auditCleanupEnabled || !config.supabase.serviceRoleKey) return;
+  await restRequest("audit_log", {
+    method: "DELETE",
+    params: { action: "eq.DELETE", version: "eq.1" },
+    prefer: "return=minimal"
+  });
+  await restRequest("audit_log", {
+    method: "DELETE",
+    params: { created_at: `lt.${auditCutoff().toISOString()}` },
+    prefer: "return=minimal"
+  });
 }
 
 async function initializePostgres() {
@@ -207,6 +224,18 @@ async function initializePostgres() {
         created_at TIMESTAMP NOT NULL
       )
     `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_audit_log_created_at
+      ON audit_log (created_at)
+    `);
+
+    if (config.auditCleanupEnabled) {
+      await client.query(
+        "DELETE FROM audit_log WHERE created_at < $1 OR (action = 'DELETE' AND version = 1)",
+        [auditCutoff()]
+      );
+    }
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS temp_analise_producao (
@@ -282,7 +311,21 @@ export async function initializeDatabase() {
   if (initialized) return;
 
   if (usesLocalFile()) {
-    await readLocalFile();
+    const db = await readLocalFile();
+    if (!config.auditCleanupEnabled) {
+      initialized = true;
+      return;
+    }
+    const cutoff = auditCutoff().toISOString();
+    const currentAudit = Array.isArray(db.audit_log) ? db.audit_log : [];
+    const retainedAudit = currentAudit.filter((entry) => {
+      const isNoopDelete = entry.action === "DELETE" && Number(entry.version) === 1;
+      return !isNoopDelete && (!entry.created_at || entry.created_at >= cutoff);
+    });
+    if (retainedAudit.length !== currentAudit.length) {
+      db.audit_log = retainedAudit;
+      await writeLocalFile(db);
+    }
   } else if (usesSupabaseRest()) {
     await initializeSupabaseRest();
   } else {
@@ -1106,7 +1149,6 @@ export async function upsertState(key, value, expectedVersion, actor = "") {
       state_key: key,
       action: "UPSERT",
       version: nextVersion,
-      payload: serializeValue(value),
       actor,
       created_at: now
     });
@@ -1137,8 +1179,8 @@ export async function upsertState(key, value, expectedVersion, actor = "") {
 
     const revision = await incrementRevision(client);
     await client.query(
-      "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
-      [key, "UPSERT", nextVersion, payload, actor, now]
+      "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
+      [key, "UPSERT", nextVersion, actor, now]
     );
     return { version: nextVersion, revision };
   });
@@ -1152,6 +1194,8 @@ export async function deleteState(key, expectedVersion, actor = "") {
     const currentItem = db.state[key];
     const current = currentItem ? Number(currentItem.version || 0) : 0;
     if (current !== expectedVersion) throw versionConflict(current);
+
+    if (current === 0) return { revision: Number(db.revision || 0) };
 
     delete db.state[key];
     db.revision = Number(db.revision || 0) + 1;
@@ -1175,6 +1219,11 @@ export async function deleteState(key, expectedVersion, actor = "") {
   return transaction(async (client) => {
     const current = await currentVersion(client, key);
     if (current !== expectedVersion) throw versionConflict(current);
+
+    if (current === 0) {
+      const revisionRows = await client.query("SELECT revision FROM app_revision WHERE singleton = $1", ["main"]);
+      return { revision: Number(firstValue(revisionRows.rows[0], ["revision"], 0)) };
+    }
 
     const now = new Date();
     await client.query("DELETE FROM app_state WHERE key = $1", [key]);
@@ -1208,7 +1257,6 @@ export async function importState(entries, actor = "IMPORT") {
         state_key: key,
         action: "IMPORT",
         version: nextVersion,
-        payload: serializeValue(value),
         actor,
         created_at: now
       });
@@ -1239,8 +1287,8 @@ export async function importState(entries, actor = "IMPORT") {
         );
       }
       await client.query(
-        "INSERT INTO audit_log (state_key, action, version, payload, actor, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
-        [key, "IMPORT", nextVersion, payload, actor, now]
+        "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
+        [key, "IMPORT", nextVersion, actor, now]
       );
     }
     return { revision: await incrementRevision(client) };
@@ -1289,7 +1337,6 @@ async function insertAuditRest({ stateKey, action, version, payload, actor, crea
       state_key: stateKey,
       action,
       version,
-      payload,
       actor,
       created_at: createdAt
     }],
@@ -1329,6 +1376,13 @@ async function deleteStateRest(key, expectedVersion, actor = "") {
   const current = await currentVersionRest(key);
   if (current !== expectedVersion) throw versionConflict(current);
 
+  if (current === 0) {
+    const rows = await restRequest("app_revision", {
+      params: { select: "revision", singleton: "eq.main", limit: 1 }
+    });
+    return { revision: Number(firstValue(rows?.[0], ["revision"], 0)) };
+  }
+
   const now = isoNow();
   await restRequest("app_state", {
     method: "DELETE",
@@ -1365,6 +1419,303 @@ async function importStateRest(entries, actor = "IMPORT") {
     await insertAuditRest({ stateKey: key, action: "IMPORT", version: nextVersion, payload, actor, createdAt: now });
   }
   return { revision: await incrementRevisionRest() };
+}
+
+const RAW_MATERIAL_CATEGORY = "Peca Bruta";
+
+function normalizeRawCode(value) {
+  return String(value || "").trim().toLocaleUpperCase("pt-BR").replace(/\s+/g, " ");
+}
+
+function isRawMaterial(material) {
+  return normalizeRawCode(material?.categoria) === normalizeRawCode(RAW_MATERIAL_CATEGORY)
+    || Boolean(material?.rawCode);
+}
+
+function rawStockView(materials, movements = []) {
+  return (Array.isArray(materials) ? materials : [])
+    .filter(isRawMaterial)
+    .map(material => ({
+      id: String(material.id || ""),
+      rawCode: normalizeRawCode(material.rawCode || material.nome),
+      quantity: Math.max(0, Number(material.saldo) || 0),
+      updatedAt: material.atualizadoEm || material.criadoEm || null,
+      updatedBy: material.atualizadoPor || ""
+    }))
+    .sort((a, b) => a.rawCode.localeCompare(b.rawCode, "pt-BR"))
+    .map(item => ({
+      ...item,
+      movements: (Array.isArray(movements) ? movements : [])
+        .filter(movement => String(movement.materialId || "") === item.id)
+        .slice(0, 20)
+    }));
+}
+
+export async function getRawMaterialStock() {
+  const snapshot = await getStateSnapshot(0);
+  return {
+    items: rawStockView(snapshot.data?.hrn_materiais, snapshot.data?.hrn_movimentos),
+    version: Number(snapshot.versions?.hrn_materiais || 0),
+    revision: Number(snapshot.revision || 0)
+  };
+}
+
+async function lockStateRows(client, defaults) {
+  const keys = Object.keys(defaults).sort();
+  for (const key of keys) {
+    await client.query(
+      "INSERT INTO app_state (key, value, version, updated_at) VALUES ($1, $2, 1, NOW()) ON CONFLICT (key) DO NOTHING",
+      [key, serializeValue(defaults[key])]
+    );
+  }
+  const result = await client.query(
+    "SELECT key, value, version FROM app_state WHERE key = ANY($1::varchar[]) ORDER BY key FOR UPDATE",
+    [keys]
+  );
+  return new Map(result.rows.map(row => [row.key, {
+    value: parseStoredValue(row.value),
+    version: Number(row.version || 0)
+  }]));
+}
+
+async function saveLockedStates(client, locked, changes, actor, action) {
+  const now = new Date();
+  const versions = {};
+  for (const [key, value] of Object.entries(changes)) {
+    const nextVersion = Number(locked.get(key)?.version || 0) + 1;
+    await client.query(
+      "UPDATE app_state SET value = $1, version = $2, updated_at = $3 WHERE key = $4",
+      [serializeValue(value), nextVersion, now, key]
+    );
+    await client.query(
+      "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
+      [key, action, nextVersion, actor, now]
+    );
+    versions[key] = nextVersion;
+  }
+  return { versions, revision: await incrementRevision(client) };
+}
+
+function rawStockTransactionRequired() {
+  const error = new Error("O estoque de brutos requer DATABASE_URL para garantir transacao atomica.");
+  error.code = "RAW_STOCK_TRANSACTION_REQUIRED";
+  error.status = 503;
+  throw error;
+}
+
+function insufficientStock(rawCode, available, required) {
+  const error = new RangeError(`Estoque insuficiente de ${rawCode}: disponivel ${available}, necessario ${required}.`);
+  error.code = "INSUFFICIENT_RAW_STOCK";
+  error.status = 409;
+  return error;
+}
+
+function findRawMaterial(materials, rawCode) {
+  const code = normalizeRawCode(rawCode);
+  return materials.find(material => isRawMaterial(material)
+    && normalizeRawCode(material.rawCode || material.nome) === code);
+}
+
+function movement({ material, type, quantity, balance, actor, op, reason, eventKey }) {
+  return {
+    id: randomUUID(),
+    materialId: material.id,
+    materialNome: material.nome,
+    tipo: type,
+    qty: Math.abs(Number(quantity) || 0),
+    opId: op?.id || "",
+    opNumero: op?.numero || "",
+    obs: reason,
+    data: isoNow(),
+    usuario: actor,
+    categoria: RAW_MATERIAL_CATEGORY,
+    saldoApos: balance,
+    eventKey
+  };
+}
+
+function rawCodesFromState(locked) {
+  const models = Array.isArray(locked.get("hrn_modelos")?.value) ? locked.get("hrn_modelos").value : [];
+  const catalog = Array.isArray(locked.get("hrn_fundicao_catalog")?.value) ? locked.get("hrn_fundicao_catalog").value : [];
+  const registered = Array.isArray(locked.get("hrn_coquilhas_catalog")?.value) ? locked.get("hrn_coquilhas_catalog").value : [];
+  return [...new Set([
+    ...models.map(item => item.codigoBruto),
+    ...catalog.map(item => item.coquilha),
+    ...registered.map(item => typeof item === "string" ? item : item.coquilha)
+  ].map(normalizeRawCode).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+export async function initializeRawMaterialStock(actor = "MIGRACAO_ESTOQUE_BRUTO") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return rawStockTransactionRequired();
+  return transaction(async client => {
+    const locked = await lockStateRows(client, {
+      hrn_fundicao_catalog: [], hrn_coquilhas_catalog: [], hrn_materiais: [], hrn_modelos: []
+    });
+    const materials = Array.isArray(locked.get("hrn_materiais").value)
+      ? [...locked.get("hrn_materiais").value]
+      : [];
+    const now = isoNow();
+    for (const rawCode of rawCodesFromState(locked)) {
+      let material = findRawMaterial(materials, rawCode);
+      if (!material) {
+        material = { id: `raw_${randomUUID()}`, nome: rawCode, rawCode, categoria: RAW_MATERIAL_CATEGORY, unidade: "un", minimo: 0, fornecedor: "", criadoEm: now };
+        materials.push(material);
+      }
+      material.nome = rawCode;
+      material.rawCode = rawCode;
+      material.categoria = RAW_MATERIAL_CATEGORY;
+      material.unidade = "un";
+      material.saldo = 0;
+      material.atualizadoEm = now;
+      material.atualizadoPor = actor;
+    }
+    const saved = await saveLockedStates(client, locked, { hrn_materiais: materials }, actor, "RAW_STOCK_INIT");
+    return { ...saved, items: rawStockView(materials), count: materials.filter(isRawMaterial).length };
+  });
+}
+
+export async function adjustRawMaterialStock(rawCode, quantity, expectedVersion, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return rawStockTransactionRequired();
+  const normalizedCode = normalizeRawCode(rawCode);
+  const target = Number(quantity);
+  if (!normalizedCode || !Number.isFinite(target) || target < 0) throw new RangeError("Informe um estoque fisico maior ou igual a zero.");
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_materiais: [], hrn_movimentos: [] });
+    if (Number(locked.get("hrn_materiais").version) !== Number(expectedVersion)) {
+      throw versionConflict(Number(locked.get("hrn_materiais").version));
+    }
+    const materials = [...locked.get("hrn_materiais").value];
+    const movements = [...locked.get("hrn_movimentos").value];
+    const material = findRawMaterial(materials, normalizedCode);
+    if (!material) throw new RangeError(`Peca bruta ${normalizedCode} nao cadastrada.`);
+    const previous = Math.max(0, Number(material.saldo) || 0);
+    if (previous === target) return { items: rawStockView(materials, movements), version: locked.get("hrn_materiais").version };
+    material.saldo = target;
+    material.atualizadoEm = isoNow();
+    material.atualizadoPor = actor;
+    movements.unshift(movement({ material, type: target > previous ? "Entrada" : "Saida", quantity: target - previous, balance: target, actor, reason: `Ajuste manual de ${previous} para ${target}`, eventKey: `RAW-ADJUST-${randomUUID()}` }));
+    const saved = await saveLockedStates(client, locked, { hrn_materiais: materials, hrn_movimentos: movements }, actor, "RAW_STOCK_ADJUST");
+    return { ...saved, items: rawStockView(materials, movements), version: saved.versions.hrn_materiais };
+  });
+}
+
+function normalizeManualOpData(data) {
+  const quantity = Math.max(0, Number.parseInt(data?.qty, 10) || 0);
+  if (!String(data?.modelo || "").trim()) throw new RangeError("Selecione um modelo de helice.");
+  if (quantity <= 0) throw new RangeError("Informe uma quantidade maior que zero.");
+  return {
+    modelo: String(data.modelo).trim(), qty: quantity,
+    cliente: String(data.cliente || "").trim(), prazo: String(data.prazo || ""),
+    etapa: String(data.etapa || "Fila de Espera"), prioridade: String(data.prioridade || "Normal"),
+    obs: String(data.obs || "").trim()
+  };
+}
+
+function modelRawCode(models, modelName) {
+  const normalized = normalizeRawCode(modelName);
+  const model = models.find(item => normalizeRawCode(item.nome) === normalized);
+  const rawCode = normalizeRawCode(model?.codigoBruto);
+  if (!rawCode) throw new RangeError(`O modelo ${modelName} nao possui peca bruta vinculada.`);
+  return rawCode;
+}
+
+export async function mutateManualProductionOrder(action, id, data, expectedVersion, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return rawStockTransactionRequired();
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_config: {}, hrn_materiais: [], hrn_modelos: [], hrn_movimentos: [], hrn_ops: [] });
+    const opsState = locked.get("hrn_ops");
+    if (Number(opsState.version) !== Number(expectedVersion)) throw versionConflict(Number(opsState.version));
+    const ops = [...opsState.value];
+    const materials = [...locked.get("hrn_materiais").value];
+    const movements = [...locked.get("hrn_movimentos").value];
+    const models = locked.get("hrn_modelos").value;
+    const now = isoNow();
+    let op;
+
+    if (action === "create") {
+      const normalized = normalizeManualOpData(data);
+      const rawCode = modelRawCode(models, normalized.modelo);
+      const material = findRawMaterial(materials, rawCode);
+      const available = Math.max(0, Number(material?.saldo) || 0);
+      if (!material || available < normalized.qty) throw insufficientStock(rawCode, available, normalized.qty);
+      const configState = { ...(locked.get("hrn_config").value || {}) };
+      configState.opCounter = Math.max(Number(configState.opCounter) || 0, ...ops.map(item => Number.parseInt(String(item.numero || "").replace(/\D/g, ""), 10) || 0)) + 1;
+      op = { id: randomUUID(), numero: `OP-${String(configState.opCounter).padStart(4, "0")}`, ...normalized, rawCode, rawStockQuantity: normalized.qty, rawStockConsumed: true, rawStockRevision: 1, criadoEm: now, atualizadoEm: now };
+      material.saldo = available - normalized.qty;
+      material.atualizadoEm = now;
+      material.atualizadoPor = actor;
+      movements.unshift(movement({ material, type: "Saida", quantity: normalized.qty, balance: material.saldo, actor, op, reason: `Consumo automatico na criacao da ${op.numero}`, eventKey: `${op.id}:consume:1` }));
+      ops.push(op);
+      const saved = await saveLockedStates(client, locked, { hrn_config: configState, hrn_materiais: materials, hrn_movimentos: movements, hrn_ops: ops }, actor, "OP_CREATE_RAW");
+      return { ...saved, op, operations: ops, stock: rawStockView(materials, movements), version: saved.versions.hrn_ops };
+    }
+
+    const index = ops.findIndex(item => String(item.id) === String(id));
+    if (index < 0) return null;
+    const previous = ops[index];
+    let stockChanged = false;
+
+    if (action === "delete") {
+      if (previous.rawStockConsumed) {
+        const material = findRawMaterial(materials, previous.rawCode);
+        if (!material) throw new RangeError(`Peca bruta ${previous.rawCode || "vinculada"} nao cadastrada; a OP nao foi cancelada.`);
+        stockChanged = true;
+        material.saldo = Math.max(0, Number(material.saldo) || 0) + Number(previous.rawStockQuantity || previous.qty || 0);
+        material.atualizadoEm = now;
+        material.atualizadoPor = actor;
+        movements.unshift(movement({ material, type: "Entrada", quantity: previous.rawStockQuantity || previous.qty, balance: material.saldo, actor, op: previous, reason: `Estorno por cancelamento da ${previous.numero}`, eventKey: `${previous.id}:cancel:${Number(previous.rawStockRevision || 1) + 1}` }));
+      }
+      ops.splice(index, 1);
+    } else {
+      const normalized = normalizeManualOpData(data);
+      op = { ...previous, ...normalized, atualizadoEm: now };
+      if (previous.rawStockConsumed) {
+        const oldCode = normalizeRawCode(previous.rawCode);
+        const newCode = modelRawCode(models, normalized.modelo);
+        const oldQty = Number(previous.rawStockQuantity || previous.qty || 0);
+        const newQty = normalized.qty;
+        const oldMaterial = findRawMaterial(materials, oldCode);
+        const newMaterial = findRawMaterial(materials, newCode);
+        if (!oldMaterial || !newMaterial) throw new RangeError("Peca bruta vinculada nao cadastrada no estoque.");
+        if (oldCode === newCode) {
+          const difference = newQty - oldQty;
+          const available = Math.max(0, Number(oldMaterial.saldo) || 0);
+          if (difference > available) throw insufficientStock(newCode, available, difference);
+          if (difference !== 0) {
+            stockChanged = true;
+            oldMaterial.saldo = available - difference;
+            oldMaterial.atualizadoEm = now;
+            oldMaterial.atualizadoPor = actor;
+            movements.unshift(movement({ material: oldMaterial, type: difference > 0 ? "Saida" : "Entrada", quantity: difference, balance: oldMaterial.saldo, actor, op, reason: `Ajuste de quantidade da ${previous.numero}: ${oldQty} para ${newQty}`, eventKey: `${previous.id}:adjust:${Number(previous.rawStockRevision || 1) + 1}` }));
+          }
+        } else {
+          stockChanged = true;
+          oldMaterial.saldo = Math.max(0, Number(oldMaterial.saldo) || 0) + oldQty;
+          const availableNew = Math.max(0, Number(newMaterial.saldo) || 0);
+          if (availableNew < newQty) throw insufficientStock(newCode, availableNew, newQty);
+          newMaterial.saldo = availableNew - newQty;
+          oldMaterial.atualizadoEm = now;
+          oldMaterial.atualizadoPor = actor;
+          newMaterial.atualizadoEm = now;
+          newMaterial.atualizadoPor = actor;
+          movements.unshift(movement({ material: oldMaterial, type: "Entrada", quantity: oldQty, balance: oldMaterial.saldo, actor, op: previous, reason: `Estorno por troca de bruto da ${previous.numero}`, eventKey: `${previous.id}:return:${Number(previous.rawStockRevision || 1) + 1}` }));
+          movements.unshift(movement({ material: newMaterial, type: "Saida", quantity: newQty, balance: newMaterial.saldo, actor, op, reason: `Consumo apos troca de bruto da ${previous.numero}`, eventKey: `${previous.id}:consume:${Number(previous.rawStockRevision || 1) + 1}` }));
+        }
+        op.rawCode = newCode;
+        op.rawStockQuantity = newQty;
+        op.rawStockRevision = Number(previous.rawStockRevision || 1) + (stockChanged ? 1 : 0);
+      }
+      ops[index] = op;
+    }
+    const changes = stockChanged
+      ? { hrn_materiais: materials, hrn_movimentos: movements, hrn_ops: ops }
+      : { hrn_ops: ops };
+    const saved = await saveLockedStates(client, locked, changes, actor, action === "delete" ? "OP_CANCEL_RAW" : "OP_UPDATE_RAW");
+    return { ...saved, op: action === "delete" ? previous : op, operations: ops, stock: rawStockView(materials, movements), version: saved.versions.hrn_ops };
+  });
 }
 
 export async function closeDatabase() {

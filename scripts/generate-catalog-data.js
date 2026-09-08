@@ -76,7 +76,6 @@ const records = rows
       cor,
       alturaBuchas,
       modeloBucha,
-      skuBucha: '',
       descricaoCaixa,
       skuCaixa,
     ] = values;

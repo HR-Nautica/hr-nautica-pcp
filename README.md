@@ -24,9 +24,10 @@ No Vercel, configure pelo menos:
 SUPABASE_URL=https://[PROJECT_REF].supabase.co
 SUPABASE_SERVICE_ROLE_KEY=[SERVICE_ROLE_KEY]
 VITE_SUPABASE_ANON_KEY=[ANON_PUBLIC_KEY]
+DATABASE_URL=postgresql://postgres.[PROJECT_REF]:[SENHA]@[POOLER]:6543/postgres?sslmode=require
 ```
 
-Localmente, voce tambem pode usar `DATABASE_URL` para conexao PostgreSQL direta/pooler. Quando `DATABASE_URL` existe, ela tem prioridade; quando nao existe, a API usa `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` via REST.
+`DATABASE_URL` e obrigatoria para criar, editar ou cancelar ordens que movimentam estoque de pecas brutas, pois essas operacoes usam uma transacao PostgreSQL e bloqueio das linhas envolvidas. Para as demais rotas, quando `DATABASE_URL` nao existe, a API ainda pode usar `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` via REST.
 
 ## Instalacao
 
@@ -40,9 +41,26 @@ npm run build
 npm start
 ```
 
-`db:init` cria/garante as tabelas do Supabase quando `DATABASE_URL` estiver configurada. No Vercel, a API tambem funciona com `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` depois que as tabelas existem.
+`db:init` cria/garante as tabelas do Supabase quando `DATABASE_URL` estiver configurada.
 
 A importacao do Excel na Analise de Producao usa `temp_analise_producao` como tabela de estagio. Cada sincronizacao grava um novo lote completo e remove o lote anterior somente depois da nova gravacao, evitando dados parciais durante a substituicao.
+
+## Estoque de pecas brutas
+
+- os cadastros e saldos oficiais dos brutos ficam em `app_state`, na chave `hrn_materiais`, identificados por `rawCode` e categoria `Peca Bruta`;
+- o relacionamento entre a helice e o bruto continua vindo de `hrn_modelos[].codigoBruto`;
+- a coluna `estoque_fisico` importada em `temp_analise_producao` representa somente o estoque informativo de helices acabadas do Tiny e nunca altera o saldo dos brutos;
+- o saldo bruto e alterado manualmente na Programacao de Fundicao ou automaticamente ao confirmar, editar e cancelar uma OP;
+- cada alteracao gera um registro em `app_state.hrn_movimentos`, incluindo bruto, quantidade, OP, data/hora e usuario disponivel;
+- saldo insuficiente rejeita a OP inteira e nenhuma baixa parcial e mantida.
+
+Para cadastrar todos os codigos brutos existentes e zerar seus saldos de forma intencional:
+
+```powershell
+npm run raw-stock:init
+```
+
+O comando exige internamente a opcao de confirmacao `--reset`, ja definida no script NPM. Para validar baixa unica, alteracao por diferenca, bloqueio de saldo negativo e estorno, use `npm run raw-stock:test`; o teste restaura o saldo utilizado ao final.
 
 Depois da migracao, o `dados_pcp.json` nao e consultado automaticamente.
 
@@ -68,6 +86,7 @@ npm run dev
 - cada chave de dados possui versao no Supabase;
 - gravacoes concorrentes com versao antiga sao rejeitadas;
 - cada alteracao e registrada em `audit_log` com usuario (`actor`);
+- a limpeza de `audit_log` pode ser ativada com `AUDIT_CLEANUP_ENABLED=true`; a retencao padrao e 30 dias e pode ser ajustada com `AUDIT_RETENTION_DAYS`;
 - erros de banco executam rollback quando suportado pela conexao PostgreSQL;
 - se o banco estiver indisponivel, o navegador bloqueia novas gravacoes;
 - alteracoes de outros usuarios sao detectadas a cada tres segundos.

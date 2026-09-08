@@ -9,6 +9,8 @@ import { databaseHealth } from "./database.js";
 import analysisTempRouter from "./routes/analysis-temp.js";
 import heliceOpsRouter from "./routes/helice-ops.js";
 import integrationsRouter from "./routes/integrations.js";
+import productionOpsRouter from "./routes/production-ops.js";
+import rawStockRouter from "./routes/raw-stock.js";
 import stateRouter from "./routes/state.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -39,6 +41,8 @@ app.get("/api/status", async (_req, res, next) => {
 app.use("/api/state", stateRouter);
 app.use("/api/analysis-temp", analysisTempRouter);
 app.use("/api/helice-ops", heliceOpsRouter);
+app.use("/api/production-ops", productionOpsRouter);
+app.use("/api/raw-stock", rawStockRouter);
 app.use("/api", integrationsRouter);
 app.use(express.static(dist, { etag: true, maxAge: "1h" }));
 app.get("*splat", (_req, res) => res.sendFile(path.join(dist, "index.html")));
