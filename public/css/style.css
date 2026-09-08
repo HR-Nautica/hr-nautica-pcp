@@ -5790,4 +5790,322 @@ textarea.op-input-control {
   }
 }
 
+/* ═════════════════════════════════════════════
+   MODAL: AGENDAR / EDITAR FUNDIÇÃO
+   ═════════════════════════════════════════════ */
+.modal--fundicao-creative {
+  width: min(700px, calc(100vw - 2rem)) !important;
+  max-width: 700px !important;
+  background: #111827 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.modal-header--fundicao {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1.25rem 1.75rem !important;
+  background: linear-gradient(180deg, rgba(45, 26, 18, 0.75) 0%, rgba(17, 24, 39, 0.98) 100%) !important;
+  border-bottom: 1px solid rgba(251, 146, 60, 0.15) !important;
+}
+
+.modal-header--fundicao-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.9rem !important;
+}
+
+.modal-header--fundicao-icon {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(234, 88, 12, 0.1)) !important;
+  border: 1px solid rgba(249, 115, 22, 0.35) !important;
+  color: #fb923c !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 0 18px rgba(234, 88, 12, 0.25) !important;
+}
+
+.modal-header--fundicao .modal-title {
+  font-size: 1.12rem !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  letter-spacing: -0.01em !important;
+}
+
+.modal-header--fundicao .modal-subtitle {
+  font-size: 0.77rem !important;
+  color: #94a3b8 !important;
+  margin-top: 2px !important;
+}
+
+.modal-header--fundicao .modal-close {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+  border-radius: 9px !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.modal-header--fundicao .modal-close:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #fca5a5 !important;
+  transform: scale(1.05) !important;
+}
+
+.modal--fundicao-creative .modal-body {
+  padding: 1.5rem 1.75rem !important;
+  max-height: min(72vh, 640px) !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.25rem !important;
+}
+
+.modal--fundicao-creative .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.modal--fundicao-creative .modal-body::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+.modal--fundicao-creative .modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+}
+.modal--fundicao-creative .modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Grid & campos de Fundição */
+.fundicao-form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 1.1rem 1.25rem !important;
+}
+
+.fundicao-form-grid .span-2 {
+  grid-column: span 2 !important;
+}
+
+.fundicao-field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.4rem !important;
+}
+
+.fundicao-field .form-label {
+  font-size: 0.77rem !important;
+  font-weight: 600 !important;
+  color: #cbd5e1 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-bottom: 0 !important;
+}
+
+.fundicao-field .req {
+  color: #f87171 !important;
+  font-weight: 700 !important;
+}
+
+.fundicao-input-control {
+  background: #151e30 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+  border-radius: 10px !important;
+  padding: 0.65rem 0.9rem !important;
+  font-size: 0.86rem !important;
+  font-family: inherit !important;
+  width: 100% !important;
+  outline: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  color-scheme: dark !important;
+}
+
+.fundicao-input-control:hover {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  background: #1a253c !important;
+}
+
+.fundicao-input-control:focus {
+  border-color: #f97316 !important;
+  background: #151e30 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+select.fundicao-input-control {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.85rem center !important;
+  background-size: 14px !important;
+  padding-right: 2.3rem !important;
+  cursor: pointer !important;
+}
+
+select.fundicao-input-control option {
+  background-color: #111827 !important;
+  color: #f1f5f9 !important;
+  padding: 8px !important;
+}
+
+textarea.fundicao-input-control {
+  min-height: 72px !important;
+  resize: vertical !important;
+  line-height: 1.45 !important;
+}
+
+/* Banner de especificações de fundição */
+.fundicao-spec-banner {
+  background: linear-gradient(135deg, rgba(30, 24, 20, 0.7) 0%, rgba(20, 24, 35, 0.85) 100%) !important;
+  border: 1px solid rgba(251, 146, 60, 0.18) !important;
+  border-radius: 12px !important;
+  padding: 0.85rem 1.1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-around !important;
+  gap: 1rem !important;
+}
+
+.fundicao-spec-col {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.fundicao-spec-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+.fundicao-spec-title svg {
+  color: #fb923c !important;
+}
+
+.fundicao-spec-val {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  color: #f1f5f9 !important;
+}
+
+.fundicao-spec-sep {
+  width: 1px !important;
+  height: 28px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Modal Footer */
+.modal-footer--fundicao {
+  padding: 1.15rem 1.75rem !important;
+  background: #0d131f !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.85rem !important;
+}
+
+.fundicao-btn-cancel {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0.65rem 1.15rem !important;
+  border-radius: 9px !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.fundicao-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.fundicao-btn-save {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 0.65rem 1.45rem !important;
+  border-radius: 9px !important;
+  font-size: 0.86rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  border: 1px solid rgba(251, 146, 60, 0.4) !important;
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.4) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.fundicao-btn-save:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  box-shadow: 0 6px 22px rgba(234, 88, 12, 0.55) !important;
+  transform: translateY(-1px) !important;
+}
+
+.fundicao-btn-save:active {
+  transform: translateY(0) !important;
+}
+
+.fundicao-btn-save:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 640px) {
+  .modal--fundicao-creative {
+    width: 96vw !important;
+    margin: 0.5rem !important;
+  }
+  .modal-header--fundicao,
+  .modal--fundicao-creative .modal-body,
+  .modal-footer--fundicao {
+    padding-left: 1.1rem !important;
+    padding-right: 1.1rem !important;
+  }
+  .fundicao-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .fundicao-form-grid .span-2 {
+    grid-column: span 1 !important;
+  }
+  .fundicao-spec-banner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+  .fundicao-spec-sep {
+    display: none !important;
+  }
+}
+
 

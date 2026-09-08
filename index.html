@@ -2107,61 +2107,109 @@
 
   <!-- Modal: Nova Programação de Fundição -->
   <div class="modal-overlay hidden" id="modal-fundicao">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 class="modal-title" id="modal-fundicao-title">Novo Agendamento de Fundição</h2>
-        <button class="btn-icon" id="modal-fundicao-close">
+    <div class="modal modal--fundicao-creative" role="dialog" aria-modal="true" aria-labelledby="modal-fundicao-title">
+      <div class="modal-header modal-header--fundicao">
+        <div class="modal-header--fundicao-info">
+          <div class="modal-header--fundicao-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="modal-title" id="modal-fundicao-title">Novo Agendamento de Fundição</h2>
+            <p class="modal-subtitle">Controle de corrida, lote térmico e abastecimento de coquilhas</p>
+          </div>
+        </div>
+        <button class="modal-close" id="modal-fundicao-close" aria-label="Fechar modal">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="fundicao-edit-id" />
-        <div class="form-grid">
-          <div class="form-group span-2">
-            <label for="fundicao-modelo">Modelo da Hélice *</label>
-            <select id="fundicao-modelo" required>
+        <div class="fundicao-form-grid">
+          <div class="form-group span-2 fundicao-field">
+            <label class="form-label" for="fundicao-modelo">Modelo da Hélice / Coquilha <span class="req">*</span></label>
+            <select class="form-input fundicao-input-control" id="fundicao-modelo" required>
               <option value="">— Selecione um modelo —</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="fundicao-lote">Nº do Lote de Fundição</label>
-            <input type="text" id="fundicao-lote" placeholder="Ex: LOTE-2026-042" />
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="fundicao-lote">Nº do Lote de Fundição</label>
+            <input type="text" class="form-input fundicao-input-control" id="fundicao-lote" placeholder="Ex: LOTE-FND-2026-001" />
           </div>
-          <div class="form-group">
-            <label for="fundicao-qty">Quantidade de Peças *</label>
-            <input type="number" id="fundicao-qty" min="1" value="10" required />
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="fundicao-qty">Quantidade de Peças <span class="req">*</span></label>
+            <input type="number" class="form-input fundicao-input-control" id="fundicao-qty" min="1" value="10" required />
           </div>
-          <div class="form-group">
-            <label for="fundicao-liga">Liga Metálica</label>
-            <select id="fundicao-liga">
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="fundicao-liga">Liga Metálica</label>
+            <select class="form-input fundicao-input-control" id="fundicao-liga">
               <option value="Alumínio AlMg5">Alumínio AlMg5 (Náutico)</option>
               <option value="Alumínio SAE 305">Alumínio SAE 305</option>
               <option value="Inox CF8M">Aço Inox CF8M</option>
               <option value="Bronze Manganês">Bronze Manganês</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="fundicao-data">Data Programada *</label>
-            <input type="date" id="fundicao-data" required />
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="fundicao-data">Data Programada <span class="req">*</span></label>
+            <input type="date" class="form-input fundicao-input-control" id="fundicao-data" required />
           </div>
-          <div class="form-group">
-            <label for="fundicao-status">Status Inicial</label>
-            <select id="fundicao-status">
+          <div class="form-group span-2 fundicao-field">
+            <label class="form-label" for="fundicao-status">Status Inicial</label>
+            <select class="form-input fundicao-input-control" id="fundicao-status">
               <option value="Agendado">Agendado</option>
               <option value="Em Fusão">Em Fusão</option>
               <option value="Resfriando">Resfriando</option>
               <option value="Concluído">Concluído</option>
             </select>
           </div>
-          <div class="form-group span-2">
-            <label for="fundicao-obs">Observações</label>
-            <textarea id="fundicao-obs" rows="2" placeholder="Temp. de vazamento, forno utilizado, operador..."></textarea>
+          <div class="form-group span-2 fundicao-field">
+            <label class="form-label" for="fundicao-obs">Observações</label>
+            <textarea class="form-input form-textarea fundicao-input-control" id="fundicao-obs" rows="2" placeholder="Temp. de vazamento, forno utilizado, orientações térmicas..."></textarea>
+          </div>
+        </div>
+
+        <!-- Banner de especificações de fundição -->
+        <div class="fundicao-spec-banner">
+          <div class="fundicao-spec-col">
+            <span class="fundicao-spec-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Processo
+            </span>
+            <span class="fundicao-spec-val">Coquilha por Gravidade</span>
+          </div>
+          <div class="fundicao-spec-sep"></div>
+          <div class="fundicao-spec-col">
+            <span class="fundicao-spec-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+              Faixa Térmica
+            </span>
+            <span class="fundicao-spec-val">710°C ~ 740°C</span>
+          </div>
+          <div class="fundicao-spec-sep"></div>
+          <div class="fundicao-spec-col">
+            <span class="fundicao-spec-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Destino
+            </span>
+            <span class="fundicao-spec-val">Estoque de Brutos</span>
           </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-ghost" id="btn-cancel-fundicao">Cancelar</button>
-        <button class="btn-primary" id="btn-save-fundicao">Salvar Agendamento</button>
+      <div class="modal-footer modal-footer--fundicao">
+        <button type="button" class="btn-ghost fundicao-btn-cancel" id="btn-cancel-fundicao">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Cancelar
+        </button>
+        <button type="button" class="btn-primary fundicao-btn-save" id="btn-save-fundicao">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+          </svg>
+          Salvar Agendamento
+        </button>
       </div>
     </div>
   </div>
