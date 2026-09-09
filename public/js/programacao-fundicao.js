@@ -49,31 +49,30 @@
     }
   }
 
-  async function editRawStock(rawCode) {
-    const code = normalizeRawCode(rawCode);
-    const current = Number(state.rawStock.get(code)?.quantity) || 0;
-    const input = window.prompt(`Informe o novo estoque físico de ${code}:`, String(current));
-    if (input === null) return;
-    const quantity = Number(String(input).replace(',', '.'));
-    if (!Number.isFinite(quantity) || quantity < 0) {
-      if (typeof showToast === 'function') showToast('Informe uma quantidade maior ou igual a zero.', 'error');
-      return;
+  function getCoquilhaEstoqueFisico(coq) {
+    const norm = normalizeRawCode(coq);
+
+    // 1. Saldo do backend sincronizado (/api/raw-stock)
+    const fromApi = Number(state.rawStock.get(norm)?.quantity);
+    if (Number.isFinite(fromApi) && fromApi > 0) return fromApi;
+
+    // 2. Saldo de materiais do DB local
+    if (typeof DB !== 'undefined' && typeof DB.getRawStock === 'function') {
+      const fromDb = DB.getRawStock(coq);
+      if (fromDb > 0) return fromDb;
     }
-    try {
-      const response = await fetch(`/api/raw-stock/${encodeURIComponent(code)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
-        body: JSON.stringify({ quantity, expectedVersion: state.rawStockVersion })
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || `Falha ao atualizar estoque (HTTP ${response.status}).`);
-      state.rawStock = new Map((result.items || []).map(item => [normalizeRawCode(item.rawCode), item]));
-      state.rawStockVersion = Number(result.version) || state.rawStockVersion;
-      renderProgramacaoFundicao();
-      if (typeof showToast === 'function') showToast(`Estoque de ${code} atualizado para ${quantity} peças.`, 'success');
-    } catch (error) {
-      if (typeof showToast === 'function') showToast(error.message, 'error');
+
+    // 3. Saldo acumulado de OPs de Fundição já finalizadas (para consistência imediata)
+    if (typeof DB !== 'undefined' && typeof DB.getFundicoes === 'function') {
+      const ops = DB.getFundicoes().filter(f =>
+        (f.status === 'Fundido' || f.finalizada) &&
+        normalizeRawCode(f.coquilha || f.produto || f.modelo) === norm
+      );
+      const sumFinalized = ops.reduce((acc, f) => acc + (Number(f.qtyProduzida || f.quantidadeProduzida || f.qty) || 0), 0);
+      if (sumFinalized > 0) return sumFinalized;
     }
+
+    return fromApi || 0;
   }
 
   function formatDatePt(dateStr) {
@@ -152,7 +151,7 @@
         liga: 'Alumínio AlMg5',
         skus: [],
         mediaTotal: 0,
-        estoqueFisicoTotal: Number(state.rawStock.get(normalizeRawCode(coq))?.quantity) || 0,
+        estoqueFisicoTotal: getCoquilhaEstoqueFisico(coq),
         prodNecTotal: 0,
         pesoUnitario: typeof DB.getCoquilhaPeso === 'function' ? DB.getCoquilhaPeso(coq) : 0,
       });
@@ -182,7 +181,7 @@
           liga: 'Alumínio AlMg5',
           skus: [],
           mediaTotal: 0,
-          estoqueFisicoTotal: Number(state.rawStock.get(normalizeRawCode(rawCoq))?.quantity) || 0,
+          estoqueFisicoTotal: getCoquilhaEstoqueFisico(rawCoq),
           prodNecTotal: 0,
           pesoUnitario: typeof DB.getCoquilhaPeso === 'function' ? DB.getCoquilhaPeso(rawCoq) : 0,
         });
@@ -366,10 +365,8 @@
           <td class="font-mono" style="min-width: 140px; color:#38bdf8; font-weight:700; white-space:nowrap;">
             ${fmtNumber(item.mediaTotal, 1)} <span style="font-size:0.75rem; color:#94a3b8">pçs/mês</span>
           </td>
-          <td class="font-mono" style="min-width: 120px; color:#f8fafc; font-weight:700; font-size:0.95rem; white-space:nowrap;">
-            <button type="button" class="btn-secondary btn-sm" onclick="window.editRawStock('${escapeHtml(item.coquilha)}')" title="Ajustar saldo do estoque físico">
-              <strong style="color:#38bdf8; font-size:1.05rem;">${fmtNumber(item.estoqueFisicoTotal, 0)}</strong> ✎
-            </button>
+          <td class="font-mono" style="min-width: 110px; color:#f8fafc; font-weight:700; font-size:0.95rem; white-space:nowrap;">
+            <strong style="color:#38bdf8; font-size:1.05rem;">${fmtNumber(item.estoqueFisicoTotal, 0)}</strong> <span style="font-size:0.75rem; color:#94a3b8">un</span>
           </td>
           <td style="min-width: 100px; white-space: nowrap;">
             <span class="pf-status-badge ${statusBadgeClass} font-mono" style="font-weight:800; white-space:nowrap;">${cobText}</span>
@@ -431,7 +428,7 @@
   window.renderProgramacaoFundicao = renderProgramacaoFundicao;
   window.toggleCoquilhaDetails = toggleCoquilhaDetails;
   window.getProgramacaoData = getProgramacaoData;
-  window.editRawStock = editRawStock;
+  window.editRawStock = null;
   window.refreshRawStock = refreshRawStock;
   window.getRawStockItem = rawCode => state.rawStock.get(normalizeRawCode(rawCode)) || null;
 
