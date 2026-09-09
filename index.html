@@ -65,6 +65,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
         Programação de Fundição
       </a>
+      <a href="#" class="nav-item" data-page="rastreio-fundicao" id="nav-rastreio-fundicao">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Rastreio OP. Fundição
+      </a>
 
       <div class="sidebar-title">Buchas</div>
       <a href="#" class="nav-item" data-page="buchas" id="nav-buchas">
@@ -1043,17 +1047,17 @@
       </div>
     </div>
 
-    <!-- ──── PAGE: CATÁLOGO DE FUNDIÇÃO (CÓDIGOS BRUTOS E APLICAÇÕES) ──── -->
+    <!-- ──── PAGE: CATÁLOGO DE FUNDIÇÃO (CADASTRO DE PRODUTOS E COQUILHAS) ──── -->
     <div class="page hidden" id="page-catalogo-fundicao">
       <div class="page-header">
         <div>
           <h1 class="page-title">Catálogo de Fundição</h1>
-          <p class="page-subtitle">Mapeamento oficial de Coquilhas / Códigos Brutos para Hélices Finais</p>
+          <p class="page-subtitle">Cadastro técnico, dados metalúrgicos e especificações dos produtos de fundição</p>
         </div>
         <div class="header-actions">
           <button class="btn-primary" id="btn-novo-cf" style="font-size:0.95rem; font-weight:600;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            ➕ Novo Item de Fundição
+            ➕ Novo Produto de Fundição
           </button>
         </div>
       </div>
@@ -1062,24 +1066,46 @@
       <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
         <div class="kpi-card">
           <div class="kpi-header">
-            <span class="kpi-label">COQUILHAS / BRUTOS</span>
+            <span class="kpi-label">PRODUTOS CADASTRADOS</span>
             <div class="kpi-icon kpi-icon--purple">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-cf-coquilhas">0 un</div>
-          <div class="kpi-sub">Moldes e coquilhas ativas</div>
+          <div class="kpi-value" id="kpi-cf-total">0</div>
+          <div class="kpi-sub">Total no catálogo</div>
         </div>
 
         <div class="kpi-card">
           <div class="kpi-header">
-            <span class="kpi-label">APLICAÇÕES MAPEADAS</span>
+            <span class="kpi-label">PRODUTOS ATIVOS</span>
+            <div class="kpi-icon kpi-icon--green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-cf-ativos">0</div>
+          <div class="kpi-sub">Disponíveis para produção</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">COQUILHAS / MOLDES</span>
             <div class="kpi-icon kpi-icon--blue">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-cf-aplicacoes">0 skus</div>
-          <div class="kpi-sub">Hélices finais vinculadas</div>
+          <div class="kpi-value" id="kpi-cf-coquilhas">0</div>
+          <div class="kpi-sub">Moldes físicos mapeados</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">PESO MÉDIO</span>
+            <div class="kpi-icon kpi-icon--teal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-cf-peso-medio">0,000 kg</div>
+          <div class="kpi-sub">Média por peça bruta</div>
         </div>
       </div>
 
@@ -1088,61 +1114,67 @@
         <div class="catalogo-toolbar">
           <div class="catalogo-search-wrap">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="search" id="cf-search" placeholder="Procurar por Coquilha, SKU ou Descrição..." autocomplete="off" />
+            <input type="search" id="cf-search" placeholder="Procurar por Código/Coquilha, Descrição ou Liga..." autocomplete="off" />
           </div>
-          <span class="catalogo-count" id="cf-count">0 itens</span>
+          <span class="catalogo-count" id="cf-count">0 produtos</span>
         </div>
         <div class="catalogo-filters">
           <label class="catalogo-filter">
-            <span>Coquilha / Código Bruto</span>
+            <span>Status</span>
+            <select id="cf-filter-status">
+              <option value="">Todos os status</option>
+              <option value="ativo">Apenas Ativos</option>
+              <option value="inativo">Apenas Inativos</option>
+            </select>
+          </label>
+          <label class="catalogo-filter">
+            <span>Coquilha / Molde</span>
             <select id="cf-filter-coquilha">
               <option value="">Todas as coquilhas</option>
             </select>
           </label>
-          <button type="button" class="btn-secondary catalogo-clear-filters" id="cf-limpar-filtros">Limpar pesquisa</button>
-          <div style="display: flex; gap: 6px; margin-left: auto;">
-            <button type="button" class="btn-secondary" id="cf-expand-all" style="font-size: 0.82rem; padding: 6px 10px;">📂 Expandir Tudo</button>
-            <button type="button" class="btn-secondary" id="cf-collapse-all" style="font-size: 0.82rem; padding: 6px 10px;">📁 Recolher Tudo</button>
-          </div>
+          <button type="button" class="btn-secondary catalogo-clear-filters" id="cf-limpar-filtros">Limpar filtros</button>
         </div>
 
         <div class="table-wrap catalogo-table-wrap">
           <table class="catalogo-table">
             <thead>
               <tr>
-                <th>Coquilha / Cód. Bruto</th>
-                <th>Código (SKU) Hélice</th>
-                <th>Descrição da Aplicação Hélice</th>
-                <th>Peso da Coquilha (kg)</th>
-                <th class="catalogo-actions-col" style="text-align: right;">Ações</th>
+                <th style="min-width: 170px;">Cód. / Coquilha</th>
+                <th style="min-width: 250px;">Descrição do Produto</th>
+                <th style="min-width: 140px;">Liga Metálica</th>
+                <th style="min-width: 120px;">Peso Unit. (kg)</th>
+                <th style="min-width: 220px;">Aplicações / Hélices</th>
+                <th style="min-width: 100px; text-align: center;">Status</th>
+                <th class="catalogo-actions-col" style="min-width: 160px; text-align: right;">Ações</th>
               </tr>
             </thead>
             <tbody id="cf-grid">
-              <tr><td colspan="5" class="empty-cell">Carregando catálogo de fundição...</td></tr>
+              <tr><td colspan="7" class="empty-cell">Carregando catálogo de fundição...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ──── PAGE: PROGRAMAÇÃO DE FUNDIÇÃO DE HÉLICE ──── -->
+    <!-- ──── PAGE: PROGRAMAÇÃO DE FUNDIÇÃO (ANÁLISE, ESTOQUE FÍSICO E CRIAÇÃO DE OP) ──── -->
     <div class="page hidden" id="page-fundicao">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Programação de Produção — Ranking por Criticidade</h1>
-          <p class="modal-subtitle">Correlação de Coquilhas Brutas com Análise de Produção de Hélices Usinadas</p>
+          <h1 class="page-title">Programação de Fundição</h1>
+          <p class="modal-subtitle">Estoque físico de peças brutas, análise de consumo médio, criticidade e necessidade de produção</p>
         </div>
         <div class="header-actions">
-          <input type="text" class="search-input" id="fundicao-search" placeholder="Buscar por coquilha/modelo..." />
+          <input type="text" class="search-input" id="fundicao-search" placeholder="Buscar por coquilha ou modelo..." />
           <select class="select-sm" id="fundicao-filter-status">
             <option value="">Todos os status</option>
             <option value="CRÍTICO">Crítico</option>
             <option value="ALERTA">Alerta</option>
             <option value="SEGURO">Seguro</option>
           </select>
-          <button class="btn-primary" id="btn-nova-fundicao">
+          <button class="btn-primary" id="btn-nova-fundicao" style="font-size:0.92rem; font-weight:600;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nova Programação
+            🔥 Criar OP de Fundição
           </button>
         </div>
       </div>
@@ -1150,13 +1182,13 @@
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-header">
-            <span class="kpi-label">COQUILHAS BRUTAS</span>
+            <span class="kpi-label">ITENS EM ESTOQUE</span>
             <div class="kpi-icon kpi-icon--purple">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-fund-agendadas">0</div>
-          <div class="kpi-sub">Total registradas</div>
+          <div class="kpi-value" id="kpi-fund-agendadas">0 un</div>
+          <div class="kpi-sub">Total no saldo físico</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header">
@@ -1175,7 +1207,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><circle cx="12" cy="12" r="3"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-fund-concluidas">0</div>
+          <div class="kpi-value" id="kpi-fund-concluidas">0 un</div>
           <div class="kpi-sub">Hélices brutas a fundir</div>
         </div>
         <div class="kpi-card">
@@ -1185,19 +1217,13 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-fund-pecas">0</div>
-          <div class="kpi-sub">Peso total estimado (kg)</div>
+          <div class="kpi-value" id="kpi-fund-pecas">0 kg</div>
+          <div class="kpi-sub">Peso total estimado</div>
         </div>
       </div>
 
-      <!-- Tab Switcher -->
-      <div class="pf-tab-switcher" style="margin-top: 1.5rem; display: flex; gap: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">
-        <button type="button" class="btn-secondary pf-tab-btn active" id="pf-tab-ranking-btn">🏆 Ranking por Criticidade</button>
-        <button type="button" class="btn-secondary pf-tab-btn" id="pf-tab-agendados-btn">📋 Lotes Agendados & Histórico</button>
-      </div>
-
-      <!-- Seção 1: Ranking por Criticidade -->
-      <div id="pf-sec-ranking" style="margin-top:1rem;">
+      <!-- Tabela Principal de Programação e Estoque Físico -->
+      <div style="margin-top:1.5rem;">
         <div class="card">
           <div class="table-wrap catalogo-table-wrap" style="overflow-x: auto; width: 100%;">
             <table class="catalogo-table" style="min-width: 1350px; width: 100%;">
@@ -1206,7 +1232,7 @@
                   <th style="width: 50px; text-align: center; white-space: nowrap;">#</th>
                   <th style="min-width: 180px; white-space: nowrap;">Cód. Bruto (Coquilha)</th>
                   <th style="min-width: 140px; white-space: nowrap;">Média (vendas/mês)</th>
-                  <th style="min-width: 110px; white-space: nowrap;">Estoque Físico</th>
+                  <th style="min-width: 120px; white-space: nowrap; color:#38bdf8;">Estoque Físico</th>
                   <th style="min-width: 100px; white-space: nowrap;">Cobertura</th>
                   <th style="min-width: 110px; white-space: nowrap;">Status</th>
                   <th style="min-width: 120px; white-space: nowrap;">Prod. Nec. (un)</th>
@@ -1225,28 +1251,105 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Seção 2: Lotes Agendados & Histórico -->
-      <div id="pf-sec-agendados" style="margin-top:1rem; display:none;">
-        <div class="card">
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Nº Prog. / Lote</th>
-                  <th>Coquilha / Modelo</th>
-                  <th>Qtd (peças)</th>
-                  <th>Liga Metálica</th>
-                  <th>Data Programada</th>
-                  <th>Status</th>
-                  <th style="text-align: center;">Ações</th>
-                </tr>
-              </thead>
-              <tbody id="fundicao-body">
-                <tr><td colspan="7" class="empty-cell">Nenhuma programação de fundição agendada.</td></tr>
-              </tbody>
-            </table>
+    <!-- ──── PAGE: RASTREIO OP. FUNDIÇÃO (ACOMPANHAMENTO E FINALIZAÇÃO DE OPS) ──── -->
+    <div class="page hidden" id="page-rastreio-fundicao">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Rastreio OP. Fundição</h1>
+          <p class="page-subtitle">Acompanhamento das Ordens de Produção e entrada física no estoque ao finalizar</p>
+        </div>
+        <div class="header-actions">
+          <input type="text" class="search-input" id="rf-search" placeholder="Buscar por OP, produto ou responsável..." />
+          <select class="select-sm" id="rf-filter-status">
+            <option value="">Todos os status</option>
+            <option value="Em aberto">Em aberto</option>
+            <option value="Fundido">Fundido</option>
+          </select>
+          <button class="btn-primary" id="btn-nova-op-rastreio" style="font-size:0.92rem; font-weight:600;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova OP Fundição
+          </button>
+        </div>
+      </div>
+
+      <!-- KPIs do Rastreio -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">OPS EM ABERTO</span>
+            <div class="kpi-icon kpi-icon--orange">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
           </div>
+          <div class="kpi-value" id="kpi-rf-abertas">0</div>
+          <div class="kpi-sub">Aguardando fundição</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">PEÇAS EM PRODUÇÃO</span>
+            <div class="kpi-icon kpi-icon--blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-rf-pecas-planejadas">0 un</div>
+          <div class="kpi-sub">Volume planejado</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">OPS FINALIZADAS</span>
+            <div class="kpi-icon kpi-icon--green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-rf-fundidas">0</div>
+          <div class="kpi-sub">Status Fundido</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">PEÇAS FUNDIDAS</span>
+            <div class="kpi-icon kpi-icon--teal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-rf-pecas-produzidas">0 un</div>
+          <div class="kpi-sub">Creditadas no estoque</div>
+        </div>
+      </div>
+
+      <!-- Tabela do Rastreio -->
+      <div class="card catalogo-card" style="margin-top: 1.5rem;">
+        <div class="catalogo-toolbar">
+          <span class="catalogo-count" id="rf-count">0 ordens</span>
+          <div style="margin-left: auto; display:flex; gap:8px;">
+            <button type="button" class="btn-secondary" id="rf-btn-refresh" style="font-size:0.82rem; padding:6px 12px;">🔄 Atualizar</button>
+          </div>
+        </div>
+
+        <div class="table-wrap catalogo-table-wrap" style="overflow-x: auto;">
+          <table class="catalogo-table" style="min-width: 1100px;">
+            <thead>
+              <tr>
+                <th style="min-width:130px;">Nº da OP</th>
+                <th style="min-width:150px;">Produto / Coquilha</th>
+                <th style="min-width:200px;">Descrição</th>
+                <th style="min-width:110px; text-align:center;">Qtd. Plan.</th>
+                <th style="min-width:110px; text-align:center;">Qtd. Prod.</th>
+                <th style="min-width:110px;">Criação</th>
+                <th style="min-width:110px;">Finalização</th>
+                <th style="min-width:120px;">Responsável</th>
+                <th style="min-width:110px; text-align:center;">Status</th>
+                <th style="min-width:160px; text-align:right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rf-table-body">
+              <tr><td colspan="10" class="empty-cell">Carregando ordens de produção...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -2105,7 +2208,7 @@
     </div>
   </div>
 
-  <!-- Modal: Nova Programação de Fundição -->
+  <!-- Modal: Nova Ordem de Produção de Fundição -->
   <div class="modal-overlay hidden" id="modal-fundicao">
     <div class="modal modal--fundicao-creative" role="dialog" aria-modal="true" aria-labelledby="modal-fundicao-title">
       <div class="modal-header modal-header--fundicao">
@@ -2116,8 +2219,8 @@
             </svg>
           </div>
           <div>
-            <h2 class="modal-title" id="modal-fundicao-title">Novo Agendamento de Fundição</h2>
-            <p class="modal-subtitle">Controle de corrida, lote térmico e abastecimento de coquilhas</p>
+            <h2 class="modal-title" id="modal-fundicao-title">Criar Ordem de Produção de Fundição</h2>
+            <p class="modal-subtitle">Gera a OP com status inicial <strong>Em aberto</strong> (não altera o estoque físico)</p>
           </div>
         </div>
         <button class="modal-close" id="modal-fundicao-close" aria-label="Fechar modal">
@@ -2128,18 +2231,18 @@
         <input type="hidden" id="fundicao-edit-id" />
         <div class="fundicao-form-grid">
           <div class="form-group span-2 fundicao-field">
-            <label class="form-label" for="fundicao-modelo">Modelo da Hélice / Coquilha <span class="req">*</span></label>
+            <label class="form-label" for="fundicao-modelo">Produto / Coquilha Bruta <span class="req">*</span></label>
             <select class="form-input fundicao-input-control" id="fundicao-modelo" required>
-              <option value="">— Selecione um modelo —</option>
+              <option value="">— Selecione um produto / coquilha —</option>
             </select>
           </div>
           <div class="form-group fundicao-field">
-            <label class="form-label" for="fundicao-lote">Nº do Lote de Fundição</label>
-            <input type="text" class="form-input fundicao-input-control" id="fundicao-lote" placeholder="Ex: LOTE-FND-2026-001" />
+            <label class="form-label" for="fundicao-lote">Nº da OP de Fundição</label>
+            <input type="text" class="form-input fundicao-input-control" id="fundicao-lote" placeholder="Ex: OP-FND-2026-001" />
           </div>
           <div class="form-group fundicao-field">
-            <label class="form-label" for="fundicao-qty">Quantidade de Peças <span class="req">*</span></label>
-            <input type="number" class="form-input fundicao-input-control" id="fundicao-qty" min="1" value="10" required />
+            <label class="form-label" for="fundicao-qty">Quantidade Planejada (peças) <span class="req">*</span></label>
+            <input type="number" class="form-input fundicao-input-control" id="fundicao-qty" min="1" value="50" required />
           </div>
           <div class="form-group fundicao-field">
             <label class="form-label" for="fundicao-liga">Liga Metálica</label>
@@ -2155,44 +2258,39 @@
             <input type="date" class="form-input fundicao-input-control" id="fundicao-data" required />
           </div>
           <div class="form-group span-2 fundicao-field">
-            <label class="form-label" for="fundicao-status">Status Inicial</label>
-            <select class="form-input fundicao-input-control" id="fundicao-status">
-              <option value="Agendado">Agendado</option>
-              <option value="Em Fusão">Em Fusão</option>
-              <option value="Resfriando">Resfriando</option>
-              <option value="Concluído">Concluído</option>
-            </select>
+            <label class="form-label" for="fundicao-responsavel">Responsável pelo Planejamento</label>
+            <input type="text" class="form-input fundicao-input-control" id="fundicao-responsavel" placeholder="Operador ou coordenador..." />
           </div>
           <div class="form-group span-2 fundicao-field">
-            <label class="form-label" for="fundicao-obs">Observações</label>
-            <textarea class="form-input form-textarea fundicao-input-control" id="fundicao-obs" rows="2" placeholder="Temp. de vazamento, forno utilizado, orientações térmicas..."></textarea>
+            <label class="form-label" for="fundicao-obs">Observações / Instruções de Corrida</label>
+            <textarea class="form-input form-textarea fundicao-input-control" id="fundicao-obs" rows="2" placeholder="Orientação térmica, forno, especificações..."></textarea>
           </div>
         </div>
 
-        <!-- Banner de especificações de fundição -->
-        <div class="fundicao-spec-banner">
+        <!-- Banner informativo -->
+        <div class="fundicao-spec-banner" style="background:rgba(249,115,22,0.08); border-color:rgba(249,115,22,0.3);">
           <div class="fundicao-spec-col">
-            <span class="fundicao-spec-title">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              Processo
+            <span class="fundicao-spec-title" style="color:#fb923c;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Status Inicial
             </span>
-            <span class="fundicao-spec-val">Coquilha por Gravidade</span>
+            <span class="fundicao-spec-val" style="color:#ffffff;">Em aberto</span>
           </div>
           <div class="fundicao-spec-sep"></div>
           <div class="fundicao-spec-col">
-            <span class="fundicao-spec-title">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-              Faixa Térmica
+            <span class="fundicao-spec-title" style="color:#fb923c;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              Impacto no Estoque
             </span>
-            <span class="fundicao-spec-val">710°C ~ 740°C</span>
+            <span class="fundicao-spec-val" style="color:#cbd5e1;">Nenhum (Entrada apenas na finalização)</span>
           </div>
           <div class="fundicao-spec-sep"></div>
           <div class="fundicao-spec-col">
-            <span class="fundicao-spec-title">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span class="fundicao-spec-title" style="color:#fb923c;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/></svg>
               Destino
             </span>
-            <span class="fundicao-spec-val">Estoque de Brutos</span>
+            <span class="fundicao-spec-val" style="color:#ffffff;">Rastreio OP. Fundição</span>
           </div>
         </div>
       </div>
@@ -2208,7 +2306,148 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
           </svg>
-          Salvar Agendamento
+          Criar OP de Fundição
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Finalizar OP de Fundição (Entrada no Estoque Físico) -->
+  <div class="modal-overlay hidden" id="modal-finalizar-op-fundicao">
+    <div class="modal modal--fundicao-creative" role="dialog" aria-modal="true" style="max-width:540px;">
+      <div class="modal-header modal-header--fundicao" style="background: linear-gradient(135deg, rgba(34,197,94,0.2) 0%, rgba(15,23,42,0.9) 100%);">
+        <div class="modal-header--fundicao-info">
+          <div class="modal-header--fundicao-icon" style="background: rgba(34,197,94,0.2); border-color: rgba(34,197,94,0.4); color: #4ade80;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="modal-title" id="fop-modal-title">Finalizar Ordem de Produção</h2>
+            <p class="modal-subtitle">Confirmação de produção e entrada física no estoque</p>
+          </div>
+        </div>
+        <button class="modal-close" id="modal-finalizar-fop-close" aria-label="Fechar modal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="fop-finish-id" />
+
+        <!-- Card de resumo da OP -->
+        <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(148,163,184,0.2); border-radius:8px; padding:14px; margin-bottom:1.25rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Ordem de Produção</span>
+            <span class="chip chip--orange font-mono" id="fop-resumo-numero" style="font-weight:700;">OP-FND-0000</span>
+          </div>
+          <div style="font-size:1.05rem; font-weight:800; color:#f8fafc; margin-bottom:4px;" id="fop-resumo-produto">COQUILHA 01</div>
+          <div style="font-size:0.85rem; color:#94a3b8;" id="fop-resumo-detalhes">Qtd. Planejada: 50 peças</div>
+        </div>
+
+        <div class="fundicao-form-grid">
+          <div class="form-group span-2 fundicao-field">
+            <label class="form-label" for="fop-qty-produzida">Quantidade Efetivamente Fundida (peças) <span class="req">*</span></label>
+            <input type="number" class="form-input fundicao-input-control" id="fop-qty-produzida" min="1" required style="font-size:1.15rem; font-weight:800; color:#4ade80;" />
+          </div>
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="fop-data-finalizacao">Data de Finalização <span class="req">*</span></label>
+            <input type="date" class="form-input fundicao-input-control" id="fop-data-finalizacao" required />
+          </div>
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="fop-responsavel-conclusao">Responsável pelo Lote</label>
+            <input type="text" class="form-input fundicao-input-control" id="fop-responsavel-conclusao" placeholder="Nome do fundidor/responsável..." />
+          </div>
+          <div class="form-group span-2 fundicao-field">
+            <label class="form-label" for="fop-obs-finalizacao">Observações da Conclusão</label>
+            <textarea class="form-input form-textarea fundicao-input-control" id="fop-obs-finalizacao" rows="2" placeholder="Apontamento de refugo, rendimento, forno..."></textarea>
+          </div>
+        </div>
+
+        <div class="fundicao-spec-banner" style="background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.3); margin-top:1rem;">
+          <div style="display:flex; align-items:center; gap:10px; color:#cbd5e1; font-size:0.85rem;">
+            <span style="font-size:1.2rem;">📦</span>
+            <span>Ao confirmar, o status será alterado para <strong>Fundido</strong> e a quantidade informada entrará <strong>automaticamente no Estoque Físico</strong> da coquilha.</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer modal-footer--fundicao">
+        <button type="button" class="btn-ghost fundicao-btn-cancel" id="btn-cancel-finalizar-fop">
+          Cancelar
+        </button>
+        <button type="button" class="btn-primary" id="btn-confirmar-finalizar-fop" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border-color: #22c55e; font-weight:700;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Finalizar OP e Dar Entrada no Estoque
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cadastro / Edição de Produto de Fundição -->
+  <div class="modal-overlay hidden" id="modal-produto-fundicao">
+    <div class="modal modal--fundicao-creative" role="dialog" aria-modal="true" aria-labelledby="modal-produto-fundicao-title" style="max-width:620px;">
+      <div class="modal-header modal-header--fundicao">
+        <div class="modal-header--fundicao-info">
+          <div class="modal-header--fundicao-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="modal-title" id="modal-produto-fundicao-title">Novo Produto de Fundição</h2>
+            <p class="modal-subtitle">Especificações técnicas e mapeamento de coquilha para o catálogo</p>
+          </div>
+        </div>
+        <button class="modal-close" id="modal-produto-fundicao-close" aria-label="Fechar modal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="mpf-id" />
+        <div class="fundicao-form-grid">
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="mpf-coquilha">Código da Coquilha / Molde <span class="req">*</span></label>
+            <input type="text" class="form-input fundicao-input-control" id="mpf-coquilha" placeholder="Ex: COQUILHA 01" required />
+          </div>
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="mpf-peso">Peso Unitário (kg) <span class="req">*</span></label>
+            <input type="number" class="form-input fundicao-input-control" id="mpf-peso" step="0.001" min="0" placeholder="Ex: 1.850" required />
+          </div>
+          <div class="form-group span-2 fundicao-field">
+            <label class="form-label" for="mpf-descricao">Descrição da Peça Bruta <span class="req">*</span></label>
+            <input type="text" class="form-input fundicao-input-control" id="mpf-descricao" placeholder="Ex: Peça Bruta Yamaha 40-50 HP 13 Estrias" required />
+          </div>
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="mpf-liga">Liga Metálica Recomendada</label>
+            <select class="form-input fundicao-input-control" id="mpf-liga">
+              <option value="Alumínio AlMg5">Alumínio AlMg5 (Náutico)</option>
+              <option value="Alumínio SAE 305">Alumínio SAE 305</option>
+              <option value="Inox CF8M">Aço Inox CF8M</option>
+              <option value="Bronze Manganês">Bronze Manganês</option>
+            </select>
+          </div>
+          <div class="form-group fundicao-field">
+            <label class="form-label" for="mpf-status">Status do Cadastro</label>
+            <select class="form-input fundicao-input-control" id="mpf-status">
+              <option value="true">Ativo (Permite Programação)</option>
+              <option value="false">Inativo</option>
+            </select>
+          </div>
+          <div class="form-group span-2 fundicao-field">
+            <label class="form-label" for="mpf-aplicacoes">Aplicações / Modelos de Hélices Compatíveis</label>
+            <input type="text" class="form-input fundicao-input-control" id="mpf-aplicacoes" placeholder="Ex: HR HY 012, HR HY 013, HR HY 014 (separados por vírgula)" />
+          </div>
+          <div class="form-group span-2 fundicao-field">
+            <label class="form-label" for="mpf-obs">Observações Técnicas</label>
+            <textarea class="form-input form-textarea fundicao-input-control" id="mpf-obs" rows="2" placeholder="Informações do molde, fornecedor, canais de ataque..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer modal-footer--fundicao">
+        <button type="button" class="btn-ghost fundicao-btn-cancel" id="btn-cancel-produto-fundicao">
+          Cancelar
+        </button>
+        <button type="button" class="btn-primary fundicao-btn-save" id="btn-save-produto-fundicao">
+          Salvar Produto
         </button>
       </div>
     </div>

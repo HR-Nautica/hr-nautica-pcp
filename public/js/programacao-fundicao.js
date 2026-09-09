@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    programacao-fundicao.js – Módulo de Programação de Fundição de Hélices
-   Ranking por Criticidade & Correlação com Análise de Produção
+   Análise de Necessidade, Estoque Físico Real e Geração de OPs
    HR Náutica PCP
    ═══════════════════════════════════════════════════════════════ */
 'use strict';
@@ -8,7 +8,6 @@
 (() => {
   const state = {
     expandedCoquilhas: new Set(),
-    activeTab: 'ranking', // 'ranking' | 'agendados'
     rawStock: new Map(),
     rawStockVersion: 0,
     rawStockLoading: false
@@ -71,7 +70,7 @@
       state.rawStock = new Map((result.items || []).map(item => [normalizeRawCode(item.rawCode), item]));
       state.rawStockVersion = Number(result.version) || state.rawStockVersion;
       renderProgramacaoFundicao();
-      if (typeof showToast === 'function') showToast(`Estoque de ${code} atualizado para ${quantity}.`, 'success');
+      if (typeof showToast === 'function') showToast(`Estoque de ${code} atualizado para ${quantity} peças.`, 'success');
     } catch (error) {
       if (typeof showToast === 'function') showToast(error.message, 'error');
     }
@@ -96,31 +95,10 @@
     renderProgramacaoFundicao();
   }
 
-  function setProgramacaoTab(tab) {
-    state.activeTab = tab;
-    const btnRanking = byId('pf-tab-ranking-btn');
-    const btnAgendados = byId('pf-tab-agendados-btn');
-    const secRanking = byId('pf-sec-ranking');
-    const secAgendados = byId('pf-sec-agendados');
-
-    if (tab === 'agendados') {
-      if (btnRanking) btnRanking.classList.remove('active');
-      if (btnAgendados) btnAgendados.classList.add('active');
-      if (secRanking) secRanking.style.display = 'none';
-      if (secAgendados) secAgendados.style.display = 'block';
-    } else {
-      if (btnAgendados) btnAgendados.classList.remove('active');
-      if (btnRanking) btnRanking.classList.add('active');
-      if (secAgendados) secAgendados.style.display = 'none';
-      if (secRanking) secRanking.style.display = 'block';
-    }
-    renderProgramacaoFundicao();
-  }
-
   function getProgramacaoData() {
     if (typeof DB === 'undefined') return [];
 
-    // 1. Obtém os dados de hélices da Análise de Produção (com estoque e OP recomendada)
+    // 1. Obtém os dados de hélices da Análise de Produção (com estoque acabado e OP recomendada)
     let analiseItems = [];
     if (typeof mergeAnaliseWithCatalogo === 'function') {
       analiseItems = mergeAnaliseWithCatalogo(
@@ -141,23 +119,46 @@
       }));
     }
 
-    // 2. Garante que todas as coquilhas cadastradas no catálogo entrem no mapa
-    const coquilhasCatalog = DB.getCoquilhasCatalog();
+    // 2. Base cadastral: produtos ativos do Catálogo de Fundição
+    const catalog = typeof window.getCombinedCatalog === 'function' 
+      ? window.getCombinedCatalog().filter(c => c.ativo !== false)
+      : (typeof DB.getFundicaoCatalog === 'function' ? DB.getFundicaoCatalog().filter(c => c.ativo !== false) : []);
+    
+    const coquilhasCatalog = typeof DB.getCoquilhasCatalog === 'function' ? DB.getCoquilhasCatalog() : [];
     const coquilhaMap = new Map();
 
-    coquilhasCatalog.forEach(coq => {
+    // Registra coquilhas do catálogo
+    catalog.forEach(item => {
+      const coq = String(item.coquilha || '').trim();
       if (!coq) return;
       coquilhaMap.set(coq, {
         coquilha: coq,
+        descricao: item.descricao || `Peça bruta ${coq}`,
+        liga: item.liga || 'Alumínio AlMg5',
         skus: [],
         mediaTotal: 0,
         estoqueFisicoTotal: Number(state.rawStock.get(normalizeRawCode(coq))?.quantity) || 0,
         prodNecTotal: 0,
-        pesoUnitario: DB.getCoquilhaPeso(coq) || 0,
+        pesoUnitario: Number(item.peso) || (typeof DB.getCoquilhaPeso === 'function' ? DB.getCoquilhaPeso(coq) : 0),
       });
     });
 
-    // 3. Agrupa as hélices pela sua Coquilha (Código Bruto)
+    // Garante inclusão das coquilhas registradas
+    coquilhasCatalog.forEach(coq => {
+      if (!coq || coquilhaMap.has(coq)) return;
+      coquilhaMap.set(coq, {
+        coquilha: coq,
+        descricao: `Molde / Coquilha ${coq}`,
+        liga: 'Alumínio AlMg5',
+        skus: [],
+        mediaTotal: 0,
+        estoqueFisicoTotal: Number(state.rawStock.get(normalizeRawCode(coq))?.quantity) || 0,
+        prodNecTotal: 0,
+        pesoUnitario: typeof DB.getCoquilhaPeso === 'function' ? DB.getCoquilhaPeso(coq) : 0,
+      });
+    });
+
+    // 3. Agrupa as hélices acabadas pela sua Coquilha (Código Bruto)
     analiseItems.forEach(item => {
       let rawCoq = String(item.codigoBruto || item.coquilha || '').trim();
       if (!rawCoq || rawCoq === '-' || rawCoq === '—') {
@@ -167,7 +168,7 @@
         }
       }
       if (!rawCoq || rawCoq === '-' || rawCoq === '—') {
-        const foundFund = DB.getFundicaoCatalog().find(f => f.sku === item.sku);
+        const foundFund = catalog.find(f => f.sku === item.sku || (f.aplicacoes && f.aplicacoes.includes(item.sku)));
         if (foundFund && foundFund.coquilha) {
           rawCoq = String(foundFund.coquilha).trim();
         }
@@ -177,11 +178,13 @@
       if (!coquilhaMap.has(rawCoq)) {
         coquilhaMap.set(rawCoq, {
           coquilha: rawCoq,
+          descricao: `Coquilha ${rawCoq}`,
+          liga: 'Alumínio AlMg5',
           skus: [],
           mediaTotal: 0,
           estoqueFisicoTotal: Number(state.rawStock.get(normalizeRawCode(rawCoq))?.quantity) || 0,
           prodNecTotal: 0,
-          pesoUnitario: DB.getCoquilhaPeso(rawCoq) || 0,
+          pesoUnitario: typeof DB.getCoquilhaPeso === 'function' ? DB.getCoquilhaPeso(rawCoq) : 0,
         });
       }
 
@@ -189,7 +192,7 @@
       const media = Number(item.mediaMensal) || 0;
       const est = Number(item.estoqueFisico) || 0;
 
-      // Quantidade de OP necessária (da Análise de Produção)
+      // Quantidade de OP recomendada da usinagem
       let suggested = 0;
       if (typeof getAnaliseSuggestedQty === 'function') {
         suggested = getAnaliseSuggestedQty(item);
@@ -242,7 +245,7 @@
       };
     });
 
-    // 5. Ordenação por Ranking de Criticidade
+    // 5. Ordenação por Criticidade
     const statusOrder = { 'CRÍTICO': 1, 'ALERTA': 2, 'SEGURO': 3 };
     list.sort((a, b) => {
       if (statusOrder[a.status] !== statusOrder[b.status]) {
@@ -264,11 +267,11 @@
     const search = String(byId('fundicao-search')?.value || '').trim().toLowerCase();
     const statusFilter = byId('fundicao-filter-status')?.value || '';
 
-    // Filtragem de busca e status
     let filtered = data;
     if (search) {
       filtered = filtered.filter(item => 
         item.coquilha.toLowerCase().includes(search) ||
+        String(item.descricao || '').toLowerCase().includes(search) ||
         item.skus.some(s => s.sku.toLowerCase().includes(search) || s.produto.toLowerCase().includes(search))
       );
     }
@@ -276,227 +279,157 @@
       filtered = filtered.filter(item => item.status === statusFilter.toUpperCase() || item.status === statusFilter);
     }
 
-    // KPIs Globais
-    const totalBrutos = data.length;
+    // KPIs Globais de Estoque e Planejamento
+    const totalEstoqueFisico = data.reduce((acc, i) => acc + i.estoqueFisicoTotal, 0);
     const criticosAlertas = data.filter(i => i.status === 'CRÍTICO' || i.status === 'ALERTA').length;
     const totalPecasNec = data.reduce((acc, i) => acc + i.prodNecTotal, 0);
     const totalLigaKg = data.reduce((acc, i) => acc + i.totLiga, 0);
 
-    if (byId('kpi-fund-agendadas')) byId('kpi-fund-agendadas').textContent = `${totalBrutos} un`;
+    if (byId('kpi-fund-agendadas')) byId('kpi-fund-agendadas').textContent = `${fmtNumber(totalEstoqueFisico, 0)} un`;
     if (byId('kpi-fund-andamento')) byId('kpi-fund-andamento').textContent = `${criticosAlertas} coquilhas`;
     if (byId('kpi-fund-concluidas')) byId('kpi-fund-concluidas').textContent = `${fmtNumber(totalPecasNec, 0)} un`;
     if (byId('kpi-fund-pecas')) byId('kpi-fund-pecas').textContent = `${fmtNumber(totalLigaKg, 1)} kg`;
 
-    // Renderiza Tabela 1: Ranking por Criticidade
-    const tbodyRanking = byId('pf-ranking-body');
-    if (tbodyRanking) {
-      if (!filtered.length) {
-        tbodyRanking.innerHTML = '<tr><td colspan="13" class="empty-cell">Nenhuma coquilha encontrada para os filtros informados.</td></tr>';
-      } else {
-        const today = new Date();
+    // Renderiza Tabela de Estoque & Programação
+    const tbody = byId('pf-ranking-body');
+    if (!tbody) return;
 
-        tbodyRanking.innerHTML = filtered.map((item, index) => {
-          const rankNum = index + 1;
-          const isExpanded = state.expandedCoquilhas.has(item.coquilha);
-
-          // Cores do Badge de Ranking
-          let rankBadgeClass = 'pf-rank-badge--red';
-          let statusBadgeClass = 'chip--red';
-          if (item.status === 'ALERTA') {
-            rankBadgeClass = 'pf-rank-badge--orange';
-            statusBadgeClass = 'chip--orange';
-          } else if (item.status === 'SEGURO') {
-            rankBadgeClass = 'pf-rank-badge--green';
-            statusBadgeClass = 'chip--green';
-          }
-
-          // Formatadores de Cobertura
-          let cobText = `${item.cobertura.toFixed(1)}x`;
-          if (item.cobertura === 999) cobText = 'Sem giro';
-
-          // Calculador simples de Prazo de Produção (Dias e Datas)
-          const diasEst = item.prodNecTotal > 0 ? Math.max(1, Math.ceil(item.prodNecTotal / 250)) : 0;
-          const dataInicio = new Date(today);
-          dataInicio.setDate(today.getDate() + index); // Escalona datas pelos itens
-          const dataFim = new Date(dataInicio);
-          dataFim.setDate(dataInicio.getDate() + Math.max(0, diasEst - 1));
-
-          const dtInicioStr = item.prodNecTotal > 0 ? formatDatePt(dataInicio.toISOString().split('T')[0]) : '—';
-          const dtFimStr = item.prodNecTotal > 0 ? formatDatePt(dataFim.toISOString().split('T')[0]) : '—';
-          const diasStr = item.prodNecTotal > 0 ? `${diasEst}d` : '—';
-
-          const skusCount = item.skus.length;
-          const pesoUnitStr = item.pesoUnitario > 0 ? `${item.pesoUnitario.toFixed(3).replace('.', ',')}` : '—';
-          const totLigaStr = item.totLiga > 0 ? `${item.totLiga.toFixed(1).replace('.', ',')}` : '—';
-
-          // Sub-linha expansível de detalhes por modelo de hélice
-          const opsChipsHtml = item.skus.map(s => `
-            <span class="chip chip--blue font-mono" style="font-size:0.82rem; padding:5px 10px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8;">
-              ${escapeHtml(s.sku)}: <strong style="color:#ffffff;">${s.opNecessaria} pc</strong>
-            </span>
-          `).join('');
-
-          const estoqueChipsHtml = item.skus.map(s => `
-            <span class="chip chip--gray font-mono" style="font-size:0.82rem; padding:5px 10px; background:rgba(148,163,184,0.12); border:1px solid rgba(148,163,184,0.3); color:#cbd5e1;">
-              ${escapeHtml(s.sku)}: <strong style="color:#ffffff;">${s.estoqueFisico} un</strong>
-            </span>
-          `).join('');
-          const rawMovements = state.rawStock.get(normalizeRawCode(item.coquilha))?.movements || [];
-          const rawMovementsHtml = rawMovements.slice(0, 5).map(movement => `
-            <div style="display:flex;justify-content:space-between;gap:12px;color:#cbd5e1;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(148,163,184,.12)">
-              <span><strong>${escapeHtml(movement.tipo)}</strong> ${fmtNumber(movement.qty, 0)} un ${movement.opNumero ? `· ${escapeHtml(movement.opNumero)}` : ''}</span>
-              <span>${escapeHtml(movement.usuario || 'Usuário')} · ${new Date(movement.data).toLocaleString('pt-BR')}</span>
-            </div>
-          `).join('');
-
-          return `
-            <tr class="pf-row ${isExpanded ? 'expanded' : ''}">
-              <td style="width: 50px; text-align: center; white-space: nowrap;">
-                <div class="pf-rank-badge ${rankBadgeClass}">${rankNum}</div>
-              </td>
-              <td style="min-width: 180px; white-space: nowrap;">
-                <button type="button" class="pf-toggle-btn" onclick="window.toggleCoquilhaDetails('${escapeHtml(item.coquilha)}')" title="Clique para expandir/recolher modelos de ${escapeHtml(item.coquilha)}">
-                  <strong style="color:#ffffff; font-weight:800; font-size:1.02rem; letter-spacing:0.02em; white-space:nowrap;">${escapeHtml(item.coquilha)}</strong>
-                  <span class="pf-arrow" style="font-size:0.85rem; color:#38bdf8; margin-left:6px; display:inline-block;">${isExpanded ? '▲' : '▼'}</span>
-                </button>
-              </td>
-              <td class="font-mono" style="min-width: 140px; color:#38bdf8; font-weight:700; white-space:nowrap;">${fmtNumber(item.mediaTotal, 1)} <span style="font-size:0.75rem; color:#94a3b8">pçs/mês</span></td>
-              <td class="font-mono" style="min-width: 110px; color:#f8fafc; font-weight:700; font-size:0.95rem; white-space:nowrap;">
-                <button type="button" class="btn-secondary btn-sm" onclick="window.editRawStock('${escapeHtml(item.coquilha)}')" title="Definir estoque físico no banco">
-                  ${fmtNumber(item.estoqueFisicoTotal, 0)} ✎
-                </button>
-              </td>
-              <td style="min-width: 100px; white-space: nowrap;">
-                <span class="pf-status-badge ${statusBadgeClass} font-mono" style="font-weight:800; white-space:nowrap;">${cobText}</span>
-              </td>
-              <td style="min-width: 110px; white-space: nowrap;">
-                <span class="pf-status-badge ${statusBadgeClass}" style="font-weight:900; letter-spacing:0.05em; white-space:nowrap;">${item.status}</span>
-              </td>
-              <td style="min-width: 120px; white-space: nowrap;">
-                ${item.prodNecTotal > 0 
-                  ? `<strong class="font-mono" style="font-size:1.15rem; color:#38bdf8; text-shadow:0 0 10px rgba(56,189,248,0.3); font-weight:800; white-space:nowrap;">${fmtNumber(item.prodNecTotal, 0)}</strong>` 
-                  : `<span class="font-mono" style="color:#64748b; font-weight:700; white-space:nowrap;">0</span>`}
-              </td>
-              <td class="font-mono" style="min-width: 95px; color:#cbd5e1; font-weight:600; white-space:nowrap;">${pesoUnitStr}</td>
-              <td class="font-mono" style="min-width: 110px; color:#f8fafc; font-weight:800; white-space:nowrap;">${totLigaStr}</td>
-              <td class="font-mono" style="min-width: 105px; color:#fb923c; font-weight:700; white-space:nowrap;">${dtInicioStr}</td>
-              <td class="font-mono" style="min-width: 105px; color:#fb923c; font-weight:700; white-space:nowrap;">${dtFimStr}</td>
-              <td class="font-mono" style="min-width: 70px; color:#cbd5e1; font-weight:700; white-space:nowrap;">${diasStr}</td>
-              <td class="catalogo-actions-col" style="min-width: 130px; text-align: right; white-space:nowrap;">
-                <button type="button" class="btn-primary btn-sm pf-action-btn" onclick="window.openCriarLoteFundicao('${escapeHtml(item.coquilha)}', ${item.prodNecTotal}, ${item.pesoUnitario})" title="Gerar Ordem de Fundição">
-                  🔥 Agendar
-                </button>
-              </td>
-            </tr>
-            ${isExpanded ? `
-              <tr class="pf-details-row">
-                <td colspan="13" style="background: rgba(15, 23, 42, 0.9); padding: 1.25rem 1.5rem; border-bottom: 2px solid rgba(56, 189, 248, 0.3); border-radius:0 0 8px 8px;">
-                  <div style="display:flex; flex-direction:column; gap:1rem;">
-                    <div>
-                      <div style="font-size:0.8rem; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem; display:flex; align-items:center; gap:6px;">
-                        <span>↳ ANÁLISE DE PRODUÇÃO — OP NECESSÁRIA POR HÉLICE (${skusCount} MODELO(S))</span>
-                      </div>
-                      <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                        ${opsChipsHtml || '<span style="color:#94a3b8; font-size:0.85rem;">Nenhuma necessidade calculada.</span>'}
-                      </div>
-                    </div>
-                    <div>
-                      <div style="font-size:0.8rem; font-weight:800; color:#cbd5e1; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
-                        Estoque de hélices acabadas do Tiny (apenas informativo):
-                      </div>
-                      <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                        ${estoqueChipsHtml || '<span style="color:#94a3b8; font-size:0.85rem;">Sem estoque físico.</span>'}
-                      </div>
-                    </div>
-                    <div>
-                      <div style="font-size:0.8rem;font-weight:800;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">
-                        Últimas movimentações do bruto
-                      </div>
-                      ${rawMovementsHtml || '<span style="color:#94a3b8;font-size:0.85rem;">Nenhuma movimentação registrada.</span>'}
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            ` : ''}
-          `;
-        }).join('');
-      }
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="13" class="empty-cell">Nenhum produto de fundição encontrado para os filtros informados.</td></tr>';
+      return;
     }
 
-    // Renderiza Tabela 2: Lotes Agendados de Fundição
-    const tbodyAgendados = byId('fundicao-body');
-    if (tbodyAgendados) {
-      let lotes = DB.getFundicoes();
-      if (search) lotes = lotes.filter(l => l.modelo.toLowerCase().includes(search) || (l.lote || '').toLowerCase().includes(search));
+    const today = new Date();
 
-      if (!lotes.length) {
-        tbodyAgendados.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhum lote de fundição agendado.</td></tr>';
-      } else {
-        const statusChips = {
-          'Agendado': '<span class="chip chip--blue">Agendado</span>',
-          'Em Fusão': '<span class="chip chip--orange">Em Fusão</span>',
-          'Resfriando': '<span class="chip chip--purple">Resfriando</span>',
-          'Concluído': '<span class="chip chip--green">Concluído</span>',
-          'Cancelado': '<span class="chip chip--gray">Cancelado</span>',
-        };
+    tbody.innerHTML = filtered.map((item, index) => {
+      const rankNum = index + 1;
+      const isExpanded = state.expandedCoquilhas.has(item.coquilha);
 
-        tbodyAgendados.innerHTML = lotes.map(f => `
-          <tr>
-            <td><span style="color:var(--accent-blue);font-weight:700">${escapeHtml(f.lote || 'LOTE-FND')}</span></td>
-            <td style="color:var(--text-primary);font-weight:600">${escapeHtml(f.modelo)}</td>
-            <td><strong>${f.qty}</strong> un</td>
-            <td>${escapeHtml(f.liga || 'Alumínio AlMg5')}</td>
-            <td>${formatDatePt(f.dataPrevista)}</td>
-            <td>${statusChips[f.status] || f.status}</td>
-            <td>
-              <div style="display:flex;gap:4px;justify-content:center">
-                <button class="btn-icon" onclick="window.openEditFundicao('${f.id}')" title="Editar">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                </button>
-                <button class="btn-icon danger" onclick="window.deleteFundicao('${f.id}')" title="Excluir">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                </button>
+      let rankBadgeClass = 'pf-rank-badge--red';
+      let statusBadgeClass = 'chip--red';
+      if (item.status === 'ALERTA') {
+        rankBadgeClass = 'pf-rank-badge--orange';
+        statusBadgeClass = 'chip--orange';
+      } else if (item.status === 'SEGURO') {
+        rankBadgeClass = 'pf-rank-badge--green';
+        statusBadgeClass = 'chip--green';
+      }
+
+      let cobText = `${item.cobertura.toFixed(1)}x`;
+      if (item.cobertura === 999) cobText = 'Sem giro';
+
+      const diasEst = item.prodNecTotal > 0 ? Math.max(1, Math.ceil(item.prodNecTotal / 250)) : 0;
+      const dataInicio = new Date(today);
+      dataInicio.setDate(today.getDate() + index);
+      const dataFim = new Date(dataInicio);
+      dataFim.setDate(dataInicio.getDate() + Math.max(0, diasEst - 1));
+
+      const dtInicioStr = item.prodNecTotal > 0 ? formatDatePt(dataInicio.toISOString().split('T')[0]) : '—';
+      const dtFimStr = item.prodNecTotal > 0 ? formatDatePt(dataFim.toISOString().split('T')[0]) : '—';
+      const diasStr = item.prodNecTotal > 0 ? `${diasEst}d` : '—';
+
+      const skusCount = item.skus.length;
+      const pesoUnitStr = item.pesoUnitario > 0 ? `${item.pesoUnitario.toFixed(3).replace('.', ',')}` : '—';
+      const totLigaStr = item.totLiga > 0 ? `${item.totLiga.toFixed(1).replace('.', ',')}` : '—';
+
+      const opsChipsHtml = item.skus.map(s => `
+        <span class="chip chip--blue font-mono" style="font-size:0.82rem; padding:5px 10px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8;">
+          ${escapeHtml(s.sku)}: <strong style="color:#ffffff;">${s.opNecessaria} pc</strong>
+        </span>
+      `).join('');
+
+      const estoqueChipsHtml = item.skus.map(s => `
+        <span class="chip chip--gray font-mono" style="font-size:0.82rem; padding:5px 10px; background:rgba(148,163,184,0.12); border:1px solid rgba(148,163,184,0.3); color:#cbd5e1;">
+          ${escapeHtml(s.sku)}: <strong style="color:#ffffff;">${s.estoqueFisico} un</strong>
+        </span>
+      `).join('');
+
+      const rawMovements = state.rawStock.get(normalizeRawCode(item.coquilha))?.movements || [];
+      const rawMovementsHtml = rawMovements.slice(0, 5).map(movement => `
+        <div style="display:flex;justify-content:space-between;gap:12px;color:#cbd5e1;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(148,163,184,.12)">
+          <span><strong>${escapeHtml(movement.tipo)}</strong> ${fmtNumber(movement.qty, 0)} un ${movement.opNumero ? `· ${escapeHtml(movement.opNumero)}` : ''}</span>
+          <span>${escapeHtml(movement.usuario || 'Usuário')} · ${new Date(movement.data).toLocaleString('pt-BR')}</span>
+        </div>
+      `).join('');
+
+      return `
+        <tr class="pf-row ${isExpanded ? 'expanded' : ''}">
+          <td style="width: 50px; text-align: center; white-space: nowrap;">
+            <div class="pf-rank-badge ${rankBadgeClass}">${rankNum}</div>
+          </td>
+          <td style="min-width: 180px; white-space: nowrap;">
+            <button type="button" class="pf-toggle-btn" onclick="window.toggleCoquilhaDetails('${escapeHtml(item.coquilha)}')" title="Expandir/recolher modelos de ${escapeHtml(item.coquilha)}">
+              <strong style="color:#ffffff; font-weight:800; font-size:1.02rem; letter-spacing:0.02em; white-space:nowrap;">${escapeHtml(item.coquilha)}</strong>
+              <span class="pf-arrow" style="font-size:0.85rem; color:#38bdf8; margin-left:6px; display:inline-block;">${isExpanded ? '▲' : '▼'}</span>
+            </button>
+          </td>
+          <td class="font-mono" style="min-width: 140px; color:#38bdf8; font-weight:700; white-space:nowrap;">
+            ${fmtNumber(item.mediaTotal, 1)} <span style="font-size:0.75rem; color:#94a3b8">pçs/mês</span>
+          </td>
+          <td class="font-mono" style="min-width: 120px; color:#f8fafc; font-weight:700; font-size:0.95rem; white-space:nowrap;">
+            <button type="button" class="btn-secondary btn-sm" onclick="window.editRawStock('${escapeHtml(item.coquilha)}')" title="Ajustar saldo do estoque físico">
+              <strong style="color:#38bdf8; font-size:1.05rem;">${fmtNumber(item.estoqueFisicoTotal, 0)}</strong> ✎
+            </button>
+          </td>
+          <td style="min-width: 100px; white-space: nowrap;">
+            <span class="pf-status-badge ${statusBadgeClass} font-mono" style="font-weight:800; white-space:nowrap;">${cobText}</span>
+          </td>
+          <td style="min-width: 110px; white-space: nowrap;">
+            <span class="pf-status-badge ${statusBadgeClass}" style="font-weight:900; letter-spacing:0.05em; white-space:nowrap;">${item.status}</span>
+          </td>
+          <td style="min-width: 120px; white-space: nowrap;">
+            ${item.prodNecTotal > 0 
+              ? `<strong class="font-mono" style="font-size:1.15rem; color:#38bdf8; text-shadow:0 0 10px rgba(56,189,248,0.3); font-weight:800; white-space:nowrap;">${fmtNumber(item.prodNecTotal, 0)}</strong>` 
+              : `<span class="font-mono" style="color:#64748b; font-weight:700; white-space:nowrap;">0</span>`}
+          </td>
+          <td class="font-mono" style="min-width: 95px; color:#cbd5e1; font-weight:600; white-space:nowrap;">${pesoUnitStr}</td>
+          <td class="font-mono" style="min-width: 110px; color:#f8fafc; font-weight:800; white-space:nowrap;">${totLigaStr}</td>
+          <td class="font-mono" style="min-width: 105px; color:#fb923c; font-weight:700; white-space:nowrap;">${dtInicioStr}</td>
+          <td class="font-mono" style="min-width: 105px; color:#fb923c; font-weight:700; white-space:nowrap;">${dtFimStr}</td>
+          <td class="font-mono" style="min-width: 70px; color:#cbd5e1; font-weight:700; white-space:nowrap;">${diasStr}</td>
+          <td class="catalogo-actions-col" style="min-width: 130px; text-align: right; white-space:nowrap;">
+            <button type="button" class="btn-primary btn-sm pf-action-btn" onclick="window.openNovaFundicao('${escapeHtml(item.coquilha)}', ${item.prodNecTotal}, ${item.pesoUnitario})" title="Gerar Ordem de Produção com status Em aberto">
+              🔥 Criar OP
+            </button>
+          </td>
+        </tr>
+        ${isExpanded ? `
+          <tr class="pf-details-row">
+            <td colspan="13" style="background: rgba(15, 23, 42, 0.9); padding: 1.25rem 1.5rem; border-bottom: 2px solid rgba(56, 189, 248, 0.3); border-radius:0 0 8px 8px;">
+              <div style="display:flex; flex-direction:column; gap:1rem;">
+                <div>
+                  <div style="font-size:0.8rem; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem; display:flex; align-items:center; gap:6px;">
+                    <span>↳ ANÁLISE DE PRODUÇÃO — OP NECESSÁRIA POR HÉLICE (${skusCount} MODELO(S))</span>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    ${opsChipsHtml || '<span style="color:#94a3b8; font-size:0.85rem;">Nenhuma necessidade calculada.</span>'}
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:0.8rem; font-weight:800; color:#cbd5e1; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                    Estoque de hélices acabadas do Tiny (apenas informativo):
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    ${estoqueChipsHtml || '<span style="color:#94a3b8; font-size:0.85rem;">Sem estoque físico.</span>'}
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:0.8rem;font-weight:800;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">
+                    Últimas movimentações do estoque físico bruto
+                  </div>
+                  ${rawMovementsHtml || '<span style="color:#94a3b8;font-size:0.85rem;">Nenhuma movimentação registrada.</span>'}
+                </div>
               </div>
             </td>
           </tr>
-        `).join('');
-      }
-    }
-  }
-
-  function openCriarLoteFundicao(coquilha, qtySugerida = 100, pesoUnitario = 0) {
-    if (typeof DB === 'undefined') return;
-
-    if (byId('modal-fundicao-title')) byId('modal-fundicao-title').textContent = `🔥 Agendar Fundição: ${coquilha}`;
-    if (byId('fundicao-edit-id')) byId('fundicao-edit-id').value = '';
-    
-    // Popula select de modelos com a coquilha escolhida ou todas as coquilhas
-    const select = byId('fundicao-modelo');
-    if (select) {
-      const coqs = DB.getCoquilhasCatalog();
-      select.innerHTML = [
-        `<option value="${escapeHtml(coquilha)}">${escapeHtml(coquilha)} (Coquilha)</option>`,
-        ...coqs.filter(c => c !== coquilha).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
-      ].join('');
-      select.value = coquilha;
-    }
-
-    const nextLoteNum = (DB.getFundicoes().length + 1).toString().padStart(3, '0');
-    if (byId('fundicao-lote')) byId('fundicao-lote').value = `LOTE-FND-${new Date().getFullYear()}-${nextLoteNum}`;
-    if (byId('fundicao-qty')) byId('fundicao-qty').value = qtySugerida > 0 ? qtySugerida : 100;
-    if (byId('fundicao-liga')) byId('fundicao-liga').value = 'Alumínio AlMg5';
-    if (byId('fundicao-data')) byId('fundicao-data').value = new Date().toISOString().split('T')[0];
-    if (byId('fundicao-status')) byId('fundicao-status').value = 'Agendado';
-    if (byId('fundicao-obs')) byId('fundicao-obs').value = `Agendado via Ranking de Criticidade da Fundição. (Peso Unit: ${pesoUnitario} kg)`;
-
-    byId('modal-fundicao')?.classList.remove('hidden');
+        ` : ''}
+      `;
+    }).join('');
   }
 
   // Exposição global
   window.renderProgramacaoFundicao = renderProgramacaoFundicao;
   window.toggleCoquilhaDetails = toggleCoquilhaDetails;
-  window.setProgramacaoTab = setProgramacaoTab;
-  window.openCriarLoteFundicao = openCriarLoteFundicao;
   window.getProgramacaoData = getProgramacaoData;
   window.editRawStock = editRawStock;
   window.refreshRawStock = refreshRawStock;
@@ -505,9 +438,6 @@
   // Listeners DOM
   document.addEventListener('DOMContentLoaded', () => {
     refreshRawStock();
-    byId('pf-tab-ranking-btn')?.addEventListener('click', () => setProgramacaoTab('ranking'));
-    byId('pf-tab-agendados-btn')?.addEventListener('click', () => setProgramacaoTab('agendados'));
-
     byId('fundicao-search')?.addEventListener('input', renderProgramacaoFundicao);
     byId('fundicao-filter-status')?.addEventListener('change', renderProgramacaoFundicao);
   });

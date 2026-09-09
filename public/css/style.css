@@ -6108,4 +6108,43 @@ textarea.fundicao-input-control {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   RASTREIO OP. FUNDIÇÃO & STATUS BADGES
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes pulseDot {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
 
+.badge-dot-pulse {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+.btn-finalizar-op {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-finalizar-op:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4) !important;
+  filter: brightness(1.1);
+}
+
+.btn-finalizar-op:active {
+  transform: translateY(0);
+}

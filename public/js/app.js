@@ -199,6 +199,9 @@ function navigate(page) {
     case 'catalogo-fundicao':
       if (typeof renderCatalogoFundicao === 'function') renderCatalogoFundicao();
       break;
+    case 'rastreio-fundicao':
+      if (typeof renderRastreioFundicao === 'function') renderRastreioFundicao();
+      break;
     case 'manutencao':  renderManutencao();  break;
     case 'fluxo':       renderFluxo();       break;
     case 'expedicao':   renderExpedicao();   break;
@@ -1429,7 +1432,8 @@ function saveMov() {
 }
 
 // ═══════════════════════════════════════════
-// PROGRAMAÇÃO DE FUNDIÇÃO
+// ═══════════════════════════════════════════
+// PROGRAMAÇÃO & ORDENS DE FUNDIÇÃO
 // ═══════════════════════════════════════════
 function renderFundicao() {
   if (typeof window.renderProgramacaoFundicao === 'function') {
@@ -1437,75 +1441,148 @@ function renderFundicao() {
   }
 }
 
-function openNovaFundicao() {
-  STATE.editingFundicaoId = null;
-  $('modal-fundicao-title').textContent = 'Novo Agendamento de Fundição';
-  $('fundicao-edit-id').value = '';
-  $('fundicao-lote').value = '';
-  $('fundicao-qty').value  = 10;
-  $('fundicao-liga').value = 'Alumínio AlMg5';
-  $('fundicao-data').value = new Date().toISOString().split('T')[0];
-  $('fundicao-status').value = 'Agendado';
-  $('fundicao-obs').value  = '';
-
-  const modelos = DB.getModelos();
-  const opts = ['<option value="">— Selecione —</option>', ...modelos.map(m => `<option value="${m.nome}">${m.nome}</option>`)].join('');
-  $('fundicao-modelo').innerHTML = opts;
-
-  $('modal-fundicao').classList.remove('hidden');
+function renderRastreioFundicao() {
+  if (typeof window.renderRastreioFundicao === 'function') {
+    window.renderRastreioFundicao();
+  }
 }
+
+function openNovaFundicao(prefilledCoquilha = '', suggestedQty = 50, pesoUnitario = 0) {
+  STATE.editingFundicaoId = null;
+  if ($('modal-fundicao-title')) $('modal-fundicao-title').textContent = 'Criar Ordem de Produção de Fundição';
+  if ($('fundicao-edit-id')) $('fundicao-edit-id').value = '';
+  
+  const nextNum = DB.nextFundicaoNumber();
+  if ($('fundicao-lote')) $('fundicao-lote').value = nextNum;
+  if ($('fundicao-qty')) $('fundicao-qty').value = suggestedQty > 0 ? suggestedQty : 50;
+  if ($('fundicao-liga')) $('fundicao-liga').value = 'Alumínio AlMg5';
+  if ($('fundicao-data')) $('fundicao-data').value = new Date().toISOString().split('T')[0];
+  if ($('fundicao-responsavel')) $('fundicao-responsavel').value = window.PCP_CURRENT_USER || '';
+  if ($('fundicao-obs')) $('fundicao-obs').value = pesoUnitario > 0 ? `Peso unitário estimado: ${pesoUnitario.toFixed(3)} kg` : '';
+
+  // Popula opções com os produtos/coquilhas do catálogo
+  const select = $('fundicao-modelo');
+  if (select) {
+    const catalog = typeof DB.getFundicaoCatalog === 'function' ? DB.getFundicaoCatalog().filter(c => c.ativo !== false) : [];
+    const coquilhas = typeof DB.getCoquilhasCatalog === 'function' ? DB.getCoquilhasCatalog() : [];
+    const allProducts = [...new Set([...coquilhas, ...catalog.map(c => c.coquilha)])].filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+
+    const opts = [
+      '<option value="">— Selecione o produto / coquilha —</option>',
+      ...allProducts.map(coq => {
+        const found = catalog.find(c => c.coquilha === coq);
+        const desc = found?.descricao ? ` (${found.descricao})` : '';
+        return `<option value="${coq}">${coq}${desc}</option>`;
+      })
+    ];
+    select.innerHTML = opts.join('');
+    if (prefilledCoquilha) select.value = prefilledCoquilha;
+  }
+
+  $('modal-fundicao')?.classList.remove('hidden');
+}
+window.openNovaFundicao = openNovaFundicao;
 
 function openEditFundicao(id) {
   const f = DB.getFundicoes().find(x => x.id === id);
   if (!f) return;
   STATE.editingFundicaoId = id;
-  $('modal-fundicao-title').textContent = 'Editar Agendamento';
-  $('fundicao-edit-id').value = id;
+  if ($('modal-fundicao-title')) $('modal-fundicao-title').textContent = `Editar OP: ${f.numero}`;
+  if ($('fundicao-edit-id')) $('fundicao-edit-id').value = id;
 
-  const modelos = DB.getModelos();
-  const opts = ['<option value="">— Selecione —</option>', ...modelos.map(m => `<option value="${m.nome}">${m.nome}</option>`)].join('');
-  $('fundicao-modelo').innerHTML = opts;
-  $('fundicao-modelo').value = f.modelo;
-  $('fundicao-lote').value   = f.lote;
-  $('fundicao-qty').value    = f.qty;
-  $('fundicao-liga').value   = f.liga;
-  $('fundicao-data').value   = f.dataPrevista;
-  $('fundicao-status').value = f.status;
-  $('fundicao-obs').value    = f.obs;
-  $('modal-fundicao').classList.remove('hidden');
+  openNovaFundicao(f.coquilha || f.modelo, f.qtyPlanejada || f.qty, f.pesoUnitario || f.peso);
+  if ($('fundicao-lote')) $('fundicao-lote').value = f.numero || f.lote;
+  if ($('fundicao-qty')) $('fundicao-qty').value = f.qtyPlanejada || f.qty;
+  if ($('fundicao-liga')) $('fundicao-liga').value = f.liga || 'Alumínio AlMg5';
+  if ($('fundicao-data')) $('fundicao-data').value = f.dataPrevista || '';
+  if ($('fundicao-responsavel')) $('fundicao-responsavel').value = f.responsavel || '';
+  if ($('fundicao-obs')) $('fundicao-obs').value = f.obs || '';
 }
 window.openEditFundicao = openEditFundicao;
 
-function closeModalFundicao() { $('modal-fundicao').classList.add('hidden'); }
+function closeModalFundicao() { $('modal-fundicao')?.classList.add('hidden'); }
+window.closeModalFundicao = closeModalFundicao;
 
-function saveFundicao() {
-  const modelo = $('fundicao-modelo').value;
-  if (!modelo) { showToast('Selecione o modelo.', 'error'); return; }
+async function saveFundicao() {
+  const coquilha = $('fundicao-modelo')?.value || '';
+  if (!coquilha) { showToast('Selecione o produto / coquilha.', 'error'); return; }
+  const qty = parseInt($('fundicao-qty')?.value) || 1;
+  const lote = $('fundicao-lote')?.value.trim() || DB.nextFundicaoNumber();
+
   const data = {
-    modelo,
-    lote:         $('fundicao-lote').value.trim(),
-    qty:          parseInt($('fundicao-qty').value) || 1,
-    liga:         $('fundicao-liga').value,
-    dataPrevista: $('fundicao-data').value,
-    status:       $('fundicao-status').value,
-    obs:          $('fundicao-obs').value.trim(),
+    produto: coquilha,
+    coquilha: coquilha,
+    modelo: coquilha,
+    codigo: coquilha,
+    numero: lote,
+    lote: lote,
+    qtyPlanejada: qty,
+    qty: qty,
+    liga: $('fundicao-liga')?.value || 'Alumínio AlMg5',
+    dataPrevista: $('fundicao-data')?.value || '',
+    responsavel: $('fundicao-responsavel')?.value.trim() || window.PCP_CURRENT_USER || '',
+    obs: $('fundicao-obs')?.value.trim() || '',
+    status: 'Em aberto'
   };
-  if (STATE.editingFundicaoId) {
-    DB.updateFundicao(STATE.editingFundicaoId, data);
-    showToast('Agendamento atualizado!');
-  } else {
-    DB.addFundicao(data);
-    showToast('Agendamento cadastrado!');
+
+  try {
+    if (STATE.editingFundicaoId) {
+      DB.updateFundicao(STATE.editingFundicaoId, data);
+      showToast('Ordem de Produção atualizada com sucesso!', 'success');
+    } else {
+      // Tenta criar na API central do servidor
+      try {
+        const response = await fetch('/api/fundicao-ops', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          const res = await response.json();
+          if (res.op) data.id = res.op.id;
+        }
+      } catch (err) {
+        console.warn('Fallback para armazenamento local de OP fundição:', err);
+      }
+
+      DB.addFundicao(data);
+      showToast(`OP ${lote} criada com status 'Em aberto'! Acompanhe no Rastreio.`, 'success');
+    }
+  } catch (error) {
+    showToast(error.message || 'Erro ao salvar OP de fundição.', 'error');
   }
+
   closeModalFundicao();
   renderFundicao();
+  if (typeof window.renderRastreioFundicao === 'function') {
+    window.renderRastreioFundicao();
+  }
 }
+window.saveFundicao = saveFundicao;
 
-function deleteFundicao(id) {
-  if (!confirm('Excluir este agendamento de fundição?')) return;
+async function deleteFundicao(id) {
+  const f = DB.getFundicoes().find(x => x.id === id);
+  if (!f) return;
+  if (f.status === 'Fundido') {
+    showToast('Não é possível excluir uma OP já fundida com entrada em estoque.', 'error');
+    return;
+  }
+  if (!confirm(`Excluir a ordem de produção ${f.numero || f.lote}?`)) return;
+
+  try {
+    await fetch(`/api/fundicao-ops/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: { 'X-PCP-User': window.PCP_CURRENT_USER || '' }
+    }).catch(() => {});
+  } catch (_) {}
+
   DB.deleteFundicao(id);
   renderFundicao();
-  showToast('Agendamento excluído.', 'error');
+  if (typeof window.renderRastreioFundicao === 'function') {
+    window.renderRastreioFundicao();
+  }
+  showToast('Ordem de fundição cancelada.', 'info');
 }
 window.deleteFundicao = deleteFundicao;
 

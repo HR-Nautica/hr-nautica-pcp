@@ -1,4 +1,4 @@
-﻿import compression from "compression";
+import compression from "compression";
 import express from "express";
 import helmet from "helmet";
 import path from "node:path";
@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
 import { databaseHealth } from "./database.js";
 import analysisTempRouter from "./routes/analysis-temp.js";
+import fundicaoOpsRouter from "./routes/fundicao-ops.js";
 import heliceOpsRouter from "./routes/helice-ops.js";
 import integrationsRouter from "./routes/integrations.js";
 import productionOpsRouter from "./routes/production-ops.js";
@@ -41,6 +42,7 @@ app.get("/api/status", async (_req, res, next) => {
 app.use("/api/state", stateRouter);
 app.use("/api/analysis-temp", analysisTempRouter);
 app.use("/api/helice-ops", heliceOpsRouter);
+app.use("/api/fundicao-ops", fundicaoOpsRouter);
 app.use("/api/production-ops", productionOpsRouter);
 app.use("/api/raw-stock", rawStockRouter);
 app.use("/api", integrationsRouter);

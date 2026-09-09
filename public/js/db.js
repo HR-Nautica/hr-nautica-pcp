@@ -481,12 +481,19 @@ const DB = {
       id: `fnd_${this._id()}`,
       coquilha: String(data.coquilha || '').trim(),
       descricao: String(data.descricao || '').trim(),
-      sku: String(data.sku || '').trim().toUpperCase(),
-      peso: parseFloat(data.peso) || 0
+      sku: String(data.sku || data.coquilha || '').trim().toUpperCase(),
+      liga: String(data.liga || 'Alumínio AlMg5').trim(),
+      peso: parseFloat(data.peso) || 0,
+      aplicacoes: Array.isArray(data.aplicacoes) ? data.aplicacoes : String(data.aplicacoes || '').split(',').map(s => s.trim()).filter(Boolean),
+      ativo: data.ativo !== undefined ? Boolean(data.ativo) : true,
+      obs: String(data.obs || '').trim(),
+      criadoEm: this._now(),
+      atualizadoEm: this._now()
     };
     catalog.unshift(item);
     this.saveFundicaoCatalog(catalog);
-    this.addAtividade(`Novo item adicionado ao Catálogo de Fundição: ${item.coquilha} - ${item.sku}`, 'teal');
+    if (item.peso > 0) this.saveCoquilhaPeso(item.coquilha, item.peso);
+    this.addAtividade(`Novo produto cadastrado no Catálogo de Fundição: ${item.coquilha} - ${item.descricao || item.sku}`, 'teal');
     return item;
   },
 
@@ -495,17 +502,37 @@ const DB = {
     const idx = catalog.findIndex(c => c.id === id);
     if (idx === -1) throw new Error('Item do Catálogo de Fundição não encontrado.');
 
+    const curr = catalog[idx];
     catalog[idx] = {
-      ...catalog[idx],
-      coquilha: String(data.coquilha || catalog[idx].coquilha).trim(),
-      descricao: String(data.descricao || catalog[idx].descricao).trim(),
-      sku: String(data.sku || catalog[idx].sku).trim().toUpperCase(),
-      peso: data.peso !== undefined ? (parseFloat(data.peso) || 0) : (catalog[idx].peso || 0)
+      ...curr,
+      coquilha: String(data.coquilha ?? curr.coquilha).trim(),
+      descricao: String(data.descricao ?? curr.descricao).trim(),
+      sku: String(data.sku ?? curr.sku).trim().toUpperCase(),
+      liga: String(data.liga ?? curr.liga ?? 'Alumínio AlMg5').trim(),
+      peso: data.peso !== undefined ? (parseFloat(data.peso) || 0) : (curr.peso || 0),
+      aplicacoes: data.aplicacoes !== undefined 
+        ? (Array.isArray(data.aplicacoes) ? data.aplicacoes : String(data.aplicacoes || '').split(',').map(s => s.trim()).filter(Boolean))
+        : (curr.aplicacoes || []),
+      ativo: data.ativo !== undefined ? Boolean(data.ativo) : (curr.ativo !== undefined ? curr.ativo : true),
+      obs: String(data.obs ?? curr.obs ?? '').trim(),
+      atualizadoEm: this._now()
     };
 
     this.saveFundicaoCatalog(catalog);
-    this.addAtividade(`Item do Catálogo de Fundição atualizado: ${catalog[idx].sku}`, 'blue');
+    if (catalog[idx].peso > 0) this.saveCoquilhaPeso(catalog[idx].coquilha, catalog[idx].peso);
+    this.addAtividade(`Produto atualizado no Catálogo de Fundição: ${catalog[idx].coquilha}`, 'blue');
     return catalog[idx];
+  },
+
+  toggleFundicaoCatalogItemStatus(id) {
+    const catalog = this.getFundicaoCatalog();
+    const item = catalog.find(c => c.id === id);
+    if (!item) return null;
+    item.ativo = item.ativo !== undefined ? !item.ativo : false;
+    item.atualizadoEm = this._now();
+    this.saveFundicaoCatalog(catalog);
+    this.addAtividade(`Produto ${item.coquilha} ${item.ativo ? 'ativado' : 'inativado'} no Catálogo de Fundição`, 'orange');
+    return item;
   },
 
   deleteFundicaoCatalogItem(id) {
@@ -515,7 +542,7 @@ const DB = {
 
     const filtered = catalog.filter(c => c.id !== id);
     this.saveFundicaoCatalog(filtered);
-    this.addAtividade(`Item removido do Catálogo de Fundição: ${item.sku}`, 'red');
+    this.addAtividade(`Item removido do Catálogo de Fundição: ${item.coquilha} - ${item.sku}`, 'red');
     return true;
   },
 
@@ -1044,53 +1071,170 @@ const DB = {
     this.addAtividade('Pedido removido', 'red');
   },
 
-  // ═══ PROGRAMAÇÃO DE FUNDIÇÃO ══════════════
-  getFundicoes()       { return this._get(this.KEYS.fundicoes); },
-  saveFundicoes(list)  { this._set(this.KEYS.fundicoes, list); },
+  // ═══ PROGRAMAÇÃO E RASTREIO DE FUNDIÇÃO ══════════════
+  getFundicoes() {
+    const raw = this._get(this.KEYS.fundicoes) || [];
+    return raw.map(f => {
+      const isConcluido = f.status === 'Fundido' || f.status === 'Concluído';
+      const status = isConcluido ? 'Fundido' : 'Em aberto';
+      const coquilha = String(f.coquilha || f.codigo || f.modelo || '').trim();
+      return {
+        id: f.id || this._id(),
+        numero: f.numero || f.lote || 'OP-FND-0000',
+        lote: f.lote || f.numero || 'OP-FND-0000',
+        produto: f.produto || coquilha,
+        codigo: coquilha,
+        coquilha: coquilha,
+        modelo: coquilha,
+        qtyPlanejada: parseInt(f.qtyPlanejada || f.qty) || 1,
+        qty: parseInt(f.qtyPlanejada || f.qty) || 1,
+        qtyProduzida: f.qtyProduzida !== undefined && f.qtyProduzida !== null ? parseInt(f.qtyProduzida) : (isConcluido ? parseInt(f.qty) || 1 : null),
+        dataCriacao: f.dataCriacao || f.criadoEm || f.data || '',
+        dataPrevista: f.dataPrevista || f.data || '',
+        dataFinalizacao: f.dataFinalizacao || (isConcluido ? f.atualizadoEm || f.data : null),
+        responsavel: f.responsavel || '',
+        liga: f.liga || f.material || 'Alumínio AlMg5',
+        pesoUnitario: parseFloat(f.pesoUnitario || f.peso) || 0,
+        status: status,
+        obs: f.obs || '',
+        obsFinalizacao: f.obsFinalizacao || ''
+      };
+    });
+  },
+
+  saveFundicoes(list) { this._set(this.KEYS.fundicoes, list); },
 
   nextFundicaoNumber() {
     const list = this.getFundicoes();
-    const nums = list.map(f => parseInt(f.numero?.replace('FND-','') || '0', 10));
-    const next = nums.length ? Math.max(...nums) + 1 : 1;
-    return 'FND-' + String(next).padStart(4, '0');
+    const nums = list.map(f => {
+      const m = String(f.numero || '').match(/\d+/g);
+      return m ? parseInt(m.join(''), 10) : 0;
+    });
+    const next = nums.length ? Math.max(...nums, 0) + 1 : 1;
+    return 'OP-FND-' + String(next).padStart(4, '0');
   },
 
   addFundicao(data) {
     const list = this.getFundicoes();
+    const coquilha = String(data.coquilha || data.codigo || data.modelo || '').trim();
+    const qty = Math.max(1, parseInt(data.qtyPlanejada || data.qty) || 1);
+    const numero = data.numero || this.nextFundicaoNumber();
+    const now = this._now();
+
     const f = {
-      id:         this._id(),
-      numero:     this.nextFundicaoNumber(),
-      modelo:     data.modelo     || '',
-      material:   data.material   || '',
-      qty:        parseInt(data.qty) || 1,
-      peso:       parseFloat(data.peso) || 0,
-      data:       data.data       || '',
-      forno:      data.forno      || '',
-      temp:       data.temp       || '',
-      status:     data.status     || 'Agendado',
-      obs:        data.obs        || '',
-      criadoEm:   this._now(),
+      id: data.id || `fnd_op_${this._id()}`,
+      numero: numero,
+      lote: numero,
+      produto: String(data.produto || coquilha).trim(),
+      codigo: coquilha,
+      coquilha: coquilha,
+      modelo: coquilha,
+      qtyPlanejada: qty,
+      qty: qty,
+      qtyProduzida: null,
+      status: 'Em aberto',
+      dataCriacao: data.dataCriacao || now,
+      dataPrevista: data.dataPrevista || '',
+      dataFinalizacao: null,
+      responsavel: data.responsavel || (typeof window !== 'undefined' ? window.PCP_CURRENT_USER : '') || '',
+      liga: data.liga || data.material || 'Alumínio AlMg5',
+      pesoUnitario: parseFloat(data.pesoUnitario || data.peso) || 0,
+      obs: data.obs || '',
+      obsFinalizacao: '',
+      criadoEm: now,
+      atualizadoEm: now
     };
-    list.push(f);
+
+    list.unshift(f);
     this.saveFundicoes(list);
-    this.addAtividade(`Nova programação de fundição: ${f.numero} – ${f.modelo}`, 'orange');
+    this.addAtividade(`Nova OP Fundição criada: ${f.numero} – ${f.coquilha} (${f.qtyPlanejada} pçs)`, 'orange');
     return f;
   },
 
   updateFundicao(id, data) {
-    const list = this.getFundicoes().map(f =>
-      f.id === id ? { ...f, ...data } : f
-    );
+    const list = this.getFundicoes().map(f => {
+      if (f.id !== id) return f;
+      return {
+        ...f,
+        ...data,
+        atualizadoEm: this._now()
+      };
+    });
     this.saveFundicoes(list);
-    this.addAtividade(`Prog. fundição ${list.find(f=>f.id===id)?.numero} atualizada`, 'teal');
-    return list.find(f => f.id === id);
+    const updated = list.find(f => f.id === id);
+    if (updated) this.addAtividade(`OP Fundição ${updated.numero} atualizada`, 'teal');
+    return updated;
+  },
+
+  getRawStock(coquilha) {
+    if (!coquilha) return 0;
+    const mat = this.getMateriais().find(m => m.nome.trim().toLowerCase() === String(coquilha).trim().toLowerCase());
+    return mat ? (parseFloat(mat.saldo) || 0) : 0;
+  },
+
+  finalizeFundicao(id, finishData = {}) {
+    const list = this.getFundicoes();
+    const idx = list.findIndex(f => f.id === id);
+    if (idx === -1) throw new Error('OP de Fundição não encontrada.');
+    const op = list[idx];
+    if (op.status === 'Fundido' || op.finalizada) {
+      return { alreadyFinalized: true, order: op };
+    }
+
+    const qtyProduzida = Math.max(1, parseInt(finishData.quantidadeProduzida || finishData.qtyProduzida || op.qtyPlanejada || op.qty) || 1);
+    const now = this._now();
+
+    op.status = 'Fundido';
+    op.finalizada = true;
+    op.qtyProduzida = qtyProduzida;
+    op.dataFinalizacao = finishData.dataFinalizacao || now;
+    op.responsavelConclusao = finishData.responsavelConclusao || finishData.responsavel || (typeof window !== 'undefined' ? window.PCP_CURRENT_USER : '') || op.responsavel;
+    op.obsFinalizacao = finishData.observacoes || finishData.obs || '';
+    op.atualizadoEm = now;
+
+    list[idx] = op;
+    this.saveFundicoes(list);
+
+    // Incrementa o estoque físico da peça/coquilha em hrn_materiais via addMovimento
+    const coquilhaNome = (op.coquilha || op.produto || '').trim();
+    if (coquilhaNome) {
+      const materiais = this.getMateriais();
+      let mat = materiais.find(m => m.nome.trim().toLowerCase() === coquilhaNome.toLowerCase());
+      if (!mat) {
+        mat = {
+          id: this._id(),
+          nome: coquilhaNome,
+          unidade: 'un',
+          saldo: 0,
+          saldoMinimo: 0,
+          atualizadoEm: now
+        };
+        materiais.push(mat);
+        this.saveMateriais(materiais);
+      }
+
+      this.addMovimento({
+        materialId: mat.id,
+        tipo: 'Entrada',
+        qty: qtyProduzida,
+        motivo: `Finalização OP ${op.numero || op.lote}`,
+        data: finishData.dataFinalizacao || now
+      });
+    }
+
+    this.addAtividade(`OP Fundição ${op.numero} FINALIZADA (+${qtyProduzida} pçs de ${op.coquilha})`, 'green');
+    return { success: true, order: op };
   },
 
   deleteFundicao(id) {
     const list = this.getFundicoes();
     const f = list.find(x => x.id === id);
+    if (!f) return false;
+    if (f.status === 'Fundido') throw new Error('Não é possível excluir uma OP de Fundição que já foi finalizada.');
+
     this.saveFundicoes(list.filter(x => x.id !== id));
-    if (f) this.addAtividade(`Prog. fundição ${f.numero} removida`, 'red');
+    this.addAtividade(`OP Fundição ${f.numero} cancelada/removida`, 'red');
+    return true;
   },
 
   // ═══ MANUTENÇÃO DE FERRAMENTAS ════════════════

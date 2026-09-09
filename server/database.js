@@ -1718,6 +1718,179 @@ export async function mutateManualProductionOrder(action, id, data, expectedVers
   });
 }
 
+export async function getFundicaoOrders() {
+  const snapshot = await getStateSnapshot(0);
+  const orders = Array.isArray(snapshot.data?.hrn_fundicoes) ? snapshot.data.hrn_fundicoes : [];
+  return {
+    orders,
+    version: Number(snapshot.versions?.hrn_fundicoes || 0)
+  };
+}
+
+export async function createFundicaoOrder(data, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return rawStockTransactionRequired();
+  const quantity = Math.max(1, Number.parseInt(data?.qtyPlanejada || data?.qty, 10) || 1);
+  const coquilha = normalizeRawCode(data?.coquilha || data?.codigo || data?.modelo);
+  if (!coquilha) throw new RangeError("Selecione o produto / coquilha.");
+
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_config: {}, hrn_fundicoes: [] });
+    const orders = [...(Array.isArray(locked.get("hrn_fundicoes")?.value) ? locked.get("hrn_fundicoes").value : [])];
+    const configState = { ...(locked.get("hrn_config")?.value || {}) };
+    const now = isoNow();
+
+    configState.fundicaoOpCounter = Math.max(
+      Number(configState.fundicaoOpCounter) || 0,
+      ...orders.map(item => Number.parseInt(String(item.numero || item.lote || "").replace(/\D/g, ""), 10) || 0)
+    ) + 1;
+
+    const opNumero = `OP-FND-${String(configState.fundicaoOpCounter).padStart(4, "0")}`;
+
+    const op = {
+      id: randomUUID(),
+      numero: opNumero,
+      lote: opNumero,
+      produto: String(data?.produto || coquilha).trim(),
+      codigo: coquilha,
+      coquilha: coquilha,
+      modelo: coquilha,
+      qtyPlanejada: quantity,
+      qty: quantity,
+      qtyProduzida: null,
+      status: "Em aberto",
+      dataCriacao: now,
+      dataPrevista: String(data?.dataPrevista || "").trim(),
+      dataFinalizacao: null,
+      responsavel: String(actor || data?.responsavel || "").trim(),
+      liga: String(data?.liga || "Alumínio AlMg5").trim(),
+      pesoUnitario: Number(data?.pesoUnitario) || 0,
+      obs: String(data?.obs || "").trim(),
+      criadoEm: now,
+      atualizadoEm: now
+    };
+
+    orders.unshift(op);
+    const saved = await saveLockedStates(
+      client,
+      locked,
+      { hrn_config: configState, hrn_fundicoes: orders },
+      actor,
+      "FUNDICAO_OP_CREATE"
+    );
+
+    return { ...saved, op, orders, version: saved.versions.hrn_fundicoes };
+  });
+}
+
+export async function finalizeFundicaoOrder(opId, finishData, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return rawStockTransactionRequired();
+
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_fundicoes: [], hrn_materiais: [], hrn_movimentos: [] });
+    const orders = [...(Array.isArray(locked.get("hrn_fundicoes")?.value) ? locked.get("hrn_fundicoes").value : [])];
+    const materials = [...(Array.isArray(locked.get("hrn_materiais")?.value) ? locked.get("hrn_materiais").value : [])];
+    const movements = [...(Array.isArray(locked.get("hrn_movimentos")?.value) ? locked.get("hrn_movimentos").value : [])];
+    const now = isoNow();
+
+    const opIndex = orders.findIndex(item => String(item.id) === String(opId));
+    if (opIndex < 0) return null;
+    const op = { ...orders[opIndex] };
+
+    // Idempotência: impede re-finalização
+    if (op.status === "Fundido") {
+      throw new RangeError(`A ordem ${op.numero || op.lote} já foi finalizada anteriormente.`);
+    }
+
+    const qtyProduzida = Math.max(1, Number(finishData?.qtyProduzida || op.qtyPlanejada || op.qty) || 1);
+    const rawCode = normalizeRawCode(op.coquilha || op.codigo || op.modelo);
+
+    let material = findRawMaterial(materials, rawCode);
+    if (!material) {
+      material = {
+        id: `raw_${randomUUID()}`,
+        nome: rawCode,
+        rawCode: rawCode,
+        categoria: RAW_MATERIAL_CATEGORY,
+        unidade: "un",
+        saldo: 0,
+        minimo: 0,
+        fornecedor: "",
+        criadoEm: now,
+        atualizadoEm: now,
+        atualizadoPor: actor
+      };
+      materials.push(material);
+    }
+
+    const previousStock = Math.max(0, Number(material.saldo) || 0);
+    const newStock = previousStock + qtyProduzida;
+    material.saldo = newStock;
+    material.atualizadoEm = now;
+    material.atualizadoPor = actor;
+
+    const opFinalizedResponsavel = String(finishData?.responsavel || actor || op.responsavel || "").trim();
+
+    movements.unshift(movement({
+      material,
+      type: "Entrada",
+      quantity: qtyProduzida,
+      balance: newStock,
+      actor: opFinalizedResponsavel,
+      op: { id: op.id, numero: op.numero || op.lote },
+      reason: `Produção finalizada da fundição (${op.numero || op.lote})`,
+      eventKey: `FUNDICAO-FINALIZAR-${op.id}`
+    }));
+
+    op.status = "Fundido";
+    op.qtyProduzida = qtyProduzida;
+    op.dataFinalizacao = finishData?.dataFinalizacao ? new Date(finishData.dataFinalizacao).toISOString() : now;
+    op.responsavel = opFinalizedResponsavel;
+    op.obsFinalizacao = String(finishData?.obs || "").trim();
+    op.atualizadoEm = now;
+
+    orders[opIndex] = op;
+
+    const saved = await saveLockedStates(
+      client,
+      locked,
+      { hrn_fundicoes: orders, hrn_materiais: materials, hrn_movimentos: movements },
+      actor,
+      "FUNDICAO_OP_FINALIZE"
+    );
+
+    return {
+      ...saved,
+      op,
+      orders,
+      stock: rawStockView(materials, movements),
+      version: saved.versions.hrn_fundicoes
+    };
+  });
+}
+
+export async function deleteFundicaoOrder(opId, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return rawStockTransactionRequired();
+
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_fundicoes: [] });
+    const orders = [...(Array.isArray(locked.get("hrn_fundicoes")?.value) ? locked.get("hrn_fundicoes").value : [])];
+    const opIndex = orders.findIndex(item => String(item.id) === String(opId));
+    if (opIndex < 0) return null;
+    const previous = orders[opIndex];
+
+    if (previous.status === "Fundido") {
+      throw new RangeError("Não é possível excluir uma OP que já foi finalizada e entrou no estoque.");
+    }
+
+    orders.splice(opIndex, 1);
+    const saved = await saveLockedStates(client, locked, { hrn_fundicoes: orders }, actor, "FUNDICAO_OP_DELETE");
+    return { ...saved, op: previous, orders, version: saved.versions.hrn_fundicoes };
+  });
+}
+
 export async function closeDatabase() {
   if (pool) {
     await pool.end();

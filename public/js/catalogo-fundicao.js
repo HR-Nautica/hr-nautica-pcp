@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   catalogo-fundicao.js – Módulo do Catálogo de Fundição (Códigos Brutos e Aplicações)
+   catalogo-fundicao.js – Cadastro e Ficha Técnica dos Produtos de Fundição
+   CRUD de Peças Brutas, Coquilhas e Especificações Metalúrgicas
    HR Náutica PCP
    ═══════════════════════════════════════════════════════════════ */
 'use strict';
@@ -7,7 +8,7 @@
 (() => {
   const state = {
     editingId: null,
-    expandedCoquilhas: new Set(),
+    isViewing: false,
   };
 
   const byId = id => document.getElementById(id);
@@ -21,315 +22,396 @@
       .replace(/'/g, '&#039;');
   }
 
-  function toggleCoquilhaExpand(coquilha) {
-    if (state.expandedCoquilhas.has(coquilha)) {
-      state.expandedCoquilhas.delete(coquilha);
-    } else {
-      state.expandedCoquilhas.add(coquilha);
-    }
-    renderCatalogoFundicao();
+  function formatKg(num) {
+    const val = parseFloat(num) || 0;
+    return `${val.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg`;
   }
 
-  function expandAllCoquilhas() {
-    if (typeof DB === 'undefined') return;
-    const catalog = getCombinedFundicaoItems();
-    const coquilhas = DB.getCoquilhasCatalog();
-    const all = [...new Set([...coquilhas, ...catalog.map(c => c.coquilha)].filter(Boolean))];
-    all.forEach(c => state.expandedCoquilhas.add(c));
-    renderCatalogoFundicao();
-  }
-
-  function collapseAllCoquilhas() {
-    state.expandedCoquilhas.clear();
-    renderCatalogoFundicao();
-  }
-
-  function promptSetCoquilhaPeso(coquilha) {
-    if (typeof DB === 'undefined') return;
-    const currentPeso = DB.getCoquilhaPeso(coquilha);
-    const input = prompt(`Informe o Peso da ${coquilha} em quilos (kg):\n\n(Ex: 1.850)`, currentPeso ? String(currentPeso) : '0');
-    if (input === null) return;
-    const val = parseFloat(input.replace(',', '.'));
-    if (isNaN(val) || val < 0) {
-      if (typeof showToast === 'function') showToast('Informe um valor numérico válido para o peso.', 'error');
-      return;
-    }
-    DB.saveCoquilhaPeso(coquilha, val);
-    if (typeof showToast === 'function') showToast(`Peso da ${coquilha} atualizado para ${val.toFixed(3).replace('.', ',')} kg!`, 'success');
-    renderCatalogoFundicao();
-  }
-
-  function getCombinedFundicaoItems() {
+  function getCombinedCatalog() {
     if (typeof DB === 'undefined') return [];
-    DB.ensureFundicaoCatalogAtualizada();
-    const catalog = DB.getFundicaoCatalog();
-    const modelos = DB.getModelos();
+    if (typeof DB.ensureFundicaoCatalogAtualizada === 'function') {
+      DB.ensureFundicaoCatalogAtualizada();
+    }
+
+    const catalog = typeof DB.getFundicaoCatalog === 'function' ? DB.getFundicaoCatalog() : [];
+    const coquilhas = typeof DB.getCoquilhasCatalog === 'function' ? DB.getCoquilhasCatalog() : [];
+    const modelos = typeof DB.getModelos === 'function' ? DB.getModelos() : [];
 
     const itemsMap = new Map();
 
-    // 1. Prioridade para modelos do Catálogo de Hélices com código bruto / coquilha
-    modelos.forEach(m => {
-      if (m.codigoBruto) {
-        const itemObj = {
-          id: m.id,
-          modeloId: m.id,
-          sku: m.sku,
-          descricao: m.nome,
-          coquilha: String(m.codigoBruto).trim(),
-          isModelo: true
-        };
-        itemsMap.set(`${itemObj.coquilha}|${itemObj.sku}`, itemObj);
-      }
-    });
-
-    // 2. Legado do catálogo de fundição (caso haja algum item não cadastrado em modelos)
+    // 1. Itens explícitos do catálogo de fundição
     catalog.forEach(c => {
-      const key = `${c.coquilha}|${c.sku}`;
-      if (!itemsMap.has(key)) {
-        itemsMap.set(key, {
-          id: c.id,
-          modeloId: null,
-          sku: c.sku,
-          descricao: c.descricao,
-          coquilha: c.coquilha,
-          isModelo: false
+      const coq = String(c.coquilha || c.sku || '').trim();
+      if (!coq) return;
+      const key = c.id || coq;
+      itemsMap.set(key, {
+        id: c.id || `fnd_${coq}`,
+        coquilha: coq,
+        descricao: c.descricao || `Peça bruta para coquilha ${coq}`,
+        sku: c.sku || coq,
+        liga: c.liga || 'Alumínio AlMg5',
+        peso: parseFloat(c.peso) || (typeof DB.getCoquilhaPeso === 'function' ? DB.getCoquilhaPeso(coq) : 0),
+        aplicacoes: Array.isArray(c.aplicacoes) ? c.aplicacoes : (c.aplicacoes ? String(c.aplicacoes).split(',').map(s => s.trim()).filter(Boolean) : (c.sku ? [c.sku] : [])),
+        ativo: c.ativo !== undefined ? Boolean(c.ativo) : true,
+        obs: c.obs || '',
+        origem: 'catalogo'
+      });
+    });
+
+    // 2. Coquilhas registradas sem cadastro detalhado ainda
+    coquilhas.forEach(coq => {
+      const coqStr = String(coq || '').trim();
+      if (!coqStr) return;
+      const existing = Array.from(itemsMap.values()).find(item => item.coquilha.toUpperCase() === coqStr.toUpperCase());
+      if (!existing) {
+        // Busca se há modelos de hélice vinculados
+        const linkedSkus = modelos
+          .filter(m => String(m.codigoBruto || '').trim().toUpperCase() === coqStr.toUpperCase())
+          .map(m => m.sku);
+
+        const peso = typeof DB.getCoquilhaPeso === 'function' ? DB.getCoquilhaPeso(coqStr) : 0;
+        const id = `fnd_${coqStr.replace(/\s+/g, '_')}`;
+
+        itemsMap.set(id, {
+          id: id,
+          coquilha: coqStr,
+          descricao: `Fundição bruta molde ${coqStr}`,
+          sku: coqStr,
+          liga: 'Alumínio AlMg5',
+          peso: peso,
+          aplicacoes: linkedSkus,
+          ativo: true,
+          obs: '',
+          origem: 'coquilha'
         });
+      } else if (!existing.aplicacoes || !existing.aplicacoes.length) {
+        // Enriquece aplicações existentes com modelos do catálogo de hélices
+        const linkedSkus = modelos
+          .filter(m => String(m.codigoBruto || '').trim().toUpperCase() === coqStr.toUpperCase())
+          .map(m => m.sku);
+        if (linkedSkus.length) {
+          existing.aplicacoes = [...new Set([...(existing.aplicacoes || []), ...linkedSkus])];
+        }
       }
     });
 
-    return Array.from(itemsMap.values());
+    return Array.from(itemsMap.values()).sort((a, b) => 
+      a.coquilha.localeCompare(b.coquilha, 'pt-BR', { numeric: true })
+    );
   }
 
   function renderCatalogoFundicao() {
     if (typeof DB === 'undefined') return;
 
-    const catalog = getCombinedFundicaoItems();
-    const coquilhas = DB.getCoquilhasCatalog();
+    const items = getCombinedCatalog();
+    const search = String(byId('cf-search')?.value || '').trim().toLowerCase();
+    const statusFilter = byId('cf-filter-status')?.value || '';
+    const coquilhaFilter = byId('cf-filter-coquilha')?.value || '';
 
-    // Lista única de coquilhas registradas e catalogadas
-    const allCoquilhas = [...new Set([...coquilhas, ...catalog.map(c => c.coquilha)].filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
-
-    // Popula filtro de Coquilhas no toolbar
+    // Popula filtro de coquilhas
     const filterSelect = byId('cf-filter-coquilha');
     if (filterSelect && !filterSelect.dataset.populated) {
+      const uniqueCoquilhas = [...new Set(items.map(i => i.coquilha))].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
       filterSelect.innerHTML = [
-        '<option value="">Todas as coquilhas / códigos brutos</option>',
-        ...allCoquilhas.map(coq => `<option value="${escapeHtml(coq)}">${escapeHtml(coq)}</option>`)
+        '<option value="">Todas as coquilhas</option>',
+        ...uniqueCoquilhas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
       ].join('');
       filterSelect.dataset.populated = 'true';
     }
 
-    const search = String(byId('cf-search')?.value || '').trim().toLowerCase();
-    const filterCoquilha = byId('cf-filter-coquilha')?.value || '';
+    // Filtros
+    let filtered = items;
+    if (statusFilter === 'ativo') {
+      filtered = filtered.filter(i => i.ativo !== false);
+    } else if (statusFilter === 'inativo') {
+      filtered = filtered.filter(i => i.ativo === false);
+    }
 
-    // Agrupa itens por coquilha
-    const groupedMap = new Map();
-    allCoquilhas.forEach(c => groupedMap.set(c, []));
-    catalog.forEach(item => {
-      if (item.coquilha) {
-        if (!groupedMap.has(item.coquilha)) groupedMap.set(item.coquilha, []);
-        groupedMap.get(item.coquilha).push(item);
-      }
-    });
-
-    // Filtra coquilhas e seus modelos correspondentes
-    let coquilhasFiltradas = allCoquilhas;
-    if (filterCoquilha) {
-      coquilhasFiltradas = coquilhasFiltradas.filter(c => c === filterCoquilha);
+    if (coquilhaFilter) {
+      filtered = filtered.filter(i => i.coquilha === coquilhaFilter);
     }
 
     if (search) {
-      coquilhasFiltradas = coquilhasFiltradas.filter(coquilhaName => {
-        const matchCoquilhaName = coquilhaName.toLowerCase().includes(search);
-        const items = groupedMap.get(coquilhaName) || [];
-        const matchItem = items.some(i => 
-          String(i.sku || '').toLowerCase().includes(search) || 
-          String(i.descricao || '').toLowerCase().includes(search)
-        );
-        return matchCoquilhaName || matchItem;
-      });
+      filtered = filtered.filter(i => 
+        i.coquilha.toLowerCase().includes(search) ||
+        String(i.descricao || '').toLowerCase().includes(search) ||
+        String(i.liga || '').toLowerCase().includes(search) ||
+        (i.aplicacoes && i.aplicacoes.some(a => String(a).toLowerCase().includes(search)))
+      );
     }
 
     // KPIs
-    const totalCoquilhasUnicas = allCoquilhas.length;
-    const totalAplicacoes = catalog.length;
+    const totalCount = items.length;
+    const ativosCount = items.filter(i => i.ativo !== false).length;
+    const uniqueCoqCount = new Set(items.map(i => i.coquilha)).size;
+    const pesosValid = items.map(i => i.peso).filter(p => p > 0);
+    const pesoMedio = pesosValid.length ? (pesosValid.reduce((a, b) => a + b, 0) / pesosValid.length) : 0;
 
-    if (byId('kpi-cf-coquilhas')) byId('kpi-cf-coquilhas').textContent = `${totalCoquilhasUnicas} un`;
-    if (byId('kpi-cf-aplicacoes')) byId('kpi-cf-aplicacoes').textContent = `${totalAplicacoes} skus`;
-    
-    // Total de SKUs visíveis
-    let skusVisiveis = 0;
-    coquilhasFiltradas.forEach(c => {
-      const items = groupedMap.get(c) || [];
-      if (search) {
-        skusVisiveis += items.filter(i => 
-          c.toLowerCase().includes(search) ||
-          String(i.sku || '').toLowerCase().includes(search) ||
-          String(i.descricao || '').toLowerCase().includes(search)
-        ).length;
-      } else {
-        skusVisiveis += items.length;
-      }
-    });
-
-    if (byId('cf-count')) byId('cf-count').textContent = `${coquilhasFiltradas.length} coquilha(s) (${skusVisiveis} skus)`;
+    if (byId('kpi-cf-total')) byId('kpi-cf-total').textContent = String(totalCount);
+    if (byId('kpi-cf-ativos')) byId('kpi-cf-ativos').textContent = String(ativosCount);
+    if (byId('kpi-cf-coquilhas')) byId('kpi-cf-coquilhas').textContent = String(uniqueCoqCount);
+    if (byId('kpi-cf-peso-medio')) byId('kpi-cf-peso-medio').textContent = formatKg(pesoMedio);
+    if (byId('cf-count')) byId('cf-count').textContent = `${filtered.length} ${filtered.length === 1 ? 'produto' : 'produtos'}`;
 
     const tbody = byId('cf-grid');
     if (!tbody) return;
 
-    if (!coquilhasFiltradas.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Nenhuma coquilha ou aplicação encontrada com os filtros informados.</td></tr>';
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhum produto de fundição encontrado para os filtros selecionados.</td></tr>';
       return;
     }
 
-    let html = '';
+    tbody.innerHTML = filtered.map(item => {
+      const isAtivo = item.ativo !== false;
+      const statusChip = isAtivo
+        ? '<span class="chip chip--green font-mono" style="font-size:0.78rem; font-weight:700;">Ativo</span>'
+        : '<span class="chip chip--gray font-mono" style="font-size:0.78rem;">Inativo</span>';
 
-    coquilhasFiltradas.forEach(coquilhaName => {
-      let items = groupedMap.get(coquilhaName) || [];
-      if (search && !coquilhaName.toLowerCase().includes(search)) {
-        items = items.filter(i => 
-          String(i.sku || '').toLowerCase().includes(search) || 
-          String(i.descricao || '').toLowerCase().includes(search)
-        );
-      }
+      const appsChips = (item.aplicacoes || []).slice(0, 4).map(app => 
+        `<span class="chip chip--blue font-mono" style="font-size:0.75rem; padding:2px 6px;">${escapeHtml(app)}</span>`
+      ).join(' ');
+      const extraAppsCount = (item.aplicacoes || []).length > 4 ? ` <small class="text-muted">+${item.aplicacoes.length - 4}</small>` : '';
 
-      // Peso referente à Coquilha
-      const pesoCoquilha = DB.getCoquilhaPeso(coquilhaName);
-      const pesoCoquilhaFormatted = pesoCoquilha ? `${pesoCoquilha.toFixed(3).replace('.', ',')} kg` : '0,000 kg';
-
-      // Se houver busca ativa, auto-expande para mostrar o resultado diretamente ao usuário
-      const isExpanded = search ? true : state.expandedCoquilhas.has(coquilhaName);
-      const skusPreview = items.map(i => i.sku).slice(0, 5).join(', ');
-      const previewText = skusPreview ? (items.length > 5 ? `${skusPreview}...` : skusPreview) : 'Sem modelos vinculados';
-
-      // Linha Principal da Coquilha
-      html += `
-        <tr class="coquilha-group-header ${isExpanded ? 'expanded' : ''}" onclick="window.toggleCoquilhaExpand('${escapeHtml(coquilhaName)}')">
+      return `
+        <tr style="${!isAtivo ? 'opacity:0.6;' : ''}">
           <td>
-            <button type="button" class="coquilha-toggle-btn" title="Clique para expandir/recolher modelos">
-              <span class="coquilha-arrow">▶</span>
-              <span class="chip chip--purple font-mono" style="font-weight:700; font-size:0.9rem; padding:4px 10px;">${escapeHtml(coquilhaName)}</span>
-            </button>
+            <span class="chip chip--purple font-mono" style="font-weight:700; font-size:0.88rem; padding:4px 8px;">
+              ${escapeHtml(item.coquilha)}
+            </span>
           </td>
           <td>
-            <span class="chip chip--blue font-mono" style="font-weight:600;">${items.length} ${items.length === 1 ? 'modelo' : 'modelos'}</span>
-          </td>
-          <td class="text-muted" style="font-size:0.85rem; font-weight:500;">
-            ${escapeHtml(previewText)}
+            <strong style="color:var(--text-primary); font-size:0.92rem;">${escapeHtml(item.descricao)}</strong>
+            ${item.obs ? `<div class="text-muted" style="font-size:0.78rem; margin-top:2px;">${escapeHtml(item.obs)}</div>` : ''}
           </td>
           <td>
-            <span class="chip chip--purple font-mono" style="font-weight:700; font-size:0.88rem;">${pesoCoquilhaFormatted}</span>
+            <span class="text-muted" style="font-size:0.85rem; font-weight:600;">${escapeHtml(item.liga || 'Alumínio AlMg5')}</span>
           </td>
-          <td class="catalogo-actions-col" style="text-align: right;" onclick="event.stopPropagation();">
-            <div class="catalogo-table-actions" style="justify-content: flex-end; gap: 0.4rem;">
-              <button class="btn-secondary" onclick="window.promptSetCoquilhaPeso('${escapeHtml(coquilhaName)}')" style="font-size:0.8rem; padding:4px 8px;" title="Editar Peso da Coquilha">⚖️ Peso Coquilha</button>
-              <button class="btn-secondary" onclick="window.openNovoModelo('${escapeHtml(coquilhaName)}')" style="font-size:0.8rem; padding:4px 10px; font-weight:600;" title="Cadastrar nova hélice no Catálogo">➕ Add Hélice</button>
+          <td>
+            <span class="font-mono" style="font-weight:700; color:#cbd5e1; font-size:0.88rem;">${formatKg(item.peso)}</span>
+          </td>
+          <td>
+            <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+              ${appsChips || '<span class="text-muted" style="font-size:0.8rem; font-style:italic;">Nenhuma hélice vinculada</span>'}
+              ${extraAppsCount}
+            </div>
+          </td>
+          <td style="text-align: center;">
+            ${statusChip}
+          </td>
+          <td class="catalogo-actions-col" style="text-align: right;">
+            <div class="catalogo-table-actions" style="justify-content: flex-end; gap: 4px;">
+              <button class="btn-secondary catalogo-icon-action" onclick="window.openViewProdutoFundicao('${escapeHtml(item.id)}')" title="Visualizar Ficha Técnica">👁️</button>
+              <button class="btn-secondary catalogo-icon-action" onclick="window.openEditProdutoFundicao('${escapeHtml(item.id)}')" title="Editar Produto">✏️</button>
+              <button class="btn-secondary catalogo-icon-action" onclick="window.toggleStatusProdutoFundicao('${escapeHtml(item.id)}')" title="${isAtivo ? 'Inativar Produto' : 'Ativar Produto'}">${isAtivo ? '⏸️' : '▶️'}</button>
+              <button class="btn-secondary catalogo-icon-action" onclick="window.deleteProdutoFundicao('${escapeHtml(item.id)}')" title="Excluir Produto" style="color:var(--accent-red); border-color:var(--accent-red);">🗑️</button>
             </div>
           </td>
         </tr>
       `;
-
-      // Linhas dos Modelos (Sub-itens quando expandido)
-      if (isExpanded) {
-        if (!items.length) {
-          html += `
-            <tr class="coquilha-child-row">
-              <td colspan="5" class="text-muted" style="padding-left: 2.2rem; font-style: italic; font-size:0.85rem;">
-                Nenhum modelo cadastrado para a ${escapeHtml(coquilhaName)}. Clique no botão "+ Add Hélice" à direita para vincular.
-              </td>
-            </tr>
-          `;
-        } else {
-          items.forEach(item => {
-            const editOnClick = item.isModelo 
-              ? `window.openEditModelo('${item.id}')` 
-              : `window.openEditCatalogoFundicao('${item.id}')`;
-            const deleteOnClick = item.isModelo 
-              ? `window.deleteModelo('${item.id}')` 
-              : `window.deleteCatalogoFundicao('${item.id}')`;
-
-            html += `
-              <tr class="coquilha-child-row">
-                <td style="padding-left: 1.5rem;">
-                  <div style="display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:0.85rem;">
-                    <span style="color:var(--accent-blue); font-weight:bold;">↳</span>
-                    <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Modelo Hélice</span>
-                  </div>
-                </td>
-                <td><strong class="helice-op-number">${escapeHtml(item.sku)}</strong></td>
-                <td><strong>${escapeHtml(item.descricao)}</strong></td>
-                <td><span class="font-mono text-muted" style="font-size:0.82rem;">(Coquilha: ${pesoCoquilhaFormatted})</span></td>
-                <td class="catalogo-actions-col" style="text-align: right;">
-                  <div class="catalogo-table-actions" style="justify-content: flex-end; gap: 0.4rem;">
-                    <button class="btn-secondary catalogo-icon-action" onclick="${editOnClick}" title="Editar Hélice no Catálogo">✏️</button>
-                    <button class="btn-secondary catalogo-icon-action" onclick="${deleteOnClick}" title="Excluir Hélice do Catálogo" style="color:var(--accent-red); border-color:var(--accent-red);">🗑️</button>
-                  </div>
-                </td>
-              </tr>
-            `;
-          });
-        }
-      }
-    });
-
-    tbody.innerHTML = html;
+    }).join('');
   }
 
-  function openNovoCatalogoFundicao(prefilledCoquilha = '') {
-    if (typeof window.openNovoModelo === 'function') {
-      window.openNovoModelo(prefilledCoquilha);
-    }
+  function openNovoProdutoFundicao() {
+    state.editingId = null;
+    state.isViewing = false;
+
+    if (byId('modal-produto-fundicao-title')) byId('modal-produto-fundicao-title').textContent = 'Novo Produto de Fundição';
+    if (byId('mpf-id')) byId('mpf-id').value = '';
+    if (byId('mpf-coquilha')) { byId('mpf-coquilha').value = ''; byId('mpf-coquilha').disabled = false; }
+    if (byId('mpf-descricao')) { byId('mpf-descricao').value = ''; byId('mpf-descricao').disabled = false; }
+    if (byId('mpf-liga')) { byId('mpf-liga').value = 'Alumínio AlMg5'; byId('mpf-liga').disabled = false; }
+    if (byId('mpf-peso')) { byId('mpf-peso').value = ''; byId('mpf-peso').disabled = false; }
+    if (byId('mpf-status')) { byId('mpf-status').value = 'true'; byId('mpf-status').disabled = false; }
+    if (byId('mpf-aplicacoes')) { byId('mpf-aplicacoes').value = ''; byId('mpf-aplicacoes').disabled = false; }
+    if (byId('mpf-obs')) { byId('mpf-obs').value = ''; byId('mpf-obs').disabled = false; }
+
+    const saveBtn = byId('btn-save-produto-fundicao');
+    if (saveBtn) saveBtn.style.display = 'inline-flex';
+
+    byId('modal-produto-fundicao')?.classList.remove('hidden');
   }
 
-  function openEditCatalogoFundicao(id) {
-    if (typeof window.openEditModelo === 'function') {
-      window.openEditModelo(id);
-    }
-  }
-
-  function deleteCatalogoFundicao(id) {
-    if (typeof DB === 'undefined') return;
-    const item = getCombinedFundicaoItems().find(c => c.id === id);
+  function openEditProdutoFundicao(id) {
+    const item = getCombinedCatalog().find(i => i.id === id);
     if (!item) return;
 
-    if (item.isModelo && typeof window.deleteModelo === 'function') {
-      window.deleteModelo(id);
+    state.editingId = id;
+    state.isViewing = false;
+
+    if (byId('modal-produto-fundicao-title')) byId('modal-produto-fundicao-title').textContent = `Editar Produto: ${item.coquilha}`;
+    if (byId('mpf-id')) byId('mpf-id').value = id;
+    if (byId('mpf-coquilha')) { byId('mpf-coquilha').value = item.coquilha; byId('mpf-coquilha').disabled = false; }
+    if (byId('mpf-descricao')) { byId('mpf-descricao').value = item.descricao; byId('mpf-descricao').disabled = false; }
+    if (byId('mpf-liga')) { byId('mpf-liga').value = item.liga || 'Alumínio AlMg5'; byId('mpf-liga').disabled = false; }
+    if (byId('mpf-peso')) { byId('mpf-peso').value = item.peso || ''; byId('mpf-peso').disabled = false; }
+    if (byId('mpf-status')) { byId('mpf-status').value = item.ativo !== false ? 'true' : 'false'; byId('mpf-status').disabled = false; }
+    if (byId('mpf-aplicacoes')) { byId('mpf-aplicacoes').value = (item.aplicacoes || []).join(', '); byId('mpf-aplicacoes').disabled = false; }
+    if (byId('mpf-obs')) { byId('mpf-obs').value = item.obs || ''; byId('mpf-obs').disabled = false; }
+
+    const saveBtn = byId('btn-save-produto-fundicao');
+    if (saveBtn) saveBtn.style.display = 'inline-flex';
+
+    byId('modal-produto-fundicao')?.classList.remove('hidden');
+  }
+
+  function openViewProdutoFundicao(id) {
+    const item = getCombinedCatalog().find(i => i.id === id);
+    if (!item) return;
+
+    state.editingId = id;
+    state.isViewing = true;
+
+    if (byId('modal-produto-fundicao-title')) byId('modal-produto-fundicao-title').textContent = `Ficha Técnica: ${item.coquilha}`;
+    if (byId('mpf-id')) byId('mpf-id').value = id;
+    if (byId('mpf-coquilha')) { byId('mpf-coquilha').value = item.coquilha; byId('mpf-coquilha').disabled = true; }
+    if (byId('mpf-descricao')) { byId('mpf-descricao').value = item.descricao; byId('mpf-descricao').disabled = true; }
+    if (byId('mpf-liga')) { byId('mpf-liga').value = item.liga || 'Alumínio AlMg5'; byId('mpf-liga').disabled = true; }
+    if (byId('mpf-peso')) { byId('mpf-peso').value = item.peso || ''; byId('mpf-peso').disabled = true; }
+    if (byId('mpf-status')) { byId('mpf-status').value = item.ativo !== false ? 'true' : 'false'; byId('mpf-status').disabled = true; }
+    if (byId('mpf-aplicacoes')) { byId('mpf-aplicacoes').value = (item.aplicacoes || []).join(', '); byId('mpf-aplicacoes').disabled = true; }
+    if (byId('mpf-obs')) { byId('mpf-obs').value = item.obs || ''; byId('mpf-obs').disabled = true; }
+
+    const saveBtn = byId('btn-save-produto-fundicao');
+    if (saveBtn) saveBtn.style.display = 'none';
+
+    byId('modal-produto-fundicao')?.classList.remove('hidden');
+  }
+
+  function closeModalProdutoFundicao() {
+    byId('modal-produto-fundicao')?.classList.add('hidden');
+  }
+
+  function saveProdutoFundicao() {
+    if (state.isViewing) {
+      closeModalProdutoFundicao();
       return;
     }
 
-    if (confirm(`Tem certeza que deseja excluir o item ${item.sku} (${item.coquilha})?`)) {
-      DB.deleteFundicaoCatalogItem(id);
-      if (typeof showToast === 'function') showToast('Item removido do Catálogo de Fundição.', 'info');
-      renderCatalogoFundicao();
+    const coquilha = String(byId('mpf-coquilha')?.value || '').trim();
+    const descricao = String(byId('mpf-descricao')?.value || '').trim();
+    const liga = String(byId('mpf-liga')?.value || 'Alumínio AlMg5').trim();
+    const peso = parseFloat(byId('mpf-peso')?.value) || 0;
+    const ativo = byId('mpf-status')?.value === 'true';
+    const aplicacoesRaw = String(byId('mpf-aplicacoes')?.value || '').trim();
+    const aplicacoes = aplicacoesRaw ? aplicacoesRaw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) : [];
+    const obs = String(byId('mpf-obs')?.value || '').trim();
+
+    if (!coquilha) {
+      if (typeof showToast === 'function') showToast('Informe o código da coquilha/molde.', 'error');
+      return;
+    }
+    if (!descricao) {
+      if (typeof showToast === 'function') showToast('Informe a descrição do produto.', 'error');
+      return;
+    }
+    if (peso <= 0) {
+      if (typeof showToast === 'function') showToast('Informe um peso unitário válido maior que zero.', 'error');
+      return;
+    }
+
+    const payload = {
+      coquilha,
+      descricao,
+      sku: coquilha,
+      liga,
+      peso,
+      aplicacoes,
+      ativo,
+      obs
+    };
+
+    if (state.editingId) {
+      const catalog = DB.getFundicaoCatalog();
+      const existingInCatalog = catalog.find(c => c.id === state.editingId || c.coquilha.toUpperCase() === coquilha.toUpperCase());
+      if (existingInCatalog) {
+        DB.updateFundicaoCatalogItem(existingInCatalog.id, payload);
+      } else {
+        DB.addFundicaoCatalogItem(payload);
+      }
+      if (typeof showToast === 'function') showToast(`Produto ${coquilha} atualizado no Catálogo!`, 'success');
+    } else {
+      DB.addFundicaoCatalogItem(payload);
+      if (typeof showToast === 'function') showToast(`Produto ${coquilha} cadastrado com sucesso!`, 'success');
+    }
+
+    closeModalProdutoFundicao();
+    renderCatalogoFundicao();
+    if (typeof window.renderProgramacaoFundicao === 'function') {
+      window.renderProgramacaoFundicao();
     }
   }
 
-  // Exposição global
+  function toggleStatusProdutoFundicao(id) {
+    if (typeof DB === 'undefined') return;
+    const item = getCombinedCatalog().find(i => i.id === id);
+    if (!item) return;
+
+    const catalog = DB.getFundicaoCatalog();
+    const existing = catalog.find(c => c.id === id || c.coquilha.toUpperCase() === item.coquilha.toUpperCase());
+
+    if (existing) {
+      DB.toggleFundicaoCatalogItemStatus(existing.id);
+    } else {
+      DB.addFundicaoCatalogItem({
+        ...item,
+        ativo: !item.ativo
+      });
+    }
+
+    const novoStatus = item.ativo ? 'inativado' : 'ativado';
+    if (typeof showToast === 'function') showToast(`Produto ${item.coquilha} ${novoStatus}.`, 'info');
+    renderCatalogoFundicao();
+    if (typeof window.renderProgramacaoFundicao === 'function') {
+      window.renderProgramacaoFundicao();
+    }
+  }
+
+  function deleteProdutoFundicao(id) {
+    if (typeof DB === 'undefined') return;
+    const item = getCombinedCatalog().find(i => i.id === id);
+    if (!item) return;
+
+    if (!confirm(`Tem certeza que deseja excluir o produto "${item.coquilha} - ${item.descricao}" do Catálogo de Fundição?`)) return;
+
+    const catalog = DB.getFundicaoCatalog();
+    const existing = catalog.find(c => c.id === id || c.coquilha.toUpperCase() === item.coquilha.toUpperCase());
+    if (existing) {
+      DB.deleteFundicaoCatalogItem(existing.id);
+    }
+
+    if (typeof showToast === 'function') showToast(`Produto ${item.coquilha} removido do Catálogo.`, 'error');
+    renderCatalogoFundicao();
+    if (typeof window.renderProgramacaoFundicao === 'function') {
+      window.renderProgramacaoFundicao();
+    }
+  }
+
+  // Exposição Global
   window.renderCatalogoFundicao = renderCatalogoFundicao;
-  window.toggleCoquilhaExpand = toggleCoquilhaExpand;
-  window.expandAllCoquilhas = expandAllCoquilhas;
-  window.collapseAllCoquilhas = collapseAllCoquilhas;
-  window.promptSetCoquilhaPeso = promptSetCoquilhaPeso;
-  window.openNovoCatalogoFundicao = openNovoCatalogoFundicao;
-  window.openEditCatalogoFundicao = openEditCatalogoFundicao;
-  window.deleteCatalogoFundicao = deleteCatalogoFundicao;
+  window.openNovoProdutoFundicao = openNovoProdutoFundicao;
+  window.openEditProdutoFundicao = openEditProdutoFundicao;
+  window.openViewProdutoFundicao = openViewProdutoFundicao;
+  window.closeModalProdutoFundicao = closeModalProdutoFundicao;
+  window.saveProdutoFundicao = saveProdutoFundicao;
+  window.toggleStatusProdutoFundicao = toggleStatusProdutoFundicao;
+  window.deleteProdutoFundicao = deleteProdutoFundicao;
+  window.getCombinedCatalog = getCombinedCatalog;
 
-  // DOM Event Listeners
+  // Listeners DOM
   document.addEventListener('DOMContentLoaded', () => {
-    byId('btn-novo-cf')?.addEventListener('click', () => openNovoCatalogoFundicao());
-
-    byId('cf-expand-all')?.addEventListener('click', expandAllCoquilhas);
-    byId('cf-collapse-all')?.addEventListener('click', collapseAllCoquilhas);
+    byId('btn-novo-cf')?.addEventListener('click', openNovoProdutoFundicao);
+    byId('modal-produto-fundicao-close')?.addEventListener('click', closeModalProdutoFundicao);
+    byId('btn-cancel-produto-fundicao')?.addEventListener('click', closeModalProdutoFundicao);
+    byId('btn-save-produto-fundicao')?.addEventListener('click', saveProdutoFundicao);
 
     byId('cf-search')?.addEventListener('input', renderCatalogoFundicao);
+    byId('cf-filter-status')?.addEventListener('change', renderCatalogoFundicao);
     byId('cf-filter-coquilha')?.addEventListener('change', renderCatalogoFundicao);
     byId('cf-limpar-filtros')?.addEventListener('click', () => {
       if (byId('cf-search')) byId('cf-search').value = '';
+      if (byId('cf-filter-status')) byId('cf-filter-status').value = '';
       if (byId('cf-filter-coquilha')) byId('cf-filter-coquilha').value = '';
       renderCatalogoFundicao();
     });
   });
 })();
-
-
