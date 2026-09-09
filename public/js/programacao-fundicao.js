@@ -53,26 +53,16 @@
     const norm = normalizeRawCode(coq);
 
     // 1. Saldo do backend sincronizado (/api/raw-stock)
-    const fromApi = Number(state.rawStock.get(norm)?.quantity);
-    if (Number.isFinite(fromApi) && fromApi > 0) return fromApi;
+    const apiItem = state.rawStock.get(norm);
+    if (apiItem && Number.isFinite(Number(apiItem.quantity))) return Number(apiItem.quantity);
 
     // 2. Saldo de materiais do DB local
     if (typeof DB !== 'undefined' && typeof DB.getRawStock === 'function') {
       const fromDb = DB.getRawStock(coq);
-      if (fromDb > 0) return fromDb;
+      if (Number.isFinite(Number(fromDb))) return Number(fromDb);
     }
 
-    // 3. Saldo acumulado de OPs de Fundição já finalizadas (para consistência imediata)
-    if (typeof DB !== 'undefined' && typeof DB.getFundicoes === 'function') {
-      const ops = DB.getFundicoes().filter(f =>
-        (f.status === 'Fundido' || f.finalizada) &&
-        normalizeRawCode(f.coquilha || f.produto || f.modelo) === norm
-      );
-      const sumFinalized = ops.reduce((acc, f) => acc + (Number(f.qtyProduzida || f.quantidadeProduzida || f.qty) || 0), 0);
-      if (sumFinalized > 0) return sumFinalized;
-    }
-
-    return fromApi || 0;
+    return 0;
   }
 
   function formatDatePt(dateStr) {
@@ -136,7 +126,7 @@
         liga: item.liga || 'Alumínio AlMg5',
         skus: [],
         mediaTotal: 0,
-        estoqueFisicoTotal: Number(state.rawStock.get(normalizeRawCode(coq))?.quantity) || 0,
+        estoqueFisicoTotal: getCoquilhaEstoqueFisico(coq),
         prodNecTotal: 0,
         pesoUnitario: Number(item.peso) || (typeof DB.getCoquilhaPeso === 'function' ? DB.getCoquilhaPeso(coq) : 0),
       });

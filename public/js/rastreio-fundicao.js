@@ -54,6 +54,21 @@
     return `Peça bruta ${coquilha}`;
   }
 
+  function cacheServerOrders(result) {
+    if (!Array.isArray(result?.orders)) return;
+    if (typeof window.applyFundicaoServerState === 'function') {
+      window.applyFundicaoServerState(result);
+    } else if (typeof DB !== 'undefined' && typeof DB.saveFundicoes === 'function') {
+      DB.saveFundicoes(result.orders);
+    }
+  }
+
+  async function readApiResult(response) {
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || `Falha na comunicação com o servidor (HTTP ${response.status}).`);
+    return result;
+  }
+
   /**
    * Busca as OPs no backend Postgres (ou localStorage se offline)
    */
@@ -67,10 +82,8 @@
         const json = await res.json();
         if (Array.isArray(json.orders)) {
           state.ops = json.orders;
-          // Sincroniza localmente com DB caso esteja offline depois
-          if (typeof DB !== 'undefined' && typeof DB.saveFundicoes === 'function') {
-            DB.saveFundicoes(json.orders);
-          }
+          // O backend é a fonte oficial das OPs; aqui apenas atualizamos o cache.
+          cacheServerOrders(json);
           return;
         }
       }
@@ -218,9 +231,6 @@
                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                Concluída
              </span>
-             <button type="button" class="btn-icon btn-danger btn-delete-op" data-id="${escapeHtml(op.id)}" title="Excluir histórico desta OP" style="opacity:0.6;">
-               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-             </button>
            </div>`
         : `<div style="display:flex; gap:6px; justify-content:flex-end; align-items:center;">
              <button type="button" class="btn-sm btn-finalizar-op" data-id="${escapeHtml(op.id)}" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color:white; border:1px solid #22c55e; border-radius:6px; padding:5px 11px; font-weight:700; font-size:0.8rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(22,163,74,0.3);" title="Confirmar produção e creditar peças no Estoque Físico">
@@ -338,18 +348,15 @@
     }
 
     const payload = {
-      quantidadeProduzida: qty,
+      qtyProduzida: qty,
       dataFinalizacao,
-      responsavelConclusao: responsavel,
-      observacoes: obs,
+      responsavel,
+      obs,
       actor: window.PCP_CURRENT_USER || 'operador'
     };
 
-    let serverSuccess = false;
-    let returnedStock = null;
-
     try {
-      const res = await fetch(`/api/fundicao-ops/${encodeURIComponent(opId)}/finalizar`, {
+      const response = await fetch(`/api/fundicao-ops/${encodeURIComponent(opId)}/finalizar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -357,54 +364,25 @@
         },
         body: JSON.stringify(payload)
       });
+      const result = await readApiResult(response);
+      cacheServerOrders(result);
 
-      if (res.ok) {
-        const json = await res.json();
-        serverSuccess = true;
-        returnedStock = json.stock;
+      // Finalização e entrada em estoque ocorrem em uma única transação no servidor.
+      if (typeof window.refreshRawStock === 'function') await window.refreshRawStock();
+      closeModalFinalizarOp();
+      if (typeof showToast === 'function') {
+        showToast(`OP finalizada. +${qty} peças creditadas no estoque físico de brutos.`, 'success');
       }
-    } catch (err) {
-      console.warn('[Rastreio Fundição] Falha ao comunicar com o servidor para finalizar OP:', err);
-    }
-
-    // Atualiza localmente no DB
-    if (typeof DB !== 'undefined' && typeof DB.finalizeFundicao === 'function') {
-      try {
-        DB.finalizeFundicao(opId, payload);
-      } catch (e) {
-        console.warn('Erro no finalizeFundicao local:', e);
+      await renderRastreioFundicao();
+      if (typeof window.renderProgramacaoFundicao === 'function') window.renderProgramacaoFundicao();
+    } catch (error) {
+      if (typeof showToast === 'function') showToast(error.message || 'Não foi possível finalizar a OP.', 'error');
+    } finally {
+      if (btnConfirmar) {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = originalText;
       }
     }
-
-    closeModalFinalizarOp();
-
-    if (btnConfirmar) {
-      btnConfirmar.disabled = false;
-      btnConfirmar.innerHTML = originalText;
-    }
-
-    // Atualiza o estoque físico na tela de Programação de Fundição
-    if (returnedStock && typeof window.refreshRawStock === 'function') {
-      try {
-        window.refreshRawStock();
-      } catch (_) {}
-    } else if (typeof window.refreshRawStock === 'function') {
-      try {
-        window.refreshRawStock();
-      } catch (_) {}
-    }
-
-    if (typeof window.renderProgramacaoFundicao === 'function') {
-      try {
-        window.renderProgramacaoFundicao();
-      } catch (_) {}
-    }
-
-    if (typeof showToast === 'function') {
-      showToast(`OP finalizada com sucesso! +${qty} peças adicionadas ao Estoque Físico.`, 'success');
-    }
-
-    await renderRastreioFundicao();
   }
 
   /**
@@ -419,14 +397,14 @@
     }
 
     try {
-      await fetch(`/api/fundicao-ops/${encodeURIComponent(opId)}`, {
+      const response = await fetch(`/api/fundicao-ops/${encodeURIComponent(opId)}`, {
         method: 'DELETE',
         headers: { 'X-PCP-User': window.PCP_CURRENT_USER || '' }
       });
-    } catch (_) {}
-
-    if (typeof DB !== 'undefined' && typeof DB.deleteFundicao === 'function') {
-      DB.deleteFundicao(opId);
+      cacheServerOrders(await readApiResult(response));
+    } catch (error) {
+      if (typeof showToast === 'function') showToast(error.message || 'Não foi possível excluir a OP.', 'error');
+      return;
     }
 
     if (typeof showToast === 'function') {

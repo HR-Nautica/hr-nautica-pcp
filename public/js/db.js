@@ -1168,7 +1168,13 @@ const DB = {
 
   getRawStock(coquilha) {
     if (!coquilha) return 0;
-    const mat = this.getMateriais().find(m => m.nome.trim().toLowerCase() === String(coquilha).trim().toLowerCase());
+    const normalized = String(coquilha).trim().toLocaleUpperCase('pt-BR').replace(/\s+/g, ' ');
+    const mat = this.getMateriais().find(m => {
+      const code = String(m.rawCode || m.nome || '').trim().toLocaleUpperCase('pt-BR').replace(/\s+/g, ' ');
+      // Mantém compatibilidade com registros locais antigos, que não tinham
+      // categoria/rawCode. O backend atual sempre grava ambos os campos.
+      return code === normalized;
+    });
     return mat ? (parseFloat(mat.saldo) || 0) : 0;
   },
 
@@ -1514,4 +1520,3 @@ const DB = {
     }
   },
 };
-

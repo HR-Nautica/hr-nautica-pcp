@@ -1452,28 +1452,35 @@ function openNovaFundicao(prefilledCoquilha = '', suggestedQty = 50, pesoUnitari
   if ($('modal-fundicao-title')) $('modal-fundicao-title').textContent = 'Criar Ordem de Produção de Fundição';
   if ($('fundicao-edit-id')) $('fundicao-edit-id').value = '';
   
-  const nextNum = DB.nextFundicaoNumber();
-  if ($('fundicao-lote')) $('fundicao-lote').value = nextNum;
+  if ($('fundicao-lote')) $('fundicao-lote').value = 'Será gerado ao salvar';
   if ($('fundicao-qty')) $('fundicao-qty').value = suggestedQty > 0 ? suggestedQty : 50;
   if ($('fundicao-liga')) $('fundicao-liga').value = 'Alumínio AlMg5';
   if ($('fundicao-data')) $('fundicao-data').value = new Date().toISOString().split('T')[0];
   if ($('fundicao-responsavel')) $('fundicao-responsavel').value = window.PCP_CURRENT_USER || '';
   if ($('fundicao-obs')) $('fundicao-obs').value = pesoUnitario > 0 ? `Peso unitário estimado: ${pesoUnitario.toFixed(3)} kg` : '';
 
-  // Popula opções com os produtos/coquilhas do catálogo
+  // A OP só pode ser aberta para um bruto cadastrado no catálogo. Assim as três
+  // telas usam exatamente o mesmo código de coquilha.
   const select = $('fundicao-modelo');
   if (select) {
-    const catalog = typeof DB.getFundicaoCatalog === 'function' ? DB.getFundicaoCatalog().filter(c => c.ativo !== false) : [];
-    const coquilhas = typeof DB.getCoquilhasCatalog === 'function' ? DB.getCoquilhasCatalog() : [];
-    const allProducts = [...new Set([...coquilhas, ...catalog.map(c => c.coquilha)])].filter(Boolean)
-      .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+    const catalog = typeof window.getCombinedCatalog === 'function'
+      ? window.getCombinedCatalog().filter(item => item.ativo !== false)
+      : (typeof DB.getFundicaoCatalog === 'function' ? DB.getFundicaoCatalog().filter(item => item.ativo !== false) : []);
+    const productsByCode = new Map();
+    catalog.forEach(item => {
+      const code = String(item.coquilha || item.codigo || '').trim();
+      if (code && !productsByCode.has(code.toLocaleUpperCase('pt-BR'))) {
+        productsByCode.set(code.toLocaleUpperCase('pt-BR'), { ...item, coquilha: code });
+      }
+    });
+    const allProducts = [...productsByCode.values()]
+      .sort((a, b) => a.coquilha.localeCompare(b.coquilha, 'pt-BR', { numeric: true }));
 
     const opts = [
       '<option value="">— Selecione o produto / coquilha —</option>',
-      ...allProducts.map(coq => {
-        const found = catalog.find(c => c.coquilha === coq);
-        const desc = found?.descricao ? ` (${found.descricao})` : '';
-        return `<option value="${coq}">${coq}${desc}</option>`;
+      ...allProducts.map(item => {
+        const desc = item.descricao ? ` — ${item.descricao}` : '';
+        return `<option value="${item.coquilha}">${item.coquilha}${desc}</option>`;
       })
     ];
     select.innerHTML = opts.join('');
@@ -1487,11 +1494,15 @@ window.openNovaFundicao = openNovaFundicao;
 function openEditFundicao(id) {
   const f = DB.getFundicoes().find(x => x.id === id);
   if (!f) return;
+  if (f.status === 'Fundido') {
+    showToast('Uma OP fundida faz parte do histórico e não pode ser alterada.', 'error');
+    return;
+  }
+  // openNovaFundicao limpa o estado de edição, então o id é restaurado depois.
+  openNovaFundicao(f.coquilha || f.modelo, f.qtyPlanejada || f.qty, f.pesoUnitario || f.peso);
   STATE.editingFundicaoId = id;
   if ($('modal-fundicao-title')) $('modal-fundicao-title').textContent = `Editar OP: ${f.numero}`;
   if ($('fundicao-edit-id')) $('fundicao-edit-id').value = id;
-
-  openNovaFundicao(f.coquilha || f.modelo, f.qtyPlanejada || f.qty, f.pesoUnitario || f.peso);
   if ($('fundicao-lote')) $('fundicao-lote').value = f.numero || f.lote;
   if ($('fundicao-qty')) $('fundicao-qty').value = f.qtyPlanejada || f.qty;
   if ($('fundicao-liga')) $('fundicao-liga').value = f.liga || 'Alumínio AlMg5';
@@ -1504,11 +1515,29 @@ window.openEditFundicao = openEditFundicao;
 function closeModalFundicao() { $('modal-fundicao')?.classList.add('hidden'); }
 window.closeModalFundicao = closeModalFundicao;
 
+function applyFundicaoServerState(result) {
+  if (!Array.isArray(result?.orders)) return;
+  if (typeof RemoteStorage !== 'undefined' && typeof RemoteStorage.applyServerState === 'function') {
+    RemoteStorage.applyServerState(DB.KEYS.fundicoes, result.orders, result.version, result.revision);
+    return;
+  }
+  DB.saveFundicoes(result.orders);
+}
+window.applyFundicaoServerState = applyFundicaoServerState;
+
+async function readFundicaoApiResult(response) {
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.error || `Não foi possível gravar a OP (HTTP ${response.status}).`);
+  }
+  return result;
+}
+
 async function saveFundicao() {
   const coquilha = $('fundicao-modelo')?.value || '';
   if (!coquilha) { showToast('Selecione o produto / coquilha.', 'error'); return; }
   const qty = parseInt($('fundicao-qty')?.value) || 1;
-  const lote = $('fundicao-lote')?.value.trim() || DB.nextFundicaoNumber();
+  const lote = STATE.editingFundicaoId ? ($('fundicao-lote')?.value.trim() || 'OP') : 'nova OP';
 
   const data = {
     produto: coquilha,
@@ -1528,36 +1557,32 @@ async function saveFundicao() {
 
   try {
     if (STATE.editingFundicaoId) {
-      DB.updateFundicao(STATE.editingFundicaoId, data);
-      showToast('Ordem de Produção atualizada com sucesso!', 'success');
+      const response = await fetch(`/api/fundicao-ops/${encodeURIComponent(STATE.editingFundicaoId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
+        body: JSON.stringify(data)
+      });
+      const result = await readFundicaoApiResult(response);
+      applyFundicaoServerState(result);
+      showToast(`OP ${result.op?.numero || lote} atualizada.`, 'success');
     } else {
-      // Tenta criar na API central do servidor
-      try {
-        const response = await fetch('/api/fundicao-ops', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
-          body: JSON.stringify(data)
-        });
-        if (response.ok) {
-          const res = await response.json();
-          if (res.op) data.id = res.op.id;
-        }
-      } catch (err) {
-        console.warn('Fallback para armazenamento local de OP fundição:', err);
-      }
-
-      DB.addFundicao(data);
-      showToast(`OP ${lote} criada com status 'Em aberto'! Acompanhe no Rastreio.`, 'success');
+      const response = await fetch('/api/fundicao-ops', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
+        body: JSON.stringify(data)
+      });
+      const result = await readFundicaoApiResult(response);
+      applyFundicaoServerState(result);
+      showToast(`OP ${result.op?.numero || lote} criada e enviada ao Rastreio de OPs.`, 'success');
     }
   } catch (error) {
     showToast(error.message || 'Erro ao salvar OP de fundição.', 'error');
+    return;
   }
 
   closeModalFundicao();
   renderFundicao();
-  if (typeof window.renderRastreioFundicao === 'function') {
-    window.renderRastreioFundicao();
-  }
+  navigate('rastreio-fundicao');
 }
 window.saveFundicao = saveFundicao;
 
@@ -1571,13 +1596,16 @@ async function deleteFundicao(id) {
   if (!confirm(`Excluir a ordem de produção ${f.numero || f.lote}?`)) return;
 
   try {
-    await fetch(`/api/fundicao-ops/${encodeURIComponent(id)}`, {
+    const response = await fetch(`/api/fundicao-ops/${encodeURIComponent(id)}`, {
       method: 'DELETE',
       headers: { 'X-PCP-User': window.PCP_CURRENT_USER || '' }
-    }).catch(() => {});
-  } catch (_) {}
+    });
+    applyFundicaoServerState(await readFundicaoApiResult(response));
+  } catch (error) {
+    showToast(error.message || 'Não foi possível cancelar a OP de fundição.', 'error');
+    return;
+  }
 
-  DB.deleteFundicao(id);
   renderFundicao();
   if (typeof window.renderRastreioFundicao === 'function') {
     window.renderRastreioFundicao();

@@ -56,18 +56,18 @@
         Rastreio OP. Hélices
       </a>
 
-      <div class="sidebar-title">Hélices Fundidas</div>
+      <div class="sidebar-title">Fundição</div>
       <a href="#" class="nav-item" data-page="catalogo-fundicao" id="nav-catalogo-fundicao">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        Catálogo de Fundição
+        Catálogo de Brutos
       </a>
       <a href="#" class="nav-item" data-page="fundicao" id="nav-fundicao">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-        Programação de Fundição
+        Programação
       </a>
       <a href="#" class="nav-item" data-page="rastreio-fundicao" id="nav-rastreio-fundicao">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        Rastreio OP. Fundição
+        Rastreio de OPs
       </a>
 
       <div class="sidebar-title">Buchas</div>
@@ -1048,11 +1048,12 @@
     </div>
 
     <!-- ──── PAGE: CATÁLOGO DE FUNDIÇÃO (CADASTRO DE PRODUTOS E COQUILHAS) ──── -->
-    <div class="page hidden" id="page-catalogo-fundicao">
+    <div class="page hidden fundicao-page" id="page-catalogo-fundicao">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Catálogo de Fundição</h1>
-          <p class="page-subtitle">Cadastro técnico, dados metalúrgicos e especificações dos produtos de fundição</p>
+          <span class="fundicao-eyebrow">Etapa 1 · Cadastro</span>
+          <h1 class="page-title">Catálogo de Brutos</h1>
+          <p class="page-subtitle">Cadastre a peça bruta e indique quais hélices podem ser produzidas com ela.</p>
         </div>
         <div class="header-actions">
           <button class="btn-primary" id="btn-novo-cf" style="font-size:0.95rem; font-weight:600;">
@@ -1061,6 +1062,12 @@
           </button>
         </div>
       </div>
+
+      <nav class="fundicao-flow-nav" aria-label="Fluxo de fundição">
+        <button type="button" class="active" onclick="navigate('catalogo-fundicao')">1. Catálogo de brutos</button>
+        <button type="button" onclick="navigate('fundicao')">2. Programação</button>
+        <button type="button" onclick="navigate('rastreio-fundicao')">3. Rastreio de OPs</button>
+      </nav>
 
       <!-- KPIs do Catálogo de Fundição -->
       <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
@@ -1158,11 +1165,12 @@
     </div>
 
     <!-- ──── PAGE: PROGRAMAÇÃO DE FUNDIÇÃO (ANÁLISE, ESTOQUE FÍSICO E CRIAÇÃO DE OP) ──── -->
-    <div class="page hidden" id="page-fundicao">
+    <div class="page hidden fundicao-page" id="page-fundicao">
       <div class="page-header">
         <div>
+          <span class="fundicao-eyebrow">Etapa 2 · Planejamento e estoque</span>
           <h1 class="page-title">Programação de Fundição</h1>
-          <p class="modal-subtitle">Estoque físico de peças brutas, análise de consumo médio, criticidade e necessidade de produção</p>
+          <p class="page-subtitle">Consulte o saldo oficial das peças brutas, priorize necessidades e abra OPs de fundição.</p>
         </div>
         <div class="header-actions">
           <input type="text" class="search-input" id="fundicao-search" placeholder="Buscar por coquilha ou modelo..." />
@@ -1178,6 +1186,12 @@
           </button>
         </div>
       </div>
+
+      <nav class="fundicao-flow-nav" aria-label="Fluxo de fundição">
+        <button type="button" onclick="navigate('catalogo-fundicao')">1. Catálogo de brutos</button>
+        <button type="button" class="active" onclick="navigate('fundicao')">2. Programação</button>
+        <button type="button" onclick="navigate('rastreio-fundicao')">3. Rastreio de OPs</button>
+      </nav>
 
       <div class="kpi-grid">
         <div class="kpi-card">
@@ -1254,11 +1268,12 @@
     </div>
 
     <!-- ──── PAGE: RASTREIO OP. FUNDIÇÃO (ACOMPANHAMENTO E FINALIZAÇÃO DE OPS) ──── -->
-    <div class="page hidden" id="page-rastreio-fundicao">
+    <div class="page hidden fundicao-page" id="page-rastreio-fundicao">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Rastreio OP. Fundição</h1>
-          <p class="page-subtitle">Acompanhamento das Ordens de Produção e entrada física no estoque ao finalizar</p>
+          <span class="fundicao-eyebrow">Etapa 3 · Produção</span>
+          <h1 class="page-title">Rastreio de OPs de Fundição</h1>
+          <p class="page-subtitle">Acompanhe as OPs abertas e finalize a produção para creditar o saldo físico do bruto.</p>
         </div>
         <div class="header-actions">
           <input type="text" class="search-input" id="rf-search" placeholder="Buscar por OP, produto ou responsável..." />
@@ -1273,6 +1288,12 @@
           </button>
         </div>
       </div>
+
+      <nav class="fundicao-flow-nav" aria-label="Fluxo de fundição">
+        <button type="button" onclick="navigate('catalogo-fundicao')">1. Catálogo de brutos</button>
+        <button type="button" onclick="navigate('fundicao')">2. Programação</button>
+        <button type="button" class="active" onclick="navigate('rastreio-fundicao')">3. Rastreio de OPs</button>
+      </nav>
 
       <!-- KPIs do Rastreio -->
       <div class="kpi-grid">
@@ -2238,7 +2259,8 @@
           </div>
           <div class="form-group fundicao-field">
             <label class="form-label" for="fundicao-lote">Nº da OP de Fundição</label>
-            <input type="text" class="form-input fundicao-input-control" id="fundicao-lote" placeholder="Ex: OP-FND-2026-001" />
+            <input type="text" class="form-input fundicao-input-control" id="fundicao-lote" readonly aria-describedby="fundicao-lote-help" />
+            <small id="fundicao-lote-help" class="text-muted">Gerado automaticamente ao salvar.</small>
           </div>
           <div class="form-group fundicao-field">
             <label class="form-label" for="fundicao-qty">Quantidade Planejada (peças) <span class="req">*</span></label>

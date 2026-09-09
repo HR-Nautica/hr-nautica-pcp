@@ -58,8 +58,15 @@
       });
     });
 
-    // 2. Coquilhas registradas sem cadastro detalhado ainda
-    coquilhas.forEach(coq => {
+    // 2. Coquilhas registradas e códigos brutos presentes nos modelos de hélice.
+    // Um modelo vinculado a um bruto também deve aparecer aqui, mesmo quando o
+    // cadastro detalhado ainda não foi preenchido.
+    const rawCodes = [...new Set([
+      ...coquilhas,
+      ...modelos.map(modelo => modelo.codigoBruto)
+    ].map(value => String(value || '').trim()).filter(Boolean))];
+
+    rawCodes.forEach(coq => {
       const coqStr = String(coq || '').trim();
       if (!coqStr) return;
       const existing = Array.from(itemsMap.values()).find(item => item.coquilha.toUpperCase() === coqStr.toUpperCase());
@@ -84,14 +91,13 @@
           obs: '',
           origem: 'coquilha'
         });
-      } else if (!existing.aplicacoes || !existing.aplicacoes.length) {
-        // Enriquece aplicações existentes com modelos do catálogo de hélices
+      } else {
+        // As aplicações preenchidas manualmente são preservadas e os modelos
+        // vinculados pelo campo codigoBruto são acrescentados automaticamente.
         const linkedSkus = modelos
           .filter(m => String(m.codigoBruto || '').trim().toUpperCase() === coqStr.toUpperCase())
           .map(m => m.sku);
-        if (linkedSkus.length) {
-          existing.aplicacoes = [...new Set([...(existing.aplicacoes || []), ...linkedSkus])];
-        }
+        if (linkedSkus.length) existing.aplicacoes = [...new Set([...(existing.aplicacoes || []), ...linkedSkus])];
       }
     });
 

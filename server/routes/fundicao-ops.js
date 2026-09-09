@@ -3,7 +3,8 @@ import {
   createFundicaoOrder,
   deleteFundicaoOrder,
   finalizeFundicaoOrder,
-  getFundicaoOrders
+  getFundicaoOrders,
+  updateFundicaoOrder
 } from "../database.js";
 
 const router = Router();
@@ -39,6 +40,19 @@ router.post("/", async (req, res, next) => {
 router.post("/:id/finalizar", async (req, res, next) => {
   try {
     const result = await finalizeFundicaoOrder(req.params.id, req.body, actor(req));
+    if (!result) return res.status(404).json({ ok: false, error: "OP de fundição não encontrada." });
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    if ([409, 503].includes(error.status) || error instanceof TypeError || error instanceof RangeError) {
+      return res.status(error.status || 400).json({ ok: false, code: error.code, error: error.message });
+    }
+    next(error);
+  }
+});
+
+router.put("/:id", async (req, res, next) => {
+  try {
+    const result = await updateFundicaoOrder(req.params.id, req.body, actor(req));
     if (!result) return res.status(404).json({ ok: false, error: "OP de fundição não encontrada." });
     return res.json({ ok: true, ...result });
   } catch (error) {
