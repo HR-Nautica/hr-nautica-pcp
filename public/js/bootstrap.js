@@ -14,6 +14,7 @@ const applicationScripts = [
   "/js/catalogo-fundicao.js",
   "/js/programacao-fundicao.js",
   "/js/rastreio-fundicao.js",
+  "/js/workspace-ui.js",
   "/js/syncManagerPage.js",
   "/js/app.js"
 ];
