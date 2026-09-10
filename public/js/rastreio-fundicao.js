@@ -192,7 +192,6 @@
       tbody.innerHTML = `
         <tr>
           <td colspan="10" class="empty-cell" style="padding: 2.5rem 1rem; text-align: center;">
-            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔍</div>
             <strong style="color: var(--text-primary); display:block; font-size: 1rem;">Nenhuma Ordem de Produção encontrada</strong>
             <span style="color: var(--text-muted); font-size: 0.85rem;">
               ${searchTerm || statusFilter ? 'Tente ajustar os termos de busca ou filtros.' : 'Clique em "Nova OP Fundição" para programar um lote.'}

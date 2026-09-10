@@ -1,0 +1,738 @@
+/* HR Náutica — Design System global
+   Este arquivo é carregado por último e é a fonte de verdade visual do produto. */
+
+:root {
+  --hr-bg: #0a101c;
+  --hr-surface-1: #0f1726;
+  --hr-surface-2: #131d2d;
+  --hr-surface-3: #182437;
+  --hr-border: #243247;
+  --hr-border-subtle: rgba(255, 255, 255, 0.06);
+  --hr-text-primary: #f5f7fa;
+  --hr-text-secondary: #a5b3c5;
+  --hr-text-muted: #6f8098;
+  --hr-accent: #3b82f6;
+  --hr-accent-hover: #5794f8;
+  --hr-success: #4ade80;
+  --hr-warning: #fbbf24;
+  --hr-danger: #f87171;
+  --hr-info: #60a5fa;
+  --hr-radius-sm: 6px;
+  --hr-radius-md: 8px;
+  --hr-radius-lg: 10px;
+  --hr-control-height: 36px;
+  --hr-sidebar-width: 232px;
+  --hr-content-x: 32px;
+  --hr-content-top: 24px;
+
+  /* Compatibilidade com componentes legados. */
+  --bg-base: var(--hr-bg);
+  --bg-surface: var(--hr-surface-1);
+  --bg-elevated: var(--hr-surface-2);
+  --bg-card: var(--hr-surface-2);
+  --sidebar-bg: var(--hr-surface-1);
+  --sidebar-width: var(--hr-sidebar-width);
+  --border: var(--hr-border-subtle);
+  --border-hover: var(--hr-border);
+  --text-primary: var(--hr-text-primary);
+  --text-secondary: var(--hr-text-secondary);
+  --text-muted: var(--hr-text-muted);
+  --primary: var(--hr-accent);
+  --primary-hover: var(--hr-accent-hover);
+  --primary-glow: rgba(59, 130, 246, 0.16);
+  --accent-blue: var(--hr-accent);
+  --accent-blue-bg: rgba(59, 130, 246, 0.11);
+  --accent-teal: var(--hr-info);
+  --accent-teal-bg: rgba(59, 130, 246, 0.11);
+  --accent-purple: var(--hr-accent);
+  --accent-purple-bg: rgba(59, 130, 246, 0.11);
+  --accent-green: var(--hr-success);
+  --accent-green-bg: rgba(34, 197, 94, 0.11);
+  --accent-orange: var(--hr-warning);
+  --accent-orange-bg: rgba(245, 158, 11, 0.11);
+  --accent-red: var(--hr-danger);
+  --accent-red-bg: rgba(239, 68, 68, 0.11);
+  --bg-hover: var(--hr-surface-3);
+  --erp-surface: var(--hr-surface-1);
+  --erp-surface-raised: var(--hr-surface-2);
+  --erp-border: var(--hr-border-subtle);
+  --erp-border-strong: var(--hr-border);
+  --erp-title: var(--hr-text-primary);
+  --erp-muted: var(--hr-text-secondary);
+  --erp-primary: var(--hr-accent);
+  --erp-primary-hover: var(--hr-accent-hover);
+  --radius-sm: var(--hr-radius-sm);
+  --radius: var(--hr-radius-md);
+  --radius-lg: var(--hr-radius-lg);
+  --radius-xl: var(--hr-radius-lg);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.16);
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.42);
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+body { background: var(--hr-bg); color: var(--hr-text-primary); font-size: 14px; line-height: 20px; }
+
+/* AppShell */
+.sidebar {
+  width: var(--hr-sidebar-width) !important;
+  background: var(--hr-surface-1) !important;
+  border-right: 1px solid var(--hr-border-subtle) !important;
+  box-shadow: none !important;
+}
+
+.sidebar-header { padding: 18px 16px 14px !important; border-bottom-color: var(--hr-border-subtle) !important; }
+.logo-img { width: 34px; height: 34px; }
+.logo-text { color: var(--hr-text-primary); font-size: 14px; font-weight: 650; }
+.sidebar-nav { gap: 0 !important; padding: 8px !important; }
+.sidebar-title {
+  margin: 0 !important;
+  padding: 14px 12px 5px !important;
+  color: var(--hr-text-muted) !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 16px !important;
+}
+
+.nav-item {
+  position: relative;
+  min-height: 38px !important;
+  margin: 0 !important;
+  padding: 9px 12px !important;
+  border: 0 !important;
+  border-radius: var(--hr-radius-sm) !important;
+  color: var(--hr-text-secondary) !important;
+  background: transparent !important;
+  font-size: 13px !important;
+  font-weight: 450 !important;
+  line-height: 20px;
+}
+
+.nav-item::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 2px;
+  width: 2px;
+  border-radius: 2px;
+  background: transparent;
+  content: "";
+}
+
+.nav-item:hover { color: var(--hr-text-primary) !important; background: rgba(255, 255, 255, 0.035) !important; }
+.nav-item.active { color: var(--hr-text-primary) !important; background: var(--hr-surface-2) !important; }
+.nav-item.active::before { background: var(--hr-accent); }
+.nav-item.active .nav-icon { stroke: var(--hr-info) !important; }
+.nav-icon { width: 16px !important; height: 16px !important; }
+.sidebar-footer { border-top-color: var(--hr-border-subtle) !important; }
+
+.main-content {
+  width: calc(100vw - var(--hr-sidebar-width)) !important;
+  max-width: none !important;
+  min-width: 0;
+  margin-left: var(--hr-sidebar-width) !important;
+  padding: var(--hr-content-top) var(--hr-content-x) 32px !important;
+  background: var(--hr-bg) !important;
+}
+
+.page,
+.erp-page { width: 100%; max-width: none !important; margin: 0 !important; }
+
+/* Tipografia */
+.page-title {
+  margin: 0 !important;
+  color: var(--hr-text-primary) !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  line-height: 34px !important;
+}
+
+.page-subtitle,
+.catalogo-subtitle,
+.modal-subtitle {
+  margin-top: 3px !important;
+  color: var(--hr-text-secondary) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 21px !important;
+}
+
+.erp-page .page-header > div:first-child::before,
+.fundicao-eyebrow {
+  display: block !important;
+  margin: 0 0 4px !important;
+  color: var(--hr-text-muted) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 16px !important;
+  text-transform: uppercase;
+}
+
+.erp-page--catalog .page-header > div:first-child::before { content: "Catálogo técnico"; }
+.erp-page--analysis .page-header > div:first-child::before { content: "Planejamento de produção"; }
+.erp-page--planning .page-header > div:first-child::before { content: "Planejamento de fundição"; }
+.erp-page--tracking .page-header > div:first-child::before { content: "Acompanhamento de produção"; }
+.erp-page--stock .page-header > div:first-child::before { content: "Controle de estoque"; }
+
+#page-catalogo-fundicao .page-header > div:first-child::before,
+#page-fundicao .page-header > div:first-child::before,
+#page-rastreio-fundicao .page-header > div:first-child::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* PageHeader */
+.page-header,
+.erp-page .page-header,
+#page-fluxo .page-header {
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  min-height: 74px !important;
+  margin: 0 0 24px !important;
+  padding: 0 0 18px !important;
+  border-bottom: 1px solid var(--hr-border-subtle) !important;
+}
+
+.header-actions,
+.erp-page .header-actions {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  width: auto !important;
+  max-width: none !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary,
+.btn-ghost,
+.btn-danger,
+.btn-icon,
+.view-toggle-btn,
+.subnav-tab-btn {
+  min-height: var(--hr-control-height) !important;
+  border-radius: var(--hr-radius-md) !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 18px !important;
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease !important;
+}
+
+.btn-primary {
+  border: 1px solid var(--hr-accent) !important;
+  background: var(--hr-accent) !important;
+  color: #fff !important;
+}
+.btn-primary:hover { border-color: var(--hr-accent-hover) !important; background: var(--hr-accent-hover) !important; transform: none !important; }
+.btn-secondary { border: 1px solid var(--hr-border) !important; background: var(--hr-surface-2) !important; color: var(--hr-text-primary) !important; }
+.btn-secondary:hover { border-color: #34445d !important; background: var(--hr-surface-3) !important; transform: none !important; }
+.btn-ghost { border-color: transparent !important; background: transparent !important; color: var(--hr-text-secondary) !important; }
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.04) !important; color: var(--hr-text-primary) !important; }
+.btn-danger { border-color: rgba(248, 113, 113, 0.28) !important; background: rgba(248, 113, 113, 0.1) !important; color: var(--hr-danger) !important; }
+.btn-icon { width: 36px !important; height: 36px !important; padding: 0 !important; }
+
+/* Inputs / Selects */
+.search-input,
+.select-sm,
+.form-input,
+.form-select,
+.form-textarea,
+.catalogo-search-wrap,
+.catalogo-filter select,
+.erp-page .search-input,
+.erp-page .select-sm,
+.erp-page .form-input,
+.erp-page .form-select,
+.erp-page .form-textarea,
+.erp-page .catalogo-filter select {
+  min-height: var(--hr-control-height) !important;
+  border: 1px solid var(--hr-border) !important;
+  border-radius: var(--hr-radius-md) !important;
+  background: var(--hr-surface-2) !important;
+  color: var(--hr-text-primary) !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+}
+
+.search-input:focus,
+.select-sm:focus,
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus,
+.catalogo-filter select:focus {
+  border-color: var(--hr-accent) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14) !important;
+}
+
+/* SummaryBar — substitui todos os cards de KPI. */
+.kpi-grid,
+.catalogo-kpis,
+.flow-kpi-bar,
+.analise-kpi-grid,
+.erp-page .kpi-grid,
+.erp-page .catalogo-kpis,
+.erp-page .flow-kpi-bar,
+.erp-page .analise-kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+  gap: 0 !important;
+  position: static !important;
+  width: 100% !important;
+  min-height: 76px !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  border: 1px solid var(--hr-border-subtle) !important;
+  border-radius: var(--hr-radius-lg) !important;
+  background: var(--hr-surface-1) !important;
+  overflow: hidden;
+}
+
+.kpi-card,
+.catalogo-kpi,
+.flow-kpi-item,
+.analise-kpi-card,
+.erp-page .kpi-card,
+.erp-page .catalogo-kpi,
+.erp-page .flow-kpi-item,
+.erp-page .analise-kpi-card {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  min-height: 74px !important;
+  margin: 0 !important;
+  padding: 12px 16px !important;
+  border: 0 !important;
+  border-right: 1px solid var(--hr-border-subtle) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.kpi-card:last-child,
+.catalogo-kpi:last-child,
+.flow-kpi-item:last-child,
+.analise-kpi-card:last-child { border-right: 0 !important; }
+
+.kpi-card::before,
+.kpi-card::after,
+.catalogo-kpi::after,
+.flow-kpi-item::after { display: none !important; }
+.kpi-header { margin: 0 !important; }
+.kpi-icon { display: none !important; }
+.kpi-value,
+.catalogo-kpi > span,
+.flow-kpi-value,
+.filter-tab-kpi {
+  order: -1;
+  color: var(--hr-text-primary) !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 26px !important;
+  font-variant-numeric: tabular-nums;
+  text-shadow: none !important;
+}
+.kpi-label,
+.catalogo-kpi small,
+.flow-kpi-label,
+.filter-tab-title {
+  color: var(--hr-text-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  line-height: 18px !important;
+  text-transform: none !important;
+}
+.kpi-sub,
+.flow-kpi-sub,
+.filter-tab-desc { display: none !important; }
+
+/* WorkflowTabs e Tabs */
+.fundicao-flow-nav,
+.subnav-tabs-bar,
+.catalogo-brand-pills-bar,
+.filter-tabs:not(.analise-kpi-grid),
+.erp-page .fundicao-flow-nav,
+.erp-page .subnav-tabs-bar,
+.erp-page .catalogo-brand-pills-bar {
+  display: flex !important;
+  gap: 20px !important;
+  width: 100% !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--hr-border-subtle) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow-x: auto;
+}
+
+.fundicao-flow-nav button,
+.subnav-tab-btn,
+.catalogo-brand-pill {
+  position: relative;
+  flex: 0 0 auto !important;
+  min-height: 38px !important;
+  padding: 8px 2px 10px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--hr-text-secondary) !important;
+  box-shadow: none !important;
+}
+
+.fundicao-flow-nav button.active,
+.subnav-tab-btn.active,
+.catalogo-brand-pill.active {
+  color: var(--hr-text-primary) !important;
+  background: transparent !important;
+}
+
+.fundicao-flow-nav button.active::after,
+.subnav-tab-btn.active::after,
+.catalogo-brand-pill.active::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--hr-accent);
+  content: "";
+}
+
+/* PageToolbar — busca, filtros e ações na mesma superfície. */
+.catalogo-card,
+.erp-page .catalogo-card,
+#analise-table-container,
+#page-fluxo > .card,
+#page-fundicao > div:last-child > .card {
+  display: grid !important;
+  grid-template-columns: minmax(280px, 1fr) auto !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  min-width: 0;
+  margin-top: 0 !important;
+  border: 1px solid var(--hr-border-subtle) !important;
+  border-radius: var(--hr-radius-lg) !important;
+  background: var(--hr-surface-1) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+.catalogo-toolbar,
+.catalogo-filters,
+.vini-toolbar,
+.analise-toolbar-panel,
+.erp-page .catalogo-toolbar,
+.erp-page .catalogo-filters,
+.erp-page .vini-toolbar,
+.erp-page .analise-toolbar-panel {
+  display: flex !important;
+  flex-flow: row wrap !important;
+  align-items: center !important;
+  align-self: stretch !important;
+  gap: 8px !important;
+  min-height: 56px !important;
+  margin: 0 !important;
+  padding: 9px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--hr-border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--hr-surface-1) !important;
+}
+
+.catalogo-toolbar { grid-column: 1 !important; }
+.catalogo-filters { grid-column: 2 !important; min-height: 56px !important; }
+.catalogo-filter { width: auto !important; min-width: 132px; }
+.catalogo-filter > span { display: none !important; }
+.catalogo-filter select { width: auto !important; min-width: 132px; }
+.catalogo-clear-filters { width: auto !important; }
+.catalogo-search-wrap { min-width: min(420px, 100%) !important; }
+
+.erp-page-toolbar {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--hr-border-subtle);
+  border-radius: var(--hr-radius-lg);
+  background: var(--hr-surface-1);
+}
+.erp-page-toolbar .search-input { flex: 1 1 280px; max-width: 440px; }
+.erp-page-toolbar .select-sm { min-width: 150px; }
+
+.erp-quick-filters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 12px;
+}
+.erp-quick-filters button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--hr-radius-sm);
+  background: transparent;
+  color: var(--hr-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.erp-quick-filters button:hover { color: var(--hr-text-primary); background: rgba(255, 255, 255, 0.035); }
+.erp-quick-filters button.active { color: #dbeafe; background: rgba(59, 130, 246, 0.12); }
+
+.catalogo-table-wrap,
+.catalogo-cards-wrap,
+.erp-page .catalogo-table-wrap,
+.erp-page .catalogo-cards-wrap {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--hr-surface-1) !important;
+}
+
+/* Remove integralmente os layouts laterais introduzidos anteriormente. */
+#page-ordens:not(.hidden),
+#page-fluxo:not(.hidden),
+#page-fundicao:not(.hidden),
+#page-rastreio-fundicao:not(.hidden),
+#page-estoque-buchas:not(.hidden) { display: block !important; }
+
+#page-ordens .analise-kpi-grid,
+#page-fluxo .flow-kpi-bar,
+#page-fundicao .kpi-grid,
+#page-rastreio-fundicao .kpi-grid,
+#page-estoque-buchas > .kpi-grid { position: static !important; display: grid !important; }
+
+#page-ordens .analise-toolbar-panel,
+#page-ordens #analise-table-container,
+#page-fluxo .section-label,
+#page-fluxo > .card,
+#page-fundicao > div:last-child,
+#page-rastreio-fundicao > .catalogo-card,
+#page-estoque-buchas > .subnav-tabs-bar,
+#page-estoque-buchas > .tab-panel { width: 100% !important; margin-left: 0 !important; }
+
+#page-ordens .analise-toolbar-panel { margin-bottom: 12px !important; border: 1px solid var(--hr-border-subtle) !important; border-radius: var(--hr-radius-lg) !important; }
+#page-ordens #analise-table-container { display: block !important; border: 1px solid var(--hr-border-subtle) !important; }
+#page-ordens .analise-table-titlebar { border: 0 !important; border-bottom: 1px solid var(--hr-border-subtle) !important; border-radius: 0 !important; }
+#page-ordens #analise-table-wrap { max-height: calc(100vh - 330px); border: 0 !important; border-radius: 0 !important; }
+#page-ordens .analise-th-total { display: none !important; }
+#page-fluxo .section-label { margin-bottom: 8px !important; }
+
+/* DataTable global */
+.data-table,
+.catalogo-table,
+.erp-page .data-table,
+.erp-page .catalogo-table {
+  width: 100%;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  background: var(--hr-surface-1) !important;
+}
+
+.data-table th,
+.catalogo-table th,
+.erp-page .data-table th,
+.erp-page .catalogo-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 38px !important;
+  padding: 9px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--hr-border-subtle) !important;
+  background: var(--hr-surface-2) !important;
+  color: var(--hr-text-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: 18px !important;
+  text-transform: none !important;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+.data-table td,
+.catalogo-table td,
+.erp-page .data-table td,
+.erp-page .catalogo-table td {
+  height: 54px !important;
+  padding: 10px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--hr-border-subtle) !important;
+  background: transparent !important;
+  color: var(--hr-text-secondary) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  vertical-align: middle;
+}
+
+.data-table td strong,
+.catalogo-table td strong { color: var(--hr-text-primary) !important; font-size: 13px !important; font-weight: 600 !important; text-shadow: none !important; }
+.data-table tbody tr,
+.catalogo-table tbody tr { cursor: pointer; transition: background-color 120ms ease !important; box-shadow: none !important; }
+.data-table tbody tr:hover td,
+.catalogo-table tbody tr:hover td { background: rgba(255, 255, 255, 0.025) !important; }
+.data-table tbody tr:hover,
+.catalogo-table tbody tr:hover { box-shadow: none !important; }
+.data-table .font-mono,
+.catalogo-table .font-mono { color: var(--hr-text-secondary) !important; font-size: 12px !important; font-weight: 500 !important; text-shadow: none !important; }
+.table-wrap { overflow: auto; scrollbar-color: #35445b transparent; }
+
+/* StatusBadge global */
+.chip,
+.pf-status-badge,
+.status-badge,
+.erp-page .chip,
+.erp-page .pf-status-badge,
+.erp-page .status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px !important;
+  border: 0 !important;
+  border-radius: var(--hr-radius-sm) !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 18px !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+.chip--green { color: #a7f3d0 !important; background: rgba(34, 197, 94, 0.11) !important; }
+.chip--orange { color: #fde68a !important; background: rgba(245, 158, 11, 0.11) !important; }
+.chip--red { color: #fecaca !important; background: rgba(239, 68, 68, 0.11) !important; }
+.chip--blue { color: #bfdbfe !important; background: rgba(59, 130, 246, 0.11) !important; }
+.chip--gray,
+.chip--purple { color: #cbd5e1 !important; background: rgba(148, 163, 184, 0.1) !important; }
+
+/* Cards e modais */
+.card,
+.erp-page .card {
+  border: 1px solid var(--hr-border-subtle) !important;
+  border-radius: var(--hr-radius-lg) !important;
+  background: var(--hr-surface-1) !important;
+  box-shadow: none !important;
+}
+
+.modal {
+  border-color: var(--hr-border) !important;
+  border-radius: var(--hr-radius-lg) !important;
+  background: var(--hr-surface-1) !important;
+  box-shadow: var(--shadow-modal) !important;
+}
+.modal-header,
+.modal-footer { border-color: var(--hr-border-subtle) !important; background: var(--hr-surface-1) !important; }
+.modal-title { font-size: 16px !important; font-weight: 600 !important; line-height: 24px !important; }
+.form-label { color: var(--hr-text-secondary) !important; font-size: 12px !important; font-weight: 500 !important; line-height: 18px !important; }
+
+/* DetailDrawer */
+.erp-detail-drawer { width: min(460px, 100vw); border-color: var(--hr-border) !important; background: var(--hr-surface-1) !important; }
+.erp-detail-header,
+.erp-detail-footer { border-color: var(--hr-border-subtle) !important; }
+.erp-detail-summary { border: 0 !important; border-radius: var(--hr-radius-md) !important; background: var(--hr-surface-2) !important; }
+.erp-row-selected td { background: rgba(59, 130, 246, 0.07) !important; }
+
+/* Estados vazios e feedback. */
+.empty-cell { height: 160px !important; padding: 32px !important; color: var(--hr-text-muted) !important; font-size: 13px !important; font-weight: 400 !important; text-align: center; }
+.toast { border: 1px solid var(--hr-border) !important; border-radius: var(--hr-radius-md) !important; background: var(--hr-surface-2) !important; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32) !important; }
+.erp-mobile-menu,
+.erp-sidebar-backdrop { display: none; }
+
+@media (max-width: 1439px) {
+  :root { --hr-content-x: 24px; }
+}
+
+@media (max-width: 1023px) {
+  :root { --hr-sidebar-width: 208px; --hr-content-x: 20px; }
+  .catalogo-card,
+  .erp-page .catalogo-card { grid-template-columns: 1fr !important; }
+  .catalogo-toolbar,
+  .catalogo-filters { grid-column: 1 !important; }
+  .catalogo-filters { grid-row: 2; border-top: 1px solid var(--hr-border-subtle) !important; }
+  .catalogo-table-wrap,
+  .catalogo-cards-wrap { grid-row: 3 !important; }
+}
+
+@media (max-width: 767px) {
+  :root { --hr-content-x: 14px; --hr-content-top: 16px; }
+  .main-content { margin-left: 0 !important; width: 100vw !important; padding-bottom: 24px !important; }
+  .sidebar { z-index: 2200; transform: translateX(-100%); transition: transform 180ms ease; }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .erp-mobile-menu {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 2100;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--hr-border);
+    border-radius: var(--hr-radius-md);
+    background: var(--hr-surface-2);
+    color: var(--hr-text-primary);
+  }
+  .erp-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2150;
+    display: block;
+    border: 0;
+    background: rgba(2, 6, 23, 0.62);
+  }
+  .erp-sidebar-backdrop.hidden { display: none; }
+  .page-header,
+  .erp-page .page-header { align-items: flex-start !important; flex-direction: column !important; }
+  .header-actions,
+  .erp-page .header-actions { justify-content: flex-start !important; width: 100% !important; }
+  .header-actions > * { flex: 1 1 auto; }
+  .kpi-grid,
+  .catalogo-kpis,
+  .flow-kpi-bar,
+  .analise-kpi-grid { display: flex !important; overflow-x: auto; }
+  .kpi-card,
+  .catalogo-kpi,
+  .flow-kpi-item,
+  .analise-kpi-card { flex: 0 0 150px !important; }
+  .catalogo-toolbar,
+  .catalogo-filters,
+  .erp-page-toolbar { flex-direction: column !important; align-items: stretch !important; }
+  .catalogo-search-wrap,
+  .catalogo-filter,
+  .catalogo-filter select { width: 100% !important; min-width: 0 !important; }
+  .erp-page-toolbar .search-input,
+  .erp-page-toolbar .select-sm { width: 100% !important; max-width: none; }
+  .erp-detail-drawer { width: 100vw; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

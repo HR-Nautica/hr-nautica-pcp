@@ -52,7 +52,7 @@ async function verificarServidorProxy() {
     TinyAPI.ultimaVerificacao = new Date();
     TinyAPI.ultimoErro        = null;
 
-    console.log(`[TinyAPI] Servidor proxy ativo. Token: ${TinyAPI.tokenConfigurado ? '✅ configurado' : '⚠ não configurado'}`);
+    console.log(`[TinyAPI] Servidor proxy ativo. Token: ${TinyAPI.tokenConfigurado ? 'configurado' : 'não configurado'}`);
     return true;
 
   } catch (err) {

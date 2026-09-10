@@ -95,7 +95,7 @@
       const operation = currentOperation(order);
       const finalized = order.status === "finalizada";
       const refugada = order.status === "refugada";
-      let statusChip = `<span class="chip ${finalized ? "chip--green" : refugada ? "chip--red" : "chip--orange"}">${finalized ? "Finalizada" : refugada ? "⚠️ Refugada" : "Em produção"}</span>`;
+      let statusChip = `<span class="chip ${finalized ? "chip--green" : refugada ? "chip--red" : "chip--orange"}">${finalized ? "Finalizada" : refugada ? "Refugada" : "Em produção"}</span>`;
 
       return `<tr class="helice-op-row ${finalized ? "helice-op-row--finished" : refugada ? "helice-op-row--refugada" : ""}" data-order-id="${escapeHtml(order.id)}" tabindex="0">
         <td><strong class="helice-op-number">${escapeHtml(order.opNumber)}</strong></td>
@@ -164,18 +164,18 @@
     byId("helice-operation-history").innerHTML = history.length
       ? history.slice().reverse().map(event => {
         if (event.type === "finish") {
-          return `<div class="helice-history-event is-finish"><span>✓</span><div><strong>OP finalizada com ${formatNumber(event.quantity)} peças</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
+          return `<div class="helice-history-event is-finish"><span aria-hidden="true"></span><div><strong>OP finalizada com ${formatNumber(event.quantity)} peças</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
         }
         if (event.type === "split_created") {
-          return `<div class="helice-history-event"><span>🔄</span><div><strong>Sub-OP gerada por desmembramento da ${escapeHtml(event.fromOp)} (${formatNumber(event.quantity)} peças)</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
+          return `<div class="helice-history-event"><div><strong>Sub-OP gerada por desmembramento da ${escapeHtml(event.fromOp)} (${formatNumber(event.quantity)} peças)</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
         }
         if (event.type === "scrap_created") {
-          return `<div class="helice-history-event is-scrap"><span>⚠️</span><div><strong>Registro de Refugo gerado a partir da ${escapeHtml(event.fromOp)} (${formatNumber(event.quantity)} peças)</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
+          return `<div class="helice-history-event is-scrap"><span aria-hidden="true"></span><div><strong>Registro de refugo gerado a partir da ${escapeHtml(event.fromOp)} (${formatNumber(event.quantity)} peças)</strong><small>${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
         }
         const createdInfo = event.createdOpNumber
           ? (event.remainingAction === "scrap"
-            ? ` · ⚠️ Refugo: ${escapeHtml(event.createdOpNumber)} (${formatNumber(event.remainingQuantity)} pçs)`
-            : ` · 🔄 Sub-OP: ${escapeHtml(event.createdOpNumber)} (${formatNumber(event.remainingQuantity)} pçs)`)
+            ? ` · Refugo: ${escapeHtml(event.createdOpNumber)} (${formatNumber(event.remainingQuantity)} pçs)`
+            : ` · Sub-OP: ${escapeHtml(event.createdOpNumber)} (${formatNumber(event.remainingQuantity)} pçs)`)
           : "";
         return `<div class="helice-history-event"><span>${escapeHtml(event.toOperation)}</span><div><strong>${formatNumber(event.forwardedQuantity)} avançaram${createdInfo}</strong><small>${escapeHtml(event.fromOperationName)} → ${escapeHtml(event.toOperationName)} · ${formatDateTime(event.at)} · ${escapeHtml(event.actor || "Usuário")}</small></div></div>`;
       }).join("")
@@ -213,11 +213,11 @@
 
     if (remainingPreview) {
       if (remaining === 0) {
-        remainingPreview.textContent = `✓ Todas as ${formatNumber(total)} peças avançarão para a próxima operação.`;
+        remainingPreview.textContent = `Todas as ${formatNumber(total)} peças avançarão para a próxima operação.`;
       } else if (action === "scrap") {
-        remainingPreview.textContent = `⚠️ Serão registradas ${formatNumber(remaining)} peças como Refugo em uma nova ordem (ex: ${order.opNumber}.REF.1).`;
+        remainingPreview.textContent = `Serão registradas ${formatNumber(remaining)} peças como refugo em uma nova ordem (ex: ${order.opNumber}.REF.1).`;
       } else {
-        remainingPreview.textContent = `🔄 Serão desmembradas ${formatNumber(remaining)} peças em uma nova Sub-OP (ex: ${order.opNumber}.1) na etapa atual.`;
+        remainingPreview.textContent = `Serão desmembradas ${formatNumber(remaining)} peças em uma nova Sub-OP (ex: ${order.opNumber}.1) na etapa atual.`;
       }
     }
   }

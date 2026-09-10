@@ -58,17 +58,17 @@
         <td style="font-weight:700; color:#f8fafc;">${escapeHtml(lastLog.fileName)}</td>
         <td>
           <span class="chip ${lastLog.analiseStatus === 'OK' ? 'chip--green' : 'chip--red'} font-mono" style="font-weight:700;">
-            ${lastLog.analiseStatus === 'OK' ? `✓ ${lastLog.analiseCount || 0} itens` : '❌ Falha'}
+            ${lastLog.analiseStatus === 'OK' ? `${lastLog.analiseCount || 0} itens` : 'Falha'}
           </span>
         </td>
         <td>
           <span class="chip ${lastLog.compStatus === 'OK' ? 'chip--green' : 'chip--red'} font-mono" style="font-weight:700;">
-            ${lastLog.compStatus === 'OK' ? `✓ ${lastLog.compCount || 0} SKUs` : '❌ Falha'}
+            ${lastLog.compStatus === 'OK' ? `${lastLog.compCount || 0} SKUs` : 'Falha'}
           </span>
         </td>
         <td>
           <span class="chip ${lastLog.status === 'OK' ? 'chip--green' : 'chip--red'} font-mono" style="font-weight:800; font-size:0.82rem;">
-            ${lastLog.status === 'OK' ? '✓ Sucesso' : '❌ Falha'}
+            ${lastLog.status === 'OK' ? 'Sucesso' : 'Falha'}
           </span>
         </td>
       </tr>
@@ -83,13 +83,13 @@
     if (badge) {
       if (status === 'success') {
         badge.className = 'chip chip--green';
-        badge.textContent = '✓ Sincronizado';
+        badge.textContent = 'Sincronizado';
       } else if (status === 'error') {
         badge.className = 'chip chip--red';
-        badge.textContent = '❌ Erro';
+        badge.textContent = 'Erro';
       } else if (status === 'syncing') {
         badge.className = 'chip chip--blue';
-        badge.textContent = '🔄 Sincronizando...';
+        badge.textContent = 'Sincronizando...';
       } else {
         badge.className = 'chip chip--gray';
         badge.textContent = 'Aguardando';
@@ -287,12 +287,12 @@
         <td style="font-weight:700; color:#f8fafc;">${escapeHtml(lastLog.fileName)}</td>
         <td>
           <span class="chip ${lastLog.viniStatus === 'OK' ? 'chip--purple' : 'chip--red'} font-mono" style="font-weight:700;">
-            ${lastLog.viniStatus === 'OK' ? `✓ Atualizado (${lastLog.viniSheets || 'Saídas / Fornecedores'})` : '❌ Falha'}
+            ${lastLog.viniStatus === 'OK' ? `Atualizado (${lastLog.viniSheets || 'Saídas / Fornecedores'})` : 'Falha'}
           </span>
         </td>
         <td>
           <span class="chip ${lastLog.status === 'OK' ? 'chip--green' : 'chip--red'} font-mono" style="font-weight:800; font-size:0.82rem;">
-            ${lastLog.status === 'OK' ? '✓ Sucesso' : '❌ Falha'}
+            ${lastLog.status === 'OK' ? 'Sucesso' : 'Falha'}
           </span>
         </td>
       </tr>

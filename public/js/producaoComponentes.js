@@ -205,7 +205,7 @@ function prodComp_createOP(sku, qty, descOverride) {
   prodComp_save();
 
   if (typeof showToast === 'function') {
-    showToast(`✅ OP de Componente ${id} criada com sucesso!`, 'success');
+    showToast(`OP de Componente ${id} criada com sucesso!`, 'success');
   }
 
   prodComp_render();
@@ -251,7 +251,7 @@ function prodComp_toggleOpStatus(opId, itemSku, opKey) {
     // Verifica bloqueio de sub-itens
     if (prodComp_isItemBlocked(op, item)) {
       if (typeof showToast === 'function') {
-        showToast('⚠ Bloqueado: conclua primeiro todas as etapas de compras/fabricação dos sub-itens!', 'warning');
+        showToast('Bloqueado: conclua primeiro todas as etapas de compras/fabricação dos sub-itens!', 'warning');
       } else {
         alert('Bloqueado: conclua primeiro todas as etapas de compras/fabricação dos sub-itens!');
       }
@@ -259,7 +259,7 @@ function prodComp_toggleOpStatus(opId, itemSku, opKey) {
     }
     opInfo.status = 'OK';
     if (typeof showToast === 'function') {
-      showToast(`✅ Etapa "${opInfo.label}" de ${item.sku} concluída!`, 'success');
+      showToast(`Etapa "${opInfo.label}" de ${item.sku} concluída!`, 'success');
     }
   } else if (opInfo.status === 'OK') {
     // Permite reverter
@@ -289,7 +289,7 @@ function prodComp_finalizarOP(opId) {
 
   if (temPendentes) {
     if (typeof showToast === 'function') {
-      showToast('⚠ Não é possível concluir a OP: ainda existem operações pendentes no conjunto!', 'warning');
+      showToast('Não é possível concluir a OP: ainda existem operações pendentes no conjunto!', 'warning');
     } else {
       alert('Não é possível concluir a OP: ainda existem operações pendentes no conjunto!');
     }
@@ -303,7 +303,7 @@ function prodComp_finalizarOP(opId) {
   prodComp_save();
 
   if (typeof showToast === 'function') {
-    showToast(`🌱Ž‰ OP de Componente ${op.id} concluída com sucesso!`, 'success');
+    showToast(`OP de Componente ${op.id} concluída com sucesso!`, 'success');
   }
 
   prodComp_render();
@@ -425,7 +425,6 @@ function prodComp_render() {
     detailsArea.innerHTML = `
       <div class="prod-comp-details-empty">
         <div style="text-align:center;">
-          <span style="font-size: 3rem; display:block; margin-bottom: 1rem; opacity: 0.5;">📋</span>
           Nenhuma OP cadastrada ou correspondente aos filtros.
         </div>
       </div>
@@ -452,7 +451,7 @@ function prodComp_render() {
       });
     });
     const pct = totalOps > 0 ? Math.round((okOps / totalOps) * 100) : 0;
-    const statusText = op.status === 'Concluído' ? '✓ Concluída' : `${pct}% Concluído`;
+    const statusText = op.status === 'Concluído' ? 'Concluída' : `${pct}% Concluído`;
     const statusColor = op.status === 'Concluído' ? 'var(--accent-green)' : 'var(--accent-blue)';
 
     sidebarCardsHtml += `
@@ -477,7 +476,6 @@ function prodComp_render() {
     detailsArea.innerHTML = `
       <div class="prod-comp-details-empty">
         <div style="text-align:center;">
-          <span style="font-size: 3rem; display:block; margin-bottom: 1rem; opacity: 0.5;">📋</span>
           Selecione uma OP na lista ao lado para gerenciar as operações e visualizar os componentes.
         </div>
       </div>
@@ -509,8 +507,8 @@ function prodComp_render() {
   // Renderiza detalhes da OP selecionada
   const isOPConcluida = selectedOP.status === 'Concluído';
   const statusText = isOPConcluida 
-    ? `<span class="earv-op-badge" style="background-color: var(--accent-green-bg); color: var(--accent-green); padding: 0.25rem 0.6rem; font-weight: 800;">✓ CONCLUÍDA</span>`
-    : `<span class="earv-op-badge" style="background-color: var(--accent-blue-bg); color: var(--accent-blue); padding: 0.25rem 0.6rem; font-weight: 800;">⚙ EM PRODUÇÃO</span>`;
+    ? `<span class="earv-op-badge" style="background-color: var(--accent-green-bg); color: var(--accent-green); padding: 0.25rem 0.6rem; font-weight: 800;">CONCLUÍDA</span>`
+    : `<span class="earv-op-badge" style="background-color: var(--accent-blue-bg); color: var(--accent-blue); padding: 0.25rem 0.6rem; font-weight: 800;">EM PRODUÇÃO</span>`;
 
   let actionsHtml = '';
   if (!isOPConcluida) {
@@ -522,24 +520,24 @@ function prodComp_render() {
     
     actionsHtml = `
       <button class="earv-btn ${btnClass} earv-btn--sm" onclick="prodComp_finalizarOP('${selectedOP.id}')" style="padding: 0.45rem 1rem; font-size: 0.8rem; font-weight: 700; ${btnStyle}">
-        🌱 Finalizar OP
+        Finalizar OP
       </button>
       <button class="earv-btn earv-btn--outline earv-btn--sm" onclick="prodComp_deleteOP('${selectedOP.id}')" style="padding: 0.45rem 1rem; font-size: 0.8rem; font-weight: 700; border-color: var(--accent-red); color: var(--accent-red); margin-left:0.5rem;">
         Cancelar OP
       </button>
     `;
   } else {
-    actionsHtml = `<span style="color: var(--accent-green); font-size: 0.85rem; font-weight: 700; margin-right: 10px;">✓ Concluída e Integrada</span>`;
+    actionsHtml = `<span style="color: var(--accent-green); font-size: 0.85rem; font-weight: 700; margin-right: 10px;">Concluída e integrada</span>`;
   }
 
   // Filtros locais (Todos, Comprar, Usinar, Outros)
   const f = PROD_COMP_STATE.localFilter || 'all';
   const filtersHtml = `
     <div class="opc-detail-filters">
-      <button class="filter-btn ${f === 'all' ? 'active' : ''}" onclick="prodComp_setLocalFilter('all')">📋 Todos os Componentes</button>
-      <button class="filter-btn ${f === 'compras' ? 'active' : ''}" onclick="prodComp_setLocalFilter('compras')">⚠️ Comprar (Falta Estoque)</button>
-      <button class="filter-btn ${f === 'usinagem' ? 'active' : ''}" onclick="prodComp_setLocalFilter('usinagem')">⚙️ Usinar Pendentes</button>
-      <button class="filter-btn ${f === 'outros' ? 'active' : ''}" onclick="prodComp_setLocalFilter('outros')">🔧 Outras Pendências</button>
+      <button class="filter-btn ${f === 'all' ? 'active' : ''}" onclick="prodComp_setLocalFilter('all')">Todos os componentes</button>
+      <button class="filter-btn ${f === 'compras' ? 'active' : ''}" onclick="prodComp_setLocalFilter('compras')">Comprar (falta estoque)</button>
+      <button class="filter-btn ${f === 'usinagem' ? 'active' : ''}" onclick="prodComp_setLocalFilter('usinagem')">Usinar pendentes</button>
+      <button class="filter-btn ${f === 'outros' ? 'active' : ''}" onclick="prodComp_setLocalFilter('outros')">Outras pendências</button>
     </div>
   `;
 
@@ -629,7 +627,7 @@ function prodComp_render() {
         opsColsHtml += `
           <td class="earv-td" style="padding: 6px !important; text-align: center;">
             <button class="earv-op-btn op-btn--ok" style="${cursorStyle};width:100%;" ${clickAction} title="Clique para reverter">
-              ✓ Concluído${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
+              Concluído${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
             </button>
           </td>
         `;
@@ -648,7 +646,7 @@ function prodComp_render() {
             opsColsHtml += `
               <td class="earv-td" style="padding: 6px !important; text-align: center;">
                 <button class="earv-op-btn op-btn--pendente op-btn--${opKey} op-btn--blocked" title="Bloqueado: conclua os sub-itens primeiro" onclick="event.stopPropagation()" style="width:100%;">
-                  🔒 Bloqueado${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
+                  Bloqueado${responsavel ? `<br/><small style="font-size:0.68rem;opacity:0.95;">${responsavel}</small>` : ''}
                 </button>
               </td>
             `;
@@ -663,7 +661,7 @@ function prodComp_render() {
               opsColsHtml += `
                 <td class="earv-td" style="padding: 6px !important; text-align: center;">
                   <span class="op-btn--em-estoque" title="Estoque suficiente — saldo pós-consumo: +${saldoFormatado}">
-                    <span style="display:block;font-size:0.78rem;font-weight:800;line-height:1.2;">✓ Em estoque</span>
+                    <span style="display:block;font-size:0.78rem;font-weight:800;line-height:1.2;">Em estoque</span>
                     <span style="display:block;font-size:0.63rem;opacity:0.8;line-height:1;">saldo: +${saldoFormatado}</span>
                   </span>
                 </td>
@@ -693,7 +691,7 @@ function prodComp_render() {
       rowClass = 'earv-row-00';
       descHtml = `
         <div class="earv-desc-wrap">
-          <span class="earv-toggle-btn earv-toggle-invisible">▶</span>
+          <span class="earv-toggle-btn earv-toggle-invisible"></span>
           <span class="earv-desc-text earv-desc--00">${item.descricao}</span>
         </div>
       `;
@@ -950,7 +948,7 @@ function prodComp_exportTarefas() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  if (typeof showToast === 'function') showToast('✅ Relatório de tarefas exportado!', 'success');
+  if (typeof showToast === 'function') showToast('Relatório de tarefas exportado!', 'success');
 }
 window.prodComp_exportTarefas = prodComp_exportTarefas;
 
@@ -1008,4 +1006,3 @@ document.addEventListener('DOMContentLoaded', () => {
     prodComp_render();
   }
 });
-

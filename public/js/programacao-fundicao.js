@@ -376,7 +376,7 @@
           <td class="font-mono" style="min-width: 70px; color:#cbd5e1; font-weight:700; white-space:nowrap;">${diasStr}</td>
           <td class="catalogo-actions-col" style="min-width: 130px; text-align: right; white-space:nowrap;">
             <button type="button" class="btn-primary btn-sm pf-action-btn" onclick="window.openNovaFundicao('${escapeHtml(item.coquilha)}', ${item.prodNecTotal}, ${item.pesoUnitario})" title="Gerar Ordem de Produção com status Em aberto">
-              🔥 Criar OP
+              Criar OP
             </button>
           </td>
         </tr>

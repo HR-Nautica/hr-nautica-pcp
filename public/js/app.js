@@ -261,7 +261,7 @@ function renderOpsRecentesTable(ops) {
       <td style="color:var(--text-primary);font-weight:500">${op.modelo}</td>
       <td>${op.cliente || '—'}</td>
       <td>${etapaChip(op.etapa)}</td>
-      <td class="${atrasado ? 'priority-urgente' : ''}">${formatDate(op.prazo)}${atrasado ? ' ' + '⚠' : ''}</td>
+      <td class="${atrasado ? 'priority-urgente' : ''}">${formatDate(op.prazo)}${atrasado ? ' · Atrasada' : ''}</td>
       <td>${etapaChip(op.etapa)}</td>
     </tr>`;
   }).join('');
@@ -374,9 +374,9 @@ function kanbanCard(op) {
       const buchaFalta = reqs.bucha ? reqs.bucha.insuficiente : false;
       const caixaFalta = reqs.caixa ? reqs.caixa.insuficiente : false;
       if (buchaFalta || caixaFalta) {
-        estoqueBadge = `<span class="chip chip--red" style="font-size:0.65rem;padding:2px 6px" title="Falta de insumos no estoque">⚠ Falta Insumos</span>`;
+        estoqueBadge = `<span class="chip chip--red" style="font-size:0.65rem;padding:2px 6px" title="Falta de insumos no estoque">Falta insumos</span>`;
       } else {
-        estoqueBadge = `<span class="chip chip--green" style="font-size:0.65rem;padding:2px 6px" title="Estoque de insumos OK">✓ Estoque OK</span>`;
+        estoqueBadge = `<span class="chip chip--green" style="font-size:0.65rem;padding:2px 6px" title="Estoque de insumos OK">Estoque OK</span>`;
       }
     }
   }
@@ -394,7 +394,7 @@ function kanbanCard(op) {
     <div class="kanban-card-footer">
       <span class="kanban-card-prazo ${atrasado ? 'atrasado' : ''}">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        ${atrasado ? '⚠' + ' ' : ''}${formatDate(op.prazo)}
+        ${atrasado ? 'Atrasada · ' : ''}${formatDate(op.prazo)}
       </span>
       <button class="btn-icon danger" onclick="event.stopPropagation(); deleteOp('${op.id}')" title="Excluir OP">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
@@ -455,8 +455,8 @@ function updateOpInsumosPreview() {
     const badgeText = bruto.insuficiente ? `Falta ${bruto.falta} un` : 'Estoque OK';
     const cardClass = bruto.insuficiente ? 'op-insumo-card--warn' : 'op-insumo-card--ok';
     const statusAction = bruto.insuficiente
-      ? `<div class="op-insumo-action op-insumo-action--warn">⚠ Fundir / Produzir Bruto</div>`
-      : `<div class="op-insumo-action op-insumo-action--ok">✓ Disponível para Usinagem</div>`;
+      ? `<div class="op-insumo-action op-insumo-action--warn">Fundir / produzir bruto</div>`
+      : `<div class="op-insumo-action op-insumo-action--ok">Disponível para usinagem</div>`;
 
     listDiv.innerHTML += `
       <div class="op-insumo-card ${cardClass}" title="${bruto.nome}">
@@ -483,8 +483,8 @@ function updateOpInsumosPreview() {
     const badgeText = b.insuficiente ? `Falta ${b.falta} un` : 'Estoque OK';
     const cardClass = b.insuficiente ? 'op-insumo-card--warn' : 'op-insumo-card--ok';
     const statusAction = b.insuficiente 
-      ? `<div class="op-insumo-action op-insumo-action--warn">⚠ Produzir Bucha</div>`
-      : `<div class="op-insumo-action op-insumo-action--ok">✓ Estoque Disponível</div>`;
+      ? `<div class="op-insumo-action op-insumo-action--warn">Produzir bucha</div>`
+      : `<div class="op-insumo-action op-insumo-action--ok">Estoque disponível</div>`;
       
     listDiv.innerHTML += `
       <div class="op-insumo-card ${cardClass}" title="${b.nome}">
@@ -518,8 +518,8 @@ function updateOpInsumosPreview() {
     const badgeText = c.insuficiente ? `Falta ${c.falta} un` : 'Estoque OK';
     const cardClass = c.insuficiente ? 'op-insumo-card--warn' : 'op-insumo-card--ok';
     const statusAction = c.insuficiente 
-      ? `<div class="op-insumo-action op-insumo-action--warn">⚠ Comprar Caixa</div>`
-      : `<div class="op-insumo-action op-insumo-action--ok">✓ Estoque Disponível</div>`;
+      ? `<div class="op-insumo-action op-insumo-action--warn">Comprar caixa</div>`
+      : `<div class="op-insumo-action op-insumo-action--ok">Estoque disponível</div>`;
       
     listDiv.innerHTML += `
       <div class="op-insumo-card ${cardClass}" title="${c.nome}">
@@ -744,7 +744,7 @@ function openFichaTecnica(id) {
 
     <div class="ficha-sections-grid">
       <div class="ficha-card-section">
-        <h4>📌 Identificação Geral</h4>
+        <h4>Identificação geral</h4>
         <div class="ficha-spec-row"><span>Descrição da Hélice:</span><strong>${escapeCatalogoHtml(modelo.nome)}</strong></div>
         <div class="ficha-spec-row"><span>Código SKU:</span><strong>${escapeCatalogoHtml(modelo.sku)}</strong></div>
         <div class="ficha-spec-row"><span>Código Bruto:</span><strong>${escapeCatalogoHtml(modelo.codigoBruto || '—')}</strong></div>
@@ -753,7 +753,7 @@ function openFichaTecnica(id) {
       </div>
 
       <div class="ficha-card-section">
-        <h4>🌀 Anel e Tubo de Alumínio</h4>
+        <h4>Anel e tubo de alumínio</h4>
         <div class="ficha-spec-row"><span>Diâmetro Tubo Anel:</span><strong>${escapeCatalogoHtml(modelo.diametroTuboAnel || '—')}</strong></div>
         <div class="ficha-spec-row"><span>Comp. Anel:</span><strong>${escapeCatalogoHtml(modelo.comprimentoAnel || '—')}</strong></div>
         <div class="ficha-spec-row"><span>Anel:</span><strong>${escapeCatalogoHtml(modelo.anel || '—')}</strong></div>
@@ -762,7 +762,7 @@ function openFichaTecnica(id) {
       </div>
 
       <div class="ficha-card-section">
-        <h4>🔧 Bucha e Latão</h4>
+        <h4>Bucha e latão</h4>
         <div class="ficha-spec-row"><span>Diâmetro Latão:</span><strong>${escapeCatalogoHtml(modelo.diametroLatao || '—')}</strong></div>
         <div class="ficha-spec-row"><span>Comp. Bucha:</span><strong>${escapeCatalogoHtml(modelo.comprimentoBucha || '—')}</strong></div>
         <div class="ficha-spec-row"><span>Bucha Modelo:</span><strong>${escapeCatalogoHtml(modelo.bucha || '—')}</strong></div>
@@ -773,7 +773,7 @@ function openFichaTecnica(id) {
       </div>
 
       <div class="ficha-card-section">
-        <h4>📦 Embalagem</h4>
+        <h4>Embalagem</h4>
         <div class="ficha-spec-row"><span>Código SKU Caixa:</span><strong>${escapeCatalogoHtml(modelo.skuCaixa || '—')}</strong></div>
         <div class="ficha-spec-row"><span>Descrição Caixa:</span><strong>${escapeCatalogoHtml(modelo.descricaoCaixa || '—')}</strong></div>
       </div>
@@ -915,7 +915,7 @@ function renderCatalogoModelos() {
             </div>
             <div class="catalogo-card-body">
               <h3 class="catalogo-card-title">${escapeCatalogoHtml(modelo.nome)}</h3>
-              ${dim ? `<div class="catalogo-card-dim">📐 ${dim}</div>` : ''}
+              ${dim ? `<div class="catalogo-card-dim">${dim}</div>` : ''}
               <div class="catalogo-card-specs">
                 <div class="catalogo-card-spec"><span>Bruto:</span><strong>${escapeCatalogoHtml(modelo.codigoBruto || '—')}</strong></div>
                 <div class="catalogo-card-spec"><span>Cor:</span><strong>${escapeCatalogoHtml(cor)}</strong></div>
@@ -926,14 +926,14 @@ function renderCatalogoModelos() {
             </div>
             <div class="catalogo-card-footer">
               <button type="button" class="btn-secondary btn-sm" onclick="openFichaTecnica('${modelo.id}')">
-                🔍 Ficha Técnica
+                Ficha Técnica
               </button>
               <div class="catalogo-card-actions">
                 <button type="button" class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
-                  ✏️ Editar
+                  Editar
                 </button>
                 <button type="button" class="btn-secondary catalogo-delete-btn catalogo-card-delete-btn" onclick="deleteModelo('${modelo.id}')" aria-label="Excluir ${escapeCatalogoHtml(modelo.nome)}">
-                  🗑 Excluir
+                  Excluir
                 </button>
               </div>
             </div>
@@ -973,7 +973,7 @@ function renderCatalogoModelos() {
       <td class="catalogo-row-actions">
         <div class="catalogo-table-actions">
           <button class="btn-secondary catalogo-icon-action" onclick="openFichaTecnica('${modelo.id}')" title="Ver ficha técnica de ${escapeCatalogoHtml(modelo.nome)}" aria-label="Ver ficha técnica de ${escapeCatalogoHtml(modelo.nome)}">
-            🔍
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
           </button>
           <button class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -1162,10 +1162,10 @@ function renderBuchas() {
           <td class="catalogo-actions-col">
             <div class="catalogo-table-actions">
               <button class="btn-secondary catalogo-edit-btn" onclick="openEditBucha('${b.id}')" title="Editar ${escapeCatalogoHtml(b.sku)}">
-                ✏️ Editar
+                Editar
               </button>
               <button class="btn-secondary catalogo-icon-action catalogo-delete-btn" onclick="deleteBucha('${b.id}')" title="Excluir ${escapeCatalogoHtml(b.sku)}">
-                🗑
+                Excluir
               </button>
             </div>
           </td>
@@ -1196,10 +1196,10 @@ function renderBuchas() {
           </div>
           <div class="catalogo-card-footer">
             <button type="button" class="btn-secondary catalogo-edit-btn" onclick="openEditBucha('${b.id}')">
-              ✏️ Editar
+              Editar
             </button>
             <button type="button" class="btn-secondary catalogo-delete-btn catalogo-card-delete-btn" onclick="deleteBucha('${b.id}')">
-              🗑 Excluir
+              Excluir
             </button>
           </div>
         </div>
@@ -1305,8 +1305,8 @@ function renderEstoque() {
   tbody.innerHTML = list.map(m => {
     const baixo = m.saldo <= m.minimo;
     const statusChip = baixo
-      ? `<span class="chip chip--red">⚠ Saldo Baixo (${m.saldo} ${m.unidade})</span>`
-      : `<span class="chip chip--green">✓ Normal (${m.saldo} ${m.unidade})</span>`;
+      ? `<span class="chip chip--red">Saldo baixo (${m.saldo} ${m.unidade})</span>`
+      : `<span class="chip chip--green">Normal (${m.saldo} ${m.unidade})</span>`;
 
     return `<tr>
       <td style="color:var(--text-primary);font-weight:600">${m.nome}</td>
@@ -1682,8 +1682,8 @@ function renderFluxo() {
           </div>
           <div class="peca-actions">
             ${prevOp ? `<button class="btn-icon" onclick="avancarOpPeca('${p.id}', '${prevOp}')" title="Voltar para Op. ${prevOp}">←</button>` : '<span></span>'}
-            <button class="btn-icon" onclick="verHistoricoPeca('${p.id}')" title="Ver Histórico">📋</button>
-            <button class="btn-icon danger" onclick="deletePeca('${p.id}')" title="Excluir Peça">🗑</button>
+            <button class="btn-icon" onclick="verHistoricoPeca('${p.id}')" title="Ver histórico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13a9 9 0 1 0 2.13-6.36L3 8"/><path d="M12 7v5l3 2"/></svg></button>
+            <button class="btn-icon danger" onclick="deletePeca('${p.id}')" title="Excluir peça"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6m3 0V4h8v2"/></svg></button>
             ${nextOp ? `<button class="btn-icon" onclick="avancarOpPeca('${p.id}', '${nextOp}')" title="Avançar para Op. ${nextOp}">→</button>` : '<span></span>'}
           </div>
         </div>

@@ -107,10 +107,10 @@
             <td>
               <div class="bucha-actions-wrap">
                 <button class="btn-primary" onclick="window.openNovaEntradaBucha('${escapeHtml(s.sku)}')" title="Nova Entrada">
-                  ➕ Entrada
+                  Entrada
                 </button>
                 <button class="btn-secondary" style="border-color:var(--accent-orange); color:var(--accent-orange);" onclick="window.openSaidaBucha('${escapeHtml(s.sku)}')" title="Dar Baixa no Estoque Pronto">
-                  ➖ Dar Baixa
+                  Dar baixa
                 </button>
               </div>
             </td>
@@ -131,13 +131,13 @@
           let etapaBadge = '';
           if (e.etapaAtual === 'Usinagem') {
             etapaBadge = '<span class="chip chip--blue">1. Usinagem</span>';
-            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.openTransicaoLoteBucha('${e.id}')">⏩ Transicionar</button>`;
+            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.openTransicaoLoteBucha('${e.id}')">Transicionar</button>`;
           } else if (e.etapaAtual === 'Retrabalho') {
             etapaBadge = '<span class="chip chip--orange">2. Retrabalho</span>';
-            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.openTransicaoLoteBucha('${e.id}')">⏩ Vulcanizar</button>`;
+            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.openTransicaoLoteBucha('${e.id}')">Vulcanizar</button>`;
           } else if (e.etapaAtual === 'Vulcanizacao') {
             etapaBadge = '<span class="chip chip--purple">3. Vulcanização</span>';
-            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem; background:var(--accent-green);" onclick="window.openTransicaoLoteBucha('${e.id}')">✅ Enviar p/ Estoque Pronto</button>`;
+            btnAcao = `<button class="btn-primary" style="padding:4px 10px; font-size:0.8rem;" onclick="window.openTransicaoLoteBucha('${e.id}')">Enviar ao estoque pronto</button>`;
           } else {
             etapaBadge = '<span class="chip chip--green">4. Estoque Pronto</span>';
             btnAcao = '<span class="chip chip--green">Concluído</span>';
@@ -153,7 +153,7 @@
             <td>
               <div class="bucha-actions-wrap">
                 ${btnAcao}
-                <button class="btn-secondary catalogo-icon-action" onclick="window.openHistoricoLoteBucha('${e.id}')" title="Histórico">📜</button>
+                <button class="btn-secondary catalogo-icon-action" onclick="window.openHistoricoLoteBucha('${e.id}')" title="Histórico" aria-label="Abrir histórico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></button>
               </div>
             </td>
           </tr>`;
@@ -416,8 +416,8 @@
       list.innerHTML = (entrada.historico || []).map(h => `
         <div style="padding: 10px; border-left: 3px solid var(--accent-teal); background: var(--bg-tertiary); margin-bottom: 8px; border-radius: 4px;">
           <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-secondary);">
-            <span>⏱ ${escapeHtml(h.data)}</span>
-            <span>👤 ${escapeHtml(h.usuario || 'Operador')}</span>
+            <span>${escapeHtml(h.data)}</span>
+            <span>${escapeHtml(h.usuario || 'Operador')}</span>
           </div>
           <div style="font-weight:600; margin-top:4px;">${escapeHtml(h.acao || '')}</div>
         </div>

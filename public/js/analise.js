@@ -782,7 +782,7 @@ function renderAnaliseTable() {
     if (automaticNeed > 0 || suggestedQty > 0) {
       actionBtn = `<button class="btn-primary analise-create-op" ${suggestedQty <= 0 ? 'disabled' : ''} onclick="abrirNovaOPDaAnalise(this, '${escapeJSString(item.produto)}', ${item.prio2})">Adicionar OP</button>`;
     } else {
-      actionBtn = `<span class="analise-buffer-ok">✓ Buffer OK</span>`;
+      actionBtn = `<span class="analise-buffer-ok">Buffer OK</span>`;
     }
 
     const formattedPrio = item.prio2 !== null ? item.prio2.toFixed(1) : '—';

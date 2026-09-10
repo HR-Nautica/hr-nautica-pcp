@@ -52,6 +52,105 @@
     });
   }
 
+  function ensureMobileNavigation() {
+    if (document.getElementById("erp-mobile-menu")) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.id = "erp-mobile-menu";
+    button.className = "erp-mobile-menu";
+    button.setAttribute("aria-label", "Abrir navegação");
+    button.setAttribute("aria-expanded", "false");
+    button.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>';
+
+    const backdrop = document.createElement("button");
+    backdrop.type = "button";
+    backdrop.id = "erp-sidebar-backdrop";
+    backdrop.className = "erp-sidebar-backdrop hidden";
+    backdrop.setAttribute("aria-label", "Fechar navegação");
+
+    const close = () => {
+      document.getElementById("sidebar")?.classList.remove("mobile-open");
+      backdrop.classList.add("hidden");
+      button.setAttribute("aria-expanded", "false");
+    };
+    button.addEventListener("click", () => {
+      const sidebar = document.getElementById("sidebar");
+      const willOpen = !sidebar?.classList.contains("mobile-open");
+      sidebar?.classList.toggle("mobile-open", willOpen);
+      backdrop.classList.toggle("hidden", !willOpen);
+      button.setAttribute("aria-expanded", String(willOpen));
+    });
+    backdrop.addEventListener("click", close);
+    document.querySelector(".sidebar-nav")?.addEventListener("click", event => {
+      if (event.target.closest(".nav-item")) close();
+    });
+    document.body.append(backdrop, button);
+  }
+
+  function createPageToolbar(pageId, controlIds, anchorSelector) {
+    const page = document.getElementById(pageId);
+    if (!page || page.querySelector(":scope > .erp-page-toolbar")) return;
+    const controls = controlIds.map(id => document.getElementById(id)).filter(Boolean);
+    if (!controls.length) return;
+    const toolbar = document.createElement("div");
+    toolbar.className = "erp-page-toolbar";
+    controls.forEach(control => toolbar.appendChild(control));
+    const anchor = page.querySelector(anchorSelector);
+    if (anchor) anchor.insertAdjacentElement("afterend", toolbar);
+    else page.querySelector(".page-header")?.insertAdjacentElement("afterend", toolbar);
+  }
+
+  function createQuickFilters(pageId, selectId, items) {
+    const page = document.getElementById(pageId);
+    const select = document.getElementById(selectId);
+    const toolbar = page?.querySelector(":scope > .erp-page-toolbar");
+    if (!page || !select || !toolbar || page.querySelector(":scope > .erp-quick-filters")) return;
+    const filters = document.createElement("div");
+    filters.className = "erp-quick-filters";
+    filters.setAttribute("aria-label", "Filtros rápidos");
+
+    const sync = () => {
+      filters.querySelectorAll("button").forEach(button => {
+        const active = button.dataset.value === select.value;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+    };
+    items.forEach(item => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.value = item.value;
+      button.textContent = item.label;
+      button.addEventListener("click", () => {
+        select.value = item.value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        sync();
+      });
+      filters.appendChild(button);
+    });
+    select.addEventListener("change", sync);
+    toolbar.insertAdjacentElement("beforebegin", filters);
+    sync();
+  }
+
+  function normalizeOperationalPages() {
+    createPageToolbar("page-fundicao", ["fundicao-search", "fundicao-filter-status"], ".kpi-grid");
+    createPageToolbar("page-rastreio-fundicao", ["rf-search", "rf-filter-status", "rf-btn-refresh"], ".kpi-grid");
+    createPageToolbar("page-fluxo", ["fluxo-search", "fluxo-filter-op", "fluxo-filter-status", "btn-refresh-helice-ops"], ".flow-kpi-bar");
+
+    createQuickFilters("page-rastreio-fundicao", "rf-filter-status", [
+      { value: "", label: "Todas" },
+      { value: "Em aberto", label: "Abertas" },
+      { value: "Fundido", label: "Finalizadas" }
+    ]);
+    createQuickFilters("page-fluxo", "fluxo-filter-status", [
+      { value: "", label: "Todas" },
+      { value: "em_producao", label: "Em produção" },
+      { value: "finalizada", label: "Finalizadas" },
+      { value: "refugada", label: "Refugadas" }
+    ]);
+  }
+
   function closeDrawer() {
     document.getElementById("erp-detail-overlay")?.classList.add("hidden");
     selectedRow?.classList.remove("erp-row-selected");
@@ -127,6 +226,8 @@
 
   function bindWorkspaceInteractions() {
     ensureDrawer();
+    ensureMobileNavigation();
+    normalizeOperationalPages();
     document.addEventListener("click", event => {
       const interactive = event.target.closest("button, a, input, select, textarea, label");
       if (interactive) return;

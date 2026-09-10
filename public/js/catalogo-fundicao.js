@@ -206,10 +206,10 @@
           </td>
           <td class="catalogo-actions-col" style="text-align: right;">
             <div class="catalogo-table-actions" style="justify-content: flex-end; gap: 4px;">
-              <button class="btn-secondary catalogo-icon-action" onclick="window.openViewProdutoFundicao('${escapeHtml(item.id)}')" title="Visualizar Ficha Técnica">👁️</button>
-              <button class="btn-secondary catalogo-icon-action" onclick="window.openEditProdutoFundicao('${escapeHtml(item.id)}')" title="Editar Produto">✏️</button>
-              <button class="btn-secondary catalogo-icon-action" onclick="window.toggleStatusProdutoFundicao('${escapeHtml(item.id)}')" title="${isAtivo ? 'Inativar Produto' : 'Ativar Produto'}">${isAtivo ? '⏸️' : '▶️'}</button>
-              <button class="btn-secondary catalogo-icon-action" onclick="window.deleteProdutoFundicao('${escapeHtml(item.id)}')" title="Excluir Produto" style="color:var(--accent-red); border-color:var(--accent-red);">🗑️</button>
+              <button class="btn-secondary catalogo-icon-action" onclick="window.openViewProdutoFundicao('${escapeHtml(item.id)}')" title="Visualizar ficha técnica"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/></svg></button>
+              <button class="btn-secondary catalogo-icon-action" onclick="window.openEditProdutoFundicao('${escapeHtml(item.id)}')" title="Editar produto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg></button>
+              <button class="btn-secondary catalogo-icon-action" onclick="window.toggleStatusProdutoFundicao('${escapeHtml(item.id)}')" title="${isAtivo ? 'Inativar produto' : 'Ativar produto'}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${isAtivo ? '<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>' : '<polygon points="7 4 20 12 7 20 7 4"/>'}</svg></button>
+              <button class="btn-danger catalogo-icon-action" onclick="window.deleteProdutoFundicao('${escapeHtml(item.id)}')" title="Excluir produto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6m3 0V4h8v2"/></svg></button>
             </div>
           </td>
         </tr>
