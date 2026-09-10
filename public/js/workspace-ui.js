@@ -12,6 +12,54 @@
     "page-estoque-buchas": "Detalhes do estoque"
   };
 
+  const tableSchemas = {
+    "analise-table": {
+      minWidth: "1680px",
+      columns: [
+        ["72px", "sticky-index"], ["340px", "sticky-primary"], ["110px", "code"], ["130px", "code"],
+        ["92px", "number"], ["92px", "number"], ["92px", "number"], ["92px", "number"],
+        ["112px", "number"], ["104px", "number"], ["104px", "status"], ["124px", "number"],
+        ["100px", "status"], ["140px", "text"], ["112px", "actions"]
+      ]
+    },
+    "modelos-table": {
+      minWidth: "1450px",
+      columns: [["132px", "code"], ["360px", "text"], ["150px", "code"], ["132px", "code"], ["320px", "text"], ["112px", "text"], ["132px", "code"], ["132px", "actions"]]
+    },
+    "buchas-table": {
+      minWidth: "1260px",
+      columns: [["140px", "code"], ["360px", "text"], ["156px", "text"], ["112px", "number"], ["124px", "number"], ["260px", "text"], ["112px", "actions"]]
+    },
+    "catalogo-fundicao-table": {
+      minWidth: "1340px",
+      columns: [["170px", "code"], ["320px", "text"], ["160px", "text"], ["120px", "number"], ["326px", "text"], ["112px", "status"], ["132px", "actions"]]
+    },
+    "fundicao-programacao-table": {
+      minWidth: "1510px",
+      columns: [["58px", "status"], ["202px", "code"], ["150px", "number"], ["124px", "number"], ["112px", "number"], ["112px", "status"], ["132px", "number"], ["100px", "number"], ["120px", "number"], ["112px", "date"], ["112px", "date"], ["72px", "number"], ["112px", "actions"]]
+    },
+    "rastreio-fundicao-table": {
+      minWidth: "1490px",
+      columns: [["140px", "code"], ["180px", "text"], ["300px", "text"], ["120px", "number"], ["120px", "number"], ["120px", "date"], ["120px", "date"], ["160px", "text"], ["110px", "status"], ["120px", "actions"]]
+    },
+    "fluxo-table": {
+      minWidth: "1540px",
+      columns: [["140px", "code"], ["120px", "code"], ["320px", "text"], ["90px", "number"], ["108px", "status"], ["180px", "text"], ["220px", "text"], ["120px", "date"], ["110px", "status"], ["132px", "actions"]]
+    },
+    "bucha-saldos-table": {
+      minWidth: "1330px",
+      columns: [["140px", "code"], ["320px", "text"], ["240px", "text"], ["100px", "number"], ["100px", "number"], ["110px", "number"], ["112px", "number"], ["100px", "number"], ["108px", "actions"]]
+    },
+    "bucha-lotes-table": {
+      minWidth: "1280px",
+      columns: [["150px", "code"], ["140px", "code"], ["320px", "text"], ["100px", "number"], ["150px", "status"], ["260px", "text"], ["160px", "actions"]]
+    },
+    "bucha-movimentos-table": {
+      minWidth: "1050px",
+      columns: [["160px", "code"], ["100px", "status"], ["140px", "code"], ["110px", "number"], ["360px", "text"], ["180px", "date"]]
+    }
+  };
+
   let selectedRow = null;
   let sourceActions = [];
 
@@ -85,6 +133,52 @@
       if (event.target.closest(".nav-item")) close();
     });
     document.body.append(backdrop, button);
+  }
+
+  function applyTableColumnTypes(table, schema) {
+    const headerCells = table.querySelectorAll("thead tr:first-child > th");
+    headerCells.forEach((cell, index) => {
+      const type = schema.columns[index]?.[1] || "text";
+      cell.classList.add(`hr-cell--${type}`);
+    });
+    table.querySelectorAll("tbody tr").forEach(row => {
+      const cells = row.querySelectorAll(":scope > td");
+      if (cells.length === 1 && cells[0].hasAttribute("colspan")) {
+        cells[0].classList.add(cells[0].classList.contains("empty-cell") ? "hr-cell--empty" : "hr-cell--detail");
+        return;
+      }
+      cells.forEach((cell, index) => {
+        const type = schema.columns[index]?.[1] || "text";
+        cell.classList.add(`hr-cell--${type}`);
+      });
+    });
+  }
+
+  function normalizeDataTables() {
+    Object.entries(tableSchemas).forEach(([id, schema]) => {
+      const table = document.getElementById(id);
+      if (!table) return;
+      table.classList.add("hr-data-table");
+      table.style.setProperty("--hr-table-min-width", schema.minWidth);
+
+      table.querySelectorAll(":scope > colgroup").forEach(group => group.remove());
+      const colgroup = document.createElement("colgroup");
+      colgroup.dataset.hrSchema = id;
+      schema.columns.forEach(([width, type]) => {
+        const col = document.createElement("col");
+        col.style.width = width;
+        col.dataset.columnType = type;
+        colgroup.appendChild(col);
+      });
+      table.prepend(colgroup);
+      applyTableColumnTypes(table, schema);
+
+      const tbody = table.tBodies[0];
+      if (tbody && !table.__hrTableObserver) {
+        table.__hrTableObserver = new MutationObserver(() => applyTableColumnTypes(table, schema));
+        table.__hrTableObserver.observe(tbody, { childList: true, subtree: true });
+      }
+    });
   }
 
   function createPageToolbar(pageId, controlIds, anchorSelector) {
@@ -228,13 +322,21 @@
     ensureDrawer();
     ensureMobileNavigation();
     normalizeOperationalPages();
+    normalizeDataTables();
     document.addEventListener("click", event => {
-      const interactive = event.target.closest("button, a, input, select, textarea, label");
+      const activeMenu = event.target.closest(".hr-action-menu");
+      document.querySelectorAll(".hr-action-menu[open]").forEach(menu => {
+        if (menu !== activeMenu) menu.removeAttribute("open");
+      });
+      const interactive = event.target.closest("button, a, input, select, textarea, label, summary, details");
       if (interactive) return;
       const row = event.target.closest(".erp-page table tbody tr");
       if (row) openRowDetails(row);
     });
     document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        document.querySelectorAll(".hr-action-menu[open]").forEach(menu => menu.removeAttribute("open"));
+      }
       if (event.key === "Escape" && !document.getElementById("erp-detail-overlay")?.classList.contains("hidden")) {
         closeDrawer();
       }

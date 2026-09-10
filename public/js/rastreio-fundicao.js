@@ -215,14 +215,8 @@
       const resp = (isFundido && op.responsavelConclusao) ? op.responsavelConclusao : (op.responsavel || '—');
 
       const statusBadge = isFundido
-        ? `<span class="chip chip--green" style="font-weight:700; display:inline-flex; align-items:center; gap:6px; padding:3px 10px;">
-             <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#22c55e;"></span>
-             Fundido
-           </span>`
-        : `<span class="chip chip--orange" style="font-weight:700; display:inline-flex; align-items:center; gap:6px; padding:3px 10px;">
-             <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f59e0b; box-shadow:0 0 6px #f59e0b;"></span>
-             Em aberto
-           </span>`;
+        ? '<span class="chip chip--green">Fundido</span>'
+        : '<span class="chip chip--orange">Em aberto</span>';
 
       const acoesHtml = isFundido
         ? `<div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
@@ -231,14 +225,14 @@
                Concluída
              </span>
            </div>`
-        : `<div style="display:flex; gap:6px; justify-content:flex-end; align-items:center;">
-             <button type="button" class="btn-sm btn-finalizar-op" data-id="${escapeHtml(op.id)}" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color:white; border:1px solid #22c55e; border-radius:6px; padding:5px 11px; font-weight:700; font-size:0.8rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(22,163,74,0.3);" title="Confirmar produção e creditar peças no Estoque Físico">
-               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-               Finalizar OP
-             </button>
-             <button type="button" class="btn-icon btn-danger btn-delete-op" data-id="${escapeHtml(op.id)}" title="Excluir Ordem de Produção">
-               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-             </button>
+        : `<div class="hr-row-actions">
+             <button type="button" class="btn-secondary btn-sm btn-finalizar-op hr-table-cta" data-id="${escapeHtml(op.id)}" title="Confirmar produção e creditar peças no Estoque Físico">Finalizar</button>
+             <details class="hr-action-menu">
+               <summary aria-label="Mais ações para ${escapeHtml(numOP)}" title="Mais ações">•••</summary>
+               <div class="hr-action-menu-popover">
+                 <button type="button" class="hr-action-danger btn-delete-op" data-id="${escapeHtml(op.id)}">Excluir OP</button>
+               </div>
+             </details>
            </div>`;
 
       return `

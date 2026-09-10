@@ -21,6 +21,11 @@
   --hr-radius-md: 8px;
   --hr-radius-lg: 10px;
   --hr-control-height: 36px;
+  --hr-table-header-height: 40px;
+  --hr-table-row-height: 52px;
+  --hr-table-cell-padding-x: 12px;
+  --hr-table-actions-width: 112px;
+  --hr-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --hr-sidebar-width: 232px;
   --hr-content-x: 32px;
   --hr-content-top: 24px;
@@ -226,6 +231,7 @@ body { background: var(--hr-bg); color: var(--hr-text-primary); font-size: 14px;
 .btn-icon,
 .view-toggle-btn,
 .subnav-tab-btn {
+  height: var(--hr-control-height) !important;
   min-height: var(--hr-control-height) !important;
   border-radius: var(--hr-radius-md) !important;
   box-shadow: none !important;
@@ -262,6 +268,7 @@ body { background: var(--hr-bg); color: var(--hr-text-primary); font-size: 14px;
 .erp-page .form-select,
 .erp-page .form-textarea,
 .erp-page .catalogo-filter select {
+  height: var(--hr-control-height) !important;
   min-height: var(--hr-control-height) !important;
   border: 1px solid var(--hr-border) !important;
   border-radius: var(--hr-radius-md) !important;
@@ -270,6 +277,9 @@ body { background: var(--hr-bg); color: var(--hr-text-primary); font-size: 14px;
   box-shadow: none !important;
   font-size: 13px !important;
 }
+
+.form-textarea,
+.erp-page .form-textarea { height: auto !important; min-height: 84px !important; }
 
 .search-input:focus,
 .select-sm:focus,
@@ -562,8 +572,8 @@ body { background: var(--hr-bg); color: var(--hr-text-primary); font-size: 14px;
   position: sticky;
   top: 0;
   z-index: 2;
-  height: 38px !important;
-  padding: 9px 12px !important;
+  height: var(--hr-table-header-height) !important;
+  padding: 10px var(--hr-table-cell-padding-x) !important;
   border: 0 !important;
   border-bottom: 1px solid var(--hr-border-subtle) !important;
   background: var(--hr-surface-2) !important;
@@ -581,8 +591,8 @@ body { background: var(--hr-bg); color: var(--hr-text-primary); font-size: 14px;
 .catalogo-table td,
 .erp-page .data-table td,
 .erp-page .catalogo-table td {
-  height: 54px !important;
-  padding: 10px 12px !important;
+  height: var(--hr-table-row-height) !important;
+  padding: 9px var(--hr-table-cell-padding-x) !important;
   border: 0 !important;
   border-bottom: 1px solid var(--hr-border-subtle) !important;
   background: transparent !important;
@@ -603,7 +613,158 @@ body { background: var(--hr-bg); color: var(--hr-text-primary); font-size: 14px;
 .catalogo-table tbody tr:hover { box-shadow: none !important; }
 .data-table .font-mono,
 .catalogo-table .font-mono { color: var(--hr-text-secondary) !important; font-size: 12px !important; font-weight: 500 !important; text-shadow: none !important; }
-.table-wrap { overflow: auto; scrollbar-color: #35445b transparent; }
+.table-wrap { overflow: auto; scrollbar-color: #35445b transparent; scrollbar-width: thin; }
+
+/* DataTable: uma única fundação estrutural para os workspaces operacionais. */
+.hr-data-table {
+  width: 100% !important;
+  min-width: var(--hr-table-min-width, 100%) !important;
+  table-layout: fixed !important;
+}
+
+.hr-data-table th,
+.hr-data-table td {
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+.hr-data-table th { text-align: left !important; }
+.hr-data-table .hr-cell--text { text-align: left !important; }
+.hr-data-table .hr-cell--code {
+  text-align: left !important;
+  font-family: var(--hr-font-mono) !important;
+  font-variant-numeric: tabular-nums;
+}
+.hr-data-table .hr-cell--number {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+.hr-data-table .hr-cell--date {
+  text-align: left !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hr-data-table .hr-cell--status { text-align: center !important; }
+.hr-data-table .hr-cell--actions {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  width: var(--hr-table-actions-width) !important;
+  min-width: var(--hr-table-actions-width) !important;
+  text-align: right !important;
+  background: var(--hr-surface-1) !important;
+  box-shadow: -1px 0 0 var(--hr-border-subtle);
+  white-space: nowrap;
+}
+.hr-data-table th.hr-cell--actions {
+  z-index: 5;
+  background: var(--hr-surface-2) !important;
+}
+.hr-data-table tbody tr:hover td.hr-cell--actions { background: #111b2b !important; }
+.hr-data-table .hr-cell--empty {
+  position: static !important;
+  text-align: center !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.hr-data-table .hr-cell--detail { position: static !important; text-align: left !important; }
+
+.pf-rank-badge {
+  width: 26px !important;
+  height: 26px !important;
+  border: 1px solid transparent !important;
+  border-radius: 50% !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.pf-rank-badge--red { border-color: rgba(248, 113, 113, 0.24) !important; background: rgba(239, 68, 68, 0.13) !important; color: #fecaca !important; }
+.pf-rank-badge--orange { border-color: rgba(251, 191, 36, 0.24) !important; background: rgba(245, 158, 11, 0.13) !important; color: #fde68a !important; }
+.pf-rank-badge--green { border-color: rgba(74, 222, 128, 0.22) !important; background: rgba(34, 197, 94, 0.12) !important; color: #a7f3d0 !important; }
+
+#analise-table .hr-cell--sticky-index,
+#analise-table .hr-cell--sticky-primary {
+  position: sticky;
+  z-index: 3;
+  background: var(--hr-surface-1) !important;
+}
+#analise-table .hr-cell--sticky-index { left: 0; text-align: center !important; }
+#analise-table .hr-cell--sticky-primary { left: 72px; box-shadow: 1px 0 0 var(--hr-border-subtle); }
+#analise-table th.hr-cell--sticky-index,
+#analise-table th.hr-cell--sticky-primary { z-index: 5; background: var(--hr-surface-2) !important; }
+#analise-table tbody tr:hover .hr-cell--sticky-index,
+#analise-table tbody tr:hover .hr-cell--sticky-primary { background: #111b2b !important; }
+
+.hr-data-table td:not(.hr-cell--actions):not(.hr-cell--empty) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ActionMenu compacto; ações destrutivas deixam de competir com a tarefa principal. */
+.hr-row-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.hr-row-action,
+.hr-action-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--hr-border);
+  border-radius: var(--hr-radius-sm);
+  background: var(--hr-surface-2);
+  color: var(--hr-text-secondary);
+  cursor: pointer;
+  list-style: none;
+}
+.hr-action-menu { position: relative; }
+.hr-action-menu > summary::-webkit-details-marker { display: none; }
+.hr-row-action:hover,
+.hr-action-menu > summary:hover,
+.hr-action-menu[open] > summary { background: var(--hr-surface-3); color: var(--hr-text-primary); }
+.hr-action-menu-popover {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 30;
+  display: grid;
+  min-width: 148px;
+  padding: 4px;
+  border: 1px solid var(--hr-border);
+  border-radius: var(--hr-radius-md);
+  background: var(--hr-surface-2);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
+}
+.hr-action-menu-popover button {
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: var(--hr-radius-sm);
+  background: transparent;
+  color: var(--hr-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.hr-action-menu-popover button:hover { background: rgba(255, 255, 255, 0.045); }
+.hr-action-menu-popover .hr-action-danger { color: var(--hr-danger); }
+.hr-table-cta { min-height: 30px !important; padding: 5px 9px !important; font-size: 12px !important; }
+
+/* Scrollbars globais discretas. */
+.table-wrap::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+.erp-detail-body::-webkit-scrollbar { width: 8px; height: 8px; }
+.table-wrap::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track,
+.erp-detail-body::-webkit-scrollbar-track { background: transparent; }
+.table-wrap::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb,
+.erp-detail-body::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 8px; background: #35445b; background-clip: padding-box; }
+.table-wrap::-webkit-scrollbar-thumb:hover,
+.sidebar::-webkit-scrollbar-thumb:hover,
+.erp-detail-body::-webkit-scrollbar-thumb:hover { background: #465874; background-clip: padding-box; }
 
 /* StatusBadge global */
 .chip,

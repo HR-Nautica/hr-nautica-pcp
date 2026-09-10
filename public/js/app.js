@@ -971,17 +971,19 @@ function renderCatalogoModelos() {
       <td class="catalogo-col-cor"><span class="catalogo-color"><i class="catalogo-color-dot${dotClass}"></i>${escapeCatalogoHtml(cor)}</span></td>
       <td class="catalogo-caixa catalogo-col-caixa">${escapeCatalogoHtml(modelo.skuCaixa || '—')}</td>
       <td class="catalogo-row-actions">
-        <div class="catalogo-table-actions">
+        <div class="hr-row-actions">
           <button class="btn-secondary catalogo-icon-action" onclick="openFichaTecnica('${modelo.id}')" title="Ver ficha técnica de ${escapeCatalogoHtml(modelo.nome)}" aria-label="Ver ficha técnica de ${escapeCatalogoHtml(modelo.nome)}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
           </button>
-          <button class="btn-secondary catalogo-edit-btn" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}">
+          <button class="hr-row-action" onclick="openEditModelo('${modelo.id}')" aria-label="Editar ${escapeCatalogoHtml(modelo.nome)}" title="Editar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Editar
           </button>
-          <button class="btn-secondary catalogo-icon-action catalogo-delete-btn" onclick="deleteModelo('${modelo.id}')" title="Excluir ${escapeCatalogoHtml(modelo.nome)}" aria-label="Excluir ${escapeCatalogoHtml(modelo.nome)}">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
-          </button>
+          <details class="hr-action-menu">
+            <summary aria-label="Mais ações para ${escapeCatalogoHtml(modelo.nome)}" title="Mais ações">•••</summary>
+            <div class="hr-action-menu-popover">
+              <button type="button" class="hr-action-danger" onclick="deleteModelo('${modelo.id}')">Excluir</button>
+            </div>
+          </details>
         </div>
       </td>
     </tr>`;
@@ -1160,13 +1162,16 @@ function renderBuchas() {
           <td>${Number(b.peso) ? `${b.peso} kg` : '—'}</td>
           <td><span class="chip chip--teal">${escapeCatalogoHtml(b.aplicacao || 'Geral')}</span></td>
           <td class="catalogo-actions-col">
-            <div class="catalogo-table-actions">
-              <button class="btn-secondary catalogo-edit-btn" onclick="openEditBucha('${b.id}')" title="Editar ${escapeCatalogoHtml(b.sku)}">
-                Editar
+            <div class="hr-row-actions">
+              <button class="hr-row-action" onclick="openEditBucha('${b.id}')" title="Editar ${escapeCatalogoHtml(b.sku)}" aria-label="Editar ${escapeCatalogoHtml(b.sku)}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
-              <button class="btn-secondary catalogo-icon-action catalogo-delete-btn" onclick="deleteBucha('${b.id}')" title="Excluir ${escapeCatalogoHtml(b.sku)}">
-                Excluir
-              </button>
+              <details class="hr-action-menu">
+                <summary aria-label="Mais ações para ${escapeCatalogoHtml(b.sku)}" title="Mais ações">•••</summary>
+                <div class="hr-action-menu-popover">
+                  <button type="button" class="hr-action-danger" onclick="deleteBucha('${b.id}')">Excluir</button>
+                </div>
+              </details>
             </div>
           </td>
         </tr>

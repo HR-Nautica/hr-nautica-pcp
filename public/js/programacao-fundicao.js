@@ -343,39 +343,39 @@
 
       return `
         <tr class="pf-row ${isExpanded ? 'expanded' : ''}">
-          <td style="width: 50px; text-align: center; white-space: nowrap;">
+          <td>
             <div class="pf-rank-badge ${rankBadgeClass}">${rankNum}</div>
           </td>
-          <td style="min-width: 180px; white-space: nowrap;">
+          <td>
             <button type="button" class="pf-toggle-btn" onclick="window.toggleCoquilhaDetails('${escapeHtml(item.coquilha)}')" title="Expandir/recolher modelos de ${escapeHtml(item.coquilha)}">
               <strong style="color:#ffffff; font-weight:800; font-size:1.02rem; letter-spacing:0.02em; white-space:nowrap;">${escapeHtml(item.coquilha)}</strong>
               <span class="pf-arrow" style="font-size:0.85rem; color:#38bdf8; margin-left:6px; display:inline-block;">${isExpanded ? '▲' : '▼'}</span>
             </button>
           </td>
-          <td class="font-mono" style="min-width: 140px; color:#38bdf8; font-weight:700; white-space:nowrap;">
+          <td class="font-mono">
             ${fmtNumber(item.mediaTotal, 1)} <span style="font-size:0.75rem; color:#94a3b8">pçs/mês</span>
           </td>
-          <td class="font-mono" style="min-width: 110px; color:#f8fafc; font-weight:700; font-size:0.95rem; white-space:nowrap;">
+          <td class="font-mono">
             <strong style="color:#38bdf8; font-size:1.05rem;">${fmtNumber(item.estoqueFisicoTotal, 0)}</strong> <span style="font-size:0.75rem; color:#94a3b8">un</span>
           </td>
-          <td style="min-width: 100px; white-space: nowrap;">
+          <td>
             <span class="pf-status-badge ${statusBadgeClass} font-mono" style="font-weight:800; white-space:nowrap;">${cobText}</span>
           </td>
-          <td style="min-width: 110px; white-space: nowrap;">
+          <td>
             <span class="pf-status-badge ${statusBadgeClass}" style="font-weight:900; letter-spacing:0.05em; white-space:nowrap;">${item.status}</span>
           </td>
-          <td style="min-width: 120px; white-space: nowrap;">
+          <td>
             ${item.prodNecTotal > 0 
               ? `<strong class="font-mono" style="font-size:1.15rem; color:#38bdf8; text-shadow:0 0 10px rgba(56,189,248,0.3); font-weight:800; white-space:nowrap;">${fmtNumber(item.prodNecTotal, 0)}</strong>` 
               : `<span class="font-mono" style="color:#64748b; font-weight:700; white-space:nowrap;">0</span>`}
           </td>
-          <td class="font-mono" style="min-width: 95px; color:#cbd5e1; font-weight:600; white-space:nowrap;">${pesoUnitStr}</td>
-          <td class="font-mono" style="min-width: 110px; color:#f8fafc; font-weight:800; white-space:nowrap;">${totLigaStr}</td>
-          <td class="font-mono" style="min-width: 105px; color:#fb923c; font-weight:700; white-space:nowrap;">${dtInicioStr}</td>
-          <td class="font-mono" style="min-width: 105px; color:#fb923c; font-weight:700; white-space:nowrap;">${dtFimStr}</td>
-          <td class="font-mono" style="min-width: 70px; color:#cbd5e1; font-weight:700; white-space:nowrap;">${diasStr}</td>
-          <td class="catalogo-actions-col" style="min-width: 130px; text-align: right; white-space:nowrap;">
-            <button type="button" class="btn-primary btn-sm pf-action-btn" onclick="window.openNovaFundicao('${escapeHtml(item.coquilha)}', ${item.prodNecTotal}, ${item.pesoUnitario})" title="Gerar Ordem de Produção com status Em aberto">
+          <td class="font-mono">${pesoUnitStr}</td>
+          <td class="font-mono">${totLigaStr}</td>
+          <td class="font-mono">${dtInicioStr}</td>
+          <td class="font-mono">${dtFimStr}</td>
+          <td class="font-mono">${diasStr}</td>
+          <td class="catalogo-actions-col">
+            <button type="button" class="btn-secondary btn-sm pf-action-btn hr-table-cta" onclick="window.openNovaFundicao('${escapeHtml(item.coquilha)}', ${item.prodNecTotal}, ${item.pesoUnitario})" title="Gerar Ordem de Produção com status Em aberto">
               Criar OP
             </button>
           </td>
