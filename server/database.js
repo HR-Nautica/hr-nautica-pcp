@@ -1776,7 +1776,7 @@ export async function createFundicaoOrder(data, actor = "") {
       locked,
       { hrn_config: configState, hrn_fundicoes: orders },
       actor,
-      "FUNDICAO_OP_CREATE"
+      "FUND_OP_CREATE"
     );
 
     return { ...saved, op, orders, version: saved.versions.hrn_fundicoes };
@@ -1857,7 +1857,7 @@ export async function finalizeFundicaoOrder(opId, finishData, actor = "") {
       locked,
       { hrn_fundicoes: orders, hrn_materiais: materials, hrn_movimentos: movements },
       actor,
-      "FUNDICAO_OP_FINALIZE"
+      "FUND_OP_FINALIZE"
     );
 
     return {
@@ -1906,7 +1906,7 @@ export async function updateFundicaoOrder(opId, data, actor = "") {
     };
     orders[opIndex] = op;
 
-    const saved = await saveLockedStates(client, locked, { hrn_fundicoes: orders }, actor, "FUNDICAO_OP_UPDATE");
+    const saved = await saveLockedStates(client, locked, { hrn_fundicoes: orders }, actor, "FUND_OP_UPDATE");
     return { ...saved, op, orders, version: saved.versions.hrn_fundicoes };
   });
 }
@@ -1927,7 +1927,7 @@ export async function deleteFundicaoOrder(opId, actor = "") {
     }
 
     orders.splice(opIndex, 1);
-    const saved = await saveLockedStates(client, locked, { hrn_fundicoes: orders }, actor, "FUNDICAO_OP_DELETE");
+    const saved = await saveLockedStates(client, locked, { hrn_fundicoes: orders }, actor, "FUND_OP_DELETE");
     return { ...saved, op: previous, orders, version: saved.versions.hrn_fundicoes };
   });
 }
