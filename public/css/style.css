@@ -5790,6 +5790,37 @@ textarea.op-input-control {
   }
 }
 
+/* Navegação lateral: agrupamento discreto e consistente com o ERP. */
+.sidebar {
+  background: #0f172a;
+  border-right-color: rgba(148, 163, 184, 0.16);
+}
+
+.logo-icon {
+  background: #1e40af;
+  box-shadow: none;
+}
+
+.sidebar-title {
+  margin-top: 0.3rem;
+  color: #718096;
+}
+
+.nav-item {
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+
+.nav-item:hover {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.nav-item.active {
+  border-color: rgba(96, 165, 250, 0.25);
+  background: rgba(59, 130, 246, 0.16);
+  color: #bfdbfe;
+}
+
 /* ═════════════════════════════════════════════
    MODAL: AGENDAR / EDITAR FUNDIÇÃO
    ═════════════════════════════════════════════ */
@@ -6218,5 +6249,362 @@ textarea.fundicao-input-control {
   .fundicao-flow-nav button {
     flex: 1 1 100%;
     text-align: left;
+  }
+}
+
+/* ======================================================================
+   ERP WORKSPACE
+   Visual compartilhado para Catálogos, Produção, Rastreio e Estoques.
+   Mantém os módulos com alta densidade de dados, sem efeitos decorativos.
+   ====================================================================== */
+.erp-page {
+  --erp-surface: #111a2a;
+  --erp-surface-raised: #182338;
+  --erp-border: rgba(148, 163, 184, 0.18);
+  --erp-border-strong: rgba(148, 163, 184, 0.28);
+  --erp-muted: #94a3b8;
+  --erp-title: #f8fafc;
+  --erp-primary: #3b82f6;
+  --erp-primary-hover: #2563eb;
+}
+
+.erp-page .page-header {
+  align-items: flex-end;
+  margin-bottom: 1.25rem !important;
+  padding: 0 0 1.2rem;
+  border-bottom: 1px solid var(--erp-border);
+}
+
+.erp-page .page-title {
+  color: var(--erp-title);
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.erp-page .page-subtitle,
+.erp-page .catalogo-subtitle {
+  max-width: 720px;
+  margin-top: 0.4rem;
+  color: var(--erp-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.erp-page .header-actions {
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.erp-page .btn-primary,
+.erp-page .btn-secondary,
+.erp-page .btn-icon,
+.erp-page .view-toggle-btn {
+  min-height: 38px;
+  border-radius: 7px;
+  box-shadow: none !important;
+  font-weight: 600;
+}
+
+.erp-page .btn-primary {
+  border-color: var(--erp-primary);
+  background: var(--erp-primary);
+}
+
+.erp-page .btn-primary:hover {
+  background: var(--erp-primary-hover);
+  border-color: var(--erp-primary-hover);
+  transform: none;
+}
+
+.erp-page .btn-secondary,
+.erp-page .btn-icon,
+.erp-page .view-toggle-btn {
+  border-color: var(--erp-border-strong);
+  background: var(--erp-surface-raised);
+  color: #cbd5e1;
+}
+
+.erp-page .btn-secondary:hover,
+.erp-page .btn-icon:hover,
+.erp-page .view-toggle-btn:hover,
+.erp-page .view-toggle-btn.active {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(59, 130, 246, 0.14);
+  color: #dbeafe;
+}
+
+.erp-page .search-input,
+.erp-page .select-sm,
+.erp-page .catalogo-search-wrap,
+.erp-page .catalogo-filter select,
+.erp-page .form-input {
+  min-height: 38px;
+  border-color: var(--erp-border-strong);
+  background-color: var(--erp-surface-raised);
+  box-shadow: none;
+}
+
+.erp-page .search-input:focus,
+.erp-page .select-sm:focus,
+.erp-page .catalogo-filter select:focus,
+.erp-page .form-input:focus {
+  border-color: var(--erp-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+.erp-page .catalogo-toolbar,
+.erp-page .catalogo-filters,
+.erp-page .vini-toolbar,
+.erp-page .analise-toolbar-panel {
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-color: var(--erp-border);
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.erp-page .catalogo-filters {
+  border-top: 1px solid var(--erp-border);
+}
+
+.erp-page .catalogo-filter > span {
+  color: var(--erp-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.erp-page .card,
+.erp-page .catalogo-card,
+.erp-page #analise-table-container {
+  overflow: hidden;
+  border: 1px solid var(--erp-border);
+  border-radius: 10px;
+  background: var(--erp-surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2);
+}
+
+.erp-page .kpi-grid,
+.erp-page .catalogo-kpis,
+.erp-page .flow-kpi-bar,
+.erp-page .analise-kpi-grid {
+  gap: 0.75rem;
+}
+
+.erp-page .kpi-card,
+.erp-page .catalogo-kpi,
+.erp-page .flow-kpi-item,
+.erp-page .analise-kpi-card {
+  min-height: 110px;
+  border: 1px solid var(--erp-border);
+  border-radius: 9px;
+  background: var(--erp-surface);
+  box-shadow: none;
+}
+
+.erp-page .kpi-card::before {
+  display: none;
+}
+
+.erp-page .kpi-card:hover,
+.erp-page .catalogo-kpi:hover,
+.erp-page .flow-kpi-item:hover,
+.erp-page .analise-kpi-card:hover {
+  transform: none;
+  border-color: var(--erp-border-strong);
+  box-shadow: none;
+}
+
+.erp-page .kpi-value,
+.erp-page .catalogo-kpi > span,
+.erp-page .flow-kpi-value,
+.erp-page .filter-tab-kpi {
+  color: var(--erp-title);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.erp-page .kpi-label,
+.erp-page .catalogo-kpi small,
+.erp-page .flow-kpi-label,
+.erp-page .filter-tab-title {
+  color: var(--erp-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.erp-page .data-table,
+.erp-page .catalogo-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.erp-page .data-table th,
+.erp-page .catalogo-table th {
+  height: 42px;
+  border-bottom: 1px solid var(--erp-border-strong);
+  background: #152036;
+  color: #9fb0c9;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.erp-page .data-table td,
+.erp-page .catalogo-table td {
+  height: 54px;
+  border-bottom-color: var(--erp-border);
+  color: #d9e2ef;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+.erp-page .data-table tr:hover td,
+.erp-page .catalogo-table tbody tr:hover td {
+  background: rgba(59, 130, 246, 0.055);
+}
+
+.erp-page .data-table th:last-child,
+.erp-page .data-table td:last-child,
+.erp-page .catalogo-table th:last-child,
+.erp-page .catalogo-table td:last-child {
+  padding-right: 1rem;
+}
+
+.erp-page .chip,
+.erp-page .pf-status-badge,
+.erp-page .status-badge {
+  border-radius: 999px;
+  box-shadow: none !important;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.erp-page .empty-cell {
+  padding: 3rem 1.25rem !important;
+  color: var(--erp-muted);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.erp-page .subnav-tabs-bar,
+.erp-page .catalogo-brand-pills-bar,
+.erp-page .filter-tabs {
+  gap: 0.45rem;
+  padding: 0.35rem;
+  border: 1px solid var(--erp-border);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.erp-page .subnav-tab-btn,
+.erp-page .catalogo-brand-pill,
+.erp-page .filter-tab {
+  border-radius: 7px;
+  box-shadow: none !important;
+}
+
+.erp-page .subnav-tab-btn.active,
+.erp-page .catalogo-brand-pill.active,
+.erp-page .filter-tab.active {
+  background: rgba(59, 130, 246, 0.18);
+  color: #dbeafe;
+}
+
+/* Modais e formulários: padrão de produto corporativo, sem gradientes/glow. */
+.modal {
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
+  border-radius: 12px !important;
+  background: #111a2a !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.48) !important;
+}
+
+.modal-header,
+.modal-header--fundicao {
+  border-bottom-color: rgba(148, 163, 184, 0.16) !important;
+  background: #131e31 !important;
+}
+
+.modal-footer,
+.modal-footer--fundicao {
+  border-top-color: rgba(148, 163, 184, 0.16) !important;
+  background: #111a2a !important;
+}
+
+.modal .form-input,
+.modal .form-select,
+.modal textarea {
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  border-radius: 7px !important;
+  background: #182338 !important;
+  box-shadow: none !important;
+}
+
+.modal .btn-primary,
+.modal .fundicao-btn-save {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: none !important;
+}
+
+.modal .btn-primary:hover,
+.modal .fundicao-btn-save:hover {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  transform: none !important;
+}
+
+@media (max-width: 900px) {
+  .erp-page .page-header {
+    align-items: stretch;
+  }
+
+  .erp-page .header-actions,
+  .erp-page .catalogo-toolbar,
+  .erp-page .catalogo-filters,
+  .erp-page .vini-toolbar {
+    width: 100%;
+  }
+
+  .erp-page .search-input,
+  .erp-page .catalogo-search-wrap {
+    flex: 1 1 240px;
+  }
+}
+
+@media (max-width: 640px) {
+  .erp-page .header-actions > * {
+    flex: 1 1 100%;
+  }
+
+  .erp-page .btn-primary,
+  .erp-page .btn-secondary {
+    justify-content: center;
+  }
+
+  .erp-page .catalogo-filters,
+  .erp-page .vini-toolbar,
+  .erp-page .subnav-tabs-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .erp-page .catalogo-filter,
+  .erp-page .catalogo-filter select,
+  .erp-page .search-input,
+  .erp-page .select-sm {
+    width: 100%;
+  }
+
+  .erp-page .kpi-grid,
+  .erp-page .catalogo-kpis,
+  .erp-page .flow-kpi-bar,
+  .erp-page .analise-kpi-grid {
+    grid-template-columns: 1fr !important;
   }
 }
