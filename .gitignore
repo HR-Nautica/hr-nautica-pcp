@@ -26,3 +26,9 @@ database/local_state.json
 _tmp_deploy/
 *.xls
 *.xlsx
+
+# Configuracoes privadas de ambiente e Docker
+.env.*
+!.env.exemplo
+!.env.example
+*.env
