@@ -1,0 +1,16 @@
+{
+  "source": "database/migrations/V001__baseline.sql",
+  "postgresMajor": 17,
+  "sha256": "aec3a0c5eab5e1d08dec7612c39693c87e3c1e3146d277adfbe3722500b514b0",
+  "sections": {
+    "tables": "c3e5bd9a4aecb0362ac4ded43af7eec7b29d28d86aef78c23715741a8f606da1",
+    "columns": "2ac27d96c75552b52a22796255951cd497a666187a613ab91f9e724d33f32878",
+    "sequences": "c43aef679b1564a611260ebb2391134d43e97a53063294687280c98f693c9046",
+    "constraints": "796dcaf34beceadb2185bd938f1ea2d0becda97cf99975136f70e659f1597a32",
+    "indexes": "d17afd1b6a5a6e6a6e466b7ced917ea242a82bd10eb94728369eef7c39d8c454",
+    "views": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "functions": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "triggers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "policies": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  }
+}
