@@ -27,6 +27,8 @@
     "db:migrate:test": "node --test tests/migrations/migration-runner.test.js",
     "db:migrate:test:integration": "node tests/migrations/run-postgres17-integration.js",
     "db:baseline:test:integration": "node tests/migrations/run-postgres17-integration.js --baseline",
+    "api:strict:test": "node --test tests/server/postgres-config.test.js",
+    "api:strict:test:integration": "node tests/migrations/run-postgres17-integration.js --strict-api",
     "db:audit": "node scripts/audit-database.js",
     "db:compact-audit": "node scripts/compact-audit-log.js --apply",
     "raw-stock:init": "node scripts/init-raw-stock.js --reset",

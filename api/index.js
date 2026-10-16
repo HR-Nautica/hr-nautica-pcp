@@ -4,6 +4,7 @@ import helmet from "helmet";
 
 import { config } from "../server/config.js";
 import { databaseHealth } from "../server/database.js";
+import { sanitizeDatabaseError } from "../server/postgres-config.js";
 import analysisTempRouter from "../server/routes/analysis-temp.js";
 import fundicaoOpsRouter from "../server/routes/fundicao-ops.js";
 import heliceOpsRouter from "../server/routes/helice-ops.js";
@@ -43,7 +44,7 @@ app.use("/api/raw-stock", rawStockRouter);
 app.use("/api", integrationsRouter);
 
 app.use((error, _req, res, _next) => {
-  console.error("[API]", error);
+  console.error("[API]", config.database.strictMode ? sanitizeDatabaseError(error) : error);
   const dbError = ["IM002", "HY000", "08001", "DATABASE_CONFIG_MISSING", "SUPABASE_REST_ERROR"].includes(error.code) || /ODBC|Access|Supabase|database|banco/i.test(error.message || "");
   res.status(dbError ? 503 : 500).json({
     ok: false,

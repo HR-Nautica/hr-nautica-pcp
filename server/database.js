@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { config } from "./config.js";
+import { buildPostgresConnectionOptions } from "./postgres-config.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOCAL_DB_PATH = path.resolve(__dirname, "../database/local_state.json");
@@ -22,10 +23,12 @@ function supabaseKey() {
 }
 
 function usesSupabaseRest() {
+  if (config.database.strictMode) return false;
   return !hasPostgresUrl() && Boolean(config.supabase.url && supabaseKey());
 }
 
 function usesLocalFile() {
+  if (config.database.strictMode) return false;
   return !hasPostgresUrl() && !usesSupabaseRest();
 }
 
@@ -55,6 +58,11 @@ async function writeLocalFile(data) {
 }
 
 function getPool() {
+  if (config.database.strictMode && !hasPostgresUrl()) {
+    const error = new Error("DATABASE_URL is required in strict mode.");
+    error.code = "DATABASE_CONFIG_MISSING";
+    throw error;
+  }
   if (usesLocalFile()) {
     throw new Error("PostgreSQL pool unavailable in local file mode.");
   }
@@ -64,6 +72,10 @@ function getPool() {
 
   if (!pool) {
     const connectionString = config.database.connectionString;
+    if (config.database.strictMode || config.database.sslMode) {
+      pool = new Pool(buildPostgresConnectionOptions(connectionString, config.database));
+      return pool;
+    }
     try {
       const params = new URL(connectionString);
       pool = new Pool({
@@ -309,6 +321,12 @@ async function initializePostgres() {
 
 export async function initializeDatabase() {
   if (initialized) return;
+
+  if (config.database.strictMode) {
+    await withConnection((client) => client.query("SELECT 1"));
+    initialized = true;
+    return;
+  }
 
   if (usesLocalFile()) {
     const db = await readLocalFile();

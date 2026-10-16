@@ -29,6 +29,32 @@ DATABASE_URL=postgresql://postgres.[PROJECT_REF]:[SENHA]@[POOLER]:6543/postgres?
 
 `DATABASE_URL` e obrigatoria para criar, editar ou cancelar ordens que movimentam estoque de pecas brutas, pois essas operacoes usam uma transacao PostgreSQL e bloqueio das linhas envolvidas. Para as demais rotas, quando `DATABASE_URL` nao existe, a API ainda pode usar `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` via REST.
 
+### Modo PostgreSQL estrito para a API
+
+O modo destinado ao container da API é ativado explicitamente:
+
+```text
+DATABASE_STRICT_MODE=true
+DATABASE_URL=postgresql://usuario:senha@postgres:5432/hr_nautica
+DATABASE_SSL_MODE=disable
+HOST=0.0.0.0
+PORT=3001
+```
+
+Nesse modo, somente `DATABASE_URL` é aceita. A API não usa Supabase REST,
+arquivo JSON ou variáveis `POSTGRES_*` como fallback. Antes de abrir a porta, ela
+confirma PostgreSQL 17, `schema_migrations`, V001 aplicada, checksums e ausência
+de migrations pendentes. A validação é somente leitura e nunca executa DDL,
+limpeza de auditoria ou migrations.
+
+`DATABASE_SSL_MODE=disable` desativa TLS e deve ser usado somente em rede privada.
+Para TLS, use `require`, `verify-ca` ou `verify-full`; a validação do certificado
+continua sendo controlada separadamente por
+`DATABASE_SSL_REJECT_UNAUTHORIZED`.
+
+Com `DATABASE_STRICT_MODE=false`, os fallbacks e a inicialização legada são
+preservados.
+
 ## Instalacao
 
 Para rodar localmente, rode uma vez:

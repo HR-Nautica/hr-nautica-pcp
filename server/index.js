@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import { config } from "./config.js";
 import { databaseHealth } from "./database.js";
+import { sanitizeDatabaseError } from "./postgres-config.js";
+import { validateStrictDatabase } from "./strict-database.js";
 import analysisTempRouter from "./routes/analysis-temp.js";
 import fundicaoOpsRouter from "./routes/fundicao-ops.js";
 import heliceOpsRouter from "./routes/helice-ops.js";
@@ -50,7 +52,7 @@ app.use(express.static(dist, { etag: true, maxAge: "1h" }));
 app.get("*splat", (_req, res) => res.sendFile(path.join(dist, "index.html")));
 
 app.use((error, _req, res, _next) => {
-  console.error("[API]", error);
+  console.error("[API]", config.database.strictMode ? sanitizeDatabaseError(error) : error);
   const dbError = ["IM002", "HY000", "08001", "DATABASE_CONFIG_MISSING", "SUPABASE_REST_ERROR"].includes(error.code) || /ODBC|Access|Supabase|database|banco/i.test(error.message || "");
   res.status(dbError ? 503 : 500).json({
     ok: false,
@@ -60,8 +62,27 @@ app.use((error, _req, res, _next) => {
   });
 });
 
-app.listen(config.port, config.host, () => {
-  console.log(`HR Nautica PCP disponivel na porta ${config.port}`);
-});
+export async function startServer() {
+  if (config.database.strictMode) await validateStrictDatabase();
+  return await new Promise((resolve, reject) => {
+    const server = app.listen(config.port, config.host, () => {
+      console.log(`HR Nautica PCP disponivel na porta ${config.port}`);
+      resolve(server);
+    });
+    server.once("error", reject);
+  });
+}
+
+export { app };
+
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  try {
+    await startServer();
+  } catch (error) {
+    console.error(`[STARTUP] ${sanitizeDatabaseError(error)}`);
+    process.exitCode = 1;
+  }
+}
 
 
