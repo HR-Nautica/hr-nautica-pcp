@@ -82,7 +82,8 @@ test("recusa migration pendente", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "hrn-strict-pending-"));
   try {
     await copyFile(path.join(migrationsDirectory, "V001__baseline.sql"), path.join(directory, "V001__baseline.sql"));
-    await writeFile(path.join(directory, "V002__pendente.sql"), "SELECT 1;", "utf8");
+    await copyFile(path.join(migrationsDirectory, "V002__authentication.sql"), path.join(directory, "V002__authentication.sql"));
+    await writeFile(path.join(directory, "V003__pendente.sql"), "SELECT 1;", "utf8");
     await assert.rejects(() => validateStrictDatabase({ migrationsDirectory: directory }), { code: "MIGRATIONS_PENDING" });
   } finally {
     await rm(directory, { recursive: true, force: true });
