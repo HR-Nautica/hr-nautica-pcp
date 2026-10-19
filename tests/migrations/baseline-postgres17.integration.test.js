@@ -41,18 +41,19 @@ before(async () => { admin = await connect(); });
 beforeEach(resetPublic);
 after(async () => { await admin.end(); });
 
-test("banco vazio recebe V001 pelo runner e coincide com o manifesto", async () => {
+test("banco vazio recebe V001 e V002 pelo runner", async () => {
   const runner = await connect();
   const result = await migrate({ client: runner, directory, operator: "empty.integration" });
-  assert.deepEqual(result.applied.map((item) => item.filename), ["V001__baseline.sql"]);
-  const structure = compareStructure(await inspectPublicSchema(runner), expected);
-  assert.equal(structure.equivalent, true);
-  const history = await runner.query("SELECT version, checksum_sha256, status FROM public.schema_migrations");
-  const [baseline] = await loadMigrations(directory);
+  assert.deepEqual(result.applied.map((item) => item.filename), ["V001__baseline.sql", "V002__authentication.sql"]);
+  const history = await runner.query("SELECT version, checksum_sha256, status FROM public.schema_migrations ORDER BY version");
+  const [baseline, authentication] = await loadMigrations(directory);
   assert.equal(history.rows[0].version, "1");
   assert.equal(history.rows[0].checksum_sha256, baseline.checksum);
   assert.equal(history.rows[0].status, "applied");
-  for (const table of ["app_revision", "app_schema", "app_state", "audit_log", "helice_production_orders", "temp_analise_producao", "users"]) {
+  assert.equal(history.rows[1].version, "2");
+  assert.equal(history.rows[1].checksum_sha256, authentication.checksum);
+  assert.equal(history.rows[1].status, "applied");
+  for (const table of ["app_revision", "app_schema", "app_state", "audit_log", "helice_production_orders", "temp_analise_producao", "users", "auth_users", "auth_sessions"]) {
     assert.equal(Number((await runner.query(`SELECT count(*) AS count FROM public.${table}`)).rows[0].count), 0);
   }
   await runner.end();

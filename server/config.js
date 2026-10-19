@@ -4,6 +4,7 @@ const INFRASTRUCTURE_KEYS = [
   "DATABASE_STRICT_MODE",
   "DATABASE_URL", "POSTGRES_URL", "POSTGRES_PRISMA_URL", "POSTGRES_URL_NON_POOLING",
   "DATABASE_SSL_MODE", "DATABASE_SSL_REJECT_UNAUTHORIZED", "HOST", "PORT",
+  "AUTH_COOKIE_NAME", "AUTH_COOKIE_SECURE", "AUTH_SESSION_HOURS",
   "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY",
   "VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"
 ];
@@ -42,6 +43,7 @@ function positiveInteger(name, fallback) {
 
 const strictMode = trueValue(env("DATABASE_STRICT_MODE"));
 const databaseUrl = env("DATABASE_URL");
+const sessionHours = positiveInteger("AUTH_SESSION_HOURS", 8);
 
 export const config = {
   port: Number(process.env.PORT || 3001),
@@ -63,5 +65,12 @@ export const config = {
   },
   auditCleanupEnabled: env("AUDIT_CLEANUP_ENABLED").toLowerCase() === "true",
   auditRetentionDays: positiveInteger("AUDIT_RETENTION_DAYS", 30),
-  tinyToken: env("TINY_TOKEN")
+  tinyToken: env("TINY_TOKEN"),
+  auth: {
+    cookieName: env("AUTH_COOKIE_NAME") || "hrn_session",
+    secureCookies: env("AUTH_COOKIE_SECURE")
+      ? trueValue(env("AUTH_COOKIE_SECURE"))
+      : env("NODE_ENV").toLowerCase() === "production",
+    sessionDurationMs: sessionHours * 60 * 60 * 1000
+  }
 };

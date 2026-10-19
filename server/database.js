@@ -117,7 +117,7 @@ function serializeValue(value) {
   return JSON.stringify(value ?? null);
 }
 
-async function withConnection(callback) {
+export async function withConnection(callback) {
   const p = getPool();
   const client = await p.connect();
   try {

@@ -74,7 +74,7 @@ test("recusa banco sem histórico", async () => {
 test("aceita V001 íntegra e aplicada", async () => {
   await applyBaseline();
   const result = await validateStrictDatabase({ migrationsDirectory });
-  assert.deepEqual(result, { strict: true, postgresMajor: 17, migrations: 1 });
+  assert.deepEqual(result, { strict: true, postgresMajor: 17, migrations: 2 });
 });
 
 test("recusa migration pendente", async () => {

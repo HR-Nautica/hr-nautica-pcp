@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { config } from "./config.js";
+import { authSystem } from "./auth.js";
 import { databaseHealth } from "./database.js";
 import { sanitizeDatabaseError } from "./postgres-config.js";
 import { validateStrictDatabase } from "./strict-database.js";
@@ -25,6 +26,8 @@ app.disable("x-powered-by");
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(express.json({ limit: "25mb" }));
+app.use("/api/auth", authSystem.router);
+app.use("/api", ...authSystem.protectBusiness);
 
 app.get("/api/status", async (_req, res, next) => {
   try {

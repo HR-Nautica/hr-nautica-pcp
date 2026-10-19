@@ -8,6 +8,7 @@ RUN npm ci --omit=dev
 
 COPY server ./server
 COPY scripts/db ./scripts/db
+COPY scripts/auth ./scripts/auth
 COPY database/migrations ./database/migrations
 COPY api ./api
 COPY public ./public

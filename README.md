@@ -55,6 +55,37 @@ continua sendo controlada separadamente por
 Com `DATABASE_STRICT_MODE=false`, os fallbacks e a inicialização legada são
 preservados.
 
+### Autenticação da homologação
+
+A migration `V002__authentication.sql` cria apenas contas e sessões. A API não
+executa migrations nem cria usuários durante a inicialização.
+
+A autenticação exige `DATABASE_URL`: contas, bloqueios e sessões revogáveis não
+usam o fallback Supabase REST nem o arquivo JSON local. Isso vale tanto para o
+processo Docker quanto para a função serverless desta branch.
+
+Depois de aplicar V002 pelo procedimento controlado de migrations, crie o
+administrador inicial de forma idempotente. Informe a senha temporária somente
+no ambiente do processo, sem adicioná-la a `.env`, histórico ou arquivos do Git:
+
+```powershell
+$env:INITIAL_ADMIN_USERNAME='lucas'
+$env:INITIAL_ADMIN_PASSWORD='<senha-temporaria-fornecida-fora-do-git>'
+npm run auth:bootstrap-admin
+Remove-Item Env:INITIAL_ADMIN_PASSWORD
+```
+
+No Ubuntu, use o mecanismo equivalente de injeção temporária de segredo do
+orquestrador ou shell. O comando não altera uma conta que já exista. A primeira
+sessão fica limitada à troca obrigatória da senha.
+
+Configuração recomendada para HTTPS:
+
+```text
+AUTH_COOKIE_SECURE=true
+AUTH_SESSION_HOURS=8
+```
+
 ## Instalacao
 
 Para rodar localmente, rode uma vez:
@@ -94,7 +125,8 @@ Depois da migracao, o `dados_pcp.json` nao e consultado automaticamente.
 
 1. Abra `Iniciar PCP.bat`.
 2. Acesse `http://localhost:3001`.
-3. Informe seu nome no primeiro acesso. Esse nome fica salvo no navegador e entra no `audit_log` das alteracoes.
+3. Entre com a conta provisionada pelo administrador. A identidade validada pela
+   API, e não um valor do navegador, entra no `audit_log` das alterações.
 
 Todos os ambientes devem apontar para o mesmo projeto Supabase.
 

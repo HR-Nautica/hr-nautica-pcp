@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 
 import { config } from "../server/config.js";
+import { authSystem } from "../server/auth.js";
 import { databaseHealth } from "../server/database.js";
 import { sanitizeDatabaseError } from "../server/postgres-config.js";
 import analysisTempRouter from "../server/routes/analysis-temp.js";
@@ -19,6 +20,8 @@ app.disable("x-powered-by");
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(express.json({ limit: "25mb" }));
+app.use("/api/auth", authSystem.router);
+app.use("/api", ...authSystem.protectBusiness);
 
 app.get("/api/status", async (_req, res, next) => {
   try {
