@@ -9,6 +9,7 @@ import { authSystem } from "./auth.js";
 import { databaseHealth } from "./database.js";
 import { sanitizeDatabaseError } from "./postgres-config.js";
 import { validateStrictDatabase } from "./strict-database.js";
+import { createProxyAuthentication, validateProxySecret } from "./proxy-auth.js";
 import analysisTempRouter from "./routes/analysis-temp.js";
 import fundicaoOpsRouter from "./routes/fundicao-ops.js";
 import heliceOpsRouter from "./routes/helice-ops.js";
@@ -25,6 +26,7 @@ const app = express();
 app.disable("x-powered-by");
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
+app.use("/api", createProxyAuthentication(config.proxySharedSecret));
 app.use(express.json({ limit: "25mb" }));
 app.use("/api/auth", authSystem.router);
 app.use("/api", ...authSystem.protectBusiness);
@@ -67,6 +69,7 @@ app.use((error, _req, res, _next) => {
 
 export async function startServer() {
   if (config.database.strictMode) await validateStrictDatabase();
+  validateProxySecret(config.proxySharedSecret);
   return await new Promise((resolve, reject) => {
     const server = app.listen(config.port, config.host, () => {
       console.log(`HR Nautica PCP disponivel na porta ${config.port}`);

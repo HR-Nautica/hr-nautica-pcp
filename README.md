@@ -14,11 +14,27 @@ Aplicacao local multiusuario:
 - projeto Supabase com as tabelas de `database/schema-postgres.sql`;
 - variaveis de ambiente configuradas no Vercel ou no `.env` local.
 
-O navegador nao grava diretamente no banco. Ele conversa com a API Node.js, e a API persiste os dados no Supabase.
+O navegador nao grava diretamente no banco. Em producao ele chama `/api` na
+mesma origem da Vercel; a funcao serverless apenas encaminha a requisicao para a
+API HTTPS no Ubuntu, onde autenticacao, CSRF, regras de negocio e persistencia
+sao executados.
+
+## Variaveis do proxy
+
+Somente os nomes (sem valores de credenciais):
+
+- Vercel: `API_ORIGIN`, `PROXY_SHARED_SECRET`, `PROXY_TIMEOUT_MS` e `PROXY_MAX_BODY_BYTES`;
+- API Ubuntu: `PROXY_SHARED_SECRET`;
+- desenvolvimento com Vite: `PROXY_SHARED_SECRET`.
+
+`PROXY_SHARED_SECRET` deve conter o mesmo segredo forte no proxy e no backend.
+Ele autentica o servidor proxy, nao o usuario. `API_ORIGIN` aceita somente uma
+origem HTTPS, sem caminho, query, credenciais ou fragmento. Nao ha fallback para
+outra API ou banco.
 
 ## Configuracao do banco
 
-No Vercel, configure pelo menos:
+Na API Ubuntu (nunca na Vercel), configure conforme o modo de banco utilizado:
 
 ```env
 SUPABASE_URL=https://[PROJECT_REF].supabase.co
@@ -138,6 +154,9 @@ npm run dev
 
 - Vite: `http://localhost:5173`
 - API: `http://localhost:3001`
+
+O navegador deve usar a URL do Vite. O proxy de desenvolvimento injeta a
+credencial server-to-server; acesso direto do navegador a porta 3001 e rejeitado.
 
 ## Protecao de dados
 

@@ -5,6 +5,7 @@ const INFRASTRUCTURE_KEYS = [
   "DATABASE_URL", "POSTGRES_URL", "POSTGRES_PRISMA_URL", "POSTGRES_URL_NON_POOLING",
   "DATABASE_SSL_MODE", "DATABASE_SSL_REJECT_UNAUTHORIZED", "HOST", "PORT",
   "AUTH_COOKIE_NAME", "AUTH_COOKIE_SECURE", "AUTH_SESSION_HOURS",
+  "PROXY_SHARED_SECRET",
   "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY",
   "VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"
 ];
@@ -66,6 +67,7 @@ export const config = {
   auditCleanupEnabled: env("AUDIT_CLEANUP_ENABLED").toLowerCase() === "true",
   auditRetentionDays: positiveInteger("AUDIT_RETENTION_DAYS", 30),
   tinyToken: env("TINY_TOKEN"),
+  proxySharedSecret: env("PROXY_SHARED_SECRET"),
   auth: {
     cookieName: env("AUTH_COOKIE_NAME") || "hrn_session",
     secureCookies: env("AUTH_COOKIE_SECURE")
