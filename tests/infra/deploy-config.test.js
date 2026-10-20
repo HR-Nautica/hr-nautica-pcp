@@ -87,3 +87,16 @@ test("startup e deploy nao executam migrations", async () => {
   const combined = [await read("dockerfile"), await read("deploy"), await read("workflow")].join("\n");
   assert.doesNotMatch(combined, /db:migrate|migrations-cli|npm run db:/i);
 });
+
+test("imagem de runtime mantem codigo legivel pelo usuario node", async () => {
+  const dockerfile = await read("dockerfile");
+  for (const source of ["server", "scripts/db", "scripts/auth", "database/migrations"]) {
+    assert.match(
+      dockerfile,
+      new RegExp(`COPY --chown=node:node --chmod=0755 ${source.replace("/", "\\/")}`)
+    );
+  }
+  assert.match(dockerfile, /COPY --chown=node:node --chmod=0644 package\*\.json/);
+  assert.match(dockerfile, /COPY --from=build --chown=node:node --chmod=0755 \/app\/dist/);
+  assert.match(dockerfile, /\nUSER node\n/);
+});

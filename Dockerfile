@@ -17,14 +17,14 @@ FROM node:22-bookworm-slim AS runtime
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY --chown=node:node --chmod=0644 package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-COPY server ./server
-COPY scripts/db ./scripts/db
-COPY scripts/auth ./scripts/auth
-COPY database/migrations ./database/migrations
-COPY --from=build /app/dist ./dist
+COPY --chown=node:node --chmod=0755 server ./server
+COPY --chown=node:node --chmod=0755 scripts/db ./scripts/db
+COPY --chown=node:node --chmod=0755 scripts/auth ./scripts/auth
+COPY --chown=node:node --chmod=0755 database/migrations ./database/migrations
+COPY --from=build --chown=node:node --chmod=0755 /app/dist ./dist
 
 ARG APP_COMMIT_SHA=development
 ENV NODE_ENV=production \
