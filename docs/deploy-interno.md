@@ -109,12 +109,11 @@ banco; migrations possuem procedimento proprio e nunca fazem parte do deploy.
 
 ## Homologacao
 
-Use `deploy/compose.homologation.yml` com
-`/etc/hr-nautica/homologation.env`. Configure `HOMOLOG_DATABASE_NETWORK` com a
-rede isolada existente e `DATABASE_URL` para `hr_nautica_homolog`. O hostname
-recomendado e `erp-homolog.hrnautica.internal`, a porta padrao e `8443` e o
-cookie e `hrn_homolog_session`. Nunca reutilize certificado/chave, segredo,
-credencial ou arquivo de ambiente de producao.
+A primeira ativacao sem DNS, em `https://192.168.100.180:8443`, esta descrita
+em `docs/homologacao-interna.md`. Ela usa `tls internal`, CA persistente e o
+script `scripts/deploy/homologation.sh`. Configure a rede e o PostgreSQL
+exclusivos de homologacao; o script recusa `supabase_default` e qualquer banco
+diferente de `hr_nautica_homolog`.
 
 ## Criterios para habilitar o deploy da main
 

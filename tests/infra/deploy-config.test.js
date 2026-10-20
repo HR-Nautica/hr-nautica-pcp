@@ -6,6 +6,9 @@ const files = {
   production: "deploy/compose.production.yml",
   homologation: "deploy/compose.homologation.yml",
   caddy: "deploy/Caddyfile",
+  homologationCaddy: "deploy/Caddyfile.homologation",
+  homologationEnv: "deploy/homologation.env.example",
+  homologationDeploy: "scripts/deploy/homologation.sh",
   workflow: ".github/workflows/deploy-internal.yml",
   deploy: "scripts/deploy/deploy-production.sh",
   dockerfile: "Dockerfile"
@@ -30,9 +33,14 @@ test("API nao publica porta e producao usa somente a rede externa esperada", asy
 
 test("homologacao exige rede isolada e nao referencia supabase_default", async () => {
   const homologation = await read("homologation");
+  const app = serviceBlock(homologation, "app", "proxy");
   assert.match(homologation, /HOMOLOG_DATABASE_NETWORK:\?/);
   assert.doesNotMatch(homologation, /supabase_default/);
   assert.match(homologation, /AUTH_COOKIE_NAME: hrn_homolog_session/);
+  assert.match(app, /expose:\s*\n\s*- "3001"/);
+  assert.doesNotMatch(app, /\n\s+ports:/);
+  assert.match(homologation, /192\.168\.100\.180\}:\$\{ERP_HTTPS_PORT:-8443\}:443/);
+  assert.match(homologation, /Caddyfile\.homologation/);
 });
 
 test("proxy termina TLS e substitui a credencial enviada para a API", async () => {
@@ -40,6 +48,30 @@ test("proxy termina TLS e substitui a credencial enviada para a API", async () =
   assert.match(caddy, /tls \/certs\/tls\.crt \/certs\/tls\.key/);
   assert.match(caddy, /header_up X-HRN-Proxy-Secret \{\$PROXY_SHARED_SECRET\}/);
   assert.match(caddy, /reverse_proxy app:3001/);
+});
+
+test("homologacao emite TLS interno para o IP e mantem o segredo fora do frontend", async () => {
+  const caddy = await read("homologationCaddy");
+  assert.match(caddy, /https:\/\/\{\$ERP_INTERNAL_HOST:192\.168\.100\.180\}/);
+  assert.match(caddy, /tls internal/);
+  assert.match(caddy, /header_up X-HRN-Proxy-Secret \{\$PROXY_SHARED_SECRET\}/);
+  assert.match(caddy, /reverse_proxy app:3001/);
+
+  const frontend = await fs.readFile("public/js/bootstrap.js", "utf8");
+  assert.doesNotMatch(frontend, /PROXY_SHARED_SECRET|X-HRN-Proxy-Secret/i);
+});
+
+test("ativacao de homologacao fixa IP, banco, rede e verifica TLS e SHA", async () => {
+  const script = await read("homologationDeploy");
+  const env = await read("homologationEnv");
+  assert.match(env, /ERP_INTERNAL_HOST=192\.168\.100\.180/);
+  assert.match(env, /DATABASE_URL=.*\/hr_nautica_homolog/);
+  assert.match(script, /database_target.*hr_nautica_homolog/s);
+  assert.match(script, /network.*supabase_default/s);
+  assert.match(script, /--cacert "\$CA_FILE"/);
+  assert.match(script, /release\.json/);
+  assert.match(script, /db:migrate:validate/);
+  assert.doesNotMatch(script, /db:migrate(?:\s|"|')/);
 });
 
 test("workflow faz deploy por SHA em runner interno somente apos testes", async () => {

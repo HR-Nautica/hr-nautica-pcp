@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
 import { authSystem } from "./auth.js";
 import { closeDatabase, databaseHealth } from "./database.js";
+import { createHealthHandler } from "./health.js";
 import { createReleaseGuard, normalizedReleaseSha } from "./release.js";
 import { sanitizeDatabaseError } from "./postgres-config.js";
 import { validateStrictDatabase } from "./strict-database.js";
@@ -29,15 +30,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(createReleaseGuard(config.releaseSha));
 
-app.get("/healthz", async (_req, res, next) => {
-  try {
-    const databaseTime = await databaseHealth();
-    res.setHeader("Cache-Control", "no-store");
-    res.json({ ok: true, service: "HR Nautica PCP", release: normalizedReleaseSha(config.releaseSha), databaseTime });
-  } catch (error) {
-    next(error);
-  }
-});
+app.get("/healthz", createHealthHandler({ databaseHealth, releaseSha: config.releaseSha }));
 
 app.use("/api", createProxyAuthentication(config.proxySharedSecret));
 app.use(express.json({ limit: "25mb" }));
