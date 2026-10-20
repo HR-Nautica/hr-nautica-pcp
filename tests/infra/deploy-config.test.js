@@ -60,6 +60,7 @@ test("proxy termina TLS e substitui a credencial enviada para a API", async () =
 
 test("homologacao emite TLS interno para o IP e mantem o segredo fora do frontend", async () => {
   const caddy = await read("homologationCaddy");
+  assert.match(caddy, /^\{\s*default_sni 192\.168\.100\.180\s*\}/);
   assert.match(caddy, /https:\/\/\{\$ERP_INTERNAL_HOST:192\.168\.100\.180\}/);
   assert.match(caddy, /tls internal/);
   assert.match(caddy, /header_up X-HRN-Proxy-Secret \{\$PROXY_SHARED_SECRET\}/);

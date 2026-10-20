@@ -1,3 +1,7 @@
+{
+	default_sni 192.168.100.180
+}
+
 https://{$ERP_INTERNAL_HOST:192.168.100.180} {
 	tls internal
 	encode zstd gzip
