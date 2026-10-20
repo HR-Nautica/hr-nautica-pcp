@@ -1,0 +1,16 @@
+{$ERP_INTERNAL_HOST:erp.hrnautica.internal} {
+	tls /certs/tls.crt /certs/tls.key
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	reverse_proxy app:3001 {
+		header_up X-HRN-Proxy-Secret {$PROXY_SHARED_SECRET}
+		header_up X-Forwarded-Proto https
+	}
+}

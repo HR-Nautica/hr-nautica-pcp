@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import { config } from "./config.js";
 import { authSystem } from "./auth.js";
-import { databaseHealth } from "./database.js";
+import { closeDatabase, databaseHealth } from "./database.js";
+import { createReleaseGuard, normalizedReleaseSha } from "./release.js";
 import { sanitizeDatabaseError } from "./postgres-config.js";
 import { validateStrictDatabase } from "./strict-database.js";
 import { createProxyAuthentication, validateProxySecret } from "./proxy-auth.js";
@@ -26,6 +27,18 @@ const app = express();
 app.disable("x-powered-by");
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
+app.use(createReleaseGuard(config.releaseSha));
+
+app.get("/healthz", async (_req, res, next) => {
+  try {
+    const databaseTime = await databaseHealth();
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, service: "HR Nautica PCP", release: normalizedReleaseSha(config.releaseSha), databaseTime });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.use("/api", createProxyAuthentication(config.proxySharedSecret));
 app.use(express.json({ limit: "25mb" }));
 app.use("/api/auth", authSystem.router);
@@ -38,6 +51,7 @@ app.get("/api/status", async (_req, res, next) => {
       ok: true,
       service: "HR Nautica PCP",
       version: "2.0.0",
+      release: normalizedReleaseSha(config.releaseSha),
       database: "supabase-connected",
       databaseTime
     });
@@ -53,8 +67,15 @@ app.use("/api/fundicao-ops", fundicaoOpsRouter);
 app.use("/api/production-ops", productionOpsRouter);
 app.use("/api/raw-stock", rawStockRouter);
 app.use("/api", integrationsRouter);
-app.use(express.static(dist, { etag: true, maxAge: "1h" }));
-app.get("*splat", (_req, res) => res.sendFile(path.join(dist, "index.html")));
+app.use(express.static(dist, {
+  etag: true,
+  maxAge: 0,
+  setHeaders(res) { res.setHeader("Cache-Control", "no-cache"); }
+}));
+app.get("*splat", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.sendFile(path.join(dist, "index.html"));
+});
 
 app.use((error, _req, res, _next) => {
   console.error("[API]", config.database.strictMode ? sanitizeDatabaseError(error) : error);
@@ -79,12 +100,25 @@ export async function startServer() {
   });
 }
 
+export async function stopServer(server) {
+  if (server?.listening) await new Promise((resolve) => server.close(resolve));
+  await closeDatabase();
+}
+
 export { app };
 
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isDirectExecution) {
   try {
-    await startServer();
+    const server = await startServer();
+    let stopping = false;
+    const shutdown = async () => {
+      if (stopping) return;
+      stopping = true;
+      await stopServer(server);
+    };
+    process.once("SIGTERM", shutdown);
+    process.once("SIGINT", shutdown);
   } catch (error) {
     console.error(`[STARTUP] ${sanitizeDatabaseError(error)}`);
     process.exitCode = 1;

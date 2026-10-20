@@ -3,6 +3,7 @@
 .env.local
 Login-API_KEY.txt
 github-recovery-codes.txt
+Senha Github Supabase.txt
 .agent/
 .agents/
 tmp_gsd/
@@ -32,3 +33,9 @@ _tmp_deploy/
 !.env.exemplo
 !.env.example
 *.env
+
+# Certificados e estado de deploy nunca entram no repositorio
+deploy/tls/
+deploy/state/
+*.key
+*.pem

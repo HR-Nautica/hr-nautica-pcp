@@ -10,7 +10,16 @@ window.fetch = async function authenticatedFetch(input, init = {}) {
     if (window.PCP_CSRF_TOKEN) headers.set("X-CSRF-Token", window.PCP_CSRF_TOKEN);
     init = { ...init, headers };
   }
+  if (url.origin === window.location.origin && url.pathname.startsWith("/api/")) {
+    const headers = new Headers(init.headers || (typeof input !== "string" ? input.headers : undefined));
+    if (window.PCP_RELEASE_SHA) headers.set("X-HRN-Release-Sha", window.PCP_RELEASE_SHA);
+    init = { ...init, headers };
+  }
   const response = await nativeFetch(input, init);
+  if (response.headers.get("X-HRN-Release-Mismatch") === "1") {
+    window.location.reload();
+    return response;
+  }
   if (response.status === 401 && !url.pathname.startsWith("/api/auth/")) {
     window.PCP_CSRF_TOKEN = "";
     window.location.reload();

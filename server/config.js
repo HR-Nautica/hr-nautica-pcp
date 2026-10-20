@@ -47,6 +47,7 @@ const databaseUrl = env("DATABASE_URL");
 const sessionHours = positiveInteger("AUTH_SESSION_HOURS", 8);
 
 export const config = {
+  releaseSha: env("APP_COMMIT_SHA") || "development",
   port: Number(process.env.PORT || 3001),
   host: process.env.HOST || "127.0.0.1",
   database: {
