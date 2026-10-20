@@ -38,10 +38,9 @@ services:
     env_file:
       - ${ERP_ENV_FILE:-/etc/hr-nautica/production.env}
     ports:
-      - "${ERP_HTTPS_BIND_IP:-192.168.100.180}:${ERP_HTTPS_PORT:-443}:443"
+      - "${ERP_HTTPS_BIND_IP:-192.168.100.180}:${ERP_HTTPS_PORT:-8444}:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ${ERP_TLS_CERT_DIR:-/etc/hr-nautica/tls/production}:/certs:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:
@@ -51,7 +50,9 @@ services:
 
 networks:
   edge:
-    internal: true
+    # Precisa aceitar o DNAT da porta publicada; somente o proxy publica porta.
+    driver: bridge
+    internal: false
   database:
     external: true
     name: supabase_default

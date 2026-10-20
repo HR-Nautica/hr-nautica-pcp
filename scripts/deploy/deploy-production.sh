@@ -15,16 +15,45 @@ readonly STATE_DIR="${ERP_DEPLOY_STATE_DIR:-/var/lib/hr-nautica-deploy}"
 readonly IMAGE_REPOSITORY="${ERP_IMAGE_REPOSITORY:-hr-nautica-pcp}"
 readonly TARGET_IMAGE="${IMAGE_REPOSITORY}:${SHA}"
 readonly HEALTH_URL="${ERP_HEALTHCHECK_URL:-}"
+readonly CA_FILE="$STATE_DIR/caddy-root.crt"
+
+env_value() {
+  local key="$1"
+  sed -n -E "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*(.*)[[:space:]]*$/\\1/p" "$ENV_FILE" | tail -n 1
+}
 
 if [[ ! -r "$ENV_FILE" ]]; then
   echo "Arquivo de ambiente nao encontrado ou ilegivel: $ENV_FILE" >&2
   exit 3
 fi
-if [[ -z "$HEALTH_URL" || "$HEALTH_URL" != https://* ]]; then
-  echo "ERP_HEALTHCHECK_URL deve ser uma URL HTTPS interna, por exemplo https://erp.hrnautica.internal/" >&2
+if [[ "$HEALTH_URL" != "https://192.168.100.180:8444" ]]; then
+  echo "ERP_HEALTHCHECK_URL deve ser https://192.168.100.180:8444" >&2
+  exit 3
+fi
+
+database_url="$(env_value DATABASE_URL)"
+internal_host="$(env_value ERP_INTERNAL_HOST)"
+bind_ip="$(env_value ERP_HTTPS_BIND_IP)"
+https_port="$(env_value ERP_HTTPS_PORT)"
+proxy_secret="$(env_value PROXY_SHARED_SECRET)"
+if [[ "$database_url" != postgresql://hr_nautica_app:*@supabase-db:5433/postgres* ]]; then
+  echo "DATABASE_URL deve usar hr_nautica_app em supabase-db:5433/postgres." >&2
+  exit 3
+fi
+if [[ "$internal_host" != "192.168.100.180" || "$bind_ip" != "192.168.100.180" || "$https_port" != "8444" ]]; then
+  echo "Producao exige IP 192.168.100.180 e porta HTTPS 8444 nesta etapa." >&2
+  exit 3
+fi
+if (( ${#proxy_secret} < 32 )) || [[ "$proxy_secret" == *SUBSTITUIR* ]]; then
+  echo "PROXY_SHARED_SECRET deve ter ao menos 32 caracteres aleatorios." >&2
   exit 3
 fi
 docker image inspect "$TARGET_IMAGE" >/dev/null
+image_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$TARGET_IMAGE")"
+if [[ "$image_revision" != "$SHA" ]]; then
+  echo "A imagem alvo nao possui o label de revisao igual ao SHA solicitado." >&2
+  exit 3
+fi
 mkdir -p "$STATE_DIR"
 exec 9>"$STATE_DIR/deploy.lock"
 if ! flock -n 9; then
@@ -44,8 +73,9 @@ fi
 
 rollback() {
   if [[ -z "$previous_image" ]] || ! docker image inspect "$previous_image" >/dev/null 2>&1; then
-    echo "Deploy falhou e nao ha imagem anterior local para rollback automatico." >&2
-    return 1
+    echo "Sem imagem anterior; encerrando a pilha incompleta." >&2
+    compose "$TARGET_IMAGE" down --remove-orphans
+    return
   fi
   echo "Restaurando imagem anterior: $previous_image" >&2
   compose "$previous_image" up -d --no-build --remove-orphans
@@ -53,10 +83,15 @@ rollback() {
 
 verify_release() {
   local health release
-  health="$(curl --fail --silent --show-error --max-time 10 "${HEALTH_URL%/}/healthz")" || return 1
-  release="$(curl --fail --silent --show-error --max-time 10 "${HEALTH_URL%/}/release.json")" || return 1
+  health="$(curl --fail --silent --show-error --cacert "$CA_FILE" --max-time 10 "${HEALTH_URL%/}/healthz")" || return 1
+  release="$(curl --fail --silent --show-error --cacert "$CA_FILE" --max-time 10 "${HEALTH_URL%/}/release.json")" || return 1
   [[ "$health" == *"\"ok\":true"* && "$health" == *"\"release\":\"$SHA\""* ]] || return 1
   [[ "$release" == *"\"release\":\"$SHA\""* ]] || return 1
+}
+
+export_ca() {
+  compose "$TARGET_IMAGE" cp proxy:/data/caddy/pki/authorities/local/root.crt "$CA_FILE"
+  chmod 0644 "$CA_FILE"
 }
 
 if ! compose "$TARGET_IMAGE" config --quiet; then
@@ -71,7 +106,7 @@ fi
 
 healthy=false
 for _attempt in $(seq 1 30); do
-  if verify_release; then
+  if export_ca >/dev/null 2>&1 && verify_release; then
     healthy=true
     break
   fi
@@ -89,3 +124,4 @@ if [[ -n "$previous_image" && "$previous_image" != "$TARGET_IMAGE" ]]; then
   printf '%s\n' "$previous_image" > "$STATE_DIR/previous-image"
 fi
 echo "Deploy confirmado no SHA $SHA"
+echo "CA raiz de producao exportada para $CA_FILE"

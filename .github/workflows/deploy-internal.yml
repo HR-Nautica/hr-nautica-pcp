@@ -54,5 +54,5 @@ jobs:
           ERP_ENV_FILE: /etc/hr-nautica/production.env
           ERP_DEPLOY_STATE_DIR: /var/lib/hr-nautica-deploy
           ERP_IMAGE_REPOSITORY: hr-nautica-pcp
-          ERP_HEALTHCHECK_URL: https://erp.hrnautica.internal
+          ERP_HEALTHCHECK_URL: https://192.168.100.180:8444
         run: bash scripts/deploy/deploy-production.sh "$RELEASE_SHA"

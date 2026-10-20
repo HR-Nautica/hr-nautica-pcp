@@ -1,143 +1,211 @@
-# Deploy interno definitivo
+# Producao interna do ERP
 
-## Arquitetura
+## Fluxo aprovado
 
 ```text
-GitHub main
-  -> testes em runner hospedado pelo GitHub
-  -> runner self-hosted no Ubuntu (somente conexao HTTPS de saida)
-  -> imagem hr-nautica-pcp:<commit SHA>
-  -> Caddy HTTPS interno -> Express (frontend dist + API da mesma imagem)
-                           -> PostgreSQL via supabase_default
+Antigravity -> pull request revisado -> GitHub main
+  -> job test em runner GitHub
+  -> job deploy no runner Ubuntu hr-nautica-production
+  -> imagem hr-nautica-pcp:<SHA completo>
+  -> Caddy https://192.168.100.180:8444
+  -> Express (frontend + API do mesmo SHA)
+  -> supabase-db:5433/postgres pela rede supabase_default
 ```
 
-O Caddy e o ERP usam um Compose proprio (`hr-nautica-prod`). Nenhuma porta ou
-container do Supabase ou do Sistema JM e alterado. A API nao publica porta no
-host: somente o Caddy participa da rede `edge`, e somente a API participa tambem
-da rede externa `supabase_default`.
+O workflow so executa o deploy em `push` na `main` e somente depois do job de
+testes. O environment GitHub `production` deve aceitar apenas a `main`. A
+aprovacao acontece antes do merge; depois de uma atualizacao aprovada da
+`main`, o deploy e automatico.
 
-O SHA completo e gravado na imagem, em `/release.json` e em `/healthz`. O script
-de deploy exige que frontend e API retornem o SHA solicitado. Uma pagina aberta
-em uma release anterior recebe `RELEASE_MISMATCH` e e recarregada antes de uma
-nova operacao de API.
+Homologacao permanece separada em `https://192.168.100.180:8443`, com outro
+Compose, cookie, segredo, banco e volumes Caddy.
 
-Homologacao usa `hr-nautica-homolog`, hostname, porta, cookie, segredo, arquivo
-de ambiente, volumes Caddy e rede de banco diferentes. Seu Compose nunca se
-conecta a `supabase_default`.
+## Isolamento e identidade da release
+
+- somente o Caddy publica `192.168.100.180:8444 -> 443/tcp`;
+- a API possui apenas `expose: 3001`, sem porta publicada no host;
+- o Caddy participa somente da rede `edge`;
+- somente a aplicacao participa de `edge` e da rede externa
+  `supabase_default`;
+- nenhum servico PostgreSQL, Supabase, n8n ou Sistema JM e criado ou alterado
+  por este Compose;
+- a imagem recebe a tag imutavel `hr-nautica-pcp:<SHA completo>` e o mesmo SHA
+  e gravado no frontend, `/release.json`, header da API e `/healthz`.
+
+Uma pagina antiga recebe `RELEASE_MISMATCH` antes de operar contra uma API de
+outro SHA.
+
+## HTTPS interno por IP
+
+Producao usa `tls internal` e `default_sni 192.168.100.180`. Assim, o Caddy
+apresenta o certificado correto inclusive a clientes TLS sem SNI. A CA de
+producao fica no volume `hr-nautica-prod_caddy_data`, separado da homologacao.
+
+O deploy exporta somente o certificado raiz publico para:
+
+```text
+/var/lib/hr-nautica-deploy/caddy-root.crt
+```
+
+O health check usa explicitamente essa CA com `curl --cacert`; a validacao TLS
+nunca e desativada. Nao apagar o volume Caddy: isso geraria outra CA e exigiria
+nova distribuicao aos clientes.
 
 ## Preparacao unica do Ubuntu
 
-Os comandos abaixo sao procedimentos para o administrador executar depois de
-autorizar a ativacao; este repositorio nao os executa remotamente.
+Estes comandos devem ser executados futuramente pelo administrador no Ubuntu;
+o repositorio e o workflow nao os executam remotamente.
 
-1. Instalar Docker Engine com Compose v2 e conferir as portas antes de escolher
-   a porta HTTPS:
+1. Confirmar Docker, rede do banco e porta livre:
 
    ```bash
-   sudo ss -lntup
-   docker network inspect supabase_default
+   docker version
+   docker compose version
+   docker network inspect supabase_default >/dev/null
+   sudo ss -lnt '( sport = :8444 )'
    ```
 
-2. Criar os diretorios locais e copiar o exemplo sem valores reais:
+2. Criar os arquivos locais. O runner precisa pertencer ao grupo `docker`:
 
    ```bash
-   sudo install -d -m 750 -o root -g docker /etc/hr-nautica/tls/production
+   sudo install -d -m 750 -o root -g docker /etc/hr-nautica
    sudo install -d -m 770 -o root -g docker /var/lib/hr-nautica-deploy
-   sudo install -m 640 -o root -g docker deploy/production.env.example /etc/hr-nautica/production.env
+   sudo install -m 640 -o root -g docker \
+     deploy/production.env.example /etc/hr-nautica/production.env
+   sudo editor /etc/hr-nautica/production.env
    ```
 
-3. Definir DNS interno, por exemplo `erp.hrnautica.internal ->
-   192.168.100.180`. Emitir na CA corporativa um certificado de servidor com
-   SAN para esse nome. Instalar a cadeia em
-   `/etc/hr-nautica/tls/production/tls.crt` e a chave em `tls.key`. Distribuir a
-   CA raiz confiavel aos computadores por politica corporativa. O certificado
-   precisa ser confiavel tambem no Ubuntu, pois o health check nao desativa a
-   validacao TLS.
-
-4. Editar `/etc/hr-nautica/production.env`. Gerar um
-   `PROXY_SHARED_SECRET` independente com `openssl rand -base64 48`; preencher
-   `DATABASE_URL` com o usuario exclusivo do ERP; confirmar o hostname Docker
-   real do PostgreSQL na rede `supabase_default`; escolher
-   `ERP_HTTPS_PORT=443` somente se estiver livre. Caso contrario, usar outra
-   porta livre e ajustar `ERP_HEALTHCHECK_URL` no workflow para incluir a porta.
-
-5. Em uma janela administrativa separada e explicitamente autorizada, criar a
-   credencial de banco propria do ERP. A conta deve ser `LOGIN`, sem superuser,
-   sem criacao de banco/role e com somente `CONNECT`, `USAGE` no schema e os
-   privilegios de DML/sequencias necessarios nas tabelas controladas pelas
-   migrations. Nao reutilizar `postgres`, service-role ou a conta da
-   homologacao. A senha entra apenas em `/etc/hr-nautica/production.env`.
-
-6. Instalar um GitHub Actions self-hosted runner oficial no Ubuntu como servico,
-   dedicado a este repositorio, no grupo restrito de producao e com os labels
-   `self-hosted`, `linux`, `x64`, `hr-nautica-production`. O runner precisa ler
-   `/etc/hr-nautica/production.env`, escrever em `/var/lib/hr-nautica-deploy` e
-   usar Docker. Ele inicia conexoes HTTPS de saida para o GitHub; nao requer
-   NAT, encaminhamento de porta, SSH ou webhook de entrada.
-
-7. Antes do primeiro deploy, validar manualmente e sem alteracao:
+3. No arquivo privado, substituir apenas `SENHA_FORA_DO_GIT` e
+   `PROXY_SHARED_SECRET`. Gerar um segredo exclusivo de producao:
 
    ```bash
-   docker compose --env-file /etc/hr-nautica/production.env \
-     -f deploy/compose.production.yml config --quiet
-   DATABASE_STRICT_MODE=true npm run db:migrate:status
-   DATABASE_STRICT_MODE=true npm run db:migrate:validate
+   openssl rand -base64 48
    ```
 
-   Os comandos de status/validate sao somente leitura. Se houver migration
-   pendente, checksum divergente ou historico incompleto, o container recusara
-   startup. Aplicar migration e criar/alterar roles continuam sendo operacoes
-   administrativas separadas, com backup, revisao e autorizacao explicita.
+   Manter estes valores confirmados:
 
-8. Para a primeira ativacao autorizada, executar o workflow a partir de um
-   commit aprovado em `main` (ou fazer o primeiro push/merge depois de habilitar
-   o workflow). A imagem recebe a tag do SHA e o script confirma
-   `https://erp.hrnautica.internal/healthz` e `/release.json`. Nenhuma migration
-   e chamada pelo Dockerfile, Compose, entrypoint, workflow ou script de deploy.
+   ```dotenv
+   ERP_INTERNAL_HOST=192.168.100.180
+   ERP_HTTPS_BIND_IP=192.168.100.180
+   ERP_HTTPS_PORT=8444
+   DATABASE_URL=postgresql://hr_nautica_app:SENHA_FORA_DO_GIT@supabase-db:5433/postgres
+   ```
 
-## Rollback
+4. Validar Compose e Caddy sem iniciar servicos:
 
-Antes da troca, o script registra a imagem atual. Falha no `compose up`, no
-banco, no TLS ou na igualdade do SHA restaura a imagem anterior localmente. O
-deploy so grava `current-sha` depois do health check completo. Imagens antigas
-nao sao removidas automaticamente.
+   ```bash
+   ERP_ENV_FILE=/etc/hr-nautica/production.env \
+     docker compose --env-file /etc/hr-nautica/production.env \
+       -f deploy/compose.production.yml config --quiet
 
-Para uma restauracao manual autorizada, consulte
-`/var/lib/hr-nautica-deploy/previous-image`, defina essa imagem como `ERP_IMAGE`
-e execute `docker compose up -d --no-build`. Rollback de aplicacao nao reverte
-banco; migrations possuem procedimento proprio e nunca fazem parte do deploy.
+   docker run --rm \
+     -e ERP_INTERNAL_HOST=192.168.100.180 \
+     -e PROXY_SHARED_SECRET=validacao-local-sem-uso-operacional-123456 \
+     -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+     caddy:2.11.7-alpine \
+     caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+   ```
+
+5. Instalar o runner self-hosted oficial, dedicado a este repositorio, com os
+   labels exatos `self-hosted`, `linux`, `x64`, `hr-nautica-production`. Ele
+   precisa ler `/etc/hr-nautica/production.env`, escrever em
+   `/var/lib/hr-nautica-deploy` e acessar Docker. Nenhuma porta de entrada,
+   webhook ou SSH e exigido pelo GitHub Actions.
+
+## Primeira ativacao automatica
+
+Depois da aprovacao do pull request, o merge autorizado na `main` dispara o
+workflow `.github/workflows/deploy-internal.yml`. Nao executar o script
+manualmente na primeira ativacao normal.
+
+O workflow:
+
+1. executa toda a suite de testes;
+2. constroi a imagem com o SHA integral de `github.sha`;
+3. executa `scripts/deploy/deploy-production.sh <SHA>` no runner interno;
+4. valida a configuracao Compose;
+5. sobe a imagem sem executar migrations;
+6. exporta a CA do Caddy;
+7. confirma `/healthz` e `/release.json` via HTTPS e exige o mesmo SHA;
+8. grava `current-sha` somente depois de todas as validacoes.
+
+O startup da API verifica PostgreSQL 17 e o historico existente. Migration
+pendente, checksum divergente ou banco inacessivel fazem o startup/deploy
+falhar. Dockerfile, Compose, workflow e script de deploy nunca chamam
+`db:migrate`.
+
+## Confianca da CA e verificacao
+
+Depois do primeiro deploy bem-sucedido, conferir no Ubuntu:
+
+```bash
+sha256sum /var/lib/hr-nautica-deploy/caddy-root.crt
+curl --cacert /var/lib/hr-nautica-deploy/caddy-root.crt \
+  https://192.168.100.180:8444/healthz
+curl --cacert /var/lib/hr-nautica-deploy/caddy-root.crt \
+  https://192.168.100.180:8444/release.json
+```
+
+Distribuir `caddy-root.crt` por canal administrativo autenticado somente aos
+computadores autorizados e conferir o fingerprint fora de banda. Nunca
+distribuir chaves privadas nem criar excecao TLS.
+
+Windows, em PowerShell elevado:
+
+```powershell
+certutil -addstore -f Root .\caddy-root.crt
+```
+
+Debian/Ubuntu cliente:
+
+```bash
+sudo install -m 644 caddy-root.crt \
+  /usr/local/share/ca-certificates/hr-nautica-production.crt
+sudo update-ca-certificates
+```
+
+Depois, abrir `https://192.168.100.180:8444` e validar login, sessao, CSRF,
+logout e troca de senha.
+
+## Rollback e encerramento
+
+Em falha no Compose, banco, TLS, health check ou igualdade do SHA, o script
+restaura automaticamente a imagem anterior. Se ainda nao existir imagem
+anterior, encerra a pilha incompleta. Nenhuma imagem antiga e removida
+automaticamente.
+
+Rollback manual autorizado:
+
+```bash
+PREVIOUS_IMAGE="$(sudo cat /var/lib/hr-nautica-deploy/previous-image)"
+sudo env ERP_IMAGE="$PREVIOUS_IMAGE" \
+  ERP_ENV_FILE=/etc/hr-nautica/production.env \
+  docker compose --env-file /etc/hr-nautica/production.env \
+    -f deploy/compose.production.yml up -d --no-build --remove-orphans
+```
+
+Encerramento sem apagar CA, volumes ou imagens:
+
+```bash
+sudo env ERP_ENV_FILE=/etc/hr-nautica/production.env \
+  docker compose --env-file /etc/hr-nautica/production.env \
+    -f deploy/compose.production.yml down --remove-orphans
+```
+
+Rollback da aplicacao nao reverte banco. Qualquer futura migration continua um
+procedimento administrativo separado, com backup e autorizacao especifica.
+
+## Controles externos ainda necessarios
+
+- branch protection da `main` exigindo revisao e job `test` aprovado;
+- environment GitHub `production` restrito a `main`;
+- runner dedicado e online;
+- firewall do Ubuntu permitindo `8444/tcp` apenas da rede interna autorizada;
+- arquivo `/etc/hr-nautica/production.env` fora do Git;
+- distribuicao controlada da CA de producao.
 
 ## Homologacao
 
-A primeira ativacao sem DNS, em `https://192.168.100.180:8443`, esta descrita
-em `docs/homologacao-interna.md`. Ela usa `tls internal`, CA persistente e o
-script `scripts/deploy/homologation.sh`. Configure a rede e o PostgreSQL
-exclusivos de homologacao; o script recusa `supabase_default` e qualquer banco
-diferente de `hr_nautica_homolog`.
-
-## Criterios para habilitar o deploy da main
-
-- DNS interno e certificado corporativo validos em clientes e no Ubuntu;
-- porta escolhida comprovadamente livre e firewall do Ubuntu limitado a rede
-  interna;
-- `supabase_default` existente e hostname do PostgreSQL confirmado, sem alterar
-  containers Supabase;
-- usuario exclusivo de producao provisionado e testado, sem usar credenciais de
-  homologacao;
-- todas as migrations aprovadas, aplicadas por procedimento manual e
-  `db:migrate:validate` sem pendencias;
-- backup operacional testado antes de qualquer futura migration;
-- branch protection em `main` exigindo o job `test`, revisao e historico linear;
-- environment GitHub `production` limitado a `main`; para deploy totalmente
-  automatico, sem aprovacao manual do environment depois que os controles
-  anteriores estiverem aceitos;
-- runner dedicado online, com label exato e sem outros repositorios autorizados;
-- arquivos em `/etc/hr-nautica` fora do Git e com permissoes restritas;
-- teste de login, troca de senha, logout, CSRF e sessao em homologacao concluido.
-
-## Desenvolvimento local
-
-`npm run dev` continua expondo Vite em `http://localhost:5173` e a API em
-`http://localhost:3001`. O `release.js` local usa `development`, portanto o
-guard de SHA nao interfere no Vite. Cookies Secure devem permanecer desativados
-somente no `.env.local` de desenvolvimento HTTP.
+O procedimento independente de homologacao continua em
+`docs/homologacao-interna.md`. Producao nunca reutiliza o banco, cookie, segredo
+ou volume Caddy da homologacao.
