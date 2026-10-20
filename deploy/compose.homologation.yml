@@ -51,7 +51,10 @@ services:
 
 networks:
   edge:
-    internal: true
+    # A bridge de entrada precisa aceitar o DNAT da porta publicada pelo Docker.
+    # O isolamento da API e garantido pela ausencia de `ports` no servico app.
+    driver: bridge
+    internal: false
   homolog_database:
     external: true
     name: ${HOMOLOG_DATABASE_NETWORK:?Informe a rede Docker isolada da homologacao}

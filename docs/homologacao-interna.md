@@ -7,6 +7,12 @@ frontend e encaminha `/api` para o mesmo container de aplicacao, portanto o
 navegador usa uma unica origem para login, cookie de sessao e CSRF. A porta
 `3001` aparece apenas na rede Docker `edge` e nao e publicada na LAN.
 
+A rede `edge` e uma bridge de entrada normal para permitir que o Docker aplique
+a publicacao `192.168.100.180:8443 -> proxy:443`. Ela nao carrega o PostgreSQL.
+O banco permanece somente na rede externa privada `homolog_database`, acessivel
+pelo container `app`; o `proxy` nao participa dessa rede. A API continua
+isolada porque possui apenas `expose: 3001`, sem `ports` no host.
+
 A imagem recebe o SHA completo durante o build. Esse mesmo SHA fica no frontend
 (`/release.json`), no header da API e em `/healthz`; a ativacao so termina quando
 os dois endpoints confirmam o SHA solicitado.

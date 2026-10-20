@@ -19,8 +19,8 @@ async function read(name) {
 }
 
 function serviceBlock(compose, service, nextService) {
-  const end = nextService ? `(?=  ${nextService}:)` : "(?=networks:)";
-  return compose.match(new RegExp(`  ${service}:[\\s\\S]*?${end}`))?.[0] || "";
+  const end = nextService ? `(?=^  ${nextService}:)` : "(?=^networks:)";
+  return compose.match(new RegExp(`^  ${service}:[\\s\\S]*?${end}`, "m"))?.[0] || "";
 }
 
 test("API nao publica porta e producao usa somente a rede externa esperada", async () => {
@@ -31,15 +31,23 @@ test("API nao publica porta e producao usa somente a rede externa esperada", asy
   assert.match(production, /external: true\s*\n\s+name: supabase_default/);
 });
 
-test("homologacao exige rede isolada e nao referencia supabase_default", async () => {
+test("homologacao publica somente o proxy e preserva a rede exclusiva do banco", async () => {
   const homologation = await read("homologation");
   const app = serviceBlock(homologation, "app", "proxy");
+  const proxy = serviceBlock(homologation, "proxy");
+  const edge = homologation.match(/networks:\s*\n  edge:\s*\n([\s\S]*?)(?=  homolog_database:)/)?.[1] || "";
   assert.match(homologation, /HOMOLOG_DATABASE_NETWORK:\?/);
   assert.doesNotMatch(homologation, /supabase_default/);
   assert.match(homologation, /AUTH_COOKIE_NAME: hrn_homolog_session/);
   assert.match(app, /expose:\s*\n\s*- "3001"/);
   assert.doesNotMatch(app, /\n\s+ports:/);
-  assert.match(homologation, /192\.168\.100\.180\}:\$\{ERP_HTTPS_PORT:-8443\}:443/);
+  assert.match(app, /- edge[\s\S]*- homolog_database/);
+  assert.match(proxy, /ports:\s*\n\s*- "\$\{ERP_HTTPS_BIND_IP:-192\.168\.100\.180\}:\$\{ERP_HTTPS_PORT:-8443\}:443"/);
+  assert.match(proxy, /networks:\s*\n\s*- edge/);
+  assert.doesNotMatch(proxy, /homolog_database/);
+  assert.match(edge, /driver: bridge/);
+  assert.match(edge, /internal: false/);
+  assert.doesNotMatch(edge, /internal: true/);
   assert.match(homologation, /Caddyfile\.homologation/);
 });
 
