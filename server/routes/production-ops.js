@@ -2,7 +2,7 @@ import { Router } from "express";
 import { mutateManualProductionOrder } from "../database.js";
 
 const router = Router();
-const actor = req => String(req.get("x-pcp-user") || req.body?.actor || "").trim().slice(0, 100);
+const actor = req => String(req.auth?.username || "").slice(0, 100);
 
 async function mutate(req, res, next, action) {
   try {

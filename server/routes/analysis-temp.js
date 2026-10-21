@@ -19,7 +19,7 @@ router.get("/", async (_req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const actor = String(req.get("x-pcp-user") || req.body?.actor || "").trim().slice(0, 100);
+    const actor = String(req.auth?.username || "").slice(0, 100);
     const result = await replaceAnalysisTempRows(req.body?.rows, actor);
     return res.status(201).json({ ok: true, ...result });
   } catch (error) {

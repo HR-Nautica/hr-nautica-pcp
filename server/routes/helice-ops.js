@@ -14,7 +14,7 @@ router.use((_req, res, next) => {
 });
 
 function actorFromRequest(req) {
-  return String(req.get("x-pcp-user") || req.body?.actor || "").trim().slice(0, 100);
+  return String(req.auth?.username || "").slice(0, 100);
 }
 
 router.get("/", async (_req, res, next) => {

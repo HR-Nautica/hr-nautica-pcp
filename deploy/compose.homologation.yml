@@ -1,0 +1,64 @@
+name: hr-nautica-homolog
+
+services:
+  app:
+    image: ${ERP_IMAGE:?ERP_IMAGE deve apontar para uma imagem imutavel por SHA}
+    restart: unless-stopped
+    env_file:
+      - ${ERP_ENV_FILE:-/etc/hr-nautica/homologation.env}
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3001
+      DATABASE_STRICT_MODE: "true"
+      DATABASE_SSL_MODE: disable
+      DATABASE_SSL_REJECT_UNAUTHORIZED: "true"
+      AUTH_COOKIE_SECURE: "false"
+      AUTH_COOKIE_NAME: hrn_homolog_session
+      AUDIT_CLEANUP_ENABLED: "false"
+    networks:
+      - edge
+      - homolog_database
+    expose:
+      - "3001"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stop_grace_period: 30s
+
+  proxy:
+    image: ${CADDY_IMAGE:-caddy:2.11.7-alpine}
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    env_file:
+      - ${ERP_ENV_FILE:-/etc/hr-nautica/homologation.env}
+    ports:
+      - "${ERP_HTTPS_BIND_IP:-192.168.100.180}:${ERP_HTTPS_PORT:-8443}:80"
+    volumes:
+      - ./Caddyfile.homologation:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  edge:
+    # A bridge de entrada precisa aceitar o DNAT da porta publicada pelo Docker.
+    # O isolamento da API e garantido pela ausencia de `ports` no servico app.
+    driver: bridge
+    internal: false
+  homolog_database:
+    external: true
+    name: ${HOMOLOG_DATABASE_NETWORK:?Informe a rede Docker isolada da homologacao}
+
+volumes:
+  caddy_data:
+  caddy_config:
