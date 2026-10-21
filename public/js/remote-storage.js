@@ -32,6 +32,8 @@ const RemoteStorage = {
   versions: new Map(),
   revision: 0,
   writeQueues: new Map(),
+  lastQueuedWriteIds: new Map(),
+  confirmedWriteVersions: new Map(),
   pendingWrites: new Map(),
   conflicts: new Map(),
   nextWriteId: 1,
@@ -62,7 +64,12 @@ const RemoteStorage = {
     if (unchanged) return;
     if (key.startsWith("hrn_") && key !== "hrn_sync_timestamp") {
       const pending = this.rememberPending(key, "PUT", value);
-      this.enqueue(key, () => this.persist(key, value, pending.writeId, pending.baseVersion));
+      this.enqueue(key, () => this.persist(
+        key,
+        value,
+        pending.writeId,
+        this.expectedVersionForPending(pending)
+      ));
     }
   },
   removeItem(key) {
@@ -74,7 +81,11 @@ const RemoteStorage = {
     }
     if (key.startsWith("hrn_")) {
       const pending = this.rememberPending(key, "DELETE");
-      this.enqueue(key, () => this.persistDelete(key, pending.writeId, pending.baseVersion));
+      this.enqueue(key, () => this.persistDelete(
+        key,
+        pending.writeId,
+        this.expectedVersionForPending(pending)
+      ));
     }
   },
   clear() {
@@ -94,6 +105,7 @@ const RemoteStorage = {
   },
   rememberPending(key, method, value) {
     const ownerUser = this.normalizedCurrentUser();
+    const predecessorWriteId = this.lastQueuedWriteIds.get(key) ?? null;
     const pending = {
       key,
       method,
@@ -101,13 +113,24 @@ const RemoteStorage = {
       baseVersion: this.serverStateLoaded ? Number(this.versions.get(key) || 0) : null,
       ownerUser,
       writeId: this.nextWriteId++,
+      predecessorWriteId,
       createdAt: new Date().toISOString(),
       error: ""
     };
+    this.lastQueuedWriteIds.set(key, pending.writeId);
     this.pendingWrites.set(key, pending);
     this.savePendingWrites();
     this.showPendingWarning(key);
     return pending;
+  },
+  expectedVersionForPending(pending) {
+    if (pending.predecessorWriteId !== null
+      && this.confirmedWriteVersions.has(pending.predecessorWriteId)) {
+      const confirmedVersion = this.confirmedWriteVersions.get(pending.predecessorWriteId);
+      this.confirmedWriteVersions.delete(pending.predecessorWriteId);
+      return confirmedVersion;
+    }
+    return pending.baseVersion;
   },
   normalizedCurrentUser() {
     return String(this.currentUser || "").trim().toLocaleLowerCase("pt-BR");
@@ -269,7 +292,9 @@ const RemoteStorage = {
       throw this.conflictBlockedError();
     }
     if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
-    this.versions.set(key, Number(result.version));
+    const confirmedVersion = Number(result.version);
+    this.versions.set(key, confirmedVersion);
+    this.confirmedWriteVersions.set(writeId, confirmedVersion);
     this.revision = Number(result.revision);
     this.clearPending(key, writeId);
     this.showConfirmedState();
@@ -292,6 +317,7 @@ const RemoteStorage = {
     }
     if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
     this.versions.delete(key);
+    this.confirmedWriteVersions.set(writeId, 0);
     this.revision = Number(result.revision);
     this.clearPending(key, writeId);
     this.showConfirmedState();
@@ -363,11 +389,27 @@ const RemoteStorage = {
       throw error;
     }
   },
-  discardConflict(key) {
-    this.conflicts.delete(key);
-    this.clearPending(key);
-    this.showConfirmedState();
-    if (typeof this.onUpdate === "function") this.onUpdate();
+  async discardConflict(key) {
+    const pending = this.pendingWrites.get(key);
+    try {
+      await this.load(true, new Set([key]));
+      if (this.data.has(key)) localStorage.setItem(key, JSON.stringify(this.data.get(key)));
+      else localStorage.removeItem(key);
+      this.conflicts.delete(key);
+      this.clearPending(key);
+      if (pending) {
+        this.confirmedWriteVersions.delete(pending.predecessorWriteId);
+        this.confirmedWriteVersions.delete(pending.writeId);
+        if (this.lastQueuedWriteIds.get(key) === pending.writeId) this.lastQueuedWriteIds.delete(key);
+      }
+      this.showConfirmedState();
+      if (typeof this.onUpdate === "function") this.onUpdate();
+      return true;
+    } catch (error) {
+      if (this.conflicts.has(key)) this.showConflictWarning(key);
+      else this.showRestoredPendingWarning(key);
+      throw error;
+    }
   },
   async retryPending(key, { confirmed = false } = {}) {
     const pending = this.pendingWrites.get(key);
@@ -424,7 +466,13 @@ const RemoteStorage = {
       const discard = document.createElement("button");
       discard.type = "button";
       discard.textContent = "Descartar alteracao local";
-      discard.addEventListener("click", () => this.discardConflict(key));
+      discard.addEventListener("click", () => {
+        discard.disabled = true;
+        this.discardConflict(key).catch((error) => {
+          console.error(`[BANCO] Falha ao restaurar a versao do servidor para ${key}:`, error);
+          discard.disabled = false;
+        });
+      });
       warning.append(" ", retry, " ", discard);
     }
     warning.style.display = "block";
@@ -448,7 +496,13 @@ const RemoteStorage = {
       const discard = document.createElement("button");
       discard.type = "button";
       discard.textContent = "Manter versao do servidor";
-      discard.addEventListener("click", () => this.discardConflict(key));
+      discard.addEventListener("click", () => {
+        discard.disabled = true;
+        this.discardConflict(key).catch((error) => {
+          console.error(`[BANCO] Falha ao restaurar a versao do servidor para ${key}:`, error);
+          discard.disabled = false;
+        });
+      });
       warning.append(" ", retry, " ", discard);
     }
     warning.style.display = "block";

@@ -69,6 +69,59 @@ test("fila nao envia snapshot posterior depois que a chave entra em conflito", a
   assert.deepEqual(JSON.parse(JSON.stringify(storage.getConflict("hrn_ops").value)), [{ id: "mais-recente" }]);
 });
 
+test("gravacoes locais sequenciais usam a versao confirmada pela predecessora", async () => {
+  const requests = [];
+  const { storage } = harness(async (_url, options = {}) => {
+    const body = JSON.parse(options.body);
+    requests.push(body);
+    const version = requests.length + 1;
+    return response(200, { ok: true, version, revision: version });
+  });
+  storage.serverStateLoaded = true;
+  storage.data.set("hrn_ops", [{ id: "base" }]);
+  storage.versions.set("hrn_ops", 1);
+
+  storage.setItem("hrn_ops", JSON.stringify([{ id: "primeiro" }]));
+  storage.setItem("hrn_ops", JSON.stringify([{ id: "estado-final" }]));
+  await storage.writeQueues.get("hrn_ops");
+
+  assert.deepEqual(requests.map(request => request.expectedVersion), [1, 2]);
+  assert.deepEqual(JSON.parse(JSON.stringify(requests[1].value)), [{ id: "estado-final" }]);
+  assert.equal(storage.versions.get("hrn_ops"), 3);
+  assert.equal(storage.pendingWrites.has("hrn_ops"), false);
+  assert.equal(storage.getConflict("hrn_ops"), null);
+});
+
+test("descartar conflito restaura o snapshot confirmado mais recente do servidor", async () => {
+  const calls = [];
+  const { storage, localStorage } = harness(async (_url, options = {}) => {
+    calls.push(options.method || "GET");
+    if (calls.length === 1) return response(409, { currentVersion: 2 });
+    if (calls.length === 2) return response(200, {
+      modified: true, revision: 8, data: { hrn_ops: [{ id: "servidor-conflito" }] }, versions: { hrn_ops: 2 }
+    });
+    return response(200, {
+      modified: true, revision: 9, data: { hrn_ops: [{ id: "servidor-confirmado" }] }, versions: { hrn_ops: 3 }
+    });
+  });
+  storage.serverStateLoaded = true;
+  storage.data.set("hrn_ops", [{ id: "base" }]);
+  storage.versions.set("hrn_ops", 1);
+  storage.setItem("hrn_ops", JSON.stringify([{ id: "local-obsoleto" }]));
+  await storage.writeQueues.get("hrn_ops");
+
+  storage.data.set("hrn_ops", [{ id: "local-obsoleto" }]);
+  localStorage.setItem("hrn_ops", JSON.stringify([{ id: "local-obsoleto" }]));
+  assert.equal(await storage.discardConflict("hrn_ops"), true);
+
+  assert.deepEqual(calls, ["PUT", "GET", "GET"]);
+  assert.deepEqual(JSON.parse(JSON.stringify(storage.data.get("hrn_ops"))), [{ id: "servidor-confirmado" }]);
+  assert.deepEqual(JSON.parse(localStorage.getItem("hrn_ops")), [{ id: "servidor-confirmado" }]);
+  assert.equal(storage.versions.get("hrn_ops"), 3);
+  assert.equal(storage.pendingWrites.has("hrn_ops"), false);
+  assert.equal(storage.getConflict("hrn_ops"), null);
+});
+
 test("falha de rede mantem gravacao pendente recuperavel no navegador", async () => {
   const { storage, localStorage, warning } = harness(async () => { throw new Error("rede indisponivel"); });
   storage.serverStateLoaded = true;
