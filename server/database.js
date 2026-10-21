@@ -1176,32 +1176,43 @@ export async function upsertState(key, value, expectedVersion, actor = "") {
 
   if (usesSupabaseRest()) return upsertStateRest(key, value, expectedVersion, actor);
 
-  return transaction(async (client) => {
-    const current = await currentVersion(client, key);
-    if (current !== expectedVersion) throw versionConflict(current);
+  return transaction(client => upsertStatePostgres(client, key, value, expectedVersion, actor));
+}
 
-    const nextVersion = current + 1;
-    const now = new Date();
-    const payload = serializeValue(value);
-    if (current === 0) {
-      await client.query(
-        "INSERT INTO app_state (key, value, version, updated_at) VALUES ($1, $2, $3, $4)",
-        [key, payload, nextVersion, now]
-      );
-    } else {
-      await client.query(
-        "UPDATE app_state SET value = $1, version = $2, updated_at = $3 WHERE key = $4",
-        [payload, nextVersion, now, key]
-      );
-    }
+export async function upsertStatePostgres(client, key, value, expectedVersion, actor = "") {
+  const expected = Number(expectedVersion);
+  const nextVersion = expected + 1;
+  const now = new Date();
+  const payload = serializeValue(value);
+  let changed;
 
-    const revision = await incrementRevision(client);
-    await client.query(
-      "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
-      [key, "UPSERT", nextVersion, actor, now]
+  if (expected === 0) {
+    changed = await client.query(
+      `INSERT INTO app_state (key, value, version, updated_at)
+       VALUES ($1, $2, 1, $3)
+       ON CONFLICT (key) DO NOTHING
+       RETURNING version`,
+      [key, payload, now]
     );
-    return { version: nextVersion, revision };
-  });
+  } else {
+    changed = await client.query(
+      `UPDATE app_state
+       SET value = $1, version = version + 1, updated_at = $2
+       WHERE key = $3 AND version = $4
+       RETURNING version`,
+      [payload, now, key, expected]
+    );
+  }
+
+  if (!changed.rowCount) throw versionConflict(await currentVersion(client, key));
+
+  const version = Number(firstValue(changed.rows[0], ["version"], nextVersion));
+  const revision = await incrementRevision(client);
+  await client.query(
+    "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
+    [key, "UPSERT", version, actor, now]
+  );
+  return { version, revision };
 }
 
 export async function deleteState(key, expectedVersion, actor = "") {
@@ -1234,24 +1245,30 @@ export async function deleteState(key, expectedVersion, actor = "") {
 
   if (usesSupabaseRest()) return deleteStateRest(key, expectedVersion, actor);
 
-  return transaction(async (client) => {
+  return transaction(client => deleteStatePostgres(client, key, expectedVersion, actor));
+}
+
+export async function deleteStatePostgres(client, key, expectedVersion, actor = "") {
+  const expected = Number(expectedVersion);
+  const now = new Date();
+  const deleted = await client.query(
+    "DELETE FROM app_state WHERE key = $1 AND version = $2 RETURNING version",
+    [key, expected]
+  );
+
+  if (!deleted.rowCount) {
     const current = await currentVersion(client, key);
-    if (current !== expectedVersion) throw versionConflict(current);
+    if (expected !== 0 || current !== 0) throw versionConflict(current);
+    return { revision: await currentRevision(client) };
+  }
 
-    if (current === 0) {
-      const revisionRows = await client.query("SELECT revision FROM app_revision WHERE singleton = $1", ["main"]);
-      return { revision: Number(firstValue(revisionRows.rows[0], ["revision"], 0)) };
-    }
-
-    const now = new Date();
-    await client.query("DELETE FROM app_state WHERE key = $1", [key]);
-    const revision = await incrementRevision(client);
-    await client.query(
-      "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
-      [key, "DELETE", current + 1, actor, now]
-    );
-    return { revision };
-  });
+  const deletedVersion = Number(firstValue(deleted.rows[0], ["version"], expected));
+  const revision = await incrementRevision(client);
+  await client.query(
+    "INSERT INTO audit_log (state_key, action, version, actor, created_at) VALUES ($1, $2, $3, $4, $5)",
+    [key, "DELETE", deletedVersion + 1, actor, now]
+  );
+  return { revision };
 }
 
 export async function importState(entries, actor = "IMPORT") {
@@ -1316,7 +1333,14 @@ export async function importState(entries, actor = "IMPORT") {
 // Helpers for REST
 async function incrementRevision(client) {
   const now = new Date();
-  await client.query("UPDATE app_revision SET revision = revision + 1, updated_at = $1 WHERE singleton = $2", [now, "main"]);
+  const rows = await client.query(
+    "UPDATE app_revision SET revision = revision + 1, updated_at = $1 WHERE singleton = $2 RETURNING revision",
+    [now, "main"]
+  );
+  return Number(firstValue(rows.rows[0], ["revision"], 0));
+}
+
+async function currentRevision(client) {
   const rows = await client.query("SELECT revision FROM app_revision WHERE singleton = $1", ["main"]);
   return Number(firstValue(rows.rows[0], ["revision"], 0));
 }
