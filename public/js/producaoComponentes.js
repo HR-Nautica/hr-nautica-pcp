@@ -17,9 +17,9 @@ function prodComp_load() {
     const cachedOps = RemoteStorage.getItem('hrn_prod_comp_ops');
     if (cachedOps) {
       PROD_COMP_STATE.ops = JSON.parse(cachedOps);
+    } else {
+      PROD_COMP_STATE.ops = [];
     }
-    // Remove qualquer cache residual de entradas locais pendentes
-    RemoteStorage.removeItem('hrn_prod_comp_entradas');
     PROD_COMP_STATE.entradasLocais = [];
     PROD_COMP_STATE.loaded = true;
   } catch (e) {
@@ -28,11 +28,14 @@ function prodComp_load() {
 }
 
 // Salva dados no RemoteStorage
-function prodComp_save() {
+async function prodComp_save() {
   try {
-    RemoteStorage.setItem('hrn_prod_comp_ops', JSON.stringify(PROD_COMP_STATE.ops));
+    const confirmed = await RemoteStorage.setItem('hrn_prod_comp_ops', JSON.stringify(PROD_COMP_STATE.ops));
+    if (confirmed !== true) throw new Error('O servidor nao confirmou a alteracao das OPs.');
+    return true;
   } catch (e) {
     console.error('Erro ao salvar dados de producaoComponentes no RemoteStorage', e);
+    throw e;
   }
 }
 
@@ -99,7 +102,7 @@ function prodComp_getRowOperacoes(row) {
 }
 
 // Cria uma nova OP de Componente e associa toda a sua árvore de sub-itens e operações
-function prodComp_createOP(sku, qty, descOverride) {
+async function prodComp_createOP(sku, qty, descOverride) {
   sku = String(sku || '').trim().toUpperCase();
   qty = parseInt(qty) || 0;
   if (!sku || qty <= 0) {
@@ -202,7 +205,12 @@ function prodComp_createOP(sku, qty, descOverride) {
   };
 
   PROD_COMP_STATE.ops.push(newOp);
-  prodComp_save();
+  try {
+    await prodComp_save();
+  } catch (error) {
+    if (typeof showToast === 'function') showToast(`OP nao confirmada pelo servidor: ${error.message}`, 'error');
+    return null;
+  }
 
   if (typeof showToast === 'function') {
     showToast(`OP de Componente ${id} criada com sucesso!`, 'success');
@@ -236,7 +244,7 @@ function prodComp_isItemBlocked(op, item) {
 window.prodComp_isItemBlocked = prodComp_isItemBlocked;
 
 // Alterna o status de uma operação de item da OP
-function prodComp_toggleOpStatus(opId, itemSku, opKey) {
+async function prodComp_toggleOpStatus(opId, itemSku, opKey) {
   prodComp_load();
   const op = PROD_COMP_STATE.ops.find(o => o.id === opId);
   if (!op || op.status !== 'Em Produção') return;
@@ -270,14 +278,19 @@ function prodComp_toggleOpStatus(opId, itemSku, opKey) {
   }
 
   op.atualizadoEm = Date.now();
-  prodComp_save();
+  try {
+    await prodComp_save();
+  } catch (error) {
+    if (typeof showToast === 'function') showToast(`Etapa nao confirmada pelo servidor: ${error.message}`, 'error');
+    return;
+  }
   prodComp_render();
   if (typeof renderViniTable === 'function') renderViniTable();
 }
 window.prodComp_toggleOpStatus = prodComp_toggleOpStatus;
 
 // Conclui a Ordem de Produção inteira (muda status para Concluído)
-function prodComp_finalizarOP(opId) {
+async function prodComp_finalizarOP(opId) {
   prodComp_load();
   const op = PROD_COMP_STATE.ops.find(o => o.id === opId);
   if (!op || op.status !== 'Em Produção') return;
@@ -300,7 +313,12 @@ function prodComp_finalizarOP(opId) {
 
   op.status = 'Concluído';
   op.atualizadoEm = Date.now();
-  prodComp_save();
+  try {
+    await prodComp_save();
+  } catch (error) {
+    if (typeof showToast === 'function') showToast(`Conclusao nao confirmada pelo servidor: ${error.message}`, 'error');
+    return false;
+  }
 
   if (typeof showToast === 'function') {
     showToast(`OP de Componente ${op.id} concluída com sucesso!`, 'success');
@@ -308,11 +326,12 @@ function prodComp_finalizarOP(opId) {
 
   prodComp_render();
   if (typeof renderViniTable === 'function') renderViniTable();
+  return true;
 }
 window.prodComp_finalizarOP = prodComp_finalizarOP;
 
 // Exclui/Cancela uma OP de Componente
-function prodComp_deleteOP(id) {
+async function prodComp_deleteOP(id) {
   if (!confirm('Deseja realmente cancelar esta Ordem de Produção de Componente?')) return;
 
   prodComp_load();
@@ -321,12 +340,18 @@ function prodComp_deleteOP(id) {
     op.deleted = true;
     op.atualizadoEm = Date.now();
   }
-  prodComp_save();
+  try {
+    await prodComp_save();
+  } catch (error) {
+    if (typeof showToast === 'function') showToast(`Cancelamento nao confirmado pelo servidor: ${error.message}`, 'error');
+    return false;
+  }
   
   if (typeof showToast === 'function') showToast('OP cancelada.', 'info');
   
   prodComp_render();
   if (typeof renderViniTable === 'function') renderViniTable();
+  return true;
 }
 window.prodComp_deleteOP = prodComp_deleteOP;
 
@@ -968,7 +993,7 @@ function prodComp_initEvents() {
   if (cancelBtn) cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
 
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       const sku = document.getElementById('op-comp-sku').value;
       const desc = document.getElementById('op-comp-desc').value;
       const qty = parseInt(document.getElementById('op-comp-qty').value) || 0;
@@ -978,8 +1003,13 @@ function prodComp_initEvents() {
         return;
       }
 
-      prodComp_createOP(sku, qty, desc);
-      modal.classList.add('hidden');
+      saveBtn.disabled = true;
+      try {
+        const created = await prodComp_createOP(sku, qty, desc);
+        if (created) modal.classList.add('hidden');
+      } finally {
+        saveBtn.disabled = false;
+      }
     });
   }
 }
@@ -996,6 +1026,7 @@ function prodComp_openCreateModal(sku, suggestedQty, desc) {
   modal.classList.remove('hidden');
 }
 window.prodComp_openCreateModal = prodComp_openCreateModal;
+window.PROD_COMP_STATE = PROD_COMP_STATE;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {

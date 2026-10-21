@@ -100,6 +100,28 @@ function parseViniNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function normalizeViniHeader(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .trim();
+}
+
+function findViniColumn(headers, matcher) {
+  return headers.findIndex(header => matcher(normalizeViniHeader(header)));
+}
+
+async function persistViniEntries(entries) {
+  const results = await Promise.all(Object.entries(entries).map(([key, value]) =>
+    RemoteStorage.setItem(key, JSON.stringify(value))
+  ));
+  if (results.some(result => result !== true)) {
+    throw new Error('O servidor nao confirmou todos os dados da importacao.');
+  }
+}
+
 // Formata cobertura em meses
 function fmtCob(valor) {
   if (!isFinite(valor) || valor === Infinity || valor === null || valor === undefined) return 'Sem Giro';
@@ -181,7 +203,7 @@ function reativarSku(sku) {
 window.reativarSku = reativarSku;
 
 // Processa dados do Excel de Fornecedores e extrai os vínculos de SKU com Fornecedor Padrão
-function processFornecedoresExcel(arrayBuffer) {
+function processFornecedoresExcelLegacy(arrayBuffer) {
   try {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
     const sheetName = wb.SheetNames[0];
@@ -212,7 +234,7 @@ function processFornecedoresExcel(arrayBuffer) {
 
 // Processa dados do Excel fabri1.xlsx de fabricação e monta o mapa de sub-itens e sub-sub-itens
 // Lê TODAS as abas do arquivo e mescla os resultados num único mapa.
-function processFabriExcel(arrayBuffer) {
+function processFabriExcelLegacy(arrayBuffer) {
   try {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
     const map = {};
@@ -288,6 +310,86 @@ function processFabriExcel(arrayBuffer) {
 
 
 // Expande ou recolhe um item de nível 1 na tabela
+async function processFornecedoresExcel(arrayBuffer) {
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  const sheetName = workbook.SheetNames.find(name => normalizeViniHeader(name).includes('FORNECED'));
+  if (!sheetName) throw new Error('Aba de Fornecedores nao localizada.');
+  const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+  if (!rows.length) throw new Error('Aba de Fornecedores vazia.');
+  const keys = Object.keys(rows[0]);
+  const skuKey = keys.find(key => {
+    const normalized = normalizeViniHeader(key);
+    return normalized === 'SKU' || normalized === 'CODIGO' || normalized.includes('CODIGO SKU');
+  });
+  const supplierKey = keys.find(key => normalizeViniHeader(key).includes('FORNECED'));
+  if (!skuKey || !supplierKey) throw new Error('Aba de Fornecedores sem colunas SKU e Fornecedor.');
+
+  const map = {};
+  rows.forEach(row => {
+    const sku = String(row[skuKey] || '').trim().toUpperCase();
+    const supplier = String(row[supplierKey] || '').trim().toUpperCase();
+    if (sku && supplier) map[sku] = supplier;
+  });
+  if (!Object.keys(map).length) throw new Error('Aba de Fornecedores nao contem vinculos validos.');
+  await persistViniEntries({ hrn_vini_fornecedores_map: map });
+  VINI_STATE.fornecedoresMap = map;
+  return { count: Object.keys(map).length, sheet: sheetName };
+}
+
+async function processFabriExcel(arrayBuffer) {
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  const fabricationSheets = workbook.SheetNames.filter(name => normalizeViniHeader(name).includes('FABRI'));
+  if (!fabricationSheets.length) throw new Error('Aba de Fabricacao nao localizada.');
+  const map = {};
+  let validLayout = false;
+
+  fabricationSheets.forEach(sheetName => {
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+    if (!rows.length) return;
+    const keys = Object.keys(rows[0]);
+    const findKey = matcher => keys.find(key => matcher(normalizeViniHeader(key)));
+    const skuKitKey = findKey(header => header.includes('SKU KIT') || header.includes('SKU FABRICADO'));
+    const skuCompKey = findKey(header => header.includes('SKU COMPONENTE'));
+    if (!skuKitKey || !skuCompKey) return;
+    validLayout = true;
+    const descCompKey = findKey(header => header.includes('DESCRICAO COMPONENTE'));
+    const supplierCompKey = findKey(header => header.includes('FORNECEDOR COMPONENTE'));
+    const qtyCompKey = findKey(header => header.includes('QUANTIDADE COMPONENTE'));
+    const skuMaterialKey = findKey(header => header.includes('SKU MATERIAL'));
+    const descMaterialKey = findKey(header => header.includes('DESCRICAO MATERIAL'));
+    const supplierMaterialKey = findKey(header => header.includes('FORNECEDOR MATERIAL'));
+    const qtyMaterialKey = findKey(header => header.includes('QTDE MATERIAL') || header.includes('QUANTIDADE MATERIAL'));
+    const unitMaterialKey = findKey(header => header === 'UN' || header.startsWith('UN '));
+
+    rows.forEach(row => {
+      const skuKit = String(row[skuKitKey] || '').trim().toUpperCase();
+      const skuComp = String(row[skuCompKey] || '').trim().toUpperCase();
+      if (!skuKit || !skuComp) return;
+      const component = {
+        skuComp,
+        descComp: descCompKey ? String(row[descCompKey] || '').trim() : '',
+        fornComp: supplierCompKey ? String(row[supplierCompKey] || '').trim().toUpperCase() : '',
+        qtyComp: qtyCompKey ? parseViniNumber(row[qtyCompKey]) : 0,
+        skuMat: skuMaterialKey ? String(row[skuMaterialKey] || '').trim().toUpperCase() : '',
+        descMat: descMaterialKey ? String(row[descMaterialKey] || '').trim() : '',
+        fornMat: supplierMaterialKey ? String(row[supplierMaterialKey] || '').trim().toUpperCase() : '',
+        qtyMat: qtyMaterialKey ? parseViniNumber(row[qtyMaterialKey]) : 0,
+        unMat: unitMaterialKey ? String(row[unitMaterialKey] || '').trim() : ''
+      };
+      if (!map[skuKit]) map[skuKit] = [];
+      if (!map[skuKit].some(item => item.skuComp === component.skuComp && item.skuMat === component.skuMat)) {
+        map[skuKit].push(component);
+      }
+    });
+  });
+
+  if (!validLayout) throw new Error('Aba de Fabricacao sem colunas SKU Kit e SKU Componente.');
+  if (!Object.keys(map).length) throw new Error('Aba de Fabricacao nao contem componentes validos.');
+  await persistViniEntries({ hrn_vini_fabri_data: map });
+  VINI_STATE.fabriData = map;
+  return { count: Object.keys(map).length, sheets: fabricationSheets };
+}
+
 function toggleItemExpansion(sku) {
   if (!sku) return;
   if (VINI_STATE.expandedItems.has(sku)) {
@@ -366,7 +468,7 @@ function seedViniFromCatalogo() {
 }
 
 // Processa dados do Excel e extrai as abas Necessidade e Entradas
-function processExcelWorkbook(arrayBuffer) {
+function processExcelWorkbookLegacy(arrayBuffer) {
   try {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
 
@@ -509,6 +611,99 @@ function processExcelWorkbook(arrayBuffer) {
 }
 
 // Carrega dados da planilha via Fetch
+async function processExcelWorkbook(arrayBuffer) {
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  const planningSheetName = workbook.SheetNames.find(name => {
+    const normalized = normalizeViniHeader(name);
+    return normalized.includes('NECESSIDADE') || normalized.includes('SAIDAS') || normalized.includes('VENDAS');
+  });
+  if (!planningSheetName) throw new Error('Aba de Necessidade, Saidas ou Vendas nao localizada.');
+
+  const rows = XLSX.utils.sheet_to_json(workbook.Sheets[planningSheetName], { header: 1, defval: '' });
+  let headerIdx = -1;
+  let columns = null;
+  for (let index = 0; index < Math.min(rows.length, 25); index++) {
+    const headers = rows[index] || [];
+    const candidate = {
+      sku: findViniColumn(headers, h => h === 'SKU' || h === 'CODIGO' || h.includes('CODIGO SKU')),
+      produto: findViniColumn(headers, h => h.includes('PRODUTO') || h.includes('DESCRICAO') || h === 'NOME'),
+      saidasPrevistas: findViniColumn(headers, h => h.includes('SAIDAS PREVISTAS') || h.includes('VENDIDO') || h === 'SAIDAS'),
+      estoqueFisico: findViniColumn(headers, h => h.includes('ESTOQUE FISICO') || h === 'ESTOQUE' || h.includes('SALDO ATUAL')),
+      saidasPeriodo: findViniColumn(headers, h => h.includes('SAIDAS NO PERIODO') || h.includes('SAIDAS PERIODO')),
+      mediaMensal: findViniColumn(headers, h => h.includes('MEDIA MENSAL')),
+      prio2: findViniColumn(headers, h => h.includes('PRIO 2') || h.includes('PRIORIDADE'))
+    };
+    if (candidate.sku >= 0 && candidate.saidasPrevistas >= 0) {
+      headerIdx = index;
+      columns = candidate;
+      break;
+    }
+  }
+  if (!columns) throw new Error('Colunas obrigatorias SKU e Saidas Previstas nao localizadas.');
+
+  const previousBySku = new Map((VINI_STATE.necessidadeData || []).map(item =>
+    [String(item.sku || '').trim().toUpperCase(), item]
+  ));
+  const snapshotBySku = new Map();
+  for (let index = headerIdx + 1; index < rows.length; index++) {
+    const row = rows[index] || [];
+    const sku = String(row[columns.sku] || '').trim().toUpperCase();
+    if (!sku || sku === 'UNDEFINED') continue;
+    const previous = previousBySku.get(sku);
+    const produto = columns.produto >= 0 && String(row[columns.produto] || '').trim()
+      ? String(row[columns.produto]).trim()
+      : previous?.produto || 'Produto sem nome';
+    const saidasPrevistas = parseViniNumber(row[columns.saidasPrevistas]);
+    const estoqueFisico = columns.estoqueFisico >= 0 ? parseViniNumber(row[columns.estoqueFisico]) : 0;
+    const saidasPeriodo = columns.saidasPeriodo >= 0
+      ? parseViniNumber(row[columns.saidasPeriodo])
+      : parseViniNumber(row[12]);
+    const mediaMensal = columns.mediaMensal >= 0 && row[columns.mediaMensal] !== ''
+      ? parseViniNumber(row[columns.mediaMensal])
+      : Number((saidasPeriodo / 3).toFixed(2));
+    const rawPrio = columns.prio2 >= 0 ? row[columns.prio2] : '';
+    const prio2 = rawPrio === '' || rawPrio === null || rawPrio === undefined ? 'â€”' : parseViniNumber(rawPrio);
+
+    snapshotBySku.set(sku, {
+      produto,
+      sku,
+      entradasPrevistas: 0,
+      saidasPrevistas,
+      estoqueFisico,
+      estoqueVirtual: estoqueFisico - saidasPrevistas,
+      saidasPeriodo,
+      mediaMensal,
+      prio2,
+      coberturaFisica: mediaMensal > 0 ? Number((estoqueFisico / mediaMensal).toFixed(2)) : Infinity,
+      coberturaVirtual: mediaMensal > 0 ? Number(((estoqueFisico - saidasPrevistas) / mediaMensal).toFixed(2)) : Infinity
+    });
+  }
+
+  const parsedItems = [...snapshotBySku.values()];
+  if (!parsedItems.length) throw new Error('A aba de planejamento nao contem SKUs validos.');
+
+  const entriesSheetName = workbook.SheetNames.find(name => normalizeViniHeader(name) === 'ENTRADAS PREVISTAS');
+  const entradasPrevistas = entriesSheetName
+    ? XLSX.utils.sheet_to_json(workbook.Sheets[entriesSheetName], { defval: '' })
+    : [];
+  if (entradasPrevistas.length) {
+    const headers = Object.keys(entradasPrevistas[0]).map(normalizeViniHeader);
+    const hasSku = headers.some(header => header === 'SKU' || header.includes('CODIGO SKU'));
+    const hasQuantity = headers.some(header => header === 'QTDE' || header.includes('QUANTIDADE'));
+    if (!hasSku || !hasQuantity) throw new Error('A aba Entradas Previstas nao possui as colunas SKU e Quantidade.');
+  }
+
+  await persistViniEntries({
+    hrn_vini_necessidades: parsedItems,
+    hrn_vini_entradas: entradasPrevistas
+  });
+  VINI_STATE.necessidadeData = parsedItems;
+  VINI_STATE.entradasPrevistasData = entradasPrevistas;
+  VINI_STATE.loaded = true;
+  updatePrio2FilterOptions();
+  return { count: parsedItems.length, sheet: planningSheetName };
+}
+
 async function loadViniExcelData() {
   if (VINI_STATE.loaded && VINI_STATE.necessidadeData?.length > 0) return true;
   const tbody = document.getElementById('vini-table-body');
@@ -518,10 +713,43 @@ async function loadViniExcelData() {
   return false;
 }
 
+function refreshViniFromStorage() {
+  const necessidades = safeGetJSON('hrn_vini_necessidades', null);
+  if (Array.isArray(necessidades)) {
+    VINI_STATE.necessidadeData = necessidades;
+    VINI_STATE.loaded = true;
+  }
+  VINI_STATE.entradasPrevistasData = safeGetJSON('hrn_vini_entradas', VINI_STATE.entradasPrevistasData);
+  VINI_STATE.fornecedoresMap = safeGetJSON('hrn_vini_fornecedores_map', VINI_STATE.fornecedoresMap);
+  VINI_STATE.fabriData = safeGetJSON('hrn_vini_fabri_data', VINI_STATE.fabriData);
+  VINI_STATE.inativados = safeGetSet('hrn_vini_inativados');
+  if (typeof window.earv_refreshFromStorage === 'function') window.earv_refreshFromStorage();
+}
+
+function calculateViniPlanning(item) {
+  const estoqueFisico = parseViniNumber(item?.estoqueFisico);
+  const saidasPrevistas = parseViniNumber(item?.saidasPrevistas);
+  const mediaMensal = parseViniNumber(item?.mediaMensal);
+  const producaoEmAndamento = typeof prodComp_getSaldoVirtualLocal === 'function'
+    ? prodComp_getSaldoVirtualLocal(item?.sku)
+    : 0;
+  return {
+    estoqueFisico,
+    producaoEmAndamento,
+    estoqueVirtual: estoqueFisico + producaoEmAndamento - saidasPrevistas,
+    necessidadeFabricacao: Math.ceil(Math.max(
+      0,
+      (VINI_STATE.coberturaAlvo * mediaMensal) - estoqueFisico - producaoEmAndamento
+    ))
+  };
+}
+
 // Renderiza a tabela do VINI e atualiza contadores/KPIs
 function renderViniTable() {
   const tbody = document.getElementById('vini-table-body');
   if (!tbody) return;
+
+  refreshViniFromStorage();
 
   if (!VINI_STATE.loaded) {
     return;
@@ -550,9 +778,6 @@ function renderViniTable() {
       item.coberturaFisica = item.mediaMensal > 0 ? item.estoqueFisico / item.mediaMensal : Infinity;
       item.coberturaVirtual = item.mediaMensal > 0 ? (item.estoqueFisico + entradasTotal) / item.mediaMensal : Infinity;
     });
-    try {
-      RemoteStorage.setItem('hrn_vini_necessidades', JSON.stringify(VINI_STATE.necessidadeData));
-    } catch (e) { }
   }
 
   const itensFiltrados = VINI_STATE.necessidadeData.filter(item => isSkuValidoVini(item.sku));
@@ -761,13 +986,13 @@ function renderViniTable() {
   const rowsHtmlArray = [];
 
   filtered.forEach(item => {
-    const localVirtual = prodComp_getSaldoVirtualLocal(item.sku);
-    const entradasTotal = localVirtual; // Apenas OPs de componentes (zerando entradas oficiais)
-    const estoqueVirtualTotal = item.estoqueFisico + entradasTotal - item.saidasPrevistas;
+    const planning = calculateViniPlanning(item);
+    const entradasTotal = planning.producaoEmAndamento;
+    const estoqueVirtualTotal = planning.estoqueVirtual;
 
     // Coberturas baseadas em fórmulas seguras recalculadas com o virtual local
     const coberturaVirtualTotal = item.mediaMensal > 0 ? (item.estoqueFisico + entradasTotal) / item.mediaMensal : Infinity;
-    const comprarTotal = Math.ceil(Math.max(0, (VINI_STATE.coberturaAlvo * item.mediaMensal) - item.estoqueFisico - entradasTotal));
+    const comprarTotal = planning.necessidadeFabricacao;
 
     const isInactive = VINI_STATE.inativados.has(item.sku);
     const isCritical = !isInactive && getItemStatus(item) === 'critico';
@@ -1192,7 +1417,7 @@ function initViniEvents() {
 
 // Reprocessa coberturas de dados já em cache
 function reprocessNecessidadeData(options = {}) {
-  const shouldPersist = options.persist !== false;
+  const shouldPersist = options.persist === true;
   if (!Array.isArray(VINI_STATE.necessidadeData) || VINI_STATE.necessidadeData.length === 0) return;
 
   VINI_STATE.necessidadeData = VINI_STATE.necessidadeData.map(item => {
@@ -1228,6 +1453,7 @@ function reprocessNecessidadeData(options = {}) {
     return {
       ...item,
       entradasPrevistas: 0,
+      producaoEmAndamento: localVirtual,
       estoqueFisico,
       saidasPeriodo,
       saidasPrevistas,
@@ -1284,9 +1510,8 @@ function clearCachedEntradasPrevistas() {
 // Inicializa o módulo
 async function initViniModule() {
   initViniEvents();
-  clearCachedEntradasPrevistas();
-  migrateSkusToUpperCase();
-  reprocessNecessidadeData();
+  refreshViniFromStorage();
+  reprocessNecessidadeData({ persist: false });
   await loadViniExcelData();
   updatePrio2FilterOptions();
   renderViniTable();
@@ -1319,6 +1544,8 @@ window.processViniExcel = processExcelWorkbook;
 window.processFornecedoresExcel = processFornecedoresExcel;
 window.processFabriExcel = processFabriExcel;
 window.renderViniTable = renderViniTable;
+window.refreshViniFromStorage = refreshViniFromStorage;
+window.calculateViniPlanning = calculateViniPlanning;
 
 
 
