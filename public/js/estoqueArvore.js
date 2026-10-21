@@ -157,11 +157,15 @@ function normalizeTreeRow(rawRow) {
   return row;
 }
 
-function persistSnapshot(entries) {
-  Object.entries(entries).forEach(([key, value]) => {
-    RemoteStorage.setItem(key, JSON.stringify(value));
-  });
-  RemoteStorage.setItem(EARV_STORAGE_KEYS.meta, JSON.stringify({ updatedAt: new Date().toISOString() }));
+async function persistSnapshot(entries) {
+  const writes = Object.entries(entries).map(([key, value]) =>
+    RemoteStorage.setItem(key, JSON.stringify(value))
+  );
+  writes.push(RemoteStorage.setItem(EARV_STORAGE_KEYS.meta, JSON.stringify({ updatedAt: new Date().toISOString() })));
+  const results = await Promise.all(writes);
+  if (results.some(result => result !== true)) {
+    throw new Error("O servidor nao confirmou todos os dados importados.");
+  }
 }
 
 function findSheetName(workbook, preferredNames) {
@@ -189,7 +193,7 @@ function detectColumns(rowsRaw, rules, fallback, required) {
   return { headerIdx: 0, ...fallback };
 }
 
-function earv_processTreeExcel(arrayBuffer) {
+async function earv_processTreeExcel(arrayBuffer) {
   const wb = XLSX.read(arrayBuffer, { type: "array" });
   const sheetName = findSheetName(wb, ["arvore", "árvore", "estrutura"]);
   const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
@@ -199,27 +203,34 @@ function earv_processTreeExcel(arrayBuffer) {
     .map(normalizeTreeRow)
     .filter(row => row.SKU || row.Descricao);
 
+  await persistSnapshot({ [EARV_STORAGE_KEYS.tree]: rows });
   EARV.rows = rows;
   EARV.familyTree = earv_buildTree(rows);
   EARV.loaded = true;
   EARV.expandedFamilies.clear();
   EARV.expandedComponents.clear();
-
-  persistSnapshot({ [EARV_STORAGE_KEYS.tree]: rows });
   return rows.length;
 }
 
-function earv_processPCPExcel(arrayBuffer) {
+async function earv_processPCPExcel(arrayBuffer) {
   const wb = XLSX.read(arrayBuffer, { type: "array" });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const rowsRaw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+  let rowsRaw = null;
+  let cols = null;
+  for (const sheetName of wb.SheetNames) {
+    const candidateRows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: "" });
+    const candidateCols = detectColumns(candidateRows, {
+      sku: h => h === "SKU" || h.includes("CODIGO SKU") || h === "CODIGO" || h.startsWith("COD "),
+      estoque: h => h.includes("ESTOQUE FISICO") || h === "ESTOQUE" || h.includes("SALDO ATUAL")
+    }, {}, ["sku", "estoque"]);
+    if (candidateCols.sku !== undefined && candidateCols.estoque !== undefined) {
+      rowsRaw = candidateRows;
+      cols = candidateCols;
+      break;
+    }
+  }
+  if (!rowsRaw || !cols) throw new Error("Aba de estoque com colunas SKU e Estoque Fisico nao localizada.");
   const estoqueMap = {};
   const saidasPeriodoMap = {};
-
-  const cols = detectColumns(rowsRaw, {
-    sku: h => h === "SKU" || h.includes("CODIGO SKU") || h === "CODIGO" || h.startsWith("COD "),
-    estoque: h => h.includes("ESTOQUE FISICO") || h === "ESTOQUE" || h.includes("SALDO ATUAL")
-  }, { sku: 1, estoque: 8 }, ["sku", "estoque"]);
 
   for (let r = cols.headerIdx + 1; r < rowsRaw.length; r++) {
     const row = rowsRaw[r] || [];
@@ -233,30 +244,40 @@ function earv_processPCPExcel(arrayBuffer) {
     if (!Number.isNaN(saidasPeriodo)) saidasPeriodoMap[sku] = saidasPeriodo;
   }
 
-  EARV.estoqueMap = estoqueMap;
-  EARV.saidasPeriodoMap = saidasPeriodoMap;
-  EARV.estoqueLoaded = true;
-
-  persistSnapshot({
+  if (!Object.keys(estoqueMap).length) throw new Error("A planilha de estoque nao contem SKUs validos.");
+  await persistSnapshot({
     [EARV_STORAGE_KEYS.estoque]: estoqueMap,
     [EARV_STORAGE_KEYS.saidasPeriodo]: saidasPeriodoMap
   });
+  EARV.estoqueMap = estoqueMap;
+  EARV.saidasPeriodoMap = saidasPeriodoMap;
+  EARV.estoqueLoaded = true;
   return {
     estoque: Object.keys(estoqueMap).length,
     saidasPeriodo: Object.keys(saidasPeriodoMap).length
   };
 }
 
-function earv_processSaidasPrevistasExcel(arrayBuffer) {
+async function earv_processSaidasPrevistasExcel(arrayBuffer) {
   const wb = XLSX.read(arrayBuffer, { type: "array" });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const rowsRaw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+  let rowsRaw = null;
+  let cols = null;
+  for (const sheetName of wb.SheetNames) {
+    const normalizedName = normalizeHeader(sheetName);
+    if (!normalizedName.includes("NECESSIDADE") && !normalizedName.includes("SAIDAS") && !normalizedName.includes("VENDAS")) continue;
+    const candidateRows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: "" });
+    const candidateCols = detectColumns(candidateRows, {
+      sku: h => h === "SKU" || h.includes("CODIGO SKU") || h === "CODIGO" || h.startsWith("COD "),
+      saidas: h => h.includes("SAIDAS PREVISTAS") || h === "SAIDAS" || h.includes("VENDIDO") || h.includes("QUANTIDADE") || h.includes("QTD")
+    }, {}, ["sku", "saidas"]);
+    if (candidateCols.sku !== undefined && candidateCols.saidas !== undefined) {
+      rowsRaw = candidateRows;
+      cols = candidateCols;
+      break;
+    }
+  }
+  if (!rowsRaw || !cols) throw new Error("Aba de saidas com colunas SKU e Saidas Previstas nao localizada.");
   const map = {};
-
-  const cols = detectColumns(rowsRaw, {
-    sku: h => h === "SKU" || h.includes("CODIGO SKU") || h === "CODIGO" || h.startsWith("COD "),
-    saidas: h => h.includes("SAIDAS PREVISTAS") || h === "SAIDAS" || h.includes("VENDIDO") || h.includes("QUANTIDADE") || h.includes("QTD")
-  }, { sku: 1, saidas: 2 }, ["sku", "saidas"]);
 
   for (let r = cols.headerIdx + 1; r < rowsRaw.length; r++) {
     const row = rowsRaw[r] || [];
@@ -266,9 +287,10 @@ function earv_processSaidasPrevistasExcel(arrayBuffer) {
     if (!Number.isNaN(saidas)) map[sku] = saidas;
   }
 
+  if (!Object.keys(map).length) throw new Error("A planilha de saidas nao contem SKUs validos.");
+  await persistSnapshot({ [EARV_STORAGE_KEYS.saidasPrevistas]: map });
   EARV.saidasPrevistasMap = map;
   EARV.saidasPrevistasLoaded = true;
-  persistSnapshot({ [EARV_STORAGE_KEYS.saidasPrevistas]: map });
   return Object.keys(map).length;
 }
 
@@ -556,14 +578,14 @@ function earv_loadFromCache() {
   EARV.quantidadesUsuario = quantidadesUsuario && typeof quantidadesUsuario === "object" ? quantidadesUsuario : {};
 
   const rows = parseCachedJson(EARV_STORAGE_KEYS.tree, []);
-  if (Array.isArray(rows) && rows.length) {
+  if (Array.isArray(rows)) {
     EARV.rows = rows.map(normalizeTreeRow);
     EARV.familyTree = earv_buildTree(EARV.rows);
-    EARV.loaded = true;
+    EARV.loaded = RemoteStorage.getItem(EARV_STORAGE_KEYS.tree) !== null;
   }
 
   const estoqueMap = parseCachedJson(EARV_STORAGE_KEYS.estoque, {});
-  if (estoqueMap && typeof estoqueMap === "object" && Object.keys(estoqueMap).length) {
+  if (RemoteStorage.getItem(EARV_STORAGE_KEYS.estoque) !== null && estoqueMap && typeof estoqueMap === "object") {
     EARV.estoqueMap = estoqueMap;
     EARV.estoqueLoaded = true;
   }
@@ -572,7 +594,7 @@ function earv_loadFromCache() {
   if (saidasPeriodoMap && typeof saidasPeriodoMap === "object") EARV.saidasPeriodoMap = saidasPeriodoMap;
 
   const saidasPrevistasMap = parseCachedJson(EARV_STORAGE_KEYS.saidasPrevistas, {});
-  if (saidasPrevistasMap && typeof saidasPrevistasMap === "object" && Object.keys(saidasPrevistasMap).length) {
+  if (RemoteStorage.getItem(EARV_STORAGE_KEYS.saidasPrevistas) !== null && saidasPrevistasMap && typeof saidasPrevistasMap === "object") {
     EARV.saidasPrevistasMap = saidasPrevistasMap;
     EARV.saidasPrevistasLoaded = true;
   }
@@ -601,7 +623,7 @@ function earv_setLoading(button, loading) {
 
 function earv_afterStockUpdate() {
   earv_render();
-  if (typeof reprocessNecessidadeData === "function") reprocessNecessidadeData({ persist: true });
+  if (typeof reprocessNecessidadeData === "function") reprocessNecessidadeData({ persist: false });
   if (typeof renderViniTable === "function") renderViniTable();
   if (typeof renderAnaliseTable === "function") renderAnaliseTable();
   window.dispatchEvent(new CustomEvent("hrn:estoque-componentes-sync", {
@@ -622,9 +644,9 @@ function earv_initEvents() {
       const file = event.target.files[0];
       if (!file) return;
       earv_setLoading(btnArv, true);
-      earv_readFile(file, arrayBuffer => {
+      earv_readFile(file, async arrayBuffer => {
         try {
-          const total = earv_processTreeExcel(arrayBuffer);
+          const total = await earv_processTreeExcel(arrayBuffer);
           if (typeof showToast === "function") showToast(`Arvore sincronizada: ${total} linhas substituidas.`, "success");
           earv_afterStockUpdate();
         } catch (error) {
@@ -646,9 +668,9 @@ function earv_initEvents() {
       const file = event.target.files[0];
       if (!file) return;
       earv_setLoading(btnEst, true);
-      earv_readFile(file, arrayBuffer => {
+      earv_readFile(file, async arrayBuffer => {
         try {
-          const total = earv_processPCPExcel(arrayBuffer);
+          const total = await earv_processPCPExcel(arrayBuffer);
           if (typeof showToast === "function") {
             showToast(`Estoque sincronizado: ${total.estoque} SKUs e ${total.saidasPeriodo} saidas no periodo pela coluna M.`, "success");
           }
@@ -672,9 +694,9 @@ function earv_initEvents() {
       const file = event.target.files[0];
       if (!file) return;
       earv_setLoading(btnPrev, true);
-      earv_readFile(file, arrayBuffer => {
+      earv_readFile(file, async arrayBuffer => {
         try {
-          const total = earv_processSaidasPrevistasExcel(arrayBuffer);
+          const total = await earv_processSaidasPrevistasExcel(arrayBuffer);
           if (typeof showToast === "function") showToast(`Saidas previstas sincronizadas: ${total} SKUs substituidos.`, "success");
           earv_afterStockUpdate();
         } catch (error) {
@@ -706,7 +728,7 @@ function earv_initEvents() {
       try {
         if (typeof showToast === "function") showToast(`Lendo planilha de árvore: ${file.name}...`, "info");
         const arrayBuffer = await file.arrayBuffer();
-        const count = earv_processTreeExcel(arrayBuffer);
+        const count = await earv_processTreeExcel(arrayBuffer);
         if (typeof showToast === "function") showToast(`Árvore de componentes ajustada com sucesso! (${count} itens)`, "success");
         earv_render();
       } catch (err) {
@@ -771,6 +793,10 @@ window.EARV = EARV;
 window.OP = OP;
 window.earv_toggleDropdown = earv_toggleDropdown;
 window.earv_editQty = earv_editQty;
+window.earv_refreshFromStorage = earv_loadFromCache;
+window.earv_processPCPExcel = earv_processPCPExcel;
+window.earv_processSaidasPrevistasExcel = earv_processSaidasPrevistasExcel;
+window.earv_processTreeExcel = earv_processTreeExcel;
 
 function earv_renderQtyCell(row) {
   const sku = normalizeSku(row.SKU);

@@ -143,12 +143,12 @@
       // 2. Estoque Componentes (Estoque Árvore / PCP)
       try {
         if (typeof earv_processPCPExcel === 'function') {
-          const earvRes = earv_processPCPExcel(arrayBuffer);
+          const earvRes = await earv_processPCPExcel(arrayBuffer);
           compCount = (earvRes && earvRes.estoque) || 0;
           compStatus = 'OK';
 
           if (typeof earv_processTreeExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('arvore') || s.toLowerCase().includes('estrutura'))) {
-            earv_processTreeExcel(arrayBuffer);
+            await earv_processTreeExcel(arrayBuffer);
           }
 
           updateCardStatus('sync-badge-componentes', 'sync-val-componentes', 'sync-sub-componentes', 'success', `${compCount} SKUs`, 'Estoques e saídas previstas reescritas');
@@ -166,7 +166,10 @@
 
       const now = new Date();
       const dateStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-      const overallStatus = analiseStatus === 'PARTIAL' ? 'PARTIAL' : ((analiseStatus === 'OK' || compStatus === 'OK') ? 'OK' : 'ERROR');
+      if (!['OK', 'PARTIAL'].includes(analiseStatus) || compStatus !== 'OK') {
+        throw new Error('A planilha nao foi confirmada por todos os modulos de estoque.');
+      }
+      const overallStatus = analiseStatus === 'PARTIAL' ? 'PARTIAL' : 'OK';
 
       saveLastStockSyncLog({
         date: dateStr,
@@ -329,34 +332,37 @@
       // 1. Necessidades PCP / Saídas V.I.N.I.
       const viniProc = window.processExcelWorkbook || (typeof processExcelWorkbook === 'function' ? processExcelWorkbook : null);
       if (viniProc) {
-        viniProc(arrayBuffer);
+        const viniResult = await viniProc(arrayBuffer);
         updated = true;
         viniSheets.push('Necessidades / Saídas');
-        viniCount = window.VINI_STATE?.necessidadeData?.length || 0;
+        viniCount = viniResult?.count || window.VINI_STATE?.necessidadeData?.length || 0;
+      } else {
+        throw new Error('Processador de planejamento V.I.N.I. indisponivel.');
       }
 
       // 2. Fornecedores
       if (typeof processFornecedoresExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('forneced'))) {
-        processFornecedoresExcel(arrayBuffer);
+        await processFornecedoresExcel(arrayBuffer);
         updated = true;
         viniSheets.push('Fornecedores');
       }
 
       // 3. Fabricação
       if (typeof processFabriExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('fabri'))) {
-        processFabriExcel(arrayBuffer);
+        await processFabriExcel(arrayBuffer);
         updated = true;
         viniSheets.push('Fabricação');
       }
 
       // 4. Saídas previstas em Componentes
       if (typeof earv_processSaidasPrevistasExcel === 'function') {
-        earv_processSaidasPrevistasExcel(arrayBuffer);
+        await earv_processSaidasPrevistasExcel(arrayBuffer);
         updated = true;
         viniSheets.push('Saídas Previstas');
       }
 
-      viniStatus = updated ? 'OK' : 'OK';
+      if (!updated) throw new Error('Nenhum conjunto de dados V.I.N.I. reconhecido.');
+      viniStatus = 'OK';
       const sheetSummary = viniSheets.length ? viniSheets.join(', ') : 'Planilha de Saídas V.I.N.I.';
       const displayVal = viniCount > 0 ? `${viniCount} itens` : 'Atualizado';
 
