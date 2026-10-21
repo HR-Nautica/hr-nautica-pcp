@@ -25,7 +25,7 @@ function safeGetJSON(key, defaultVal) {
 }
 window.safeGetJSON = window.safeGetJSON || safeGetJSON;
 
-const PENDING_WRITES_KEY = "pcp_remote_pending_writes_v1";
+const PENDING_WRITES_KEY_PREFIX = "pcp_remote_pending_writes_v2";
 
 const RemoteStorage = {
   data: new Map(),
@@ -39,6 +39,8 @@ const RemoteStorage = {
   onUpdate: null,
   online: false,
   currentUser: "",
+  serverStateLoaded: false,
+  restoredPendingKeys: new Set(),
 
   get length() { return this.data.size; },
   key(index) { return Array.from(this.data.keys())[index] ?? null; },
@@ -60,7 +62,7 @@ const RemoteStorage = {
     if (unchanged) return;
     if (key.startsWith("hrn_") && key !== "hrn_sync_timestamp") {
       const pending = this.rememberPending(key, "PUT", value);
-      this.enqueue(key, () => this.persist(key, value, pending.writeId));
+      this.enqueue(key, () => this.persist(key, value, pending.writeId, pending.baseVersion));
     }
   },
   removeItem(key) {
@@ -72,7 +74,7 @@ const RemoteStorage = {
     }
     if (key.startsWith("hrn_")) {
       const pending = this.rememberPending(key, "DELETE");
-      this.enqueue(key, () => this.persistDelete(key, pending.writeId));
+      this.enqueue(key, () => this.persistDelete(key, pending.writeId, pending.baseVersion));
     }
   },
   clear() {
@@ -91,10 +93,13 @@ const RemoteStorage = {
     }
   },
   rememberPending(key, method, value) {
+    const ownerUser = this.normalizedCurrentUser();
     const pending = {
       key,
       method,
       value,
+      baseVersion: this.serverStateLoaded ? Number(this.versions.get(key) || 0) : null,
+      ownerUser,
       writeId: this.nextWriteId++,
       createdAt: new Date().toISOString(),
       error: ""
@@ -104,20 +109,34 @@ const RemoteStorage = {
     this.showPendingWarning(key);
     return pending;
   },
+  normalizedCurrentUser() {
+    return String(this.currentUser || "").trim().toLocaleLowerCase("pt-BR");
+  },
+  pendingStorageKey() {
+    const owner = this.normalizedCurrentUser() || "usuario-nao-identificado";
+    return `${PENDING_WRITES_KEY_PREFIX}:${encodeURIComponent(owner)}`;
+  },
   savePendingWrites() {
     try {
-      localStorage.setItem(PENDING_WRITES_KEY, JSON.stringify([...this.pendingWrites.values()]));
+      const entries = [...this.pendingWrites.values()].filter(pending => pending.ownerUser === this.normalizedCurrentUser());
+      if (entries.length) localStorage.setItem(this.pendingStorageKey(), JSON.stringify(entries));
+      else localStorage.removeItem(this.pendingStorageKey());
     } catch (error) {
       console.warn("[BANCO] Nao foi possivel preservar alteracoes pendentes:", error);
     }
   },
   loadPendingWrites() {
     try {
-      const stored = JSON.parse(localStorage.getItem(PENDING_WRITES_KEY) || "[]");
+      const ownerUser = this.normalizedCurrentUser();
+      const stored = JSON.parse(localStorage.getItem(this.pendingStorageKey()) || "[]");
       if (!Array.isArray(stored)) return;
       stored.forEach((pending) => {
-        if (pending?.key && ["PUT", "DELETE"].includes(pending.method)) {
+        if (pending?.key && pending.ownerUser === ownerUser && ["PUT", "DELETE"].includes(pending.method)) {
+          pending.baseVersion = Number.isInteger(pending.baseVersion) && pending.baseVersion >= 0
+            ? pending.baseVersion
+            : null;
           this.pendingWrites.set(pending.key, pending);
+          this.restoredPendingKeys.add(pending.key);
           this.nextWriteId = Math.max(this.nextWriteId, Number(pending.writeId || 0) + 1);
         }
       });
@@ -129,7 +148,33 @@ const RemoteStorage = {
     const current = this.pendingWrites.get(key);
     if (current && (writeId === undefined || current.writeId === writeId)) {
       this.pendingWrites.delete(key);
+      this.restoredPendingKeys.delete(key);
       this.savePendingWrites();
+    }
+  },
+  serverVersion(key) {
+    return Number(this.versions.get(key) || 0);
+  },
+  pendingBelongsToCurrentUser(pending) {
+    return Boolean(pending?.ownerUser)
+      && pending.ownerUser === this.normalizedCurrentUser();
+  },
+  evaluateRestoredPendings() {
+    for (const key of this.restoredPendingKeys) {
+      const pending = this.pendingWrites.get(key);
+      if (!this.pendingBelongsToCurrentUser(pending)) continue;
+      const currentVersion = this.serverVersion(key);
+      if (pending.baseVersion === null || pending.baseVersion !== currentVersion) {
+        this.conflicts.set(key, {
+          ...pending,
+          detectedAt: new Date().toISOString(),
+          reason: pending.baseVersion === null ? "BASE_VERSION_UNKNOWN" : "SERVER_VERSION_CHANGED",
+          serverVersion: currentVersion
+        });
+        this.showConflictWarning(key);
+      } else {
+        this.showRestoredPendingWarning(key);
+      }
     }
   },
   loadFromLocalStorage() {
@@ -151,7 +196,7 @@ const RemoteStorage = {
     this.onUpdate = onUpdate || null;
     this.loadPendingWrites();
     await this.load(true);
-    if (this.pendingWrites.size) this.showPendingWarning([...this.pendingWrites.keys()][0]);
+    this.evaluateRestoredPendings();
   },
   async load(initial, serverWinsForKeys = new Set()) {
     try {
@@ -160,6 +205,7 @@ const RemoteStorage = {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
       this.setConnectionState(true);
+      this.serverStateLoaded = true;
       if (!result.modified) return;
       this.revision = Number(result.revision || 0);
 
@@ -206,9 +252,12 @@ const RemoteStorage = {
     this.writeQueues.set(key, next);
     return next;
   },
-  async persist(key, value, writeId) {
+  async persist(key, value, writeId, expectedVersion) {
     if (this.conflicts.has(key)) throw this.conflictBlockedError();
-    const expectedVersion = this.versions.get(key) || 0;
+    if (!Number.isInteger(expectedVersion) || expectedVersion < 0) {
+      this.markVersionConflict(key, "BASE_VERSION_UNKNOWN");
+      throw this.conflictBlockedError();
+    }
     const response = await fetch(`/api/state/${encodeURIComponent(key)}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", "X-PCP-User": this.currentUser },
@@ -225,9 +274,12 @@ const RemoteStorage = {
     this.clearPending(key, writeId);
     this.showConfirmedState();
   },
-  async persistDelete(key, writeId) {
+  async persistDelete(key, writeId, expectedVersion) {
     if (this.conflicts.has(key)) throw this.conflictBlockedError();
-    const expectedVersion = this.versions.get(key) || 0;
+    if (!Number.isInteger(expectedVersion) || expectedVersion < 0) {
+      this.markVersionConflict(key, "BASE_VERSION_UNKNOWN");
+      throw this.conflictBlockedError();
+    }
     const response = await fetch(`/api/state/${encodeURIComponent(key)}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json", "X-PCP-User": this.currentUser },
@@ -249,10 +301,25 @@ const RemoteStorage = {
     error.code = "WRITE_CONFLICT";
     return error;
   },
+  markVersionConflict(key, reason = "SERVER_VERSION_CHANGED") {
+    const pending = this.pendingWrites.get(key);
+    this.conflicts.set(key, {
+      ...pending,
+      detectedAt: new Date().toISOString(),
+      reason,
+      serverVersion: this.serverVersion(key)
+    });
+    this.showConflictWarning(key);
+  },
   async handleConflict(key) {
     const pending = this.pendingWrites.get(key);
-    this.conflicts.set(key, { ...pending, detectedAt: new Date().toISOString() });
     await this.load(true, new Set([key]));
+    this.conflicts.set(key, {
+      ...pending,
+      detectedAt: new Date().toISOString(),
+      reason: "SERVER_VERSION_CHANGED",
+      serverVersion: this.serverVersion(key)
+    });
     try {
       if (this.data.has(key)) localStorage.setItem(key, JSON.stringify(this.data.get(key)));
       else localStorage.removeItem(key);
@@ -265,14 +332,22 @@ const RemoteStorage = {
   getConflict(key) {
     return this.conflicts.get(key) || null;
   },
-  async retryConflict(key) {
+  async retryConflict(key, { confirmed = false } = {}) {
     const conflict = this.conflicts.get(key);
     const pending = this.pendingWrites.get(key) || conflict;
-    if (!pending) return false;
-    this.conflicts.delete(key);
+    if (!pending || !this.pendingBelongsToCurrentUser(pending)) return false;
+    if (!confirmed) {
+      this.showConflictWarning(key);
+      return false;
+    }
     try {
-      if (pending.method === "DELETE") await this.persistDelete(key, pending.writeId);
-      else await this.persist(key, pending.value, pending.writeId);
+      // A confirmacao autoriza uma nova tentativa, nao o uso de uma versao
+      // possivelmente obsoleta mantida em memoria. Rele o servidor primeiro.
+      await this.load(true, new Set([key]));
+      const explicitExpectedVersion = this.serverVersion(key);
+      this.conflicts.delete(key);
+      if (pending.method === "DELETE") await this.persistDelete(key, pending.writeId, explicitExpectedVersion);
+      else await this.persist(key, pending.value, pending.writeId, explicitExpectedVersion);
       if (pending.method === "DELETE") {
         this.data.delete(key);
         try { localStorage.removeItem(key); } catch (error) {}
@@ -294,12 +369,20 @@ const RemoteStorage = {
     this.showConfirmedState();
     if (typeof this.onUpdate === "function") this.onUpdate();
   },
-  async retryPending(key) {
+  async retryPending(key, { confirmed = false } = {}) {
     const pending = this.pendingWrites.get(key);
-    if (!pending) return false;
-    if (this.conflicts.has(key)) return this.retryConflict(key);
-    if (pending.method === "DELETE") await this.persistDelete(key, pending.writeId);
-    else await this.persist(key, pending.value, pending.writeId);
+    if (!pending || !this.pendingBelongsToCurrentUser(pending)) return false;
+    if (this.conflicts.has(key)) return this.retryConflict(key, { confirmed });
+    if (pending.baseVersion === null || pending.baseVersion !== this.serverVersion(key)) {
+      this.markVersionConflict(key, pending.baseVersion === null ? "BASE_VERSION_UNKNOWN" : "SERVER_VERSION_CHANGED");
+      return false;
+    }
+    if (!confirmed) {
+      this.showRestoredPendingWarning(key);
+      return false;
+    }
+    if (pending.method === "DELETE") await this.persistDelete(key, pending.writeId, pending.baseVersion);
+    else await this.persist(key, pending.value, pending.writeId, pending.baseVersion);
     if (pending.method === "DELETE") {
       this.data.delete(key);
       try { localStorage.removeItem(key); } catch (error) {}
@@ -316,17 +399,48 @@ const RemoteStorage = {
     warning.textContent = `Salvando alteracoes de ${key} no servidor...`;
     warning.style.display = "block";
   },
+  confirmSnapshotReplacement(key) {
+    const message = `Reaplicar a alteracao pendente de ${key}?\n\n` +
+      "Esta acao envia um snapshot completo e pode substituir alteracoes feitas por outros funcionarios. " +
+      "Confirme somente depois de revisar os dados atuais do servidor.";
+    return typeof window.confirm === "function" && window.confirm(message);
+  },
+  showRestoredPendingWarning(key) {
+    const warning = document.getElementById("central-server-warning");
+    if (!warning) return;
+    warning.textContent = `Alteracao pendente de ${key} recuperada para este usuario. Nada esta sendo salvo agora; revise antes de tentar novamente.`;
+    if (typeof document.createElement === "function") {
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.textContent = "Revisar e tentar salvar";
+      retry.addEventListener("click", () => {
+        if (!this.confirmSnapshotReplacement(key)) return;
+        retry.disabled = true;
+        this.retryPending(key, { confirmed: true }).catch((error) => {
+          console.error(`[BANCO] Nova tentativa falhou para ${key}:`, error);
+          retry.disabled = false;
+        });
+      });
+      const discard = document.createElement("button");
+      discard.type = "button";
+      discard.textContent = "Descartar alteracao local";
+      discard.addEventListener("click", () => this.discardConflict(key));
+      warning.append(" ", retry, " ", discard);
+    }
+    warning.style.display = "block";
+  },
   showConflictWarning(key) {
     const warning = document.getElementById("central-server-warning");
     if (!warning) return;
-    warning.textContent = `Conflito em ${key}: a versao do servidor foi preservada. Sua alteracao local esta pendente.`;
+    warning.textContent = `Conflito em ${key}: a versao do servidor foi preservada. A alteracao local deste usuario continua pendente. Reaplicar o snapshot completo pode substituir alteracoes de outros funcionarios.`;
     if (typeof document.createElement === "function") {
       const retry = document.createElement("button");
       retry.type = "button";
       retry.textContent = "Reaplicar minha alteracao";
       retry.addEventListener("click", () => {
+        if (!this.confirmSnapshotReplacement(key)) return;
         retry.disabled = true;
-        this.retryConflict(key).catch((error) => {
+        this.retryConflict(key, { confirmed: true }).catch((error) => {
           console.error(`[BANCO] Nova tentativa consciente falhou para ${key}:`, error);
           retry.disabled = false;
         });
@@ -360,7 +474,8 @@ const RemoteStorage = {
         retry.addEventListener("click", async () => {
           retry.disabled = true;
           for (const key of [...this.pendingWrites.keys()]) {
-            try { await this.retryPending(key); } catch (error) {
+            if (!this.confirmSnapshotReplacement(key)) continue;
+            try { await this.retryPending(key, { confirmed: true }); } catch (error) {
               console.error(`[BANCO] Nova tentativa falhou para ${key}:`, error);
             }
           }
