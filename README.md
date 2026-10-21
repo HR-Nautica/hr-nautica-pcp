@@ -1,7 +1,7 @@
 # HR Nautica PCP
 
 ERP multiusuario com frontend Vite, API Node.js/Express, autenticacao por sessao
-e PostgreSQL 17. A publicacao oficial e interna: HTTPS no Ubuntu, sem Vercel,
+e PostgreSQL 17. A publicacao oficial e interna: HTTP no Ubuntu, sem Vercel,
 Cloudflare ou portas abertas no roteador.
 
 ## Desenvolvimento
@@ -17,7 +17,7 @@ npm run dev
 - API: `http://localhost:3001`
 
 O proxy do Vite injeta `PROXY_SHARED_SECRET`. Em HTTP local, configure
-`AUTH_COOKIE_SECURE=false` somente no `.env.local`. O navegador nunca recebe
+`AUTH_COOKIE_SECURE=false` no desenvolvimento e na rede interna HTTP. O navegador nunca recebe
 credenciais do PostgreSQL ou do proxy.
 
 ## Validacao
@@ -58,7 +58,7 @@ locks, falhas e recuperacao.
 ## Deploy interno
 
 - imagem unica e imutavel por commit SHA para frontend e API;
-- Caddy com certificado da CA corporativa;
+- Caddy como proxy HTTP vinculado somente ao IP privado do Ubuntu;
 - Compose proprio, sem modificar Supabase ou Sistema JM;
 - producao conectada privadamente a `supabase_default`;
 - homologacao em Compose, rede, porta, cookie e credenciais separados;
@@ -77,6 +77,11 @@ Arquivos de entrada:
 - `.github/workflows/deploy-internal.yml`;
 - `scripts/deploy/deploy-production.sh`.
 
-Segredos, certificados, chaves, `.env` reais e estado do deploy nao pertencem ao
+Segredos, chaves, `.env` reais e estado do deploy nao pertencem ao
 Git. O arquivo `.env.exemplo` documenta apenas os nomes usados em desenvolvimento
 e compatibilidade legada.
+
+> **Risco aceito da rede interna:** HTTP nao cifra login, cookies nem dados em
+> transito. Um agente com capacidade de observar ou alterar trafego na LAN pode
+> capturar credenciais/sessoes. `HttpOnly`, `SameSite` e CSRF continuam ativos,
+> mas nao substituem TLS.

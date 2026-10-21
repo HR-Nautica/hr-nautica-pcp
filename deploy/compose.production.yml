@@ -13,7 +13,7 @@ services:
       DATABASE_STRICT_MODE: "true"
       DATABASE_SSL_MODE: disable
       DATABASE_SSL_REJECT_UNAUTHORIZED: "true"
-      AUTH_COOKIE_SECURE: "true"
+      AUTH_COOKIE_SECURE: "false"
       AUDIT_CLEANUP_ENABLED: "false"
     networks:
       - edge
@@ -38,7 +38,7 @@ services:
     env_file:
       - ${ERP_ENV_FILE:-/etc/hr-nautica/production.env}
     ports:
-      - "${ERP_HTTPS_BIND_IP:-192.168.100.180}:${ERP_HTTPS_PORT:-8444}:443"
+      - "${ERP_HTTPS_BIND_IP:-192.168.100.180}:${ERP_HTTPS_PORT:-8444}:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

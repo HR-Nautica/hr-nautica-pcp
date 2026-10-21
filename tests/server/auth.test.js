@@ -99,6 +99,7 @@ test("login, troca obrigatÃ³ria, CSRF, sessÃ£o e logout", async (t) => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("set-cookie"), /HttpOnly/);
   assert.match(response.headers.get("set-cookie"), /SameSite=Strict/);
+  assert.doesNotMatch(response.headers.get("set-cookie"), /;\s*Secure/i);
   let cookie = cookieFrom(response);
   let payload = await json(response);
   assert.equal(payload.user.mustChangePassword, true);

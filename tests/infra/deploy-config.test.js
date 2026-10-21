@@ -31,8 +31,10 @@ test("producao publica somente Caddy e separa a rede do banco", async () => {
   const edge = production.match(/networks:\s*\n  edge:\s*\n([\s\S]*?)(?=  database:)/)?.[1] || "";
   assert.match(app, /expose:\s*\n\s*- "3001"/);
   assert.doesNotMatch(app, /\n\s+ports:/);
+  assert.match(app, /AUTH_COOKIE_SECURE: "false"/);
+  assert.doesNotMatch(app, /AUTH_COOKIE_SECURE: "true"/);
   assert.match(app, /- edge[\s\S]*- database/);
-  assert.match(proxy, /ports:\s*\n\s*- "\$\{ERP_HTTPS_BIND_IP:-192\.168\.100\.180\}:\$\{ERP_HTTPS_PORT:-8444\}:443"/);
+  assert.match(proxy, /ports:\s*\n\s*- "\$\{ERP_HTTPS_BIND_IP:-192\.168\.100\.180\}:\$\{ERP_HTTPS_PORT:-8444\}:80"/);
   assert.match(proxy, /networks:\s*\n\s*- edge/);
   assert.doesNotMatch(proxy, /- database/);
   assert.match(edge, /driver: bridge/);
@@ -51,8 +53,10 @@ test("homologacao publica somente o proxy e preserva a rede exclusiva do banco",
   assert.match(homologation, /AUTH_COOKIE_NAME: hrn_homolog_session/);
   assert.match(app, /expose:\s*\n\s*- "3001"/);
   assert.doesNotMatch(app, /\n\s+ports:/);
+  assert.match(app, /AUTH_COOKIE_SECURE: "false"/);
+  assert.doesNotMatch(app, /AUTH_COOKIE_SECURE: "true"/);
   assert.match(app, /- edge[\s\S]*- homolog_database/);
-  assert.match(proxy, /ports:\s*\n\s*- "\$\{ERP_HTTPS_BIND_IP:-192\.168\.100\.180\}:\$\{ERP_HTTPS_PORT:-8443\}:443"/);
+  assert.match(proxy, /ports:\s*\n\s*- "\$\{ERP_HTTPS_BIND_IP:-192\.168\.100\.180\}:\$\{ERP_HTTPS_PORT:-8443\}:80"/);
   assert.match(proxy, /networks:\s*\n\s*- edge/);
   assert.doesNotMatch(proxy, /homolog_database/);
   assert.match(edge, /driver: bridge/);
@@ -61,24 +65,25 @@ test("homologacao publica somente o proxy e preserva a rede exclusiva do banco",
   assert.match(homologation, /Caddyfile\.homologation/);
 });
 
-test("producao usa TLS interno por IP, default SNI e proxy autenticado", async () => {
+test("producao usa HTTP por IP e mantem proxy autenticado", async () => {
   const caddy = await read("caddy");
-  assert.match(caddy, /^\{\s*default_sni 192\.168\.100\.180\s*\}/);
-  assert.match(caddy, /https:\/\/\{\$ERP_INTERNAL_HOST:192\.168\.100\.180\}/);
-  assert.match(caddy, /tls internal/);
+  assert.match(caddy, /^http:\/\/\{\$ERP_INTERNAL_HOST:192\.168\.100\.180\}/);
+  assert.doesNotMatch(caddy, /tls internal|default_sni|Strict-Transport-Security|https:\/\//);
   assert.match(caddy, /header_up X-HRN-Proxy-Secret \{\$PROXY_SHARED_SECRET\}/);
+  assert.match(caddy, /header_up X-Forwarded-Proto http/);
   assert.match(caddy, /reverse_proxy app:3001/);
 });
 
-test("producao fixa PostgreSQL real e deploy valida TLS e SHA com rollback", async () => {
+test("producao fixa PostgreSQL real e deploy valida HTTP e SHA com rollback", async () => {
   const env = await read("productionEnv");
   const deploy = await read("deploy");
   assert.match(env, /ERP_INTERNAL_HOST=192\.168\.100\.180/);
   assert.match(env, /ERP_HTTPS_PORT=8444/);
+  assert.match(env, /AUTH_COOKIE_SECURE=false/);
   assert.match(env, /DATABASE_URL=postgresql:\/\/hr_nautica_app:SENHA_FORA_DO_GIT@supabase-db:5433\/postgres/);
   assert.doesNotMatch(env, /ERP_TLS_CERT_DIR/);
-  assert.match(deploy, /--cacert "\$CA_FILE"/);
-  assert.match(deploy, /caddy\/pki\/authorities\/local\/root\.crt/);
+  assert.match(deploy, /http:\/\/192\.168\.100\.180:8444/);
+  assert.doesNotMatch(deploy, /--cacert|caddy-root|https:\/\//);
   assert.match(deploy, /org\.opencontainers\.image\.revision/);
   assert.match(deploy, /image_revision.*SHA/s);
   assert.match(deploy, /healthz/);
@@ -87,26 +92,28 @@ test("producao fixa PostgreSQL real e deploy valida TLS e SHA com rollback", asy
   assert.match(deploy, /down --remove-orphans/);
 });
 
-test("homologacao emite TLS interno para o IP e mantem o segredo fora do frontend", async () => {
+test("homologacao usa HTTP por IP e mantem o segredo fora do frontend", async () => {
   const caddy = await read("homologationCaddy");
-  assert.match(caddy, /^\{\s*default_sni 192\.168\.100\.180\s*\}/);
-  assert.match(caddy, /https:\/\/\{\$ERP_INTERNAL_HOST:192\.168\.100\.180\}/);
-  assert.match(caddy, /tls internal/);
+  assert.match(caddy, /^http:\/\/\{\$ERP_INTERNAL_HOST:192\.168\.100\.180\}/);
+  assert.doesNotMatch(caddy, /tls internal|default_sni|Strict-Transport-Security|https:\/\//);
   assert.match(caddy, /header_up X-HRN-Proxy-Secret \{\$PROXY_SHARED_SECRET\}/);
+  assert.match(caddy, /header_up X-Forwarded-Proto http/);
   assert.match(caddy, /reverse_proxy app:3001/);
 
   const frontend = await fs.readFile("public/js/bootstrap.js", "utf8");
   assert.doesNotMatch(frontend, /PROXY_SHARED_SECRET|X-HRN-Proxy-Secret/i);
 });
 
-test("ativacao de homologacao fixa IP, banco, rede e verifica TLS e SHA", async () => {
+test("ativacao de homologacao fixa IP, banco, rede e verifica HTTP e SHA", async () => {
   const script = await read("homologationDeploy");
   const env = await read("homologationEnv");
   assert.match(env, /ERP_INTERNAL_HOST=192\.168\.100\.180/);
+  assert.match(env, /AUTH_COOKIE_SECURE=false/);
   assert.match(env, /DATABASE_URL=.*\/hr_nautica_homolog/);
   assert.match(script, /database_target.*hr_nautica_homolog/s);
   assert.match(script, /network.*supabase_default/s);
-  assert.match(script, /--cacert "\$CA_FILE"/);
+  assert.match(script, /http:\/\/192\.168\.100\.180:8443/);
+  assert.doesNotMatch(script, /--cacert|caddy-root|https:\/\//);
   assert.match(script, /release\.json/);
   assert.match(script, /db:migrate:validate/);
   assert.doesNotMatch(script, /db:migrate(?:\s|"|')/);
@@ -120,7 +127,12 @@ test("workflow faz deploy por SHA em runner interno somente apos testes", async 
   assert.match(workflow, /APP_COMMIT_SHA="\$RELEASE_SHA"/);
   assert.match(workflow, /--tag "hr-nautica-pcp:\$RELEASE_SHA"/);
   assert.match(workflow, /deploy-production\.sh "\$RELEASE_SHA"/);
-  assert.match(workflow, /ERP_HEALTHCHECK_URL: https:\/\/192\.168\.100\.180:8444/);
+  assert.match(workflow, /ERP_HEALTHCHECK_URL: http:\/\/192\.168\.100\.180:8444/);
+});
+
+test("servidor desativa HSTS no modo HTTP interno", async () => {
+  const server = await fs.readFile("server/index.js", "utf8");
+  assert.match(server, /strictTransportSecurity: false/);
 });
 
 test("startup e deploy nao executam migrations", async () => {

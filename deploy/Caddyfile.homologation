@@ -1,13 +1,7 @@
-{
-	default_sni 192.168.100.180
-}
-
-https://{$ERP_INTERNAL_HOST:192.168.100.180} {
-	tls internal
+http://{$ERP_INTERNAL_HOST:192.168.100.180} {
 	encode zstd gzip
 
 	header {
-		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "same-origin"
 		-Server
@@ -17,6 +11,6 @@ https://{$ERP_INTERNAL_HOST:192.168.100.180} {
 		# Sobrescreve qualquer valor enviado pelo cliente. O segredo existe apenas
 		# entre o Caddy e a API e nunca e entregue ao JavaScript do navegador.
 		header_up X-HRN-Proxy-Secret {$PROXY_SHARED_SECRET}
-		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Proto http
 	}
 }

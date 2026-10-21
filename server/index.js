@@ -26,7 +26,9 @@ const dist = path.join(root, "dist");
 const app = express();
 
 app.disable("x-powered-by");
-app.use(helmet({ contentSecurityPolicy: false }));
+// A publicacao interna atual e HTTP. HSTS so e aceito sobre transporte seguro
+// e anunciaria uma politica incompatível com esse modo de operacao.
+app.use(helmet({ contentSecurityPolicy: false, strictTransportSecurity: false }));
 app.use(compression());
 app.use(createReleaseGuard(config.releaseSha));
 

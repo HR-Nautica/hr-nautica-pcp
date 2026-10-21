@@ -9,14 +9,12 @@ readonly COMPOSE_FILE="$REPOSITORY_ROOT/deploy/compose.homologation.yml"
 readonly ENV_FILE="${ERP_ENV_FILE:-/etc/hr-nautica/homologation.env}"
 readonly STATE_DIR="${ERP_HOMOLOG_STATE_DIR:-/var/lib/hr-nautica-homolog}"
 readonly IMAGE_REPOSITORY="${ERP_IMAGE_REPOSITORY:-hr-nautica-pcp}"
-readonly CA_FILE="$STATE_DIR/caddy-root.crt"
 
 usage() {
   cat <<'EOF'
 Uso:
   homologation.sh activate <commit-sha-completo>
   homologation.sh bootstrap-admin [usuario]
-  homologation.sh export-ca [arquivo-destino]
   homologation.sh status
   homologation.sh rollback
   homologation.sh stop
@@ -55,7 +53,7 @@ require_safe_environment() {
     exit 3
   fi
   if [[ "$internal_host" != "192.168.100.180" || "$bind_ip" != "192.168.100.180" || "$https_port" != "8443" ]]; then
-    echo "Esta primeira homologacao exige IP 192.168.100.180 e porta HTTPS 8443." >&2
+    echo "Esta homologacao exige IP 192.168.100.180 e porta HTTP 8443." >&2
     exit 3
   fi
   if (( ${#secret} < 32 )) || [[ "$secret" == *SUBSTITUIR* ]]; then
@@ -77,20 +75,12 @@ current_image() {
   [[ -n "$container" ]] && docker inspect --format '{{.Config.Image}}' "$container" 2>/dev/null || true
 }
 
-export_ca() {
-  local destination="${1:-$CA_FILE}"
-  mkdir -p "$(dirname -- "$destination")"
-  compose "$(current_image)" cp proxy:/data/caddy/pki/authorities/local/root.crt "$destination"
-  chmod 0644 "$destination"
-  echo "CA raiz exportada para: $destination"
-}
-
 verify_release() {
   local sha="$1" health release
-  health="$(curl --fail --silent --show-error --cacert "$CA_FILE" --max-time 10 \
-    "https://192.168.100.180:8443/healthz")" || return 1
-  release="$(curl --fail --silent --show-error --cacert "$CA_FILE" --max-time 10 \
-    "https://192.168.100.180:8443/release.json")" || return 1
+  health="$(curl --fail --silent --show-error --max-time 10 \
+    "http://192.168.100.180:8443/healthz")" || return 1
+  release="$(curl --fail --silent --show-error --max-time 10 \
+    "http://192.168.100.180:8443/release.json")" || return 1
   [[ "$health" == *"\"ok\":true"* && "$health" == *"\"release\":\"$sha\""* ]] || return 1
   [[ "$release" == *"\"release\":\"$sha\""* ]] || return 1
 }
@@ -133,14 +123,14 @@ activate() {
     exit 5
   fi
   for _attempt in $(seq 1 30); do
-    if export_ca "$CA_FILE" >/dev/null 2>&1 && verify_release "$sha"; then
+    if verify_release "$sha"; then
       healthy=true
       break
     fi
     sleep 3
   done
   if [[ "$healthy" != true ]]; then
-    echo "Health check TLS nao confirmou o SHA $sha; iniciando rollback." >&2
+    echo "Health check HTTP nao confirmou o SHA $sha; iniciando rollback." >&2
     rollback_to "$previous_image"
     exit 6
   fi
@@ -149,8 +139,7 @@ activate() {
   if [[ -n "$previous_image" && "$previous_image" != "$target_image" ]]; then
     printf '%s\n' "$previous_image" > "$STATE_DIR/previous-image"
   fi
-  echo "Homologacao ativa em https://192.168.100.180:8443 no SHA $sha"
-  echo "CA raiz para os computadores autorizados: $CA_FILE"
+  echo "Homologacao ativa em http://192.168.100.180:8443 no SHA $sha"
 }
 
 rollback_to() {
@@ -177,7 +166,6 @@ case "$ACTION" in
       -e INITIAL_ADMIN_PASSWORD app npm run auth:bootstrap-admin
     unset password INITIAL_ADMIN_PASSWORD INITIAL_ADMIN_USERNAME
     ;;
-  export-ca) export_ca "${ARGUMENT:-$CA_FILE}" ;;
   status) compose "$(current_image)" ps ;;
   rollback)
     [[ -r "$STATE_DIR/previous-image" ]] || { echo "Imagem anterior nao registrada." >&2; exit 3; }

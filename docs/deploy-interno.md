@@ -1,62 +1,66 @@
-# Producao interna do ERP
+# Producao interna do ERP via HTTP
 
-## Fluxo aprovado
+## Arquitetura
 
 ```text
 Antigravity -> pull request revisado -> GitHub main
-  -> job test em runner GitHub
-  -> job deploy no runner Ubuntu hr-nautica-production
+  -> testes no runner GitHub
+  -> deploy no runner Ubuntu hr-nautica-production
   -> imagem hr-nautica-pcp:<SHA completo>
-  -> Caddy https://192.168.100.180:8444
+  -> Caddy http://192.168.100.180:8444
   -> Express (frontend + API do mesmo SHA)
   -> supabase-db:5433/postgres pela rede supabase_default
 ```
 
-O workflow so executa o deploy em `push` na `main` e somente depois do job de
-testes. O environment GitHub `production` deve aceitar apenas a `main`. A
-aprovacao acontece antes do merge; depois de uma atualizacao aprovada da
-`main`, o deploy e automatico.
+Somente o Caddy publica `192.168.100.180:8444 -> 80/tcp`. A API possui apenas
+`expose: 3001`; nao existe publicacao direta na LAN. O Caddy participa somente
+da rede `edge`, enquanto a aplicacao participa de `edge` e da rede externa
+`supabase_default`. PostgreSQL, Supabase, n8n e Sistema JM nao sao publicados ou
+alterados por este Compose.
 
-Homologacao permanece separada em `https://192.168.100.180:8443`, com outro
-Compose, cookie, segredo, banco e volumes Caddy.
+Homologacao permanece isolada em `http://192.168.100.180:8443`, com Compose,
+cookie, segredo, banco e volumes proprios.
 
-## Isolamento e identidade da release
+## Limite de seguranca do HTTP
 
-- somente o Caddy publica `192.168.100.180:8444 -> 443/tcp`;
-- a API possui apenas `expose: 3001`, sem porta publicada no host;
-- o Caddy participa somente da rede `edge`;
-- somente a aplicacao participa de `edge` e da rede externa
-  `supabase_default`;
-- nenhum servico PostgreSQL, Supabase, n8n ou Sistema JM e criado ou alterado
-  por este Compose;
-- a imagem recebe a tag imutavel `hr-nautica-pcp:<SHA completo>` e o mesmo SHA
-  e gravado no frontend, `/release.json`, header da API e `/healthz`.
+HTTP nao oferece confidencialidade nem integridade do trafego. Credenciais de
+login, cookies de sessao, tokens CSRF e dados do ERP podem ser observados ou
+alterados por alguem com acesso ao caminho de rede. `HttpOnly` impede leitura do
+cookie por JavaScript, `SameSite=Strict` reduz envio entre sites e CSRF protege
+operacoes contra requisicoes forjadas, mas nenhum desses controles substitui
+TLS contra interceptacao na LAN.
 
-Uma pagina antiga recebe `RELEASE_MISMATCH` antes de operar contra uma API de
-outro SHA.
+Este modo deve ficar restrito a rede interna autorizada da Kalled. O Compose
+vincula a porta somente ao IP privado `192.168.100.180`, nunca a `0.0.0.0`.
+Nenhuma regra de firewall ou roteador e alterada pelo repositorio; confirmar a
+ausencia de NAT/encaminhamento externo continua sendo responsabilidade do
+administrador de rede.
 
-## HTTPS interno por IP
+Cookies usam `HttpOnly; SameSite=Strict`, expiracao e revogacao, mas nao usam
+`Secure`, pois navegadores nao enviam cookies `Secure` em HTTP. HSTS foi
+desativado por ser incompatível com operacao exclusivamente HTTP. Caso algum
+cliente tenha politica HTTPS/HSTS antiga em cache, limpar os dados/politicas do
+site para o IP antes do primeiro acesso HTTP.
 
-Producao usa `tls internal` e `default_sni 192.168.100.180`. Assim, o Caddy
-apresenta o certificado correto inclusive a clientes TLS sem SNI. A CA de
-producao fica no volume `hr-nautica-prod_caddy_data`, separado da homologacao.
+## Identidade da release e autenticacao
 
-O deploy exporta somente o certificado raiz publico para:
+A imagem recebe a tag imutavel `hr-nautica-pcp:<SHA completo>`. O mesmo SHA e
+gravado no frontend, em `/release.json`, no header da API e em `/healthz`. O
+script recusa imagem cujo label OCI de revisao nao corresponda ao SHA pedido e
+so conclui depois que os dois endpoints confirmam esse SHA.
 
-```text
-/var/lib/hr-nautica-deploy/caddy-root.crt
-```
-
-O health check usa explicitamente essa CA com `curl --cacert`; a validacao TLS
-nunca e desativada. Nao apagar o volume Caddy: isso geraria outra CA e exigiria
-nova distribuicao aos clientes.
+O segredo `PROXY_SHARED_SECRET` permanece somente entre Caddy e API. Caddy
+sobrescreve o header antes de encaminhar a requisicao; o frontend nunca recebe
+o segredo. Login individual, hash Argon2id, sessoes no PostgreSQL, expiracao,
+CSRF, troca obrigatoria de senha, logout e bloqueio de tentativas permanecem
+inalterados.
 
 ## Preparacao unica do Ubuntu
 
-Estes comandos devem ser executados futuramente pelo administrador no Ubuntu;
-o repositorio e o workflow nao os executam remotamente.
+Estes comandos sao para execucao futura pelo administrador; o repositorio nao
+os executa remotamente.
 
-1. Confirmar Docker, rede do banco e porta livre:
+1. Confirmar Docker, rede do banco e porta privada livre:
 
    ```bash
    docker version
@@ -65,7 +69,7 @@ o repositorio e o workflow nao os executam remotamente.
    sudo ss -lnt '( sport = :8444 )'
    ```
 
-2. Criar os arquivos locais. O runner precisa pertencer ao grupo `docker`:
+2. Criar os arquivos locais. O runner deve pertencer ao grupo `docker`:
 
    ```bash
    sudo install -d -m 750 -o root -g docker /etc/hr-nautica
@@ -75,23 +79,21 @@ o repositorio e o workflow nao os executam remotamente.
    sudo editor /etc/hr-nautica/production.env
    ```
 
-3. No arquivo privado, substituir apenas `SENHA_FORA_DO_GIT` e
-   `PROXY_SHARED_SECRET`. Gerar um segredo exclusivo de producao:
-
-   ```bash
-   openssl rand -base64 48
-   ```
-
-   Manter estes valores confirmados:
+3. Substituir somente `SENHA_FORA_DO_GIT` e `PROXY_SHARED_SECRET`. Gerar o
+   segredo com `openssl rand -base64 48`. Manter:
 
    ```dotenv
    ERP_INTERNAL_HOST=192.168.100.180
    ERP_HTTPS_BIND_IP=192.168.100.180
    ERP_HTTPS_PORT=8444
    DATABASE_URL=postgresql://hr_nautica_app:SENHA_FORA_DO_GIT@supabase-db:5433/postgres
+   AUTH_COOKIE_SECURE=false
    ```
 
-4. Validar Compose e Caddy sem iniciar servicos:
+   Os nomes `ERP_HTTPS_*` foram mantidos por compatibilidade com os arquivos de
+   ambiente existentes; apesar do nome legado, o transporte atual e HTTP.
+
+4. Validar sem iniciar servicos:
 
    ```bash
    ERP_ENV_FILE=/etc/hr-nautica/production.env \
@@ -106,73 +108,42 @@ o repositorio e o workflow nao os executam remotamente.
      caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
    ```
 
-5. Instalar o runner self-hosted oficial, dedicado a este repositorio, com os
-   labels exatos `self-hosted`, `linux`, `x64`, `hr-nautica-production`. Ele
-   precisa ler `/etc/hr-nautica/production.env`, escrever em
-   `/var/lib/hr-nautica-deploy` e acessar Docker. Nenhuma porta de entrada,
-   webhook ou SSH e exigido pelo GitHub Actions.
+5. Instalar o runner self-hosted dedicado com os labels
+   `self-hosted`, `linux`, `x64`, `hr-nautica-production`. Ele precisa ler o
+   arquivo de ambiente, escrever no diretorio de estado e acessar Docker.
 
-## Primeira ativacao automatica
+## Ativacao automatica
 
-Depois da aprovacao do pull request, o merge autorizado na `main` dispara o
-workflow `.github/workflows/deploy-internal.yml`. Nao executar o script
-manualmente na primeira ativacao normal.
+Depois de revisao e merge autorizado na `main`, o workflow:
 
-O workflow:
-
-1. executa toda a suite de testes;
+1. executa a suite de testes;
 2. constroi a imagem com o SHA integral de `github.sha`;
-3. executa `scripts/deploy/deploy-production.sh <SHA>` no runner interno;
-4. valida a configuracao Compose;
+3. chama `scripts/deploy/deploy-production.sh <SHA>` no Ubuntu;
+4. valida o Compose e o label OCI da imagem;
 5. sobe a imagem sem executar migrations;
-6. exporta a CA do Caddy;
-7. confirma `/healthz` e `/release.json` via HTTPS e exige o mesmo SHA;
-8. grava `current-sha` somente depois de todas as validacoes.
+6. consulta via HTTP `/healthz` e `/release.json`;
+7. grava `current-sha` somente apos confirmar o mesmo SHA nos dois endpoints.
 
-O startup da API verifica PostgreSQL 17 e o historico existente. Migration
-pendente, checksum divergente ou banco inacessivel fazem o startup/deploy
-falhar. Dockerfile, Compose, workflow e script de deploy nunca chamam
-`db:migrate`.
+O startup apenas verifica PostgreSQL 17 e o historico existente. Migration
+pendente, checksum divergente ou banco inacessivel impedem o startup. Dockerfile,
+Compose, workflow e script de deploy nunca chamam `db:migrate`.
 
-## Confianca da CA e verificacao
-
-Depois do primeiro deploy bem-sucedido, conferir no Ubuntu:
+Verificacao depois de uma ativacao autorizada:
 
 ```bash
-sha256sum /var/lib/hr-nautica-deploy/caddy-root.crt
-curl --cacert /var/lib/hr-nautica-deploy/caddy-root.crt \
-  https://192.168.100.180:8444/healthz
-curl --cacert /var/lib/hr-nautica-deploy/caddy-root.crt \
-  https://192.168.100.180:8444/release.json
+curl --fail --show-error http://192.168.100.180:8444/healthz
+curl --fail --show-error http://192.168.100.180:8444/release.json
 ```
 
-Distribuir `caddy-root.crt` por canal administrativo autenticado somente aos
-computadores autorizados e conferir o fingerprint fora de banda. Nunca
-distribuir chaves privadas nem criar excecao TLS.
-
-Windows, em PowerShell elevado:
-
-```powershell
-certutil -addstore -f Root .\caddy-root.crt
-```
-
-Debian/Ubuntu cliente:
-
-```bash
-sudo install -m 644 caddy-root.crt \
-  /usr/local/share/ca-certificates/hr-nautica-production.crt
-sudo update-ca-certificates
-```
-
-Depois, abrir `https://192.168.100.180:8444` e validar login, sessao, CSRF,
-logout e troca de senha.
+Depois, abrir `http://192.168.100.180:8444` e validar login, sessao, CSRF,
+logout, bloqueio por tentativas e expiracao.
 
 ## Rollback e encerramento
 
-Em falha no Compose, banco, TLS, health check ou igualdade do SHA, o script
-restaura automaticamente a imagem anterior. Se ainda nao existir imagem
-anterior, encerra a pilha incompleta. Nenhuma imagem antiga e removida
-automaticamente.
+Falha no Compose, banco, health check ou igualdade do SHA restaura a imagem
+anterior. Na primeira ativacao, sem imagem anterior, a pilha incompleta e
+encerrada. Os volumes `caddy_data` e `caddy_config` continuam declarados e nao
+sao apagados na troca de HTTPS para HTTP nem em `down` sem `--volumes`.
 
 Rollback manual autorizado:
 
@@ -184,7 +155,7 @@ sudo env ERP_IMAGE="$PREVIOUS_IMAGE" \
     -f deploy/compose.production.yml up -d --no-build --remove-orphans
 ```
 
-Encerramento sem apagar CA, volumes ou imagens:
+Encerramento sem apagar volumes, dados ou imagens:
 
 ```bash
 sudo env ERP_ENV_FILE=/etc/hr-nautica/production.env \
@@ -192,20 +163,20 @@ sudo env ERP_ENV_FILE=/etc/hr-nautica/production.env \
     -f deploy/compose.production.yml down --remove-orphans
 ```
 
-Rollback da aplicacao nao reverte banco. Qualquer futura migration continua um
-procedimento administrativo separado, com backup e autorizacao especifica.
+Rollback da aplicacao nao reverte banco. Migrations permanecem um procedimento
+administrativo separado, com backup e autorizacao especifica.
 
-## Controles externos ainda necessarios
+## Controles externos pendentes
 
-- branch protection da `main` exigindo revisao e job `test` aprovado;
+- branch protection da `main` exigindo revisao e testes;
 - environment GitHub `production` restrito a `main`;
 - runner dedicado e online;
-- firewall do Ubuntu permitindo `8444/tcp` apenas da rede interna autorizada;
+- confirmar que firewall/roteador nao publicam `8444` fora da LAN, sem alterar
+  regras globais sem autorizacao;
 - arquivo `/etc/hr-nautica/production.env` fora do Git;
-- distribuicao controlada da CA de producao.
+- aceitar formalmente o risco de credenciais e cookies sem criptografia na LAN.
 
 ## Homologacao
 
-O procedimento independente de homologacao continua em
-`docs/homologacao-interna.md`. Producao nunca reutiliza o banco, cookie, segredo
-ou volume Caddy da homologacao.
+O procedimento independente esta em `docs/homologacao-interna.md`. Producao
+nunca reutiliza banco, cookie, segredo ou projeto Compose da homologacao.

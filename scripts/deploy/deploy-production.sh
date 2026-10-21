@@ -15,7 +15,6 @@ readonly STATE_DIR="${ERP_DEPLOY_STATE_DIR:-/var/lib/hr-nautica-deploy}"
 readonly IMAGE_REPOSITORY="${ERP_IMAGE_REPOSITORY:-hr-nautica-pcp}"
 readonly TARGET_IMAGE="${IMAGE_REPOSITORY}:${SHA}"
 readonly HEALTH_URL="${ERP_HEALTHCHECK_URL:-}"
-readonly CA_FILE="$STATE_DIR/caddy-root.crt"
 
 env_value() {
   local key="$1"
@@ -26,8 +25,8 @@ if [[ ! -r "$ENV_FILE" ]]; then
   echo "Arquivo de ambiente nao encontrado ou ilegivel: $ENV_FILE" >&2
   exit 3
 fi
-if [[ "$HEALTH_URL" != "https://192.168.100.180:8444" ]]; then
-  echo "ERP_HEALTHCHECK_URL deve ser https://192.168.100.180:8444" >&2
+if [[ "$HEALTH_URL" != "http://192.168.100.180:8444" ]]; then
+  echo "ERP_HEALTHCHECK_URL deve ser http://192.168.100.180:8444" >&2
   exit 3
 fi
 
@@ -41,7 +40,7 @@ if [[ "$database_url" != postgresql://hr_nautica_app:*@supabase-db:5433/postgres
   exit 3
 fi
 if [[ "$internal_host" != "192.168.100.180" || "$bind_ip" != "192.168.100.180" || "$https_port" != "8444" ]]; then
-  echo "Producao exige IP 192.168.100.180 e porta HTTPS 8444 nesta etapa." >&2
+  echo "Producao exige IP 192.168.100.180 e porta HTTP 8444 nesta etapa." >&2
   exit 3
 fi
 if (( ${#proxy_secret} < 32 )) || [[ "$proxy_secret" == *SUBSTITUIR* ]]; then
@@ -83,15 +82,10 @@ rollback() {
 
 verify_release() {
   local health release
-  health="$(curl --fail --silent --show-error --cacert "$CA_FILE" --max-time 10 "${HEALTH_URL%/}/healthz")" || return 1
-  release="$(curl --fail --silent --show-error --cacert "$CA_FILE" --max-time 10 "${HEALTH_URL%/}/release.json")" || return 1
+  health="$(curl --fail --silent --show-error --max-time 10 "${HEALTH_URL%/}/healthz")" || return 1
+  release="$(curl --fail --silent --show-error --max-time 10 "${HEALTH_URL%/}/release.json")" || return 1
   [[ "$health" == *"\"ok\":true"* && "$health" == *"\"release\":\"$SHA\""* ]] || return 1
   [[ "$release" == *"\"release\":\"$SHA\""* ]] || return 1
-}
-
-export_ca() {
-  compose "$TARGET_IMAGE" cp proxy:/data/caddy/pki/authorities/local/root.crt "$CA_FILE"
-  chmod 0644 "$CA_FILE"
 }
 
 if ! compose "$TARGET_IMAGE" config --quiet; then
@@ -106,7 +100,7 @@ fi
 
 healthy=false
 for _attempt in $(seq 1 30); do
-  if export_ca >/dev/null 2>&1 && verify_release; then
+  if verify_release; then
     healthy=true
     break
   fi
@@ -124,4 +118,3 @@ if [[ -n "$previous_image" && "$previous_image" != "$TARGET_IMAGE" ]]; then
   printf '%s\n' "$previous_image" > "$STATE_DIR/previous-image"
 fi
 echo "Deploy confirmado no SHA $SHA"
-echo "CA raiz de producao exportada para $CA_FILE"
