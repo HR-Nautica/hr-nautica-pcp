@@ -61,16 +61,19 @@ const RemoteStorage = {
     } catch (err) {
       console.warn("[BANCO] Nao foi possivel salvar no localStorage local:", err);
     }
-    if (unchanged) return;
+    if (unchanged) {
+      return this.writeQueues.get(key) || Promise.resolve(!this.pendingWrites.has(key));
+    }
     if (key.startsWith("hrn_") && key !== "hrn_sync_timestamp") {
       const pending = this.rememberPending(key, "PUT", value);
-      this.enqueue(key, () => this.persist(
+      return this.enqueue(key, () => this.persist(
         key,
         value,
         pending.writeId,
         this.expectedVersionForPending(pending)
       ));
     }
+    return Promise.resolve(true);
   },
   removeItem(key) {
     this.data.delete(key);
@@ -81,12 +84,13 @@ const RemoteStorage = {
     }
     if (key.startsWith("hrn_")) {
       const pending = this.rememberPending(key, "DELETE");
-      this.enqueue(key, () => this.persistDelete(
+      return this.enqueue(key, () => this.persistDelete(
         key,
         pending.writeId,
         this.expectedVersionForPending(pending)
       ));
     }
+    return Promise.resolve(true);
   },
   clear() {
     throw new Error("Limpeza total bloqueada para proteger o banco central.");
@@ -101,6 +105,19 @@ const RemoteStorage = {
     this.revision = Math.max(this.revision, Number(revision) || 0);
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (err) {
       console.warn("[BANCO] Nao foi possivel atualizar o cache local:", err);
+    }
+  },
+  restoreLocalView(key, value, { exists = true } = {}) {
+    if (exists) {
+      this.data.set(key, value);
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (error) {
+        console.warn("[BANCO] Nao foi possivel restaurar a visualizacao local:", error);
+      }
+    } else {
+      this.data.delete(key);
+      try { localStorage.removeItem(key); } catch (error) {
+        console.warn("[BANCO] Nao foi possivel limpar a visualizacao local:", error);
+      }
     }
   },
   rememberPending(key, method, value) {
@@ -268,6 +285,7 @@ const RemoteStorage = {
         }
         if (error?.code !== "WRITE_CONFLICT") this.setConnectionState(false);
         console.error(`[BANCO] Falha ao gravar ${key}:`, error);
+        return false;
       })
       .finally(() => {
         if (this.writeQueues.get(key) === next) this.writeQueues.delete(key);
@@ -298,6 +316,7 @@ const RemoteStorage = {
     this.revision = Number(result.revision);
     this.clearPending(key, writeId);
     this.showConfirmedState();
+    return true;
   },
   async persistDelete(key, writeId, expectedVersion) {
     if (this.conflicts.has(key)) throw this.conflictBlockedError();
@@ -321,6 +340,7 @@ const RemoteStorage = {
     this.revision = Number(result.revision);
     this.clearPending(key, writeId);
     this.showConfirmedState();
+    return true;
   },
   conflictBlockedError() {
     const error = new Error("Gravacao bloqueada por conflito pendente.");
