@@ -312,17 +312,30 @@ function processFabriExcelLegacy(arrayBuffer) {
 // Expande ou recolhe um item de nível 1 na tabela
 async function processFornecedoresExcel(arrayBuffer) {
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-  const sheetName = workbook.SheetNames.find(name => normalizeViniHeader(name).includes('FORNECED'));
-  if (!sheetName) throw new Error('Aba de Fornecedores nao localizada.');
-  const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
-  if (!rows.length) throw new Error('Aba de Fornecedores vazia.');
-  const keys = Object.keys(rows[0]);
-  const skuKey = keys.find(key => {
-    const normalized = normalizeViniHeader(key);
-    return normalized === 'SKU' || normalized === 'CODIGO' || normalized.includes('CODIGO SKU');
-  });
-  const supplierKey = keys.find(key => normalizeViniHeader(key).includes('FORNECED'));
-  if (!skuKey || !supplierKey) throw new Error('Aba de Fornecedores sem colunas SKU e Fornecedor.');
+  const candidates = workbook.SheetNames.map(sheetName => {
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+    const keys = rows.length ? Object.keys(rows[0]) : [];
+    const skuKey = keys.find(key => {
+      const normalized = normalizeViniHeader(key);
+      return normalized === 'SKU' || normalized === 'CODIGO' || normalized.includes('CODIGO SKU');
+    });
+    const supplierKey = keys.find(key => normalizeViniHeader(key).includes('FORNECED'));
+    return {
+      sheetName,
+      rows,
+      skuKey,
+      supplierKey,
+      preferred: normalizeViniHeader(sheetName).includes('FORNECED')
+    };
+  }).filter(candidate => candidate.skuKey && candidate.supplierKey)
+    .sort((a, b) => Number(b.preferred) - Number(a.preferred));
+  if (!candidates.length) throw new Error('Nenhuma aba possui as colunas obrigatorias SKU e Fornecedor.');
+
+  const selected = candidates.find(candidate => candidate.rows.some(row =>
+    String(row[candidate.skuKey] || '').trim() && String(row[candidate.supplierKey] || '').trim()
+  ));
+  if (!selected) throw new Error('As colunas SKU e Fornecedor estao vazias.');
+  const { sheetName, rows, skuKey, supplierKey } = selected;
 
   const map = {};
   rows.forEach(row => {
@@ -338,23 +351,32 @@ async function processFornecedoresExcel(arrayBuffer) {
 
 async function processFabriExcel(arrayBuffer) {
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-  const fabricationSheets = workbook.SheetNames.filter(name => normalizeViniHeader(name).includes('FABRI'));
-  if (!fabricationSheets.length) throw new Error('Aba de Fabricacao nao localizada.');
   const map = {};
-  let validLayout = false;
-
-  fabricationSheets.forEach(sheetName => {
+  const fabricationSheets = workbook.SheetNames.map(sheetName => {
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
-    if (!rows.length) return;
-    const keys = Object.keys(rows[0]);
+    const keys = rows.length ? Object.keys(rows[0]) : [];
     const findKey = matcher => keys.find(key => matcher(normalizeViniHeader(key)));
     const skuKitKey = findKey(header => header.includes('SKU KIT') || header.includes('SKU FABRICADO'));
     const skuCompKey = findKey(header => header.includes('SKU COMPONENTE'));
-    if (!skuKitKey || !skuCompKey) return;
-    validLayout = true;
+    return {
+      sheetName,
+      rows,
+      skuKitKey,
+      skuCompKey,
+      preferred: normalizeViniHeader(sheetName).includes('FABRI')
+    };
+  }).filter(candidate => candidate.skuKitKey && candidate.skuCompKey)
+    .sort((a, b) => Number(b.preferred) - Number(a.preferred));
+  if (!fabricationSheets.length) {
+    throw new Error('Nenhuma aba possui as colunas obrigatorias SKU Kit e SKU Componente.');
+  }
+
+  fabricationSheets.forEach(({ sheetName, rows, skuKitKey, skuCompKey }) => {
+    const keys = Object.keys(rows[0]);
+    const findKey = matcher => keys.find(key => matcher(normalizeViniHeader(key)));
     const descCompKey = findKey(header => header.includes('DESCRICAO COMPONENTE'));
     const supplierCompKey = findKey(header => header.includes('FORNECEDOR COMPONENTE'));
-    const qtyCompKey = findKey(header => header.includes('QUANTIDADE COMPONENTE'));
+    const qtyCompKey = findKey(header => header.includes('QUANTIDADE COMPONENTE') || header.includes('QTDE COMPONENTE') || header.includes('QTD COMPONENTE'));
     const skuMaterialKey = findKey(header => header.includes('SKU MATERIAL'));
     const descMaterialKey = findKey(header => header.includes('DESCRICAO MATERIAL'));
     const supplierMaterialKey = findKey(header => header.includes('FORNECEDOR MATERIAL'));
@@ -383,11 +405,10 @@ async function processFabriExcel(arrayBuffer) {
     });
   });
 
-  if (!validLayout) throw new Error('Aba de Fabricacao sem colunas SKU Kit e SKU Componente.');
-  if (!Object.keys(map).length) throw new Error('Aba de Fabricacao nao contem componentes validos.');
+  if (!Object.keys(map).length) throw new Error('As colunas SKU Kit e SKU Componente estao vazias.');
   await persistViniEntries({ hrn_vini_fabri_data: map });
   VINI_STATE.fabriData = map;
-  return { count: Object.keys(map).length, sheets: fabricationSheets };
+  return { count: Object.keys(map).length, sheets: fabricationSheets.map(candidate => candidate.sheetName) };
 }
 
 function toggleItemExpansion(sku) {

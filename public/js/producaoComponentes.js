@@ -27,15 +27,40 @@ function prodComp_load() {
   }
 }
 
-// Salva dados no RemoteStorage
-async function prodComp_save() {
+function prodComp_cloneOps(ops) {
+  return JSON.parse(JSON.stringify(ops || []));
+}
+
+function prodComp_hasUnresolvedWrite() {
+  return Boolean(
+    RemoteStorage.pendingWrites?.has('hrn_prod_comp_ops')
+    || RemoteStorage.conflicts?.has('hrn_prod_comp_ops')
+  );
+}
+
+function prodComp_warnUnresolvedWrite() {
+  const message = 'Existe uma alteracao de OP ainda nao confirmada. Recupere ou descarte essa pendencia antes de fazer outra alteracao.';
+  if (typeof showToast === 'function') showToast(message, 'warning');
+  else alert(message);
+}
+
+// Confirma um rascunho sem promover estado otimista a estado persistido.
+async function prodComp_save(nextOps, confirmedOps) {
   try {
-    const confirmed = await RemoteStorage.setItem('hrn_prod_comp_ops', JSON.stringify(PROD_COMP_STATE.ops));
+    const confirmed = await RemoteStorage.setItem('hrn_prod_comp_ops', JSON.stringify(nextOps));
     if (confirmed !== true) throw new Error('O servidor nao confirmou a alteracao das OPs.');
+    PROD_COMP_STATE.ops = nextOps;
     return true;
-  } catch (e) {
-    console.error('Erro ao salvar dados de producaoComponentes no RemoteStorage', e);
-    throw e;
+  } catch (error) {
+    // Em 409, RemoteStorage ja restaurou o snapshot atual do servidor. Em falha
+    // sem resposta, restaura somente a visualizacao confirmada e mantem a
+    // pendencia original para recuperacao consciente.
+    if (!RemoteStorage.getConflict?.('hrn_prod_comp_ops')) {
+      RemoteStorage.restoreLocalView('hrn_prod_comp_ops', confirmedOps, { exists: true });
+    }
+    prodComp_load();
+    console.error('Erro ao salvar dados de producaoComponentes no RemoteStorage', error);
+    throw error;
   }
 }
 
@@ -120,6 +145,11 @@ async function prodComp_createOP(sku, qty, descOverride) {
   }
 
   prodComp_load();
+  if (prodComp_hasUnresolvedWrite()) {
+    prodComp_warnUnresolvedWrite();
+    return null;
+  }
+  const confirmedOps = prodComp_cloneOps(PROD_COMP_STATE.ops);
 
   const id = 'OPC-' + Date.now();
   const dataCriacao = new Date().toLocaleDateString('pt-BR');
@@ -204,9 +234,10 @@ async function prodComp_createOP(sku, qty, descOverride) {
     atualizadoEm: Date.now()
   };
 
-  PROD_COMP_STATE.ops.push(newOp);
+  const nextOps = prodComp_cloneOps(confirmedOps);
+  nextOps.push(newOp);
   try {
-    await prodComp_save();
+    await prodComp_save(nextOps, confirmedOps);
   } catch (error) {
     if (typeof showToast === 'function') showToast(`OP nao confirmada pelo servidor: ${error.message}`, 'error');
     return null;
@@ -246,7 +277,13 @@ window.prodComp_isItemBlocked = prodComp_isItemBlocked;
 // Alterna o status de uma operação de item da OP
 async function prodComp_toggleOpStatus(opId, itemSku, opKey) {
   prodComp_load();
-  const op = PROD_COMP_STATE.ops.find(o => o.id === opId);
+  if (prodComp_hasUnresolvedWrite()) {
+    prodComp_warnUnresolvedWrite();
+    return false;
+  }
+  const confirmedOps = prodComp_cloneOps(PROD_COMP_STATE.ops);
+  const nextOps = prodComp_cloneOps(confirmedOps);
+  const op = nextOps.find(o => o.id === opId);
   if (!op || op.status !== 'Em Produção') return;
 
   const item = op.itens.find(i => i.sku === itemSku);
@@ -254,6 +291,8 @@ async function prodComp_toggleOpStatus(opId, itemSku, opKey) {
 
   const opInfo = item.operacoes[opKey];
   if (!opInfo || opInfo.status === '—') return;
+  let successMessage = '';
+  let successType = 'success';
 
   if (opInfo.status === 'Pendente') {
     // Verifica bloqueio de sub-itens
@@ -266,33 +305,38 @@ async function prodComp_toggleOpStatus(opId, itemSku, opKey) {
       return;
     }
     opInfo.status = 'OK';
-    if (typeof showToast === 'function') {
-      showToast(`Etapa "${opInfo.label}" de ${item.sku} concluída!`, 'success');
-    }
+    successMessage = `Etapa "${opInfo.label}" de ${item.sku} concluída!`;
   } else if (opInfo.status === 'OK') {
     // Permite reverter
     opInfo.status = 'Pendente';
-    if (typeof showToast === 'function') {
-      showToast(`Etapa "${opInfo.label}" de ${item.sku} retornou para Pendente.`, 'info');
-    }
+    successMessage = `Etapa "${opInfo.label}" de ${item.sku} retornou para Pendente.`;
+    successType = 'info';
   }
 
   op.atualizadoEm = Date.now();
   try {
-    await prodComp_save();
+    await prodComp_save(nextOps, confirmedOps);
   } catch (error) {
     if (typeof showToast === 'function') showToast(`Etapa nao confirmada pelo servidor: ${error.message}`, 'error');
-    return;
+    return false;
   }
+  if (successMessage && typeof showToast === 'function') showToast(successMessage, successType);
   prodComp_render();
   if (typeof renderViniTable === 'function') renderViniTable();
+  return true;
 }
 window.prodComp_toggleOpStatus = prodComp_toggleOpStatus;
 
 // Conclui a Ordem de Produção inteira (muda status para Concluído)
 async function prodComp_finalizarOP(opId) {
   prodComp_load();
-  const op = PROD_COMP_STATE.ops.find(o => o.id === opId);
+  if (prodComp_hasUnresolvedWrite()) {
+    prodComp_warnUnresolvedWrite();
+    return false;
+  }
+  const confirmedOps = prodComp_cloneOps(PROD_COMP_STATE.ops);
+  const nextOps = prodComp_cloneOps(confirmedOps);
+  const op = nextOps.find(o => o.id === opId);
   if (!op || op.status !== 'Em Produção') return;
 
   // Verifica se há alguma etapa pendente em qualquer item do conjunto
@@ -314,7 +358,7 @@ async function prodComp_finalizarOP(opId) {
   op.status = 'Concluído';
   op.atualizadoEm = Date.now();
   try {
-    await prodComp_save();
+    await prodComp_save(nextOps, confirmedOps);
   } catch (error) {
     if (typeof showToast === 'function') showToast(`Conclusao nao confirmada pelo servidor: ${error.message}`, 'error');
     return false;
@@ -335,13 +379,19 @@ async function prodComp_deleteOP(id) {
   if (!confirm('Deseja realmente cancelar esta Ordem de Produção de Componente?')) return;
 
   prodComp_load();
-  const op = PROD_COMP_STATE.ops.find(o => o.id === id);
+  if (prodComp_hasUnresolvedWrite()) {
+    prodComp_warnUnresolvedWrite();
+    return false;
+  }
+  const confirmedOps = prodComp_cloneOps(PROD_COMP_STATE.ops);
+  const nextOps = prodComp_cloneOps(confirmedOps);
+  const op = nextOps.find(o => o.id === id);
   if (op) {
     op.deleted = true;
     op.atualizadoEm = Date.now();
   }
   try {
-    await prodComp_save();
+    await prodComp_save(nextOps, confirmedOps);
   } catch (error) {
     if (typeof showToast === 'function') showToast(`Cancelamento nao confirmado pelo servidor: ${error.message}`, 'error');
     return false;
