@@ -557,7 +557,7 @@ async function loadProductionEntriesFromServer() {
 }
 
 // Processa o arquivo Excel e extrai os dados
-async function processAnaliseExcel(arrayBuffer) {
+async function processAnaliseExcel(arrayBuffer, options = {}) {
   try {
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
     
@@ -635,20 +635,26 @@ async function processAnaliseExcel(arrayBuffer) {
       };
     }).filter(item => (item.sku || item.produto) && item.produto !== 'undefined');
 
-    const syncResult = await replaceAnalysisTempOnServer(importedData);
-    const parsedData = mergeAnaliseWithCatalogo(importedData);
+    if (!importedData.length) throw new Error('A aba de Cobertura nao contem itens validos.');
 
-    ANALISE_STATE.coberturaData = parsedData;
-    ANALISE_STATE.loaded = true;
+    const commit = async () => {
+      const syncResult = await replaceAnalysisTempOnServer(importedData);
+      const parsedData = mergeAnaliseWithCatalogo(importedData);
+      ANALISE_STATE.coberturaData = parsedData;
+      ANALISE_STATE.loaded = true;
 
-    // Cobertura já está confirmada; falha de rastreio é resultado parcial, nunca rollback fictício.
-    let tracking;
-    try {
-      tracking = await syncRastreioPecas(wb);
-    } catch (trackingError) {
-      tracking = { status: 'failed', error: trackingError.message, conflict: false };
-    }
-    return { ...syncResult, coverage: { status: 'confirmed', result: syncResult }, tracking };
+      // Cobertura já está confirmada; falha de rastreio é resultado parcial, nunca rollback fictício.
+      let tracking;
+      try {
+        tracking = await syncRastreioPecas(wb);
+      } catch (trackingError) {
+        tracking = { status: 'failed', error: trackingError.message, conflict: false };
+      }
+      return { ...syncResult, coverage: { status: 'confirmed', result: syncResult }, tracking };
+    };
+
+    if (options.prepareOnly) return { count: importedData.length, sheet: sheetName, commit };
+    return await commit();
   } catch (err) {
     console.error('[ANALISE] Erro ao processar planilha de cobertura:', err);
     throw err;

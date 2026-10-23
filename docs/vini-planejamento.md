@@ -16,9 +16,19 @@ em um snapshot diario nao remove esses dados nem altera estoques de brutos ou bu
 
 ## Confirmacao e atomicidade
 
-Todas as abas e colunas obrigatorias sao validadas antes da primeira gravacao. A
-interface somente informa sucesso quando todas as gravacoes solicitadas foram
-confirmadas pelo servidor.
+As sincronizacoes centralizadas possuem duas fases. Primeiro identificam todas as
+abas aplicaveis, validam cabecalhos e dados obrigatorios e montam os snapshots em
+memoria. Nenhuma gravacao e iniciada nessa fase. Se qualquer aba identificada for
+invalida, toda a importacao e rejeitada sem modificar dados no servidor.
+
+Somente depois da pre-validacao integral os snapshots sao enviados, e a interface
+somente informa sucesso quando todas as gravacoes solicitadas foram confirmadas
+pelo servidor.
+
+Pre-validacao completa nao significa atomicidade transacional. Ela impede que um
+erro de formato descoberto tarde deixe snapshots anteriores gravados, mas nao pode
+desfazer uma gravacao ja confirmada caso a rede ou o servidor falhe durante a fase
+de persistencia.
 
 O armazenamento de estado oferece controle de versao por chave, mas nao uma
 transacao envolvendo varias chaves. Portanto, as seguintes importacoes ainda podem

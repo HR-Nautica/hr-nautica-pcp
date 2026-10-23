@@ -310,7 +310,7 @@ function processFabriExcelLegacy(arrayBuffer) {
 
 
 // Expande ou recolhe um item de nível 1 na tabela
-async function processFornecedoresExcel(arrayBuffer) {
+async function processFornecedoresExcel(arrayBuffer, options = {}) {
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
   const candidates = workbook.SheetNames.map(sheetName => {
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
@@ -344,12 +344,17 @@ async function processFornecedoresExcel(arrayBuffer) {
     if (sku && supplier) map[sku] = supplier;
   });
   if (!Object.keys(map).length) throw new Error('Aba de Fornecedores nao contem vinculos validos.');
-  await persistViniEntries({ hrn_vini_fornecedores_map: map });
-  VINI_STATE.fornecedoresMap = map;
-  return { count: Object.keys(map).length, sheet: sheetName };
+  const result = { count: Object.keys(map).length, sheet: sheetName };
+  const commit = async () => {
+    await persistViniEntries({ hrn_vini_fornecedores_map: map });
+    VINI_STATE.fornecedoresMap = map;
+    return result;
+  };
+  if (options.prepareOnly) return { ...result, commit };
+  return await commit();
 }
 
-async function processFabriExcel(arrayBuffer) {
+async function processFabriExcel(arrayBuffer, options = {}) {
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
   const map = {};
   const fabricationSheets = workbook.SheetNames.map(sheetName => {
@@ -406,9 +411,14 @@ async function processFabriExcel(arrayBuffer) {
   });
 
   if (!Object.keys(map).length) throw new Error('As colunas SKU Kit e SKU Componente estao vazias.');
-  await persistViniEntries({ hrn_vini_fabri_data: map });
-  VINI_STATE.fabriData = map;
-  return { count: Object.keys(map).length, sheets: fabricationSheets.map(candidate => candidate.sheetName) };
+  const result = { count: Object.keys(map).length, sheets: fabricationSheets.map(candidate => candidate.sheetName) };
+  const commit = async () => {
+    await persistViniEntries({ hrn_vini_fabri_data: map });
+    VINI_STATE.fabriData = map;
+    return result;
+  };
+  if (options.prepareOnly) return { ...result, commit };
+  return await commit();
 }
 
 function toggleItemExpansion(sku) {
@@ -632,7 +642,7 @@ function processExcelWorkbookLegacy(arrayBuffer) {
 }
 
 // Carrega dados da planilha via Fetch
-async function processExcelWorkbook(arrayBuffer) {
+async function processExcelWorkbook(arrayBuffer, options = {}) {
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
   const planningSheetName = workbook.SheetNames.find(name => {
     const normalized = normalizeViniHeader(name);
@@ -714,15 +724,20 @@ async function processExcelWorkbook(arrayBuffer) {
     if (!hasSku || !hasQuantity) throw new Error('A aba Entradas Previstas nao possui as colunas SKU e Quantidade.');
   }
 
-  await persistViniEntries({
-    hrn_vini_necessidades: parsedItems,
-    hrn_vini_entradas: entradasPrevistas
-  });
-  VINI_STATE.necessidadeData = parsedItems;
-  VINI_STATE.entradasPrevistasData = entradasPrevistas;
-  VINI_STATE.loaded = true;
-  updatePrio2FilterOptions();
-  return { count: parsedItems.length, sheet: planningSheetName };
+  const result = { count: parsedItems.length, sheet: planningSheetName };
+  const commit = async () => {
+    await persistViniEntries({
+      hrn_vini_necessidades: parsedItems,
+      hrn_vini_entradas: entradasPrevistas
+    });
+    VINI_STATE.necessidadeData = parsedItems;
+    VINI_STATE.entradasPrevistasData = entradasPrevistas;
+    VINI_STATE.loaded = true;
+    updatePrio2FilterOptions();
+    return result;
+  };
+  if (options.prepareOnly) return { ...result, commit };
+  return await commit();
 }
 
 async function loadViniExcelData() {

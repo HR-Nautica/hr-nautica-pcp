@@ -193,7 +193,7 @@ function detectColumns(rowsRaw, rules, fallback, required) {
   return { headerIdx: 0, ...fallback };
 }
 
-async function earv_processTreeExcel(arrayBuffer) {
+async function earv_processTreeExcel(arrayBuffer, options = {}) {
   const wb = XLSX.read(arrayBuffer, { type: "array" });
   const sheetName = findSheetName(wb, ["arvore", "árvore", "estrutura"]);
   const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
@@ -203,16 +203,21 @@ async function earv_processTreeExcel(arrayBuffer) {
     .map(normalizeTreeRow)
     .filter(row => row.SKU || row.Descricao);
 
-  await persistSnapshot({ [EARV_STORAGE_KEYS.tree]: rows });
-  EARV.rows = rows;
-  EARV.familyTree = earv_buildTree(rows);
-  EARV.loaded = true;
-  EARV.expandedFamilies.clear();
-  EARV.expandedComponents.clear();
-  return rows.length;
+  if (!rows.length) throw new Error("A planilha de estrutura nao contem itens validos.");
+  const commit = async () => {
+    await persistSnapshot({ [EARV_STORAGE_KEYS.tree]: rows });
+    EARV.rows = rows;
+    EARV.familyTree = earv_buildTree(rows);
+    EARV.loaded = true;
+    EARV.expandedFamilies.clear();
+    EARV.expandedComponents.clear();
+    return rows.length;
+  };
+  if (options.prepareOnly) return { count: rows.length, sheet: sheetName, commit };
+  return await commit();
 }
 
-async function earv_processPCPExcel(arrayBuffer) {
+async function earv_processPCPExcel(arrayBuffer, options = {}) {
   const wb = XLSX.read(arrayBuffer, { type: "array" });
   let rowsRaw = null;
   let cols = null;
@@ -245,20 +250,25 @@ async function earv_processPCPExcel(arrayBuffer) {
   }
 
   if (!Object.keys(estoqueMap).length) throw new Error("A planilha de estoque nao contem SKUs validos.");
-  await persistSnapshot({
-    [EARV_STORAGE_KEYS.estoque]: estoqueMap,
-    [EARV_STORAGE_KEYS.saidasPeriodo]: saidasPeriodoMap
-  });
-  EARV.estoqueMap = estoqueMap;
-  EARV.saidasPeriodoMap = saidasPeriodoMap;
-  EARV.estoqueLoaded = true;
-  return {
+  const result = {
     estoque: Object.keys(estoqueMap).length,
     saidasPeriodo: Object.keys(saidasPeriodoMap).length
   };
+  const commit = async () => {
+    await persistSnapshot({
+      [EARV_STORAGE_KEYS.estoque]: estoqueMap,
+      [EARV_STORAGE_KEYS.saidasPeriodo]: saidasPeriodoMap
+    });
+    EARV.estoqueMap = estoqueMap;
+    EARV.saidasPeriodoMap = saidasPeriodoMap;
+    EARV.estoqueLoaded = true;
+    return result;
+  };
+  if (options.prepareOnly) return { ...result, commit };
+  return await commit();
 }
 
-async function earv_processSaidasPrevistasExcel(arrayBuffer) {
+async function earv_processSaidasPrevistasExcel(arrayBuffer, options = {}) {
   const wb = XLSX.read(arrayBuffer, { type: "array" });
   let rowsRaw = null;
   let cols = null;
@@ -288,10 +298,15 @@ async function earv_processSaidasPrevistasExcel(arrayBuffer) {
   }
 
   if (!Object.keys(map).length) throw new Error("A planilha de saidas nao contem SKUs validos.");
-  await persistSnapshot({ [EARV_STORAGE_KEYS.saidasPrevistas]: map });
-  EARV.saidasPrevistasMap = map;
-  EARV.saidasPrevistasLoaded = true;
-  return Object.keys(map).length;
+  const count = Object.keys(map).length;
+  const commit = async () => {
+    await persistSnapshot({ [EARV_STORAGE_KEYS.saidasPrevistas]: map });
+    EARV.saidasPrevistasMap = map;
+    EARV.saidasPrevistasLoaded = true;
+    return count;
+  };
+  if (options.prepareOnly) return { count, commit };
+  return await commit();
 }
 
 function earv_buildTree(rows) {
