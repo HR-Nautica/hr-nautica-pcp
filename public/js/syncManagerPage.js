@@ -120,7 +120,6 @@
       const arrayBuffer = await file.arrayBuffer();
       const wb = XLSX.read(arrayBuffer, { type: 'array' });
       const sheetNames = wb.SheetNames.map(s => s.trim());
-
       // 1. Análise de Produção Hélices
       try {
         if (typeof processAnaliseExcel === 'function') {
@@ -319,6 +318,18 @@
       const arrayBuffer = await file.arrayBuffer();
       const wb = XLSX.read(arrayBuffer, { type: 'array' });
       const sheetNames = wb.SheetNames.map(s => s.trim());
+      const normalizedSheetHeaders = wb.SheetNames.map(name => {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '' });
+        return (rows[0] || []).map(header => String(header || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase());
+      });
+      const hasSupplierLayout = normalizedSheetHeaders.some(headers =>
+        headers.some(header => header === 'SKU' || header.includes('CODIGO SKU'))
+        && headers.some(header => header.includes('FORNECED'))
+      );
+      const hasFabricationLayout = normalizedSheetHeaders.some(headers =>
+        headers.some(header => header.includes('SKU KIT') || header.includes('SKU FABRICADO'))
+        && headers.some(header => header.includes('SKU COMPONENTE'))
+      );
 
       let updated = false;
       let viniCount = 0;
@@ -335,14 +346,14 @@
       }
 
       // 2. Fornecedores
-      if (typeof processFornecedoresExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('forneced'))) {
+      if (typeof processFornecedoresExcel === 'function' && (sheetNames.some(s => s.toLowerCase().includes('forneced')) || hasSupplierLayout)) {
         await processFornecedoresExcel(arrayBuffer);
         updated = true;
         viniSheets.push('Fornecedores');
       }
 
       // 3. Fabricação
-      if (typeof processFabriExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('fabri'))) {
+      if (typeof processFabriExcel === 'function' && (sheetNames.some(s => s.toLowerCase().includes('fabri')) || hasFabricationLayout)) {
         await processFabriExcel(arrayBuffer);
         updated = true;
         viniSheets.push('Fabricação');

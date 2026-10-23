@@ -107,6 +107,19 @@ const RemoteStorage = {
       console.warn("[BANCO] Nao foi possivel atualizar o cache local:", err);
     }
   },
+  restoreLocalView(key, value, { exists = true } = {}) {
+    if (exists) {
+      this.data.set(key, value);
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (error) {
+        console.warn("[BANCO] Nao foi possivel restaurar a visualizacao local:", error);
+      }
+    } else {
+      this.data.delete(key);
+      try { localStorage.removeItem(key); } catch (error) {
+        console.warn("[BANCO] Nao foi possivel limpar a visualizacao local:", error);
+      }
+    }
+  },
   rememberPending(key, method, value) {
     const ownerUser = this.normalizedCurrentUser();
     const predecessorWriteId = this.lastQueuedWriteIds.get(key) ?? null;
