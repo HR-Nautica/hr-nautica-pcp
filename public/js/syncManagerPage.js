@@ -120,36 +120,29 @@
       const arrayBuffer = await file.arrayBuffer();
       const wb = XLSX.read(arrayBuffer, { type: 'array' });
       const sheetNames = wb.SheetNames.map(s => s.trim());
-      // 1. Análise de Produção Hélices
-      try {
-        if (typeof processAnaliseExcel === 'function') {
-          const syncRes = await processAnaliseExcel(arrayBuffer);
-          analiseCount = (syncRes && syncRes.count) || (window.ANALISE_STATE?.coberturaData?.length) || 0;
-          analiseStatus = 'OK';
-          updateCardStatus('sync-badge-analise', 'sync-val-analise', 'sync-sub-analise', 'success', `${analiseCount} itens`, 'Estoques usinado/bruto reescritos com sucesso');
-        }
-      } catch (err) {
-        console.warn('[SyncCentral] Erro na Análise de Produção:', err.message);
-        updateCardStatus('sync-badge-analise', 'sync-val-analise', 'sync-sub-analise', 'error', 'Pendente', err.message);
+      if (typeof processAnaliseExcel !== 'function' || typeof earv_processPCPExcel !== 'function') {
+        throw new Error('Processadores obrigatorios da sincronizacao de estoque indisponiveis.');
       }
 
-      // 2. Estoque Componentes (Estoque Árvore / PCP)
-      try {
-        if (typeof earv_processPCPExcel === 'function') {
-          const earvRes = await earv_processPCPExcel(arrayBuffer);
-          compCount = (earvRes && earvRes.estoque) || 0;
-          compStatus = 'OK';
-
-          if (typeof earv_processTreeExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('arvore') || s.toLowerCase().includes('estrutura'))) {
-            await earv_processTreeExcel(arrayBuffer);
-          }
-
-          updateCardStatus('sync-badge-componentes', 'sync-val-componentes', 'sync-sub-componentes', 'success', `${compCount} SKUs`, 'Estoques e saídas previstas reescritas');
-        }
-      } catch (err) {
-        console.warn('[SyncCentral] Erro em Estoque Componentes:', err.message);
-        updateCardStatus('sync-badge-componentes', 'sync-val-componentes', 'sync-sub-componentes', 'error', 'Pendente', err.message);
+      // Fase 1: todos os módulos preparam e validam seus snapshots sem persistir.
+      const analisePlan = await processAnaliseExcel(arrayBuffer, { prepareOnly: true });
+      const componentPlan = await earv_processPCPExcel(arrayBuffer, { prepareOnly: true });
+      let treePlan = null;
+      if (typeof earv_processTreeExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('arvore') || s.toLowerCase().includes('estrutura'))) {
+        treePlan = await earv_processTreeExcel(arrayBuffer, { prepareOnly: true });
       }
+
+      // Fase 2: somente após a validação integral começam as gravações.
+      const syncRes = await analisePlan.commit();
+      analiseCount = (syncRes && syncRes.count) || analisePlan.count || 0;
+      analiseStatus = 'OK';
+      updateCardStatus('sync-badge-analise', 'sync-val-analise', 'sync-sub-analise', 'success', `${analiseCount} itens`, 'Estoques usinado/bruto reescritos com sucesso');
+
+      const earvRes = await componentPlan.commit();
+      compCount = (earvRes && earvRes.estoque) || componentPlan.estoque || 0;
+      if (treePlan) await treePlan.commit();
+      compStatus = 'OK';
+      updateCardStatus('sync-badge-componentes', 'sync-val-componentes', 'sync-sub-componentes', 'success', `${compCount} SKUs`, 'Estoques e saídas previstas reescritas');
 
       // Dispara atualizações da UI em todas as abas afetadas
       if (typeof window.renderAnaliseTable === 'function') window.renderAnaliseTable();
@@ -333,11 +326,13 @@
 
       let updated = false;
       let viniCount = 0;
+      const plans = [];
 
       // 1. Necessidades PCP / Saídas V.I.N.I.
       const viniProc = window.processExcelWorkbook || (typeof processExcelWorkbook === 'function' ? processExcelWorkbook : null);
       if (viniProc) {
-        const viniResult = await viniProc(arrayBuffer);
+        const viniResult = await viniProc(arrayBuffer, { prepareOnly: true });
+        plans.push({ label: 'Necessidades / Saídas', plan: viniResult });
         updated = true;
         viniSheets.push('Necessidades / Saídas');
         viniCount = viniResult?.count || window.VINI_STATE?.necessidadeData?.length || 0;
@@ -347,26 +342,37 @@
 
       // 2. Fornecedores
       if (typeof processFornecedoresExcel === 'function' && (sheetNames.some(s => s.toLowerCase().includes('forneced')) || hasSupplierLayout)) {
-        await processFornecedoresExcel(arrayBuffer);
+        const supplierPlan = await processFornecedoresExcel(arrayBuffer, { prepareOnly: true });
+        plans.push({ label: 'Fornecedores', plan: supplierPlan });
         updated = true;
         viniSheets.push('Fornecedores');
       }
 
       // 3. Fabricação
       if (typeof processFabriExcel === 'function' && (sheetNames.some(s => s.toLowerCase().includes('fabri')) || hasFabricationLayout)) {
-        await processFabriExcel(arrayBuffer);
+        const fabricationPlan = await processFabriExcel(arrayBuffer, { prepareOnly: true });
+        plans.push({ label: 'Fabricação', plan: fabricationPlan });
         updated = true;
         viniSheets.push('Fabricação');
       }
 
       // 4. Saídas previstas em Componentes
       if (typeof earv_processSaidasPrevistasExcel === 'function') {
-        await earv_processSaidasPrevistasExcel(arrayBuffer);
+        const outputsPlan = await earv_processSaidasPrevistasExcel(arrayBuffer, { prepareOnly: true });
+        plans.push({ label: 'Saídas Previstas', plan: outputsPlan });
         updated = true;
         viniSheets.push('Saídas Previstas');
       }
 
       if (!updated) throw new Error('Nenhum conjunto de dados V.I.N.I. reconhecido.');
+      if (plans.some(({ plan }) => typeof plan?.commit !== 'function')) {
+        throw new Error('Um processador nao forneceu um snapshot validado para gravacao.');
+      }
+
+      // Persistência continua sequencial e pode confirmar parcialmente em falha de rede.
+      // A diferença é que nenhuma escrita começa antes de todas as abas serem válidas.
+      for (const { plan } of plans) await plan.commit();
+
       viniStatus = 'OK';
       const sheetSummary = viniSheets.length ? viniSheets.join(', ') : 'Planilha de Saídas V.I.N.I.';
       const displayVal = viniCount > 0 ? `${viniCount} itens` : 'Atualizado';
