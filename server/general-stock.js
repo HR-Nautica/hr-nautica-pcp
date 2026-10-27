@@ -26,7 +26,7 @@ function record({ id, family, code, description, unit, sourceIdentifier, physica
   const sourceSwitchBlockers = [];
   if (identityStatus !== "confirmed" || !text(code)) sourceSwitchBlockers.push("Identidade do item não reconciliada");
   if (physical === null) sourceSwitchBlockers.push("Saldo físico atual desconhecido");
-  if (!masterItemId) sourceSwitchBlockers.push("Item mestre ainda não vinculado");
+  if (!masterItemId) sourceSwitchBlockers.push("Vínculo ao Item Mestre não verificado nesta consulta");
   return {
     id,
     family,

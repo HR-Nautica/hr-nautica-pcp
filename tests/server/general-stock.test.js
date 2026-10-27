@@ -29,7 +29,7 @@ test("consolida as quatro famílias sem criar disponibilidade fictícia", () => 
   assert.equal(result.items.find(item => item.family === "componentes").authorityMode, "sync");
   assert.equal(result.items.find(item => item.family === "buchas").authorityMode, "erp");
   assert.equal(result.items.find(item => item.family === "brutos").authorityMode, "erp");
-  assert.deepEqual(result.items.find(item => item.family === "helices").sourceSwitchBlockers, ["Item mestre ainda não vinculado"]);
+  assert.deepEqual(result.items.find(item => item.family === "helices").sourceSwitchBlockers, ["Vínculo ao Item Mestre não verificado nesta consulta"]);
   assert.equal(result.items.filter(item => item.family === "brutos").length, 1);
   assert.deepEqual(result.items.find(item => item.code === "CMP-1").bom.map(line => [line.code, line.quantity, line.status]), [["CMP-2", 2, "linked"]]);
   assert.deepEqual(result.items.find(item => item.code === "CMP-2").bom.map(line => [line.code, line.quantity, line.status]), [["MAT-1", 0.5, "linked"]]);

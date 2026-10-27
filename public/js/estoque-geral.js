@@ -59,7 +59,7 @@ function egOpenDetail(id) {
   const modal = eg("modal-estoque-geral");
   eg("estoque-geral-modal-family").textContent = item.familyLabel;
   eg("estoque-geral-modal-title").textContent = item.description;
-  const master = item.masterItemId ? egEscape(item.masterItemId) : "Não vinculado";
+  const master = item.masterItemId ? egEscape(item.masterItemId) : "Não verificado nesta consulta";
   const authority = item.authorityMode === "sync" ? "Sincronizar Estoque" : "Gerenciado pelo ERP";
   const blockers = (item.sourceSwitchBlockers || []).map(reason => `<li>${egEscape(reason)}</li>`).join("");
   const sourceControl = `<section class="estoque-geral-bom"><h3>Gestão do saldo</h3><p>Modo atual: <strong>${authority}</strong>. A troca por item será habilitada quando a identidade, a transferência do saldo e os fluxos de escrita estiverem preparados.</p>${blockers ? `<p>Pendências deste item:</p><ul>${blockers}</ul>` : ""}</section>`;
