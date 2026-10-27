@@ -31,6 +31,7 @@ const applicationScripts = [
   "/js/db.js", "/js/buchas_data.js", "/js/fundicao_catalog_data.js", "/js/tinyApi.js",
   "/js/estoqueArvore.js", "/js/producaoComponentes.js", "/js/vini.js", "/js/analise.js",
   "/js/rastreio-helices.js", "/js/estoque-buchas.js", "/js/catalogo-fundicao.js",
+  "/js/estoque-geral.js",
   "/js/programacao-fundicao.js", "/js/rastreio-fundicao.js", "/js/workspace-ui.js",
   "/js/syncManagerPage.js", "/js/app.js"
 ];

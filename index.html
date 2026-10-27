@@ -81,6 +81,10 @@
       </a>
 
       <div class="sidebar-title">Estoque</div>
+      <a href="#" class="nav-item" data-page="estoque-geral" id="nav-estoque-geral">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
+        Estoque Geral
+      </a>
       <a href="#" class="nav-item" data-page="estoque-buchas" id="nav-estoque-buchas">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         Estoque de Buchas
@@ -920,6 +924,31 @@
             </table>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ──── PAGE: ESTOQUE GERAL ──── -->
+    <div class="page hidden erp-page erp-page--stock" id="page-estoque-geral">
+      <div class="page-header estoque-geral-header"><div><h1 class="page-title">Estoque Geral</h1><p class="page-subtitle">Consulte os produtos cadastrados, seus saldos e a situação do estoque em um único lugar.</p></div><button type="button" class="btn-secondary" id="estoque-geral-refresh">Atualizar dados</button></div>
+      <div class="estoque-geral-kpis" aria-label="Resumo do estoque geral">
+        <div class="estoque-geral-kpi"><span class="estoque-geral-kpi__label">Produtos ativos</span><strong id="estoque-geral-total">—</strong><small>cadastros ativos nas fontes atuais</small></div>
+        <div class="estoque-geral-kpi"><span class="estoque-geral-kpi__label">Saldo físico conhecido</span><strong id="estoque-geral-known">—</strong><small>sem inferir disponibilidade</small></div>
+        <div class="estoque-geral-kpi"><span class="estoque-geral-kpi__label">Estoque físico zero</span><strong id="estoque-geral-zero">—</strong><small>posição confirmada pela fonte</small></div>
+        <div class="estoque-geral-kpi"><span class="estoque-geral-kpi__label">Fonte pendente</span><strong id="estoque-geral-pending">—</strong><small>saldo ainda não configurado</small></div>
+      </div>
+      <div class="estoque-geral-notice" id="estoque-geral-notice">Disponível e reservado só são exibidos quando houver uma fonte oficial configurada. Esta tela não cria nem movimenta estoque.</div>
+      <div class="card estoque-geral-card">
+        <div class="estoque-geral-toolbar">
+          <label class="estoque-geral-search" for="estoque-geral-search"><span class="sr-only">Buscar produtos</span><input type="search" id="estoque-geral-search" class="search-input" placeholder="Buscar por SKU, código, produto ou referência" autocomplete="off" /></label>
+          <label class="catalogo-filter"><span>Família</span><select id="estoque-geral-family"><option value="">Todas</option><option value="helices">Hélices</option><option value="componentes">Componentes</option><option value="buchas">Buchas</option><option value="brutos">Brutos</option></select></label>
+          <label class="catalogo-filter"><span>Situação</span><select id="estoque-geral-product-status"><option value="">Todas</option><option value="active">Cadastrado</option><option value="reconciliation_pending">Reconciliação pendente</option></select></label>
+          <label class="catalogo-filter"><span>Saldo</span><select id="estoque-geral-stock-status"><option value="">Todos</option><option value="physical_known">Físico conhecido</option><option value="zero">Físico zero</option><option value="pending">Não configurado</option></select></label>
+          <label class="catalogo-filter"><span>Origem</span><select id="estoque-geral-source"><option value="">Todas</option><option value="excel">Snapshot Excel</option><option value="erp">Movimentações ERP</option><option value="pending">Fonte pendente</option></select></label>
+          <button type="button" class="btn-ghost" id="estoque-geral-clear">Limpar filtros</button>
+        </div>
+        <div class="estoque-geral-results"><span id="estoque-geral-count">Carregando produtos…</span><span id="estoque-geral-state" role="status" aria-live="polite"></span></div>
+        <div class="table-wrap"><table class="hr-data-table estoque-geral-table" id="estoque-geral-table"><thead><tr><th><button type="button" data-estoque-geral-sort="code">Código</button></th><th><button type="button" data-estoque-geral-sort="description">Produto</button></th><th><button type="button" data-estoque-geral-sort="familyLabel">Categoria</button></th><th><button type="button" data-estoque-geral-sort="physicalStock">Estoque físico</button></th><th>Reservado</th><th>Disponível</th><th>Unidade</th><th>Situação</th><th aria-label="Detalhes"></th></tr></thead><tbody id="estoque-geral-body"><tr><td colspan="9" class="empty-cell">Carregando Estoque Geral…</td></tr></tbody></table></div>
+        <div class="estoque-geral-pagination" id="estoque-geral-pagination"></div>
       </div>
     </div>
 
@@ -2820,6 +2849,8 @@
       </div>
     </div>
   </div>
+
+  <div class="modal-overlay hidden" id="modal-estoque-geral" aria-hidden="true"><div class="modal modal--catalogo estoque-geral-modal" role="dialog" aria-modal="true" aria-labelledby="estoque-geral-modal-title"><div class="modal-header"><div><p class="estoque-geral-modal__eyebrow" id="estoque-geral-modal-family">—</p><h2 class="modal-title" id="estoque-geral-modal-title">Detalhes do produto</h2></div><button type="button" class="btn-icon" id="estoque-geral-modal-close" aria-label="Fechar detalhes">×</button></div><div class="modal-body" id="estoque-geral-modal-body"></div><div class="modal-footer"><button type="button" class="btn-secondary" id="estoque-geral-modal-done">Fechar</button></div></div></div>
 
   <!-- Toast de Notificação Geral -->
   <div class="toast hidden" id="toast">

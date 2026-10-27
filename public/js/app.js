@@ -195,6 +195,9 @@ function navigate(page) {
       if (typeof refreshEstoqueBuchas === 'function') refreshEstoqueBuchas().catch(() => {});
       else if (typeof renderEstoqueBuchas === 'function') renderEstoqueBuchas();
       break;
+    case 'estoque-geral':
+      if (typeof initEstoqueGeral === 'function') initEstoqueGeral();
+      break;
     case 'estoque':     renderEstoque();     break;
     case 'fundicao':    renderFundicao();    break;
     case 'catalogo-fundicao':
