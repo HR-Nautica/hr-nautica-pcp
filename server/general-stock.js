@@ -6,18 +6,30 @@ const FAMILY_LABELS = {
   buchas: "Buchas",
   brutos: "Brutos"
 };
+const TYPE_LABELS = {
+  item_final: "Item final",
+  componente: "Componente",
+  material: "Material",
+  helice_usinada: "Hélice usinada",
+  bucha: "Bucha",
+  helice_bruta: "Hélice bruta / coquilha"
+};
 
 const normalize = (value) => String(value ?? "").trim().toLocaleUpperCase("pt-BR").replace(/\s+/g, " ");
 const text = (value) => String(value ?? "").trim();
-const isInactive = (item) => item?.active === false || ["inactive", "inativo", "desativado"].includes(String(item?.status || "").toLocaleLowerCase("pt-BR"));
+const isInactive = (item) => item?.active === false || item?.ativo === false || ["inactive", "inativo", "desativado"].includes(String(item?.status || "").toLocaleLowerCase("pt-BR"));
 const known = (value) => value === null || value === undefined || value === "" || !Number.isFinite(Number(value)) ? null : Number(value);
 
-function record({ id, family, code, description, unit, sourceIdentifier, physicalStock = null, source, updatedAt = null, identityStatus = "confirmed", masterItemId = null, location = null, catalogStatus = "active" }) {
+function record({ id, family, code, description, unit, sourceIdentifier, physicalStock = null, source, updatedAt = null, identityStatus = "confirmed", masterItemId = null, location = null, catalogStatus = "active", itemTypes = [], catalogSource = null, bom = [] }) {
   const physical = known(physicalStock);
   return {
     id,
     family,
     familyLabel: FAMILY_LABELS[family],
+    itemTypes,
+    typeLabel: itemTypes.map(type => TYPE_LABELS[type]).join(" / ") || "Não classificado",
+    catalogSource,
+    bom,
     code: text(code),
     description: text(description) || "Descrição não informada",
     unit: text(unit) || "—",
@@ -65,26 +77,17 @@ function helices(snapshot, analysisRows) {
       source: sourceRow && !ambiguous ? "Snapshot Excel de hélices" : "Fonte pendente",
       updatedAt: sourceRow?.importedAt || null,
       identityStatus: ambiguous ? "ambiguous" : "confirmed",
-      catalogStatus: "active"
+      catalogStatus: "active",
+      itemTypes: ["helice_usinada", "item_final"],
+      catalogSource: "Catálogo de Hélices",
+      bom: [
+        ["Bruto / coquilha", item.codigoBruto, "brutos"],
+        ["Bucha", item.skuBucha, "buchas"],
+        ["Caixa", item.skuCaixa, "componentes"],
+        ["Tubo de alumínio", item.skuTinyTuboAl, "componentes"],
+        ["Latão", item.skuTinyLatao, "componentes"]
+      ].filter(([, targetCode]) => text(targetCode)).map(([role, targetCode, targetFamily]) => ({ role, code: text(targetCode), family: targetFamily, quantity: null, unit: null }))
     });
-  });
-  const catalogCodes = new Set(catalog.map(item => normalize(item.sku)).filter(Boolean));
-  rows.forEach((item, index) => {
-    const code = normalize(item.sku);
-    if (!code || catalogCodes.has(code)) return;
-    result.push(record({
-      id: `helices:snapshot:${item.sourceRow || index}`,
-      family: "helices",
-      code: item.sku,
-      description: item.produto,
-      unit: "un",
-      sourceIdentifier: item.sku,
-      physicalStock: snapshotDuplicates.has(code) ? null : item.estoqueFisico,
-      source: snapshotDuplicates.has(code) ? "Identidade pendente no snapshot" : "Snapshot Excel de hélices",
-      updatedAt: item.importedAt || null,
-      identityStatus: snapshotDuplicates.has(code) ? "ambiguous" : "catalog_missing",
-      catalogStatus: "reconciliation_pending"
-    }));
   });
   return result;
 }
@@ -94,12 +97,27 @@ function componentes(snapshot) {
   const stockMap = snapshot.data?.hrn_earv_estoque && typeof snapshot.data.hrn_earv_estoque === "object" ? snapshot.data.hrn_earv_estoque : {};
   const meta = snapshot.data?.hrn_earv_meta && typeof snapshot.data.hrn_earv_meta === "object" ? snapshot.data.hrn_earv_meta : {};
   const bySku = new Map();
+  let parent = null;
+  let component = null;
   for (const item of tree) {
     const code = normalize(item.SKU || item.sku);
+    const position = String(item.Posicao ?? item.posicao ?? "").trim().padStart(2, "0");
+    if (position === "00") { parent = code || null; component = null; }
+    if (position === "01") component = code || null;
     if (!code) continue;
     const previous = bySku.get(code);
     const description = text(item.Descricao || item.descricao || item.Produto || item.produto);
-    bySku.set(code, previous ? { item: previous.item, ambiguous: previous.ambiguous || (description && previous.description && description !== previous.description), description: previous.description || description } : { item, ambiguous: false, description });
+    const type = position === "00" ? "item_final" : position === "02" ? "material" : "componente";
+    const current = previous || { item, ambiguous: false, description, types: new Set(), bom: [] };
+    current.ambiguous ||= Boolean(description && current.description && description !== current.description);
+    current.description ||= description;
+    current.types.add(type);
+    bySku.set(code, current);
+    const parentCode = position === "01" ? parent : position === "02" ? component : null;
+    if (parentCode && parentCode !== code) {
+      const parentRow = bySku.get(parentCode);
+      if (parentRow) parentRow.bom.push({ role: position === "01" ? "Componente" : "Material", code, family: "componentes", quantity: known(item.Quantidade), unit: item.unidade || null });
+    }
   }
   return [...bySku.entries()].map(([code, value]) => record({
     id: `componentes:${code}`,
@@ -111,16 +129,23 @@ function componentes(snapshot) {
     physicalStock: value.ambiguous || !Object.prototype.hasOwnProperty.call(stockMap, code) ? null : stockMap[code],
     source: value.ambiguous ? "Identidade pendente na árvore" : Object.prototype.hasOwnProperty.call(stockMap, code) ? "Snapshot Excel de componentes" : "Fonte pendente",
     updatedAt: meta.updatedAt || null,
-    identityStatus: value.ambiguous ? "ambiguous" : "confirmed"
+    identityStatus: value.ambiguous ? "ambiguous" : "confirmed",
+    itemTypes: [...value.types],
+    catalogSource: "Estoque de Componentes / árvore",
+    bom: value.bom
   }));
 }
 
 function buchas(readModel) {
   const catalog = Array.isArray(readModel?.catalog) ? readModel.catalog.filter(item => !isInactive(item)) : [];
-  const stockBySku = new Map((Array.isArray(readModel?.items) ? readModel.items : []).map(item => [normalize(item.sku), item]));
+  const stockRows = Array.isArray(readModel?.items) ? readModel.items : [];
+  const catalogDuplicates = duplicateCodes(catalog, item => item.sku);
+  const stockDuplicates = duplicateCodes(stockRows, item => item.sku);
+  const stockBySku = new Map(stockRows.map(item => [normalize(item.sku), item]));
   return catalog.map((item, index) => {
     const code = text(item.sku || item.codigo);
     const stock = stockBySku.get(normalize(code));
+    const ambiguous = !code || catalogDuplicates.has(normalize(code)) || stockDuplicates.has(normalize(code));
     return record({
       id: `buchas:${text(item.id || code || index)}`,
       family: "buchas",
@@ -128,56 +153,70 @@ function buchas(readModel) {
       description: item.descricao || item.description || item.nome,
       unit: item.unidade || "un",
       sourceIdentifier: code,
-      physicalStock: stock?.estoqueFinal,
-      source: stock ? "Movimentações internas do ERP" : "Fonte pendente",
+      physicalStock: ambiguous ? null : stock?.estoqueFinal,
+      source: ambiguous ? "Identidade pendente em Buchas" : stock ? "Movimentações internas do ERP" : "Fonte pendente",
       updatedAt: null,
-      identityStatus: code ? "confirmed" : "ambiguous"
+      identityStatus: ambiguous ? "ambiguous" : "confirmed",
+      itemTypes: ["bucha", "componente"],
+      catalogSource: "Catálogo de Buchas"
     });
   });
 }
 
 function brutos(snapshot, rawStock) {
   const catalog = Array.isArray(snapshot.data?.hrn_fundicao_catalog) ? snapshot.data.hrn_fundicao_catalog.filter(item => !isInactive(item)) : [];
+  const coquilhas = Array.isArray(snapshot.data?.hrn_coquilhas_catalog) ? snapshot.data.hrn_coquilhas_catalog : [];
   const rawItems = Array.isArray(rawStock?.items) ? rawStock.items : [];
+  const rawDuplicates = duplicateCodes(rawItems, item => item.rawCode);
   const rawByCode = new Map(rawItems.map(item => [normalize(item.rawCode), item]));
-  const catalogCodes = new Set();
-  const result = catalog.map((item, index) => {
+  const catalogByCode = new Map();
+  for (const item of catalog) {
     const code = text(item.coquilha || item.codigo || item.sku);
     const normalized = normalize(code);
-    const stock = rawByCode.get(normalized);
-    catalogCodes.add(normalized);
+    if (normalized && !catalogByCode.has(normalized)) catalogByCode.set(normalized, { code, item });
+  }
+  for (const value of coquilhas) {
+    const code = text(typeof value === "string" ? value : value?.coquilha || value?.codigo);
+    if (code && !catalogByCode.has(normalize(code))) catalogByCode.set(normalize(code), { code, item: {} });
+  }
+  const models = Array.isArray(snapshot.data?.hrn_modelos) ? snapshot.data.hrn_modelos.filter(item => !isInactive(item)) : [];
+  for (const model of models) {
+    const code = text(model.codigoBruto);
+    if (code && !catalogByCode.has(normalize(code))) catalogByCode.set(normalize(code), { code, item: {}, linkedFromModel: true });
+  }
+  return [...catalogByCode.values()].map(({ code, item, linkedFromModel }) => {
+    const stock = rawByCode.get(normalize(code));
+    const ambiguous = rawDuplicates.has(normalize(code));
     return record({
-      id: `brutos:catalog:${text(item.id || code || index)}`,
+      id: `brutos:catalog:${normalize(code)}`,
       family: "brutos",
       code,
-      description: item.descricao || item.description || item.produto || code,
+      description: `Hélice bruta / ${code}`,
       unit: item.unidade || "un",
       sourceIdentifier: code,
-      physicalStock: stock ? stock.quantity : null,
-      source: stock ? "Movimentações internas do ERP" : "Fonte pendente",
+      physicalStock: ambiguous ? null : stock ? stock.quantity : null,
+      source: ambiguous ? "Identidade pendente em Brutos" : stock ? "Movimentações internas do ERP" : "Fonte pendente",
       updatedAt: stock?.updatedAt || null,
       location: stock?.location || null,
-      identityStatus: normalized ? "confirmed" : "ambiguous"
+      identityStatus: ambiguous ? "ambiguous" : "confirmed",
+      itemTypes: ["helice_bruta", "componente"],
+      catalogSource: linkedFromModel ? "Catálogo de Brutos / vínculo em Hélices" : "Catálogo de Brutos"
     });
   });
-  rawItems.forEach((item, index) => {
-    const code = normalize(item.rawCode);
-    if (!code || catalogCodes.has(code)) return;
-    result.push(record({
-      id: `brutos:ledger:${text(item.id || code || index)}`,
-      family: "brutos",
-      code: item.rawCode,
-      description: item.rawCode,
-      unit: "un",
-      sourceIdentifier: item.rawCode,
-      physicalStock: item.quantity,
-      source: "Movimentações internas do ERP",
-      updatedAt: item.updatedAt || null,
-      identityStatus: "catalog_missing",
-      catalogStatus: "reconciliation_pending"
-    }));
-  });
-  return result;
+}
+
+function resolveBom(items) {
+  const byCode = new Map();
+  for (const item of items) {
+    const key = `${item.family}:${normalize(item.code)}`;
+    byCode.set(key, [...(byCode.get(key) || []), item]);
+  }
+  for (const item of items) {
+    item.bom = item.bom.map(line => {
+      const matches = byCode.get(`${line.family}:${normalize(line.code)}`) || [];
+      return { ...line, targetId: matches.length === 1 && matches[0].identityStatus === "confirmed" ? matches[0].id : null, status: matches.length === 0 ? "not_cataloged" : matches.length === 1 && matches[0].identityStatus === "confirmed" ? "linked" : "ambiguous" };
+    });
+  }
 }
 
 export function buildGeneralStock({ snapshot = { data: {} }, analysisRows = [], buchasStock = {}, rawStock = {} } = {}) {
@@ -187,7 +226,15 @@ export function buildGeneralStock({ snapshot = { data: {} }, analysisRows = [], 
     ...buchas(buchasStock),
     ...brutos(snapshot, rawStock)
   ].sort((a, b) => a.familyLabel.localeCompare(b.familyLabel, "pt-BR") || a.code.localeCompare(b.code, "pt-BR"));
+  resolveBom(items);
   const active = items.filter(item => item.catalogStatus === "active");
+  const catalogCodes = Object.fromEntries(Object.keys(FAMILY_LABELS).map(family => [family, new Set(items.filter(item => item.family === family).map(item => normalize(item.code)))]));
+  const unmatchedSourceRows = {
+    helices: (Array.isArray(analysisRows) ? analysisRows : []).filter(row => !catalogCodes.helices.has(normalize(row.sku))).length,
+    componentes: Object.keys(snapshot.data?.hrn_earv_estoque || {}).filter(code => !catalogCodes.componentes.has(normalize(code))).length,
+    buchas: (Array.isArray(buchasStock?.items) ? buchasStock.items : []).filter(row => !catalogCodes.buchas.has(normalize(row.sku))).length,
+    brutos: (Array.isArray(rawStock?.items) ? rawStock.items : []).filter(row => !catalogCodes.brutos.has(normalize(row.rawCode))).length
+  };
   return {
     items,
     summary: {
@@ -195,7 +242,8 @@ export function buildGeneralStock({ snapshot = { data: {} }, analysisRows = [], 
       physicalKnown: active.filter(item => item.physicalStock !== null).length,
       physicalZero: active.filter(item => item.physicalStock === 0).length,
       balancePending: active.filter(item => item.physicalStock === null).length,
-      availableConfigured: active.filter(item => item.availableStock !== null).length
+      availableConfigured: active.filter(item => item.availableStock !== null).length,
+      unmatchedSourceRows
     },
     sources: {
       helices: "Snapshot Excel de hélices",
