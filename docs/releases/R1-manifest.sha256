@@ -1,6 +1,6 @@
-# Source commit: 498cfc99ce6c4bdac5205a35a2b3a2be5d00357e
-# Source tree: 74ce4d46a1834d8b4d5e86a4f716a2e3205f62a9
-# SHA-256 dos blobs Git versionados antes da adicao deste manifesto
+# Source commit: e0ab1d186dddfb0f4577271830f6a1f880b48d81
+# Source tree: dfd4c525dfc82004a28c2155fef15af0b8db730e
+# SHA-256 dos blobs Git versionados, exceto este manifesto
 4ce93b813b12bedc43ea869ff7827daa4eb7d1560e907b1c3dbf2822e094fa70  .agents/agents/hr-erp-architect.md
 dc81d38e0d45034a1b792af3690a82df80d3ba3b30c0d70c8625924ea7bc75f5  .agents/agents/hr-production-engineer.md
 b2b13edaaaa7efc01baa719c5f345cd2a34b0ab3fc5cb5364dcc0687efd9bf10  .agents/agents/hr-quality-guardian.md
@@ -53,7 +53,7 @@ b5e1ce994859c9c888edefc800169e165b8e53b8cf501754019fc80f440a3fe7  docs/hr-erp-2.
 f010c8313f2bc62bc092d38d76fa193dccbab73e223e78a2bdf46753544ffdf9  docs/hr-erp-2.0-fase-1b-decisoes.md
 e8a43a62373f414d6a287682fcc8a34ab0135b2cdd3c9ea81d3f73edf89db801  docs/hr-open-decisions.md
 6477c090055c20eb065d07dcaf071000404dd29358d8bd3b19499fb992d48cd6  docs/p0-state-write-protection.md
-bcdd9283390bd90233bf959352a2e748b6186098401fbe2a7ecc028c9783eb37  docs/releases/R1-primeira-release-visual.md
+1f986c55b010fee83cb2f05872cc8e5b294339afcf14e4c6c12641485f81282a  docs/releases/R1-primeira-release-visual.md
 99509345e1d8863cca40f8785315b6df9d04286a7a8104df8c7809ba7f47d0f9  docs/vini-planejamento.md
 1d5bb3a5a06f37847f76c198be6ed9716a26ea2d844f4e65b9bfceefbbd46d96  index.html
 481e761076e9993839f60d4f762cec79a2c2273c231046499ddcb8f9730e38c5  package-lock.json
