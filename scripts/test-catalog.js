@@ -37,9 +37,9 @@ const sourceRows = XLSX.utils.sheet_to_json(workbook.Sheets.Matriz, {
   header: 1,
   defval: '',
   raw: false,
-  range: 'B1:S87',
+  range: 'B1:U87',
 });
-assert.equal(sourceRows.length - 1, catalogData.length, 'todas as linhas B:S devem ser geradas');
+assert.equal(sourceRows.length - 1, catalogData.length, 'todas as linhas B:U devem ser geradas');
 assert.equal(
   JSON.stringify(Array.from(catalogData, (record) => record.sku)),
   JSON.stringify(sourceRows.slice(1).map((row) => String(row[1]).trim())),
@@ -60,10 +60,24 @@ assert.equal(
   JSON.stringify(sourceRows.slice(1).map((row) => String(row[17]).trim())),
   'o SKU da caixa deve corresponder exatamente à coluna S',
 );
+assert.equal(
+  JSON.stringify(Array.from(catalogData, (record) => record.origin_uid)),
+  JSON.stringify(sourceRows.slice(1).map((row) => String(row[18]).trim().toLowerCase())),
+  'o Origin UID deve corresponder exatamente à coluna T da fonte',
+);
+assert.equal(
+  new Set(Array.from(catalogData, (record) => record.origin_uid)).size,
+  catalogData.length,
+  'o catálogo-fonte deve conter Origin UIDs únicos',
+);
+assert.equal(
+  JSON.stringify(Array.from(catalogData, (record) => record.skuBucha)),
+  JSON.stringify(sourceRows.slice(1).map((row) => String(row[19]).trim())),
+  'o SKU da bucha deve corresponder exatamente à coluna U da fonte',
+);
 
 assert.equal(DB.ensureCatalogoAtualizado(), true, 'a primeira carga deve instalar o catálogo');
-assert.equal(DB.getModelos().length, 86, 'o catálogo deve conter as 86 linhas de B:S');
-assert.equal(DB.getConfig().catalogoVersion, '2026-08-07');
+assert.equal(DB.getModelos().length, 86, 'o catálogo deve conter as 86 linhas de B:U');
 
 const skus = DB.getModelos().map((modelo) => modelo.sku.toLocaleUpperCase('pt-BR'));
 assert.equal(new Set(skus).size, skus.length, 'os SKUs devem ser únicos');

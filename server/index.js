@@ -13,10 +13,15 @@ import { sanitizeDatabaseError } from "./postgres-config.js";
 import { validateStrictDatabase } from "./strict-database.js";
 import { createProxyAuthentication, validateProxySecret } from "./proxy-auth.js";
 import analysisTempRouter from "./routes/analysis-temp.js";
+import buchasRouter from "./routes/buchas.js";
 import fundicaoOpsRouter from "./routes/fundicao-ops.js";
 import heliceOpsRouter from "./routes/helice-ops.js";
 import integrationsRouter from "./routes/integrations.js";
+import inventoryRouter from "./routes/inventory.js";
+import masterItemsRouter from "./routes/master-items.js";
+import catalogLinksRouter from "./routes/catalog-links.js";
 import productionOpsRouter from "./routes/production-ops.js";
+import productionTrackingRouter from "./routes/production-tracking.js";
 import rawStockRouter from "./routes/raw-stock.js";
 import stateRouter from "./routes/state.js";
 
@@ -60,7 +65,12 @@ app.use("/api/analysis-temp", analysisTempRouter);
 app.use("/api/helice-ops", heliceOpsRouter);
 app.use("/api/fundicao-ops", fundicaoOpsRouter);
 app.use("/api/production-ops", productionOpsRouter);
+app.use("/api/production-tracking", productionTrackingRouter);
 app.use("/api/raw-stock", rawStockRouter);
+app.use("/api/inventory", inventoryRouter);
+app.use("/api/master-items", masterItemsRouter);
+app.use("/api/catalog-links", catalogLinksRouter);
+app.use("/api/buchas", buchasRouter);
 app.use("/api", integrationsRouter);
 app.use(express.static(dist, {
   etag: true,

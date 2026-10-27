@@ -35,7 +35,8 @@ const ANALISE_STATE = {
   sortColumn: 'prioridadeGeral',
   sortDirection: 'asc',
   productionSuggestions: safeGetJSON('hrn_analise_op_sugerida', {}),
-  productionEntries: {}
+  productionEntries: {},
+  trackingRetryEvents: new Map()
 };
 
 // Formata cobertura em meses (comportamento similar ao vini.js)
@@ -70,8 +71,13 @@ function getAnaliseItemStatus(item, targetCoverage) {
   }
 }
 
-// Sincroniza as peças em Rastreio de Operações a partir da aba correspondente da Planilha
-function syncRastreioPecas(wb) {
+// Guard defensivo para qualquer referência antiga: a escrita local de rastreio não tem fallback.
+function legacyTrackingWriteForbidden() {
+  throw new Error('Escrita local de rastreio removida; use /api/production-tracking/reconcile.');
+}
+
+// Implementação legada removida em P0.3B: o rastreio usa apenas a reconciliação transacional abaixo.
+function legacySyncRastreioPecasRemoved(wb) {
   try {
     // 1. Encontra a aba de Rastreio de Peças
     let sheetName = wb.SheetNames.find(name => {
@@ -186,7 +192,7 @@ function syncRastreioPecas(wb) {
           if (op && op.etapa !== etapa) {
             op.etapa = etapa;
             opsChanged = true;
-            DB.addAtividade(`OP ${op.numero} movida para ${etapa} (Sincronizado via Planilha)`, 'teal');
+            legacyTrackingWriteForbidden();
           }
         }
       } else {
@@ -196,7 +202,7 @@ function syncRastreioPecas(wb) {
         let opNumero = opMap[mapKey]?.numero;
         
         if (!opId) {
-          const novaOp = DB.addOp({
+          const novaOp = legacyTrackingWriteForbidden({
             modelo: nome,
             qty: qty,
             cliente: 'Estoque Interno',
@@ -236,18 +242,104 @@ function syncRastreioPecas(wb) {
     });
     
     if (hasChanges) {
-      DB.savePecas(pecasLocais);
+      legacyTrackingWriteForbidden(pecasLocais);
     }
     if (opsChanged) {
-      DB.saveOps(opsLocais);
+      legacyTrackingWriteForbidden(opsLocais);
     }
     
     if (pecasMovidas > 0 || pecasAdicionadas > 0) {
-      DB.addAtividade(`Sincronização de Rastreio: ${pecasMovidas} peças movidas, ${pecasAdicionadas} novas peças criadas.`, 'teal');
+      legacyTrackingWriteForbidden();
     }
     
   } catch (err) {
     console.error('[RASTREIO] Erro ao sincronizar peças da Planilha:', err);
+  }
+}
+
+function trackingHeaderValue(row, names) {
+  return getExcelRowValue(row, names, '');
+}
+
+function trackingOperationForLocation(loc) {
+  const value = String(loc || '').toLowerCase().replace(/\r?\n/g, ' ').trim();
+  if (value.includes('vulcaniz')) return '02';
+  if (value.includes('polimento') || value.includes('estoque bruto') || value.includes('codan)')) return '03';
+  if (value.includes('usinagem') || value.includes('estoque usinado')) return '04';
+  if (value.includes('pintura')) return '05';
+  if (value.includes('embuchamento')) return '06';
+  if (value.includes('grava') || value.includes('entrada')) return '07';
+  return '01';
+}
+
+function trackingEventKey(fingerprint) {
+  const existing = ANALISE_STATE.trackingRetryEvents.get(fingerprint);
+  if (existing) return existing;
+  const random = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const eventKey = `TRACKING-RECONCILE-${random}`;
+  ANALISE_STATE.trackingRetryEvents.set(fingerprint, eventKey);
+  return eventKey;
+}
+
+function trackingExpectedVersions() {
+  const version = key => typeof RemoteStorage.serverVersion === 'function'
+    ? RemoteStorage.serverVersion(key)
+    : Number(RemoteStorage.versions?.get?.(key) || 0);
+  return { hrn_ops: version('hrn_ops'), hrn_pecas: version('hrn_pecas'), hrn_tracking_reconcile_events: version('hrn_tracking_reconcile_events') };
+}
+
+function applyTrackingConfirmation(result) {
+  if (!result?.versions || typeof RemoteStorage.applyServerState !== 'function') return;
+  RemoteStorage.applyServerState('hrn_ops', result.operations || [], result.versions.hrn_ops, result.revision);
+  RemoteStorage.applyServerState('hrn_pecas', result.pieces || [], result.versions.hrn_pecas, result.revision);
+  RemoteStorage.versions?.set?.('hrn_tracking_reconcile_events', Number(result.versions.hrn_tracking_reconcile_events) || 0);
+}
+
+async function syncRastreioPecas(wb) {
+  const sheetName = wb.SheetNames.find(name => {
+    const n = name.toLowerCase();
+    return n.includes('rastreio') || n.includes('producao') || n.includes('produção') || n.includes('peças') || n.includes('pecas') || n.includes('fluxo') || n.includes('lote');
+  });
+  if (!sheetName) return { status: 'skipped', reason: 'Nenhuma aba de rastreio encontrada.' };
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '' });
+  if (!rows.length) return { status: 'skipped', reason: 'Aba de rastreio vazia.' };
+  const importId = `tracking-import-${Date.now()}`;
+  const records = rows.map((row, index) => {
+    const sourceId = String(trackingHeaderValue(row, ['ID Lote', 'Id Lote', 'Identificador do Lote', 'Identificador', 'Lote', 'Número do Lote', 'Numero do Lote', 'Código do Lote', 'Codigo do Lote'])).trim();
+    const modelo = String(trackingHeaderValue(row, ['Descrição', 'Descricao', 'Modelo', 'Produto', 'Nome'])).trim();
+    const sku = String(trackingHeaderValue(row, ['Código (SKU)', 'Codigo (SKU)', 'SKU', 'Código', 'Codigo'])).trim().toUpperCase();
+    const quantidade = Number.parseInt(trackingHeaderValue(row, ['Acompanhamento de Peças (qty)', 'Acompanhamento de Pecas (qty)', 'qty', 'Qtd', 'Quantidade']), 10);
+    if (!modelo || !sku || !Number.isInteger(quantidade) || quantidade <= 0) return null;
+    if (!sourceId) throw new Error(`Rastreio: linha ${index + 2} sem identificador estável de lote. Use uma coluna ID/Lote; a linha da planilha não é identidade.`);
+    const localizacao = String(trackingHeaderValue(row, ['Localização', 'Localizacao', 'Etapa', 'Operação', 'Operacao'])).trim();
+    return { sourceId, externalLotId: sourceId, modelo, sku, codigoBruto: String(trackingHeaderValue(row, ['Bruto', 'Bruto/Coquilha'])).trim(), quantidade, localizacao, operacao: trackingOperationForLocation(localizacao), sourceRef: `${sheetName}!${index + 2}`, importId };
+  }).filter(Boolean);
+  if (!records.length) return { status: 'skipped', reason: 'Nenhum lote válido na aba de rastreio.' };
+  const ids = new Set();
+  for (const record of records) {
+    if (ids.has(record.sourceId)) throw new Error(`Rastreio: identificador de lote duplicado na importação: ${record.sourceId}.`);
+    ids.add(record.sourceId);
+  }
+  const fingerprint = JSON.stringify(records.map(({ importId: _importId, sourceRef: _sourceRef, ...record }) => record));
+  const eventKey = trackingEventKey(fingerprint);
+  try {
+    const response = await fetch('/api/production-tracking/reconcile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
+      body: JSON.stringify({ data: { eventKey, records }, expectedVersions: trackingExpectedVersions() })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 409 && typeof RemoteStorage.load === 'function') await RemoteStorage.load(false);
+      const error = new Error(result.error || `Falha no rastreio (HTTP ${response.status}).`);
+      error.status = response.status;
+      throw error;
+    }
+    applyTrackingConfirmation(result);
+    ANALISE_STATE.trackingRetryEvents.delete(fingerprint);
+    return { status: 'confirmed', eventKey, result };
+  } catch (error) {
+    return { status: 'failed', eventKey, error: error.message, conflict: error.status === 409 };
   }
 }
 
@@ -549,10 +641,14 @@ async function processAnaliseExcel(arrayBuffer) {
     ANALISE_STATE.coberturaData = parsedData;
     ANALISE_STATE.loaded = true;
 
-    // Sincroniza também as peças em Rastreio (se houver a aba correspondente no mesmo arquivo)
-    syncRastreioPecas(wb);
-
-    return syncResult;
+    // Cobertura já está confirmada; falha de rastreio é resultado parcial, nunca rollback fictício.
+    let tracking;
+    try {
+      tracking = await syncRastreioPecas(wb);
+    } catch (trackingError) {
+      tracking = { status: 'failed', error: trackingError.message, conflict: false };
+    }
+    return { ...syncResult, coverage: { status: 'confirmed', result: syncResult }, tracking };
   } catch (err) {
     console.error('[ANALISE] Erro ao processar planilha de cobertura:', err);
     throw err;

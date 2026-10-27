@@ -8,9 +8,17 @@ const network = `hrn-migration-test-${suffix}`;
 const databaseContainer = `hrn-postgres17-test-${suffix}`;
 const repository = path.resolve(".");
 const password = `test-${crypto.randomBytes(16).toString("hex")}`;
+const proxySecret = crypto.randomBytes(32).toString("hex");
 const fingerprintMode = process.argv.includes("--fingerprint");
 const baselineMode = process.argv.includes("--baseline");
 const strictApiMode = process.argv.includes("--strict-api");
+const itemMasterMode = process.argv.includes("--item-master");
+const itemMasterHttpMode = process.argv.includes("--item-master-http");
+const inventoryMode = process.argv.includes("--inventory");
+const buchasMode = process.argv.includes("--buchas");
+const trackingMode = process.argv.includes("--tracking");
+const helicesMasterLinksMode = process.argv.includes("--helices-master-links");
+const helicesMasterLinksHttpMode = process.argv.includes("--helices-master-links-http");
 
 function docker(args, options = {}) {
   const result = spawnSync("docker", args, { encoding: "utf8", stdio: options.capture ? "pipe" : "inherit" });
@@ -51,7 +59,21 @@ try {
     "--workdir", "/work",
     "--env", `MIGRATIONS_TEST_DATABASE_URL=postgresql://migration_test:${password}@${databaseContainer}:5432/migration_test`,
     "node:22-bookworm-slim",
-    "sh", "-lc", fingerprintMode
+    "sh", "-lc", helicesMasterLinksHttpMode
+      ? `cp -R /source/server /source/scripts /source/tests /source/database /source/dist . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL="$MIGRATIONS_TEST_DATABASE_URL" DATABASE_SSL_MODE=disable PROXY_SHARED_SECRET=${proxySecret} MASTER_ITEM_TEST_USER=master_admin MASTER_ITEM_TEST_PASSWORD=Master-Test-Only-123 node --test tests/integration/helices-master-links-http-postgres17.integration.test.js`
+      : helicesMasterLinksMode
+      ? "cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL=\"$MIGRATIONS_TEST_DATABASE_URL\" DATABASE_SSL_MODE=disable node --test tests/integration/helices-master-links-postgres17.integration.test.js"
+      : itemMasterHttpMode
+      ? `cp -R /source/server /source/scripts /source/tests /source/database /source/dist . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL="$MIGRATIONS_TEST_DATABASE_URL" DATABASE_SSL_MODE=disable PROXY_SHARED_SECRET=${proxySecret} MASTER_ITEM_TEST_USER=master_admin MASTER_ITEM_TEST_PASSWORD=Master-Test-Only-123 node --test tests/integration/master-item-http-postgres17.integration.test.js`
+      : itemMasterMode
+      ? "cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL=\"$MIGRATIONS_TEST_DATABASE_URL\" DATABASE_SSL_MODE=disable node --test tests/integration/item-master-postgres17.integration.test.js && DATABASE_STRICT_MODE=true DATABASE_URL=\"$MIGRATIONS_TEST_DATABASE_URL\" DATABASE_SSL_MODE=disable node --test tests/integration/master-item-events-postgres17.integration.test.js && DATABASE_STRICT_MODE=true DATABASE_URL=\"$MIGRATIONS_TEST_DATABASE_URL\" DATABASE_SSL_MODE=disable node --test tests/integration/master-item-service-postgres17.integration.test.js"
+      : trackingMode
+      ? `cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL="$MIGRATIONS_TEST_DATABASE_URL" DATABASE_SSL_MODE=disable PROXY_SHARED_SECRET=${proxySecret} INVENTORY_TEST_USER=tracking_test INVENTORY_TEST_PASSWORD=Tracking-Test-Only-123 node --test tests/integration/production-tracking-postgres17.integration.test.js`
+      : buchasMode
+      ? `cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL="$MIGRATIONS_TEST_DATABASE_URL" DATABASE_SSL_MODE=disable PROXY_SHARED_SECRET=${proxySecret} INVENTORY_TEST_USER=buchas_test INVENTORY_TEST_PASSWORD=Buchas-Test-Only-123 node --test tests/integration/buchas-postgres17.integration.test.js`
+      : inventoryMode
+      ? `cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL=\"$MIGRATIONS_TEST_DATABASE_URL\" DATABASE_SSL_MODE=disable PROXY_SHARED_SECRET=${proxySecret} INVENTORY_TEST_USER=inventory_test INVENTORY_TEST_PASSWORD=Inventory-Test-Only-123 node --test tests/integration/inventory-postgres17.integration.test.js`
+      : fingerprintMode
       ? "cp /source/package.json /source/package-lock.json . && mkdir -p scripts/db tests/migrations database/migrations && cp /source/scripts/db/*.js scripts/db/ && cp /source/tests/migrations/print-baseline-fingerprint.js tests/migrations/ && cp /source/database/migrations/V001__baseline.sql database/migrations/ && npm ci --ignore-scripts --no-audit --no-fund && node tests/migrations/print-baseline-fingerprint.js"
       : baselineMode
         ? "cp /source/package.json /source/package-lock.json . && mkdir -p scripts/db tests/migrations database/migrations database && cp /source/scripts/db/*.js scripts/db/ && cp /source/tests/migrations/baseline-postgres17.integration.test.js tests/migrations/ && cp /source/database/migrations/*.sql database/migrations/ && cp /source/database/baseline-structure.json database/ && npm ci --ignore-scripts --no-audit --no-fund && node --test tests/migrations/baseline-postgres17.integration.test.js"

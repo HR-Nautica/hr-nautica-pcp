@@ -148,13 +148,9 @@ async function bootstrap() {
       console.warn("[BOOT] RemoteStorage init alert:", error);
     }
     await Promise.all(scriptPromises);
+    // A extensão da ficha depende da função global instalada por app.js.
+    await loadScript("/js/helices-master-identity.js");
     if (RemoteStorage.length === 0 && typeof DB !== "undefined") DB.seed();
-    if (typeof DB !== "undefined") {
-      DB.ensureCatalogoAtualizado();
-      DB.ensureBuchasAtualizadas();
-      DB.ensureBuchasOpsSeed();
-      DB.ensureBuchasEntradasSeed();
-    }
     RemoteStorage.currentUser = window.PCP_CURRENT_USER;
     document.getElementById("login-overlay")?.classList.add("hidden");
     document.dispatchEvent(new Event("DOMContentLoaded"));

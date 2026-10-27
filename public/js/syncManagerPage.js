@@ -126,8 +126,14 @@
         if (typeof processAnaliseExcel === 'function') {
           const syncRes = await processAnaliseExcel(arrayBuffer);
           analiseCount = (syncRes && syncRes.count) || (window.ANALISE_STATE?.coberturaData?.length) || 0;
-          analiseStatus = 'OK';
-          updateCardStatus('sync-badge-analise', 'sync-val-analise', 'sync-sub-analise', 'success', `${analiseCount} itens`, 'Estoques usinado/bruto reescritos com sucesso');
+          const tracking = syncRes?.tracking;
+          const trackingFailed = tracking?.status === 'failed';
+          analiseStatus = trackingFailed ? 'PARTIAL' : 'OK';
+          updateCardStatus(
+            'sync-badge-analise', 'sync-val-analise', 'sync-sub-analise',
+            trackingFailed ? 'error' : 'success', `${analiseCount} itens`,
+            trackingFailed ? `Cobertura confirmada; rastreio pendente: ${tracking.error}` : 'Cobertura confirmada; rastreio conciliado quando presente'
+          );
         }
       } catch (err) {
         console.warn('[SyncCentral] Erro na Análise de Produção:', err.message);
@@ -160,7 +166,7 @@
 
       const now = new Date();
       const dateStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-      const overallStatus = (analiseStatus === 'OK' || compStatus === 'OK') ? 'OK' : 'ERROR';
+      const overallStatus = analiseStatus === 'PARTIAL' ? 'PARTIAL' : ((analiseStatus === 'OK' || compStatus === 'OK') ? 'OK' : 'ERROR');
 
       saveLastStockSyncLog({
         date: dateStr,
@@ -173,7 +179,7 @@
       });
 
       if (typeof showToast === 'function') {
-        showToast(`Estoques sincronizados e reescritos com sucesso!`, 'success');
+        showToast(overallStatus === 'PARTIAL' ? 'Cobertura confirmada, mas o rastreio não foi conciliado. Consulte o cartão de Análise.' : 'Sincronização concluída.', overallStatus === 'PARTIAL' ? 'warning' : 'success');
       }
     } catch (err) {
       console.error('[SyncCentral] Erro crítico ao processar planilha de estoque:', err);

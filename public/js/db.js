@@ -265,7 +265,48 @@ const DB = {
 
   // ═══ MODELOS ════════════════════════════
   getModelos()      { return this._get(this.KEYS.modelos); },
-  saveModelos(list) { this._set(this.KEYS.modelos, list); },
+  isOriginUid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+  },
+
+  normalizeOriginUid(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (!this.isOriginUid(normalized)) throw new Error('Origin UID da hélice é inválido.');
+    return normalized;
+  },
+
+  createOriginUid() {
+    if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID().toLowerCase();
+    }
+    const bytes = new Uint8Array(16);
+    if (globalThis.crypto && typeof globalThis.crypto.getRandomValues === 'function') {
+      globalThis.crypto.getRandomValues(bytes);
+    } else {
+      for (let index = 0; index < bytes.length; index += 1) bytes[index] = Math.floor(Math.random() * 256);
+    }
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  },
+
+  validateModelosOriginUids(list) {
+    const seen = new Set();
+    for (const modelo of list) {
+      const originUid = String(modelo?.origin_uid || '').trim().toLowerCase();
+      if (!originUid) continue; // Registros legados continuam legíveis sem atribuição automática.
+      if (!this.isOriginUid(originUid)) throw new Error('Origin UID da hélice é inválido.');
+      if (seen.has(originUid)) throw new Error(`Origin UID duplicado no catálogo: ${originUid}.`);
+      seen.add(originUid);
+    }
+  },
+
+  saveModelos(list) {
+    if (!Array.isArray(list)) throw new Error('O catálogo de hélices deve ser uma lista.');
+    this.validateModelosOriginUids(list);
+    this._set(this.KEYS.modelos, list);
+  },
 
   normalizeModelo(data, existing = {}) {
     const value = (field, fallback = '') => {
@@ -276,10 +317,20 @@ const DB = {
     const diametroTuboAnel = value('diametroTuboAnel', data.tuboAnel ?? existing.tuboAnel ?? '');
     const descricaoCaixa = value('descricaoCaixa', data.caixa ?? existing.caixa ?? '');
     const now = this._now();
+    const hasExistingRecord = Boolean(existing && existing.id);
+    const existingOriginUid = String(existing.origin_uid || '').trim().toLowerCase();
+    const hasProvidedOriginUid = Object.prototype.hasOwnProperty.call(data, 'origin_uid')
+      && String(data.origin_uid || '').trim() !== '';
+    const providedOriginUid = hasProvidedOriginUid ? this.normalizeOriginUid(data.origin_uid) : '';
+    if (existingOriginUid && hasProvidedOriginUid && existingOriginUid !== providedOriginUid) {
+      throw new Error('Origin UID da hélice é imutável.');
+    }
+    const origin_uid = existingOriginUid || (hasExistingRecord ? providedOriginUid : (providedOriginUid || this.createOriginUid()));
 
     return {
       ...existing,
       id: existing.id || this._id(),
+      ...(origin_uid ? { origin_uid } : {}),
       nome: value('nome'),
       sku: value('sku'),
       codigoBruto: value('codigoBruto'),
@@ -326,7 +377,13 @@ const DB = {
   addModelo(data) {
     const modelos = this.getModelos();
     this.validateModeloUnique(data);
-    const m = this.normalizeModelo(data);
+    let m = this.normalizeModelo(data);
+    if (!Object.prototype.hasOwnProperty.call(data, 'origin_uid')) {
+      while (modelos.some((modelo) => modelo.origin_uid === m.origin_uid)) {
+        m = { ...m, origin_uid: this.createOriginUid() };
+      }
+    }
+    this.validateModelosOriginUids([...modelos, m]);
     modelos.push(m);
     this.saveModelos(modelos);
     this.addAtividade(`Novo modelo cadastrado: ${m.nome}`, 'blue');
@@ -334,10 +391,12 @@ const DB = {
   },
 
   updateModelo(id, data) {
-    this.validateModeloUnique(data, id);
-    const list = this.getModelos().map(m =>
-      m.id === id ? this.normalizeModelo(data, m) : m
-    );
+    const modelos = this.getModelos();
+    const existing = modelos.find((modelo) => modelo.id === id);
+    if (!existing) return null;
+    const updated = this.normalizeModelo(data, existing);
+    this.validateModeloUnique(updated, id);
+    const list = modelos.map((modelo) => modelo.id === id ? updated : modelo);
     this.saveModelos(list);
     return list.find(m => m.id === id);
   },
@@ -355,23 +414,17 @@ const DB = {
     if (typeof CATALOGO_DATA === 'undefined' || !Array.isArray(CATALOGO_DATA)) return false;
     if (typeof CATALOGO_VERSION === 'undefined') return false;
 
-    const config = this.getConfig();
-    if (config.catalogoVersion === CATALOGO_VERSION) return false;
+    const currentCatalog = this.getModelos();
+    if (currentCatalog.length) return false;
 
-    const existingBySku = new Map(
-      this.getModelos().map((modelo) => [String(modelo.sku || '').trim().toLocaleUpperCase('pt-BR'), modelo])
-    );
     const catalogo = CATALOGO_DATA.map((data) => {
-      const key = String(data.sku || '').trim().toLocaleUpperCase('pt-BR');
-      return this.normalizeModelo(data, existingBySku.get(key) || {});
+      if (!this.isOriginUid(data.origin_uid)) {
+        throw new Error('O catálogo-base contém Origin UID ausente ou inválido; a reconstrução foi interrompida.');
+      }
+      return this.normalizeModelo(data);
     });
 
     this.saveModelos(catalogo);
-    this.setConfig({
-      ...config,
-      catalogoVersion: CATALOGO_VERSION,
-      catalogoAtualizadoEm: this._now(),
-    });
     this.addAtividade(`Catálogo ${CATALOGO_VERSION} carregado: ${catalogo.length} hélices.`, 'green');
     return true;
   },
@@ -582,11 +635,11 @@ const DB = {
     if (typeof BUCHAS_DATA === 'undefined' || !Array.isArray(BUCHAS_DATA)) return false;
     if (typeof BUCHAS_VERSION === 'undefined') return false;
 
-    const config = this.getConfig();
-    if (config.buchasVersion === BUCHAS_VERSION) return false;
+    const currentBuchas = this.getBuchas();
+    if (currentBuchas.length) return false;
 
     const existingBySku = new Map(
-      this.getBuchas().map((bucha) => [String(bucha.sku || '').trim().toLocaleUpperCase('pt-BR'), bucha])
+      currentBuchas.map((bucha) => [String(bucha.sku || '').trim().toLocaleUpperCase('pt-BR'), bucha])
     );
     const buchas = BUCHAS_DATA.map((data) => {
       const key = String(data.sku || '').trim().toLocaleUpperCase('pt-BR');
@@ -594,11 +647,6 @@ const DB = {
     });
 
     this.saveBuchas(buchas);
-    this.setConfig({
-      ...config,
-      buchasVersion: BUCHAS_VERSION,
-      buchasAtualizadasEm: this._now(),
-    });
     this.addAtividade(`Catálogo de buchas ${BUCHAS_VERSION} carregado: ${buchas.length} itens.`, 'teal');
     return true;
   },
@@ -722,52 +770,6 @@ const DB = {
     this.saveBuchasOps(ops.filter(o => o.id !== id));
     this.addAtividade(`OP de Bucha removida: ${op.opNumber}`, 'red');
     return op;
-  },
-
-  ensureBuchasOpsSeed() {
-    const existing = this.getBuchasOps();
-    if (existing && existing.length > 0) return false;
-
-    const buchas = this.getBuchas();
-    if (!buchas.length) return false;
-
-    const seedSpecs = [
-      { sku: 'HR BH 001', qty: 200, stage: 'op01', status: 'em_producao' },
-      { sku: 'HR BH 002', qty: 150, stage: 'op01', status: 'em_producao' },
-      { sku: 'HR BH 003', qty: 100, stage: 'op02', status: 'em_producao' },
-      { sku: 'HR BH 004', qty: 80,  stage: 'op02', status: 'em_producao' },
-      { sku: 'HR BH 005', qty: 250, stage: 'op03', status: 'finalizada' }
-    ];
-
-    const seedOps = seedSpecs.map((spec, i) => {
-      const bucha = buchas.find(b => b.sku === spec.sku) || buchas[i % buchas.length];
-      const opNum = `OPB-${String(i + 1).padStart(6, '0')}`;
-      const stageNames = { op01: 'Retrabalho', op02: 'Vulcanização', op03: 'Estoque Final' };
-      return {
-        id: `opb_seed_${i + 1}`,
-        opNumber: opNum,
-        sku: bucha.sku,
-        description: bucha.descricao,
-        quantity: spec.qty,
-        priority: i % 2 === 0 ? 'Alta' : 'Normal',
-        currentStage: spec.stage,
-        status: spec.status,
-        entryDate: '2026-08-07',
-        obs: 'Lote inicial cadastrado',
-        history: [
-          { date: '2026-08-07 10:00:00', stage: stageNames[spec.stage], action: 'Lote inicial registrado', user: 'Sistema' }
-        ],
-        stages: [
-          { code: 'op01', name: 'Retrabalho', quantity: spec.stage === 'op01' ? spec.qty : 0 },
-          { code: 'op02', name: 'Vulcanização', quantity: spec.stage === 'op02' ? spec.qty : 0 },
-          { code: 'op03', name: 'Estoque Final', quantity: spec.stage === 'op03' ? spec.qty : 0 }
-        ]
-      };
-    });
-
-    this.saveBuchasOps(seedOps);
-    this.addAtividade('Demonstração de OPs de Bucha carregada com sucesso.', 'teal');
-    return true;
   },
 
   // ═══ ENTRADAS E SAÍDAS DE BUCHAS ════════
@@ -942,53 +944,31 @@ const DB = {
     });
   },
 
-  ensureBuchasEntradasSeed() {
-    const existingEntradas = this.getBuchasEntradas();
-    // Se contiver dados fictícios antigos de teste, limpa para garantir saldos zerados reais
-    if (Array.isArray(existingEntradas) && existingEntradas.some(e => String(e.id || '').includes('seed'))) {
-      const semSeed = existingEntradas.filter(e => !String(e.id || '').includes('seed'));
-      this.saveBuchasEntradas(semSeed);
-    }
-    const existingSaidas = this.getBuchasSaidas();
-    if (Array.isArray(existingSaidas) && existingSaidas.some(s => String(s.id || '').includes('seed'))) {
-      const semSeedSaidas = existingSaidas.filter(s => !String(s.id || '').includes('seed'));
-      this.saveBuchasSaidas(semSeedSaidas);
-    }
-    return true;
-  },
-
   // ═══ MATERIAIS / ESTOQUE ════════════════
   getMateriais()      { return this._get(this.KEYS.materiais); },
   saveMateriais(list) { this._set(this.KEYS.materiais, list); },
 
-  addMaterial(data) {
-    const list = this.getMateriais();
-    const m = {
-      id:         this._id(),
-      nome:       data.nome       || '',
-      unidade:    data.unidade    || 'kg',
-      saldo:      parseFloat(data.saldo)   || 0,
-      minimo:     parseFloat(data.minimo)  || 0,
-      fornecedor: data.fornecedor || '',
-      criadoEm:  this._now(),
-    };
-    list.push(m);
-    this.saveMateriais(list);
-    this.addAtividade(`Material cadastrado: ${m.nome}`, 'blue');
-    return m;
+  async _inventory(path, method, data) {
+    const response = await fetch(`/api/inventory${path}`, { method, headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' }, body: JSON.stringify({ data, expectedVersions: { hrn_materiais: RemoteStorage.versions.get(this.KEYS.materiais) || 0, hrn_movimentos: RemoteStorage.versions.get(this.KEYS.movimentos) || 0 } }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || `Falha no estoque (HTTP ${response.status}).`);
+    RemoteStorage.applyServerState(this.KEYS.materiais, result.materials, result.versions?.hrn_materiais, result.revision);
+    RemoteStorage.applyServerState(this.KEYS.movimentos, result.movements, result.versions?.hrn_movimentos, result.revision);
+    return result;
   },
 
-  updateMaterial(id, data) {
-    const list = this.getMateriais().map(m =>
-      m.id === id ? { ...m, ...data } : m
-    );
-    this.saveMateriais(list);
-    return list.find(m => m.id === id);
+  async addMaterial(data) {
+    const result = await this._inventory('/materials', 'POST', { ...data, eventKey: `material-${this._id()}` });
+    return result.materials.at(-1);
   },
 
-  deleteMaterial(id) {
-    this.saveMateriais(this.getMateriais().filter(m => m.id !== id));
-    this.addAtividade('Material removido do estoque', 'red');
+  async updateMaterial(id, data) {
+    const result = await this._inventory(`/materials/${encodeURIComponent(id)}`, 'PATCH', data);
+    return result.materials.find(m => m.id === id);
+  },
+
+  async deleteMaterial(id) {
+    await this._inventory(`/materials/${encodeURIComponent(id)}`, 'DELETE');
   },
 
   getMaterialById(id) { return this.getMateriais().find(m => m.id === id); },
@@ -997,7 +977,8 @@ const DB = {
   getMovimentos()      { return this._get(this.KEYS.movimentos); },
   saveMovimentos(list) { this._set(this.KEYS.movimentos, list); },
 
-  addMovimento(data) {
+  async addMovimento(data) {
+    return (await this._inventory('/movements', 'POST', { ...data, eventKey: `movement-${this._id()}` })).movements[0];
     const movs = this.getMovimentos();
     const mov = {
       id:          this._id(),
@@ -1365,13 +1346,11 @@ const DB = {
 
   // ─── Seed Data ──────────────────────────
   seed() {
-    // One-time cleanup to ensure all mock/fake data is removed from RemoteStorage
-    if (!RemoteStorage.getItem('hrn_cleaned_mock_data_v3')) {
-      Object.values(this.KEYS).forEach(k => RemoteStorage.removeItem(k));
-      RemoteStorage.setItem('hrn_cleaned_mock_data_v3', 'true');
-    }
-
+    // Bootstrap must never delete or fabricate operational/stock state. Those
+    // records now have protected server-side business flows.
     this.ensureCatalogoAtualizado();
+    this.ensureBuchasAtualizadas();
+    return;
 
     // Seed/register raw materials in inventory (Estoque) based on standard materials and Excel sheet data
     const materiais = this.getMateriais();

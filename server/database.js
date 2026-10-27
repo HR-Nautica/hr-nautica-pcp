@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { config } from "./config.js";
 import { buildPostgresConnectionOptions } from "./postgres-config.js";
+import { assertGenericStateWriteAllowed } from "./state-write-policy.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOCAL_DB_PATH = path.resolve(__dirname, "../database/local_state.json");
@@ -1144,6 +1145,7 @@ function versionConflict(current) {
 }
 
 export async function upsertState(key, value, expectedVersion, actor = "") {
+  assertGenericStateWriteAllowed(key, "PUT");
   await initializeDatabase();
 
   if (usesLocalFile()) {
@@ -1180,6 +1182,7 @@ export async function upsertState(key, value, expectedVersion, actor = "") {
 }
 
 export async function upsertStatePostgres(client, key, value, expectedVersion, actor = "") {
+  assertGenericStateWriteAllowed(key, "PUT");
   const expected = Number(expectedVersion);
   const nextVersion = expected + 1;
   const now = new Date();
@@ -1216,6 +1219,7 @@ export async function upsertStatePostgres(client, key, value, expectedVersion, a
 }
 
 export async function deleteState(key, expectedVersion, actor = "") {
+  assertGenericStateWriteAllowed(key, "DELETE");
   await initializeDatabase();
 
   if (usesLocalFile()) {
@@ -1249,6 +1253,7 @@ export async function deleteState(key, expectedVersion, actor = "") {
 }
 
 export async function deleteStatePostgres(client, key, expectedVersion, actor = "") {
+  assertGenericStateWriteAllowed(key, "DELETE");
   const expected = Number(expectedVersion);
   const now = new Date();
   const deleted = await client.query(
@@ -1640,6 +1645,502 @@ export async function adjustRawMaterialStock(rawCode, quantity, expectedVersion,
     movements.unshift(movement({ material, type: target > previous ? "Entrada" : "Saida", quantity: target - previous, balance: target, actor, reason: `Ajuste manual de ${previous} para ${target}`, eventKey: `RAW-ADJUST-${randomUUID()}` }));
     const saved = await saveLockedStates(client, locked, { hrn_materiais: materials, hrn_movimentos: movements }, actor, "RAW_STOCK_ADJUST");
     return { ...saved, items: rawStockView(materials, movements), version: saved.versions.hrn_materiais };
+  });
+}
+
+function inventoryTransactionRequired() {
+  const error = new Error("O estoque interno requer DATABASE_URL para garantir transacao atomica.");
+  error.code = "INVENTORY_TRANSACTION_REQUIRED";
+  error.status = 503;
+  throw error;
+}
+
+function assertInventoryVersions(locked, expected = {}) {
+  for (const key of ["hrn_materiais", "hrn_movimentos"]) {
+    // lockStateRows materializa agregados ainda inexistentes na versão 1;
+    // o primeiro cliente, que leu ausência como versão 0, pode inicializá-los.
+    const initializing = Number(expected[key]) === 0 && Number(locked.get(key).version) === 1;
+    if (expected[key] !== undefined && !initializing && Number(locked.get(key).version) !== Number(expected[key])) {
+      throw versionConflict(Number(locked.get(key).version));
+    }
+  }
+}
+
+function inventoryResponse(saved, materials, movements) {
+  return { ...saved, materials, movements, versions: saved.versions };
+}
+
+function sameInventoryEvent(existing, candidate, fields) {
+  return fields.every(field => String(existing?.[field] ?? "") === String(candidate?.[field] ?? ""));
+}
+
+export async function mutateInventory(action, id, data = {}, expectedVersions = {}, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return inventoryTransactionRequired();
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_materiais: [], hrn_movimentos: [] });
+    assertInventoryVersions(locked, expectedVersions);
+    const materials = [...locked.get("hrn_materiais").value];
+    const movements = [...locked.get("hrn_movimentos").value];
+    const now = isoNow();
+    if (action === "create") {
+      const name = String(data.nome || "").trim();
+      if (!name) throw new RangeError("Informe o nome do material.");
+      const opening = Number(data.saldo || 0);
+      if (!Number.isFinite(opening) || opening < 0) throw new RangeError("Saldo inicial invalido.");
+      const eventKey = String(data.eventKey || "").trim();
+      if (!eventKey) throw new RangeError("eventKey e obrigatorio para criar material.");
+      const duplicate = materials.find(item => item.eventKey === eventKey);
+      if (duplicate) {
+        if (!sameInventoryEvent(duplicate, data, ["nome", "categoria", "unidade", "minimo", "fornecedor", "saldo"])) throw new RangeError("eventKey ja foi usado com dados diferentes.");
+        return inventoryResponse({ versions: { hrn_materiais: locked.get("hrn_materiais").version, hrn_movimentos: locked.get("hrn_movimentos").version }, revision: await currentRevision(client), duplicate: true }, materials, movements);
+      }
+      const material = { id: `mat_${randomUUID()}`, eventKey, nome: name, categoria: String(data.categoria || ""), unidade: String(data.unidade || "kg"), minimo: Math.max(0, Number(data.minimo) || 0), fornecedor: String(data.fornecedor || ""), saldo: opening, criadoEm: now, atualizadoEm: now, atualizadoPor: actor };
+      materials.push(material);
+      if (opening > 0) movements.unshift({ id: randomUUID(), materialId: material.id, materialNome: material.nome, tipo: "Entrada", qty: opening, opId: "", opNumero: "", obs: "Saldo inicial", data: now, usuario: actor, eventKey, saldoApos: opening });
+      const changes = opening > 0 ? { hrn_materiais: materials, hrn_movimentos: movements } : { hrn_materiais: materials };
+      return inventoryResponse(await saveLockedStates(client, locked, changes, actor, "INV_MAT_CREATE"), materials, movements);
+    }
+    const index = materials.findIndex(item => String(item.id) === String(id));
+    if (index < 0) return null;
+    const material = materials[index];
+    if (isRawMaterial(material)) throw new RangeError("Pecas brutas usam a API de estoque de brutos.");
+    if (action === "update") {
+      if (Object.prototype.hasOwnProperty.call(data, "saldo")) throw new RangeError("Saldo so pode ser alterado por movimentacao.");
+      materials[index] = { ...material, nome: String(data.nome || material.nome).trim(), categoria: String(data.categoria ?? material.categoria ?? ""), unidade: String(data.unidade || material.unidade || "kg"), minimo: Math.max(0, Number(data.minimo ?? material.minimo) || 0), fornecedor: String(data.fornecedor ?? material.fornecedor ?? ""), atualizadoEm: now, atualizadoPor: actor };
+      if (!materials[index].nome) throw new RangeError("Informe o nome do material.");
+      return inventoryResponse(await saveLockedStates(client, locked, { hrn_materiais: materials }, actor, "INV_MAT_UPDATE"), materials, movements);
+    }
+    if (action === "delete") {
+      if (Number(material.saldo) !== 0 || movements.some(item => String(item.materialId) === String(material.id))) throw new RangeError("Material com saldo ou historico nao pode ser excluido.");
+      materials.splice(index, 1);
+      return inventoryResponse(await saveLockedStates(client, locked, { hrn_materiais: materials }, actor, "INV_MAT_DELETE"), materials, movements);
+    }
+    throw new RangeError("Acao de material invalida.");
+  });
+}
+
+export async function createInventoryMovement(data = {}, expectedVersions = {}, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return inventoryTransactionRequired();
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_materiais: [], hrn_movimentos: [] });
+    const materials = [...locked.get("hrn_materiais").value];
+    const movements = [...locked.get("hrn_movimentos").value];
+    const eventKey = String(data.eventKey || "").trim();
+    if (!eventKey) throw new RangeError("eventKey e obrigatorio para movimentacao.");
+    const duplicate = movements.find(item => item.eventKey === eventKey);
+    if (duplicate) {
+      if (!sameInventoryEvent(duplicate, data, ["materialId", "tipo", "qty", "opId", "opNumero", "obs"])) throw new RangeError("eventKey ja foi usado com dados diferentes.");
+      return inventoryResponse({ versions: { hrn_materiais: locked.get("hrn_materiais").version, hrn_movimentos: locked.get("hrn_movimentos").version }, revision: await currentRevision(client), duplicate: true }, materials, movements);
+    }
+    assertInventoryVersions(locked, expectedVersions);
+    const material = materials.find(item => String(item.id) === String(data.materialId));
+    if (!material) throw new RangeError("Material nao encontrado.");
+    if (isRawMaterial(material)) throw new RangeError("Pecas brutas usam a API de estoque de brutos.");
+    const quantity = Number(data.qty);
+    if (!Number.isFinite(quantity) || quantity <= 0) throw new RangeError("Informe uma quantidade maior que zero.");
+    const type = data.tipo === "Saida" ? "Saida" : data.tipo === "Entrada" ? "Entrada" : null;
+    if (!type) throw new RangeError("Tipo de movimentacao invalido.");
+    const previous = Number(material.saldo) || 0;
+    const next = type === "Entrada" ? previous + quantity : previous - quantity;
+    if (next < 0) throw insufficientStock(material.nome, previous, quantity);
+    material.saldo = next; material.atualizadoEm = isoNow(); material.atualizadoPor = actor;
+    movements.unshift({ id: randomUUID(), materialId: material.id, materialNome: material.nome, tipo: type, qty: quantity, opId: String(data.opId || ""), opNumero: String(data.opNumero || ""), obs: String(data.obs || ""), data: isoNow(), usuario: actor, eventKey, saldoApos: next });
+    return inventoryResponse(await saveLockedStates(client, locked, { hrn_materiais: materials, hrn_movimentos: movements }, actor, "INV_MOVE_CREATE"), materials, movements);
+  });
+}
+
+const BUCHA_ENTRY_STAGES = new Map([
+  ["usinagem", "Usinagem"],
+  ["retrabalho", "Retrabalho"],
+  ["vulcanizacao", "Vulcanizacao"],
+  ["vulcanização", "Vulcanizacao"],
+  ["estoque final", "Estoque Final"]
+]);
+
+function normalizeBuchaSku(value) {
+  return String(value || "").trim().toLocaleUpperCase("pt-BR").replace(/\s+/g, " ");
+}
+
+function normalizeBuchaEntryStage(value) {
+  return BUCHA_ENTRY_STAGES.get(String(value || "").trim().toLocaleLowerCase("pt-BR")) || null;
+}
+
+function buchaTransactionRequired() {
+  const error = new Error("As entradas de buchas requerem DATABASE_URL para garantir transacao atomica.");
+  error.code = "BUCHA_TRANSACTION_REQUIRED";
+  error.status = 503;
+  throw error;
+}
+
+function buchaEntryCandidate(data, sku, stage, quantity) {
+  return {
+    sku,
+    etapaAtual: stage,
+    quantidade: quantity,
+    origemObs: String(data.origemObs || "Entrada manual de lote").trim()
+  };
+}
+
+function sameBuchaEntryEvent(existing, candidate) {
+  return String(existing?.sku || "").trim().toLocaleUpperCase("pt-BR") === candidate.sku
+    && String(existing?.etapaAtual || "") === candidate.etapaAtual
+    && Number(existing?.quantidade) === candidate.quantidade
+    && String(existing?.origemObs || "").trim() === candidate.origemObs;
+}
+
+function assertBuchaEntryVersions(locked, expected = {}) {
+  for (const key of ["hrn_buchas", "hrn_buchas_entradas"]) {
+    const current = Number(locked.get(key).version);
+    const initializing = Number(expected[key]) === 0 && current === 1;
+    if (expected[key] !== undefined && !initializing && current !== Number(expected[key])) throw versionConflict(current);
+  }
+}
+
+function buchaEntryCode(entries) {
+  const numbers = entries
+    .map(item => Number.parseInt(String(item?.codigoEntrada || "").replace(/\D/g, ""), 10))
+    .filter(Number.isFinite);
+  return `ENT-BCH-${String((numbers.length ? Math.max(...numbers) : 0) + 1).padStart(6, "0")}`;
+}
+
+function derivedBuchaEntryCode(parentCode, entries) {
+  const base = String(parentCode || "ENT-BCH").trim();
+  const used = new Set(entries.map(item => String(item?.codigoEntrada || "").trim()));
+  let suffix = 1;
+  while (used.has(`${base}.${suffix}`)) suffix += 1;
+  return `${base}.${suffix}`;
+}
+
+function allowedBuchaTransition(from, to) {
+  const flow = {
+    Usinagem: new Set(["Retrabalho", "Vulcanizacao", "Estoque Final"]),
+    Retrabalho: new Set(["Vulcanizacao", "Estoque Final"]),
+    Vulcanizacao: new Set(["Estoque Final"]),
+    "Estoque Final": new Set()
+  };
+  return Boolean(flow[from]?.has(to));
+}
+
+function transitionEventCandidate(id, quantity, stage, remainingAction) {
+  return { entryId: String(id), quantity, proximaEtapa: stage, acaoSaldoRestante: remainingAction };
+}
+
+function sameBuchaTransitionEvent(existing, candidate) {
+  return String(existing?.entryId || "") === candidate.entryId
+    && Number(existing?.quantity) === candidate.quantity
+    && String(existing?.proximaEtapa || "") === candidate.proximaEtapa
+    && String(existing?.acaoSaldoRestante || "") === candidate.acaoSaldoRestante;
+}
+
+function buchaEntryReadModel(catalog, entries, outputs, versions = {}, revision = 0, ops = []) {
+  const bySku = new Map();
+  const inconsistencies = [];
+  const entryCodes = new Map();
+  const outputCodes = new Map();
+  const ensure = (sku, source) => {
+    const key = normalizeBuchaSku(sku);
+    if (!key) {
+      inconsistencies.push({ code: "BUCHA_SKU_MISSING", source });
+      return null;
+    }
+    if (!bySku.has(key)) bySku.set(key, { sku: key, descricao: "", usinagem: 0, retrabalho: 0, vulcanizacao: 0, estoqueFinalEntradas: 0, saidas: 0, catalogado: false });
+    return bySku.get(key);
+  };
+  for (const item of Array.isArray(catalog) ? catalog : []) {
+    const row = ensure(item?.sku, "catalogo");
+    if (!row) continue;
+    row.descricao = String(item?.descricao || item?.description || row.descricao || "").trim();
+    row.catalogado = true;
+  }
+  for (const entry of Array.isArray(entries) ? entries : []) {
+    const row = ensure(entry?.sku, "entrada");
+    const qty = Number(entry?.quantidade);
+    if (!row || !Number.isFinite(qty) || qty < 0) { inconsistencies.push({ code: "BUCHA_ENTRY_QUANTITY_INVALID", id: entry?.id || null, sku: normalizeBuchaSku(entry?.sku) || null }); continue; }
+    const stage = normalizeBuchaEntryStage(entry?.etapaAtual);
+    if (String(entry?.status || "") === "Concluido" || stage === "Estoque Final") row.estoqueFinalEntradas += qty;
+    else if (stage === "Usinagem") row.usinagem += qty;
+    else if (stage === "Retrabalho") row.retrabalho += qty;
+    else if (stage === "Vulcanizacao") row.vulcanizacao += qty;
+    else if (stage === "Estoque Final") row.estoqueFinalEntradas += qty;
+    else inconsistencies.push({ code: "BUCHA_ENTRY_STAGE_UNKNOWN", id: entry?.id || null, sku: normalizeBuchaSku(entry?.sku) || null, stage: entry?.etapaAtual || null });
+    const code = String(entry?.codigoEntrada || "").trim();
+    if (code) entryCodes.set(code, [...(entryCodes.get(code) || []), entry?.id || null]);
+  }
+  for (const output of Array.isArray(outputs) ? outputs : []) {
+    const row = ensure(output?.sku, "saida");
+    const qty = Number(output?.quantidade ?? output?.qty ?? output?.quantidadeSaida);
+    if (!row || !Number.isFinite(qty) || qty < 0) { inconsistencies.push({ code: "BUCHA_OUTPUT_QUANTITY_INVALID", id: output?.id || null, sku: normalizeBuchaSku(output?.sku) || null }); continue; }
+    row.saidas += qty;
+    const code = String(output?.codigoSaida || "").trim();
+    if (code) outputCodes.set(code, [...(outputCodes.get(code) || []), output?.id || null]);
+  }
+  for (const [code, ids] of entryCodes) if (ids.length > 1) inconsistencies.push({ code: "BUCHA_ENTRY_CODE_DUPLICATE", value: code, ids });
+  for (const [code, ids] of outputCodes) if (ids.length > 1) inconsistencies.push({ code: "BUCHA_OUTPUT_CODE_DUPLICATE", value: code, ids });
+  const items = [...bySku.values()].map(row => {
+    if (!row.catalogado) inconsistencies.push({ code: "BUCHA_SKU_NOT_IN_CATALOG", sku: row.sku });
+    const estoqueFinal = row.estoqueFinalEntradas - row.saidas;
+    if (estoqueFinal < 0) {
+      inconsistencies.push({ code: "BUCHA_FINISHED_NEGATIVE", sku: row.sku, value: estoqueFinal });
+      inconsistencies.push({ code: "BUCHA_OUTPUT_EXCEEDS_FINISHED", sku: row.sku, value: row.saidas - row.estoqueFinalEntradas });
+    }
+    return { sku: row.sku, descricao: row.descricao, usinagem: row.usinagem, retrabalho: row.retrabalho, vulcanizacao: row.vulcanizacao, estoqueFinal, total: row.usinagem + row.retrabalho + row.vulcanizacao + estoqueFinal };
+  }).sort((a, b) => a.sku.localeCompare(b.sku, "pt-BR"));
+  const byId = new Map((Array.isArray(entries) ? entries : []).map(entry => [String(entry?.id || ""), entry]));
+  for (const op of Array.isArray(ops) ? ops : []) {
+    const entryId = String(op?.entradaId || op?.entryId || op?.loteEntradaId || "");
+    if (!entryId) continue;
+    const entry = byId.get(entryId);
+    if (!entry || (op?.sku && normalizeBuchaSku(op.sku) !== normalizeBuchaSku(entry.sku)) || (op?.quantity && Number(op.quantity) > Number(entry.quantidade))) inconsistencies.push({ code: "BUCHA_OP_ENTRY_DIVERGENCE", id: op?.id || null, entryId });
+  }
+  return { origin: "ERP_INTERNAL_TRANSACTIONS", versions, revision, catalog: Array.isArray(catalog) ? catalog : [], entries: Array.isArray(entries) ? entries : [], outputs: Array.isArray(outputs) ? outputs : [], ops: Array.isArray(ops) ? ops : [], items, inconsistencies: inconsistencies.map(issue => ({ severity: "error", ...issue })) };
+}
+
+export async function getBuchasStock() {
+  const snapshot = await getStateSnapshot(0);
+  return buchaEntryReadModel(snapshot.data?.hrn_buchas, snapshot.data?.hrn_buchas_entradas, snapshot.data?.hrn_buchas_saidas, snapshot.versions, snapshot.revision, snapshot.data?.hrn_buchas_ops);
+}
+
+export async function createBuchaEntry(data = {}, expectedVersions = {}, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return buchaTransactionRequired();
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_buchas: [], hrn_buchas_entradas: [], hrn_buchas_saidas: [] });
+    const catalog = Array.isArray(locked.get("hrn_buchas").value) ? [...locked.get("hrn_buchas").value] : [];
+    const entries = Array.isArray(locked.get("hrn_buchas_entradas").value) ? [...locked.get("hrn_buchas_entradas").value] : [];
+    const outputs = Array.isArray(locked.get("hrn_buchas_saidas").value) ? locked.get("hrn_buchas_saidas").value : [];
+    const eventKey = String(data.eventKey || "").trim();
+    if (!eventKey) throw new RangeError("eventKey e obrigatorio para entrada de bucha.");
+    const sku = normalizeBuchaSku(data.sku);
+    const stage = normalizeBuchaEntryStage(data.etapaInicial);
+    const quantity = Number(data.quantidade);
+    if (!sku) throw new RangeError("SKU de bucha e obrigatorio.");
+    if (!Number.isInteger(quantity) || quantity <= 0) throw new RangeError("A quantidade deve ser um inteiro positivo.");
+    if (!stage) throw new RangeError("Etapa inicial de bucha invalida.");
+    const candidate = buchaEntryCandidate(data, sku, stage, quantity);
+    const duplicate = entries.find(item => String(item?.eventKey || "") === eventKey);
+    if (duplicate) {
+      if (!sameBuchaEntryEvent(duplicate, candidate)) throw new RangeError("eventKey ja foi usado com dados diferentes.");
+      return { ...buchaEntryReadModel(catalog, entries, outputs, { hrn_buchas: locked.get("hrn_buchas").version, hrn_buchas_entradas: locked.get("hrn_buchas_entradas").version, hrn_buchas_saidas: locked.get("hrn_buchas_saidas").version }, await currentRevision(client)), entry: duplicate, duplicate: true };
+    }
+    assertBuchaEntryVersions(locked, expectedVersions);
+    const bucha = catalog.find(item => normalizeBuchaSku(item?.sku) === sku);
+    if (!bucha) throw new RangeError("SKU de bucha nao cadastrado.");
+    const now = isoNow();
+    const entry = { id: `ent_${randomUUID()}`, codigoEntrada: buchaEntryCode(entries), eventKey, sku, descricao: String(bucha.descricao || bucha.description || "").trim(), quantidade: quantity, etapaAtual: stage, status: stage === "Estoque Final" ? "Concluido" : "Em Andamento", dataCriacao: now, origemObs: candidate.origemObs, historico: [{ data: now, acao: `Entrada registrada em ${stage} com ${quantity} un`, usuario: actor || "Sistema" }] };
+    entries.unshift(entry);
+    const saved = await saveLockedStates(client, locked, { hrn_buchas_entradas: entries }, actor, "BCH_ENTRY_CREATE");
+    return { ...buchaEntryReadModel(catalog, entries, outputs, { ...saved.versions, hrn_buchas: locked.get("hrn_buchas").version, hrn_buchas_saidas: locked.get("hrn_buchas_saidas").version }, saved.revision), ...saved, entry };
+  });
+}
+
+export async function transitionBuchaEntry(id, data = {}, expectedVersions = {}, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return buchaTransactionRequired();
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_buchas_entradas: [] });
+    const entries = Array.isArray(locked.get("hrn_buchas_entradas").value) ? [...locked.get("hrn_buchas_entradas").value] : [];
+    const eventKey = String(data.eventKey || "").trim();
+    if (!eventKey) throw new RangeError("eventKey e obrigatorio para transicao de bucha.");
+    const quantity = Number(data.quantidade);
+    const stage = normalizeBuchaEntryStage(data.proximaEtapa);
+    const remainingAction = String(data.acaoSaldoRestante || "manter").trim();
+    if (!Number.isInteger(quantity) || quantity <= 0) throw new RangeError("A quantidade deve ser um inteiro positivo.");
+    if (!stage) throw new RangeError("Proxima etapa de bucha invalida.");
+    if (!["manter", "split"].includes(remainingAction)) throw new RangeError("Tratamento do saldo restante invalido.");
+    const candidate = transitionEventCandidate(id, quantity, stage, remainingAction);
+    if (entries.some(item => String(item?.eventKey || "") === eventKey)) throw new RangeError("eventKey ja foi usado por outra operacao de entrada.");
+    const duplicate = entries.flatMap(item => Array.isArray(item?.transitionEvents) ? item.transitionEvents.map(event => ({ item, event })) : [])
+      .find(({ event }) => String(event.eventKey || "") === eventKey);
+    if (duplicate) {
+      if (!sameBuchaTransitionEvent(duplicate.event, candidate)) throw new RangeError("eventKey ja foi usado com dados diferentes.");
+      return { entry: duplicate.item, entries, versions: { hrn_buchas_entradas: locked.get("hrn_buchas_entradas").version }, revision: await currentRevision(client), duplicate: true };
+    }
+    const expected = expectedVersions?.hrn_buchas_entradas;
+    const currentVersion = Number(locked.get("hrn_buchas_entradas").version);
+    if (expected !== undefined && Number(expected) !== currentVersion) throw versionConflict(currentVersion);
+    const index = entries.findIndex(item => String(item?.id) === String(id));
+    if (index < 0) throw new RangeError("Lote de bucha nao encontrado.");
+    const entry = entries[index];
+    const available = Number(entry.quantidade);
+    if (!Number.isInteger(available) || available <= 0) throw new RangeError("Quantidade disponivel do lote invalida.");
+    if (quantity > available) throw new RangeError("Quantidade movimentada supera o saldo disponivel do lote.");
+    const from = normalizeBuchaEntryStage(entry.etapaAtual);
+    if (!from || !allowedBuchaTransition(from, stage)) throw new RangeError("Transicao de etapa nao permitida para este lote.");
+    const now = isoNow();
+    const remaining = available - quantity;
+    const transition = { eventKey, ...candidate, at: now, actor: actor || "Sistema" };
+    const priorHistory = Array.isArray(entry.historico) ? entry.historico : [];
+    if (remaining > 0) {
+      const remainder = {
+        ...entry,
+        id: `ent_${randomUUID()}`,
+        codigoEntrada: derivedBuchaEntryCode(entry.codigoEntrada, entries),
+        quantidade: remaining,
+        parentEntryId: entry.id,
+        loteOrigemId: entry.loteOrigemId || entry.id,
+        historico: [...priorHistory, { data: now, acao: `Desmembrado de ${entry.codigoEntrada}; ${remaining} un permanecem em ${entry.etapaAtual}`, usuario: actor || "Sistema" }],
+        transitionEvents: []
+      };
+      entries.splice(index + 1, 0, remainder);
+    }
+    const moved = {
+      ...entry,
+      quantidade: quantity,
+      etapaAtual: stage,
+      status: stage === "Estoque Final" ? "Concluido" : "Em Andamento",
+      historico: [...priorHistory, { data: now, acao: `Avancou ${quantity} un de ${entry.etapaAtual} para ${stage}`, usuario: actor || "Sistema" }],
+      transitionEvents: [...(Array.isArray(entry.transitionEvents) ? entry.transitionEvents : []), transition]
+    };
+    entries[index] = moved;
+    const saved = await saveLockedStates(client, locked, { hrn_buchas_entradas: entries }, actor, "BCH_ENTRY_MOVE");
+    return { entry: moved, entries, ...saved };
+  });
+}
+
+function assertBuchaOutputVersions(locked, expected = {}) {
+  for (const key of ["hrn_buchas", "hrn_buchas_entradas", "hrn_buchas_saidas"]) {
+    const current = Number(locked.get(key).version);
+    const initializing = Number(expected[key]) === 0 && current === 1;
+    if (expected[key] !== undefined && !initializing && current !== Number(expected[key])) throw versionConflict(current);
+  }
+}
+
+function buchaOutputCode(outputs) {
+  const numbers = outputs.map(item => Number.parseInt(String(item?.codigoSaida || "").replace(/\D/g, ""), 10)).filter(Number.isFinite);
+  return `SAI-BCH-${String((numbers.length ? Math.max(...numbers) : 0) + 1).padStart(6, "0")}`;
+}
+
+function sameBuchaOutputEvent(existing, candidate) {
+  return normalizeBuchaSku(existing?.sku) === candidate.sku
+    && Number(existing?.quantidade) === candidate.quantidade
+    && String(existing?.destinoObs || "").trim() === candidate.destinoObs;
+}
+
+function insufficientBuchaStock(sku, available, requested) {
+  const error = new RangeError(`Estoque Final insuficiente de ${sku}: disponivel ${available}, necessario ${requested}.`);
+  error.code = "INSUFFICIENT_BUCHA_STOCK";
+  error.status = 409;
+  return error;
+}
+
+export async function createBuchaOutput(data = {}, expectedVersions = {}, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return buchaTransactionRequired();
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_buchas: [], hrn_buchas_entradas: [], hrn_buchas_saidas: [] });
+    const catalog = Array.isArray(locked.get("hrn_buchas").value) ? [...locked.get("hrn_buchas").value] : [];
+    const entries = Array.isArray(locked.get("hrn_buchas_entradas").value) ? locked.get("hrn_buchas_entradas").value : [];
+    const outputs = Array.isArray(locked.get("hrn_buchas_saidas").value) ? [...locked.get("hrn_buchas_saidas").value] : [];
+    const eventKey = String(data.eventKey || "").trim();
+    const sku = normalizeBuchaSku(data.sku);
+    const quantity = Number(data.quantidade);
+    const candidate = { sku, quantidade: quantity, destinoObs: String(data.destinoObs || "Baixa de estoque").trim() };
+    if (!eventKey) throw new RangeError("eventKey e obrigatorio para saida de bucha.");
+    const duplicate = outputs.find(item => String(item?.eventKey || "") === eventKey);
+    if (duplicate) {
+      if (!sameBuchaOutputEvent(duplicate, candidate)) throw new RangeError("eventKey ja foi usado com dados diferentes.");
+      return { ...buchaEntryReadModel(catalog, entries, outputs, { hrn_buchas: locked.get("hrn_buchas").version, hrn_buchas_entradas: locked.get("hrn_buchas_entradas").version, hrn_buchas_saidas: locked.get("hrn_buchas_saidas").version }, await currentRevision(client)), output: duplicate, duplicate: true };
+    }
+    if (entries.some(item => String(item?.eventKey || "") === eventKey) || entries.some(item => Array.isArray(item?.transitionEvents) && item.transitionEvents.some(event => String(event?.eventKey || "") === eventKey))) throw new RangeError("eventKey ja foi usado por outra operacao de bucha.");
+    assertBuchaOutputVersions(locked, expectedVersions);
+    if (!sku) throw new RangeError("SKU de bucha e obrigatorio.");
+    if (!Number.isInteger(quantity) || quantity <= 0) throw new RangeError("A quantidade deve ser um inteiro positivo.");
+    const bucha = catalog.find(item => normalizeBuchaSku(item?.sku) === sku);
+    if (!bucha) throw new RangeError("SKU de bucha nao cadastrado.");
+    const stock = buchaEntryReadModel(catalog, entries, outputs, {}, 0);
+    const affectedIssues = stock.inconsistencies.filter(issue => issue.sku === sku);
+    if (affectedIssues.length) throw new RangeError("Inconsistencia historica impede determinar o saldo de bucha.");
+    const item = stock.items.find(row => row.sku === sku);
+    const available = Number(item?.estoqueFinal);
+    if (!Number.isFinite(available) || available < 0) throw new RangeError("Inconsistencia historica impede determinar o saldo acabado.");
+    if (quantity > available) throw insufficientBuchaStock(sku, available, quantity);
+    const now = isoNow();
+    const output = { id: `sai_${randomUUID()}`, codigoSaida: buchaOutputCode(outputs), eventKey, sku, descricao: String(bucha.descricao || bucha.description || "").trim(), quantidade: quantity, destinoObs: candidate.destinoObs, dataSaida: now, usuario: actor || "Sistema", historico: [{ data: now, acao: `Saida registrada de ${quantity} un do Estoque Final`, usuario: actor || "Sistema" }] };
+    outputs.unshift(output);
+    const saved = await saveLockedStates(client, locked, { hrn_buchas_saidas: outputs }, actor, "BCH_OUT_CREATE");
+    return { ...buchaEntryReadModel(catalog, entries, outputs, { ...saved.versions, hrn_buchas: locked.get("hrn_buchas").version, hrn_buchas_entradas: locked.get("hrn_buchas_entradas").version }, saved.revision), ...saved, output };
+  });
+}
+
+function trackingError(message, code = "TRACKING_RECONCILE_INVALID", status = 400) {
+  const error = new RangeError(message); error.code = code; error.status = status; return error;
+}
+
+function normalizeTrackingRecord(item, index) {
+  const sourceId = String(item?.sourceId || item?.externalLotId || item?.originId || "").trim();
+  const sku = normalizeBuchaSku(item?.sku);
+  const modelo = String(item?.modelo || item?.model || "").trim();
+  const codigoBruto = normalizeRawCode(item?.codigoBruto || item?.bruto);
+  const quantity = Number(item?.quantidade ?? item?.qty);
+  if (!sourceId) throw trackingError(`Registro ${index + 1} sem identificacao estavel de origem.`, "TRACKING_IDENTITY_REQUIRED");
+  if (!sku && !modelo) throw trackingError(`Registro ${index + 1} sem SKU ou modelo.`);
+  if (!Number.isInteger(quantity) || quantity <= 0) throw trackingError(`Registro ${index + 1} com quantidade invalida.`);
+  return { sourceId, externalLotId: String(item?.externalLotId || "").trim(), sku, modelo, codigoBruto, quantidade: quantity, localizacao: String(item?.localizacao || "").trim(), operacao: String(item?.operacao || item?.operacaoAtual || "").trim() || "01", sourceRef: String(item?.sourceRef || item?.linhaOrigem || "").trim(), importId: String(item?.importId || "").trim() };
+}
+
+function trackingFingerprint(records) { return JSON.stringify(records); }
+
+function assertTrackingVersions(locked, expected = {}) {
+  for (const key of ["hrn_ops", "hrn_pecas", "hrn_tracking_reconcile_events"]) {
+    const current = Number(locked.get(key).version);
+    const initializing = Number(expected[key]) === 0 && current === 1;
+    if (expected[key] !== undefined && !initializing && current !== Number(expected[key])) throw versionConflict(current);
+  }
+}
+
+export async function reconcileProductionTracking(data = {}, expectedVersions = {}, actor = "") {
+  await initializeDatabase();
+  if (usesLocalFile() || usesSupabaseRest()) return inventoryTransactionRequired();
+  const rawRecords = Array.isArray(data?.records) ? data.records : [];
+  if (!rawRecords.length) throw trackingError("Informe ao menos um registro de rastreio.");
+  const records = rawRecords.map(normalizeTrackingRecord);
+  const ids = new Set();
+  for (const record of records) { if (ids.has(record.sourceId)) throw trackingError(`Identificacao de origem duplicada: ${record.sourceId}.`, "TRACKING_IDENTITY_AMBIGUOUS", 409); ids.add(record.sourceId); }
+  const eventKey = String(data?.eventKey || "").trim();
+  if (!eventKey) throw trackingError("eventKey e obrigatorio para reconciliacao.");
+  const fingerprint = trackingFingerprint(records);
+  return transaction(async client => {
+    const locked = await lockStateRows(client, { hrn_ops: [], hrn_pecas: [], hrn_tracking_reconcile_events: [] });
+    const ops = Array.isArray(locked.get("hrn_ops").value) ? [...locked.get("hrn_ops").value] : [];
+    const pieces = Array.isArray(locked.get("hrn_pecas").value) ? [...locked.get("hrn_pecas").value] : [];
+    const events = Array.isArray(locked.get("hrn_tracking_reconcile_events").value) ? [...locked.get("hrn_tracking_reconcile_events").value] : [];
+    const duplicate = events.find(event => event.eventKey === eventKey);
+    if (duplicate) {
+      if (duplicate.fingerprint !== fingerprint) throw trackingError("eventKey ja foi usado com dados diferentes.", "TRACKING_EVENT_CONFLICT", 409);
+      return { ...duplicate.result, versions: { hrn_ops: locked.get("hrn_ops").version, hrn_pecas: locked.get("hrn_pecas").version, hrn_tracking_reconcile_events: locked.get("hrn_tracking_reconcile_events").version }, revision: await currentRevision(client), duplicate: true };
+    }
+    assertTrackingVersions(locked, expectedVersions);
+    const now = isoNow(); const result = { created: [], updated: [], unchanged: [], rejected: [] };
+    let nextNumber = Math.max(0, ...ops.filter(op => op?.origin === "tracking_import").map(op => Number.parseInt(String(op.numero || "").replace(/\D/g, ""), 10) || 0));
+    for (const record of records) {
+      const matchingPieces = pieces.filter(piece => String(piece?.trackingSourceId || "") === record.sourceId);
+      const matchingOps = ops.filter(op => String(op?.trackingSourceId || "") === record.sourceId);
+      if (matchingPieces.length > 1 || matchingOps.length > 1) throw trackingError(`Identificacao ${record.sourceId} e ambigua no rastreio existente.`, "TRACKING_IDENTITY_AMBIGUOUS", 409);
+      const piece = matchingPieces[0]; const op = matchingOps[0];
+      if ((piece && piece.origin !== "tracking_import") || (op && op.origin !== "tracking_import")) throw trackingError(`Identificacao ${record.sourceId} pertence a registro de origem incompativel.`, "TRACKING_ORIGIN_CONFLICT", 409);
+      if (piece && op && String(piece.opId || "") !== String(op.id || "")) throw trackingError(`Vinculo de OP inconsistente para ${record.sourceId}.`, "TRACKING_LINK_CONFLICT", 409);
+      if (!piece && op) throw trackingError(`OP de acompanhamento sem lote para ${record.sourceId}.`, "TRACKING_LINK_CONFLICT", 409);
+      const desired = { modelo: record.modelo, sku: record.sku, tipoFundicao: record.codigoBruto, qty: record.quantidade, operacaoAtual: record.operacao, localizacao: record.localizacao, sourceRef: record.sourceRef, importId: record.importId };
+      if (!piece) {
+        const newOp = { id: randomUUID(), numero: `TRK-${String(++nextNumber).padStart(4, "0")}`, modelo: record.modelo || record.sku, qty: record.quantidade, cliente: "Estoque Interno", etapa: record.operacao, prioridade: "Normal", obs: `Acompanhamento importado. Bruto: ${record.codigoBruto}. Loc: ${record.localizacao}`, origin: "tracking_import", trackingSourceId: record.sourceId, criadoEm: now, atualizadoEm: now };
+        const newPiece = { id: randomUUID(), numero: record.externalLotId || `TRK-${record.sourceId}`, ...desired, opId: newOp.id, opNumero: newOp.numero, origin: "tracking_import", trackingSourceId: record.sourceId, historico: [{ op: record.operacao, data: now, obs: `Importado de rastreio${record.importId ? ` (${record.importId})` : ""}` }], criadoEm: now, atualizadoEm: now };
+        ops.push(newOp); pieces.push(newPiece); result.created.push({ sourceId: record.sourceId, pieceId: newPiece.id, opId: newOp.id });
+        continue;
+      }
+      const changed = Object.entries(desired).some(([key, value]) => String(piece[key] ?? "") !== String(value ?? ""));
+      if (!changed) { result.unchanged.push({ sourceId: record.sourceId, pieceId: piece.id, opId: piece.opId }); continue; }
+      const pieceIndex = pieces.findIndex(item => item.id === piece.id); const opIndex = ops.findIndex(item => item.id === piece.opId);
+      const history = Array.isArray(piece.historico) ? [...piece.historico] : [];
+      history.push({ op: record.operacao, data: now, obs: `Atualizado de rastreio${record.importId ? ` (${record.importId})` : ""}` });
+      pieces[pieceIndex] = { ...piece, ...desired, historico: history, atualizadoEm: now };
+      if (opIndex >= 0) ops[opIndex] = { ...ops[opIndex], modelo: record.modelo || record.sku, qty: record.quantidade, etapa: record.operacao, obs: `Acompanhamento importado. Bruto: ${record.codigoBruto}. Loc: ${record.localizacao}`, atualizadoEm: now };
+      result.updated.push({ sourceId: record.sourceId, pieceId: piece.id, opId: piece.opId });
+    }
+    events.unshift({ id: randomUUID(), eventKey, fingerprint, actor, at: now, result });
+    const saved = await saveLockedStates(client, locked, { hrn_ops: ops, hrn_pecas: pieces, hrn_tracking_reconcile_events: events }, actor, "TRK_RECONCILE");
+    return { ...result, operations: ops, pieces, ...saved };
   });
 }
 

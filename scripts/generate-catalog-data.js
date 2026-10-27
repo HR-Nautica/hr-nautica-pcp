@@ -5,7 +5,7 @@ import XLSX from 'xlsx';
 const sourcePath = path.resolve('public/Novas Planilhas/Catalogo_Atualizado.xlsx');
 const outputPath = path.resolve('public/js/catalogo_data.js');
 const sheetName = 'Matriz';
-const sourceRange = 'B1:S87';
+const sourceRange = 'B1:U87';
 const catalogVersion = '2026-08-07';
 
 const expectedHeaders = [
@@ -27,7 +27,11 @@ const expectedHeaders = [
   'Modelo Bucha',
   'Descrição Caixa',
   'Código SKU Caixa',
+  'Origin UID',
+  'SKU Bucha',
 ];
+
+const ORIGIN_UID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function clean(value) {
   return String(value ?? '').trim();
@@ -78,10 +82,16 @@ const records = rows
       modeloBucha,
       descricaoCaixa,
       skuCaixa,
+      origin_uid,
+      skuBucha,
     ] = values;
 
     if (!nome || !sku) {
       throw new Error(`Descrição ou SKU ausente na linha ${index + 2} do intervalo ${sourceRange}.`);
+    }
+
+    if (!ORIGIN_UID_PATTERN.test(origin_uid)) {
+      throw new Error(`Origin UID inv\u00e1lido ou ausente na linha ${index + 2} do intervalo ${sourceRange}.`);
     }
 
     return {
@@ -103,6 +113,8 @@ const records = rows
       modeloBucha,
       descricaoCaixa,
       skuCaixa,
+      origin_uid: origin_uid.toLowerCase(),
+      skuBucha,
       pas: '3',
       material: 'Alumínio',
       ...dimensions(nome),
@@ -114,6 +126,13 @@ const duplicateSkus = records
   .filter((sku, index, all) => all.indexOf(sku) !== index);
 if (duplicateSkus.length) {
   throw new Error(`SKUs duplicados: ${[...new Set(duplicateSkus)].join(', ')}`);
+}
+
+const duplicateOriginUids = records
+  .map((record) => record.origin_uid)
+  .filter((originUid, index, all) => all.indexOf(originUid) !== index);
+if (duplicateOriginUids.length) {
+  throw new Error(`Origin UIDs duplicados: ${[...new Set(duplicateOriginUids)].join(', ')}`);
 }
 
 const output = `/* Arquivo gerado por scripts/generate-catalog-data.js. Não editar manualmente. */\n` +

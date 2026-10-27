@@ -266,7 +266,7 @@ const RemoteStorage = {
           pending.error = error?.message || "Falha de conexao";
           this.savePendingWrites();
         }
-        if (error?.code !== "WRITE_CONFLICT") this.setConnectionState(false);
+        if (!["WRITE_CONFLICT", "GENERIC_STATE_WRITE_FORBIDDEN"].includes(error?.code)) this.setConnectionState(false);
         console.error(`[BANCO] Falha ao gravar ${key}:`, error);
       })
       .finally(() => {
@@ -290,6 +290,10 @@ const RemoteStorage = {
     if (response.status === 409) {
       await this.handleConflict(key);
       throw this.conflictBlockedError();
+    }
+    if (response.status === 403 && result.code === "GENERIC_STATE_WRITE_FORBIDDEN") {
+      await this.handlePolicyRejection(key, writeId, result);
+      throw this.policyRejectedError(result);
     }
     if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
     const confirmedVersion = Number(result.version);
@@ -315,12 +319,40 @@ const RemoteStorage = {
       await this.handleConflict(key);
       throw this.conflictBlockedError();
     }
+    if (response.status === 403 && result.code === "GENERIC_STATE_WRITE_FORBIDDEN") {
+      await this.handlePolicyRejection(key, writeId, result);
+      throw this.policyRejectedError(result);
+    }
     if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
     this.versions.delete(key);
     this.confirmedWriteVersions.set(writeId, 0);
     this.revision = Number(result.revision);
     this.clearPending(key, writeId);
     this.showConfirmedState();
+  },
+  policyRejectedError(result) {
+    const error = new Error(result?.error || "Escrita generica proibida.");
+    error.code = "GENERIC_STATE_WRITE_FORBIDDEN";
+    error.status = 403;
+    return error;
+  },
+  async handlePolicyRejection(key, writeId, result) {
+    this.clearPending(key, writeId);
+    await this.load(true, new Set([key]));
+    try {
+      if (this.data.has(key)) localStorage.setItem(key, JSON.stringify(this.data.get(key)));
+      else localStorage.removeItem(key);
+    } catch (error) {
+      console.warn("[BANCO] Nao foi possivel restaurar o cache confirmado:", error);
+    }
+    const warning = document.getElementById("central-server-warning");
+    if (warning) {
+      warning.textContent = result?.specificApi
+        ? `Alteracao rejeitada: ${key} exige ${result.specificApi}.`
+        : `Alteracao rejeitada pela politica de integridade: ${key}.`;
+      warning.style.display = "block";
+    }
+    if (typeof this.onUpdate === "function") this.onUpdate();
   },
   conflictBlockedError() {
     const error = new Error("Gravacao bloqueada por conflito pendente.");

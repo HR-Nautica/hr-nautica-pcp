@@ -192,7 +192,8 @@ function navigate(page) {
     case 'modelos':     renderModelos();     break;
     case 'buchas':      renderBuchas();      break;
     case 'estoque-buchas':
-      if (typeof renderEstoqueBuchas === 'function') renderEstoqueBuchas();
+      if (typeof refreshEstoqueBuchas === 'function') refreshEstoqueBuchas().catch(() => {});
+      else if (typeof renderEstoqueBuchas === 'function') renderEstoqueBuchas();
       break;
     case 'estoque':     renderEstoque();     break;
     case 'fundicao':    renderFundicao();    break;
@@ -1368,7 +1369,7 @@ window.openEditMaterial = openEditMaterial;
 
 function closeModalMaterial() { $('modal-material').classList.add('hidden'); }
 
-function saveMaterial() {
+async function saveMaterial() {
   const nome = $('material-nome').value.trim();
   if (!nome) { showToast('Informe o nome do material.', 'error'); return; }
   const data = {
@@ -1377,26 +1378,28 @@ function saveMaterial() {
     unidade:   $('material-unidade').value,
     minimo:    parseFloat($('material-minimo').value) || 0,
   };
-  if (STATE.editingMaterialId) {
-    DB.updateMaterial(STATE.editingMaterialId, data);
-    showToast('Material atualizado!');
-  } else {
-    data.saldo = parseFloat($('material-saldo').value) || 0;
-    DB.addMaterial(data);
-    showToast('Material cadastrado!');
-  }
+  try {
+    if (STATE.editingMaterialId) {
+      await DB.updateMaterial(STATE.editingMaterialId, data);
+      showToast('Material atualizado!');
+    } else {
+      data.saldo = parseFloat($('material-saldo').value) || 0;
+      await DB.addMaterial(data);
+      showToast('Material cadastrado!');
+    }
+  } catch (error) { showToast(error.message, 'error'); return; }
   closeModalMaterial();
   renderEstoque();
 }
 
-function deleteMaterial(id) {
+async function deleteMaterial(id) {
   const material = DB.getMateriais().find(item => item.id === id);
   if (material?.rawCode) {
     showToast('Peças brutas são permanentes. Ajuste apenas o saldo físico.', 'warning');
     return;
   }
   if (!confirm('Excluir este item do estoque?')) return;
-  DB.deleteMaterial(id);
+  try { await DB.deleteMaterial(id); } catch (error) { showToast(error.message, 'error'); return; }
   renderEstoque();
   showToast('Item excluído.', 'error');
 }
@@ -1415,7 +1418,7 @@ function openModalMov() {
 
 function closeModalMov() { $('modal-mov').classList.add('hidden'); }
 
-function saveMov() {
+async function saveMov() {
   const matId = $('mov-material').value;
   const qty   = parseFloat($('mov-qty').value) || 0;
   if (!matId) { showToast('Selecione o material.', 'error'); return; }
@@ -1430,7 +1433,7 @@ function saveMov() {
     if (!confirm(`Saldo insuficiente (${mat.saldo} ${mat.unidade}). Deseja continuar mesmo assim?`)) return;
   }
 
-  DB.addMovimento({ materialId: matId, tipo, qty, opId, obs });
+  try { await DB.addMovimento({ materialId: matId, materialNome: mat?.nome || '', tipo, qty, opId, obs }); } catch (error) { showToast(error.message, 'error'); return; }
   closeModalMov();
   renderEstoque();
   showToast(`Movimentação de ${tipo.toLowerCase()} registrada!`);
@@ -1524,9 +1527,7 @@ function applyFundicaoServerState(result) {
   if (!Array.isArray(result?.orders)) return;
   if (typeof RemoteStorage !== 'undefined' && typeof RemoteStorage.applyServerState === 'function') {
     RemoteStorage.applyServerState(DB.KEYS.fundicoes, result.orders, result.version, result.revision);
-    return;
   }
-  DB.saveFundicoes(result.orders);
 }
 window.applyFundicaoServerState = applyFundicaoServerState;
 
