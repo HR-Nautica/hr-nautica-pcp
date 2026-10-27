@@ -11,6 +11,20 @@
 
 O Estoque Geral é uma projeção de consulta. As linhas de saldo sem cadastro não criam itens automaticamente. Códigos relacionados são ligados apenas por correspondência exata normalizada; relações não resolvidas ficam visíveis como pendência. Quantidades de bruto, bucha, caixa, tubo e latão permanecem não informadas enquanto o cadastro não contiver consumo por unidade.
 
+## Decisão posterior: fonte do saldo por item
+
+O operador quer escolher por item entre **Sincronizar Estoque** e **Gerenciado pelo ERP**, com efeito em todo o ERP e cópia do saldo físico vigente no momento da troca. Esta escolha substitui a autoridade fixa por família descrita na tabela acima somente depois de implementada a migração operacional. Uma checkbox isolada no Estoque Geral seria falsa: a importação, os planejadores, as OPs e as movimentações continuariam lendo ou gravando nas fontes antigas.
+
+O recorte funcional precisa ser atômico e auditável:
+
+1. Identificar o item por chave estável; bloquear a troca se houver SKU duplicado, saldo desconhecido ou vínculo não reconciliado.
+2. Em transação, bloquear o item, conferir versão, capturar o saldo e a origem atuais, gravar o novo modo, o saldo inicial e um evento de transferência idempotente. Repetir a mesma requisição não pode copiar o saldo duas vezes.
+3. Redirecionar todas as leituras de saldo para uma autoridade única. A sincronização só aplica posição física aos itens no modo Excel; lançamentos e OPs só alteram itens no modo ERP. Importações continuam preservando cadastros e históricos.
+4. Na troca ERP → Excel, a cópia é uma posição provisória identificada como transferência; a próxima sincronização válida substitui apenas a posição daquele item. A interface deve mostrar claramente essa transição.
+5. Testar concorrência entre troca de modo, importação e movimentação, além de falha de rede, zero/negativo, ausência de saldo, rollback e divergências entre telas.
+
+Não publicar a seleção editável antes de os cinco pontos funcionarem. Até lá, a origem exibida permanece a autoridade atual por família.
+
 ## Sequência proposta
 
 1. **Consulta consolidada (esta etapa).** Catálogos definem os itens, tipo e vínculos; fontes oficiais fornecem saldos. Validar contagens e relações com dados reais no 8444.
