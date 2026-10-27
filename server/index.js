@@ -16,6 +16,7 @@ import { createProxyAuthentication, validateProxySecret } from "./proxy-auth.js"
 import analysisTempRouter from "./routes/analysis-temp.js";
 import buchasRouter from "./routes/buchas.js";
 import fundicaoOpsRouter from "./routes/fundicao-ops.js";
+import generalStockRouter from "./routes/general-stock.js";
 import heliceOpsRouter from "./routes/helice-ops.js";
 import integrationsRouter from "./routes/integrations.js";
 import inventoryRouter from "./routes/inventory.js";
@@ -75,6 +76,7 @@ app.use("/api/inventory", inventoryRouter);
 app.use("/api/master-items", requireMasterItemsSchema, masterItemsRouter);
 app.use("/api/catalog-links", requireCatalogLinksSchema, catalogLinksRouter);
 app.use("/api/buchas", buchasRouter);
+app.use("/api/estoque-geral", generalStockRouter);
 app.use("/api", integrationsRouter);
 app.use(express.static(dist, {
   etag: true,
