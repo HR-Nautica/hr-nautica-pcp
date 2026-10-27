@@ -71,22 +71,25 @@ test("recusa banco sem histórico", async () => {
   await assert.rejects(() => validateStrictDatabase({ migrationsDirectory }), { code: "MIGRATION_HISTORY_MISSING" });
 });
 
-test("aceita V001 íntegra e aplicada", async () => {
+test("aceita histórico íntegro e totalmente aplicado", async () => {
   await applyBaseline();
   const result = await validateStrictDatabase({ migrationsDirectory });
-  assert.deepEqual(result, { strict: true, postgresMajor: 17, migrations: 2 });
+  assert.deepEqual(result, { strict: true, postgresMajor: 17, migrations: 5, pending: [] });
 });
 
-test("recusa migration pendente", async () => {
-  await applyBaseline();
-  const directory = await mkdtemp(path.join(os.tmpdir(), "hrn-strict-pending-"));
+test("reporta migration pendente sem escrever no banco", async () => {
+  const appliedDirectory = await mkdtemp(path.join(os.tmpdir(), "hrn-strict-applied-"));
   try {
-    await copyFile(path.join(migrationsDirectory, "V001__baseline.sql"), path.join(directory, "V001__baseline.sql"));
-    await copyFile(path.join(migrationsDirectory, "V002__authentication.sql"), path.join(directory, "V002__authentication.sql"));
-    await writeFile(path.join(directory, "V003__pendente.sql"), "SELECT 1;", "utf8");
-    await assert.rejects(() => validateStrictDatabase({ migrationsDirectory: directory }), { code: "MIGRATIONS_PENDING" });
+    await copyFile(path.join(migrationsDirectory, "V001__baseline.sql"), path.join(appliedDirectory, "V001__baseline.sql"));
+    await copyFile(path.join(migrationsDirectory, "V002__authentication.sql"), path.join(appliedDirectory, "V002__authentication.sql"));
+    const client = await connect();
+    await migrate({ client, directory: appliedDirectory, operator: "strict.integration" });
+    await client.end();
+    const result = await validateStrictDatabase({ migrationsDirectory });
+    assert.deepEqual(result.pending, [3, 4, 5]);
+    assert.equal((await admin.query("SELECT to_regclass('public.master_items') AS name")).rows[0].name, null);
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(appliedDirectory, { recursive: true, force: true });
   }
 });
 
