@@ -226,6 +226,42 @@ function resolveBom(items) {
   }
 }
 
+function reconciliationIssues({ snapshot, analysisRows, buchasStock, rawStock, items, catalogCodes }) {
+  const issues = [];
+  const add = (family, code, category, detail, count = 1) => issues.push({
+    id: `${family}:${category}:${normalize(code) || "sem-codigo"}:${issues.length}`,
+    family, familyLabel: FAMILY_LABELS[family], code: text(code) || "Sem código",
+    category, detail, count
+  });
+  const sourceGroups = [
+    ["helices", Array.isArray(analysisRows) ? analysisRows : [], row => row.sku],
+    ["componentes", Object.keys(snapshot.data?.hrn_earv_estoque || {}), code => code],
+    ["buchas", Array.isArray(buchasStock?.items) ? buchasStock.items : [], row => row.sku],
+    ["brutos", Array.isArray(rawStock?.items) ? rawStock.items : [], row => row.rawCode]
+  ];
+  for (const [family, rows, codeOf] of sourceGroups) {
+    const unmatched = new Map();
+    for (const row of rows) {
+      const code = text(codeOf(row));
+      if (code && catalogCodes[family].has(normalize(code))) continue;
+      const key = normalize(code) || "sem-codigo";
+      const group = unmatched.get(key) || { code, count: 0 };
+      group.count += 1;
+      unmatched.set(key, group);
+    }
+    for (const { code, count } of unmatched.values()) add(family, code, "source_without_catalog", "Posição da fonte oficial sem cadastro correspondente", count);
+  }
+  for (const item of items) {
+    if (item.identityStatus !== "confirmed") add(item.family, item.code, "ambiguous_identity", "Identidade ambígua: conferir códigos duplicados ou descrições divergentes");
+    else if (item.physicalStock === null) add(item.family, item.code, "balance_pending", "Cadastro sem saldo físico confirmado na fonte atual");
+    for (const line of item.bom) {
+      if (line.status === "linked") continue;
+      add(item.family, item.code, line.status === "ambiguous" ? "ambiguous_relation" : "relation_without_catalog", `${line.role}: ${line.code} (${FAMILY_LABELS[line.family]})`);
+    }
+  }
+  return issues.sort((a, b) => a.familyLabel.localeCompare(b.familyLabel, "pt-BR") || a.category.localeCompare(b.category) || a.code.localeCompare(b.code, "pt-BR"));
+}
+
 export function buildGeneralStock({ snapshot = { data: {} }, analysisRows = [], buchasStock = {}, rawStock = {} } = {}) {
   const items = [
     ...helices(snapshot, analysisRows),
@@ -242,15 +278,18 @@ export function buildGeneralStock({ snapshot = { data: {} }, analysisRows = [], 
     buchas: (Array.isArray(buchasStock?.items) ? buchasStock.items : []).filter(row => !catalogCodes.buchas.has(normalize(row.sku))).length,
     brutos: (Array.isArray(rawStock?.items) ? rawStock.items : []).filter(row => !catalogCodes.brutos.has(normalize(row.rawCode))).length
   };
+  const reconciliation = reconciliationIssues({ snapshot, analysisRows, buchasStock, rawStock, items, catalogCodes });
   return {
     items,
+    reconciliation,
     summary: {
       totalActive: active.length,
       physicalKnown: active.filter(item => item.physicalStock !== null).length,
       physicalZero: active.filter(item => item.physicalStock === 0).length,
       balancePending: active.filter(item => item.physicalStock === null).length,
       availableConfigured: active.filter(item => item.availableStock !== null).length,
-      unmatchedSourceRows
+      unmatchedSourceRows,
+      reconciliationIssues: reconciliation.length
     },
     sources: {
       helices: "Snapshot Excel de hélices",
