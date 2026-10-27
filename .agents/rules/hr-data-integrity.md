@@ -1,6 +1,6 @@
 ---
 trigger: model_decision
-description: "Aplicar a importações Excel, saldos, tabelas, versões, concorrência, transações de estoque e mudanças em banco/API." 
+description: "Aplicar a importações Excel, saldos, tabelas, versões, concorrência, transações de estoque e mudanças em banco/API."
 ---
 
 # Fonte de verdade, persistência e integridade
