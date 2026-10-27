@@ -8,6 +8,9 @@
   const state = {
     selectedEntradaId: null,
     activeTab: 'saldos', // 'saldos' | 'lotes' | 'historico'
+    snapshot: null,
+    loading: false,
+    intents: new Map(),
   };
 
   const byId = id => document.getElementById(id);
@@ -23,6 +26,73 @@
 
   function formatNum(val) {
     return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Number(val) || 0);
+  }
+
+  function writeError(response, payload) {
+    const error = new Error(payload?.error || `Falha na operacao (HTTP ${response.status}).`);
+    error.status = response.status;
+    return error;
+  }
+
+  function newEventKey(prefix, fingerprint) {
+    const existing = state.intents.get(fingerprint);
+    if (existing) return existing;
+    const suffix = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const eventKey = `BUCHA-${prefix}-${suffix}`;
+    state.intents.set(fingerprint, eventKey);
+    return eventKey;
+  }
+
+  function applyConfirmedSnapshot(snapshot) {
+    state.snapshot = snapshot;
+    if (typeof RemoteStorage === 'undefined') return;
+    RemoteStorage.applyServerState(DB.KEYS.buchas, snapshot.catalog || [], snapshot.versions?.hrn_buchas, snapshot.revision);
+    RemoteStorage.applyServerState(DB.KEYS.buchasEntradas, snapshot.entries || [], snapshot.versions?.hrn_buchas_entradas, snapshot.revision);
+    RemoteStorage.applyServerState(DB.KEYS.buchasSaidas, snapshot.outputs || [], snapshot.versions?.hrn_buchas_saidas, snapshot.revision);
+  }
+
+  function renderLoadState(message) {
+    const grid = byId('bucha-saldo-grid');
+    if (grid) grid.innerHTML = `<tr><td colspan="9" class="empty-cell">${escapeHtml(message)}</td></tr>`;
+  }
+
+  async function refreshEstoqueBuchas({ render = true } = {}) {
+    if (state.loading) return state.snapshot;
+    state.loading = true;
+    if (!state.snapshot) renderLoadState('Carregando saldos confirmados...');
+    try {
+      const response = await fetch('/api/buchas/stock', { cache: 'no-store' });
+      const snapshot = await response.json().catch(() => ({}));
+      if (!response.ok) throw writeError(response, snapshot);
+      applyConfirmedSnapshot(snapshot);
+      if (render) renderEstoqueBuchas();
+      return snapshot;
+    } catch (error) {
+      if (!state.snapshot) renderLoadState(`Nao foi possivel carregar dados confirmados: ${error.message}`);
+      if (typeof showToast === 'function') showToast(`Buchas: ${error.message}`, 'error');
+      throw error;
+    } finally {
+      state.loading = false;
+    }
+  }
+
+  async function postBuchas(path, data, expectedVersions) {
+    const response = await fetch(`/api/buchas${path}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-PCP-User': window.PCP_CURRENT_USER || '' },
+      body: JSON.stringify({ data, expectedVersions })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw writeError(response, result);
+    return result;
+  }
+
+  async function submitBucha(buttonId, work) {
+    const button = byId(buttonId);
+    if (button?.disabled) return false;
+    const label = button?.textContent;
+    if (button) { button.disabled = true; button.textContent = 'Enviando...'; }
+    try { await work(); return true; }
+    finally { if (button) { button.disabled = false; button.textContent = label; } }
   }
 
   function switchEstoqueBuchasTab(tabName) {
@@ -42,10 +112,11 @@
 
   function renderEstoqueBuchas() {
     if (typeof DB === 'undefined') return;
+    if (!state.snapshot) { refreshEstoqueBuchas().catch(() => {}); return; }
 
-    const saldos = DB.getBuchasSaldosConsolidados();
-    const entradas = DB.getBuchasEntradas();
-    const saidas = DB.getBuchasSaidas();
+    const saldos = (state.snapshot.items || []).map(item => ({ ...item, qtdUsinagem: item.usinagem, qtdRetrabalho: item.retrabalho, qtdVulcanizacao: item.vulcanizacao, qtdAcabada: item.estoqueFinal, saldoTotal: item.total }));
+    const entradas = state.snapshot.entries || [];
+    const saidas = state.snapshot.outputs || [];
 
     const search = String(byId('bucha-op-search')?.value || '').trim().toLowerCase();
     const filterMotor = byId('bucha-filter-motor-saldo')?.value || '';
@@ -249,7 +320,7 @@
 
   // --- Modal Nova Entrada de Bucha ---
   function openNovaEntradaBucha(preselectSku = '') {
-    const catalog = DB.getBuchas();
+    const catalog = state.snapshot?.catalog || [];
     const selectSku = byId('entrada-bucha-sku');
     if (selectSku) {
       selectSku.innerHTML = [
@@ -270,7 +341,7 @@
     byId('modal-nova-entrada-bucha')?.classList.add('hidden');
   }
 
-  function saveNovaEntradaBucha() {
+  async function saveNovaEntradaBucha() {
     const sku = byId('entrada-bucha-sku')?.value;
     const qty = parseInt(byId('entrada-bucha-qty')?.value, 10);
     const etapaInicial = byId('entrada-bucha-etapa')?.value || 'Usinagem';
@@ -285,16 +356,26 @@
       return;
     }
 
-    DB.addBuchaEntrada({ sku, quantidade: qty, etapaInicial, origemObs });
-    if (typeof showToast === 'function') showToast(`Entrada registrada com sucesso!`, 'success');
-
-    closeModalNovaEntradaBucha();
-    renderEstoqueBuchas();
+    const fingerprint = JSON.stringify({ action: 'entry', sku, qty, etapaInicial, origemObs });
+    try {
+      await submitBucha('btn-save-nova-entrada-bucha', async () => {
+        const eventKey = newEventKey('ENTRY', fingerprint);
+        const snapshot = state.snapshot || await refreshEstoqueBuchas({ render: false });
+        await postBuchas('/entries', { sku, quantidade: qty, etapaInicial, origemObs, eventKey }, { hrn_buchas: snapshot.versions?.hrn_buchas || 0, hrn_buchas_entradas: snapshot.versions?.hrn_buchas_entradas || 0 });
+        state.intents.delete(fingerprint);
+        await refreshEstoqueBuchas();
+        if (typeof showToast === 'function') showToast('Entrada registrada com sucesso!', 'success');
+        closeModalNovaEntradaBucha();
+      });
+    } catch (error) {
+      if (error.status === 409) await refreshEstoqueBuchas().catch(() => {});
+      if (typeof showToast === 'function') showToast(error.message || 'Erro ao registrar entrada.', 'error');
+    }
   }
 
   // --- Modal Transicionar Lote ---
   function openTransicaoLoteBucha(id) {
-    const entradas = DB.getBuchasEntradas();
+    const entradas = state.snapshot?.entries || [];
     const entrada = entradas.find(e => e.id === id);
     if (!entrada) return;
 
@@ -333,9 +414,9 @@
     state.selectedEntradaId = null;
   }
 
-  function saveTransicaoLoteBucha() {
+  async function saveTransicaoLoteBucha() {
     if (!state.selectedEntradaId) return;
-    const entradas = DB.getBuchasEntradas();
+    const entradas = state.snapshot?.entries || [];
     const entrada = entradas.find(e => e.id === state.selectedEntradaId);
     if (!entrada) return;
 
@@ -349,16 +430,26 @@
       return;
     }
 
-    DB.moverBuchaEntrada(state.selectedEntradaId, moveQty, proximaEtapa, acaoSaldo);
-    if (typeof showToast === 'function') showToast(`Lote ${entrada.codigoEntrada} transicionado para ${proximaEtapa}!`, 'success');
-
-    closeModalTransicaoLoteBucha();
-    renderEstoqueBuchas();
+    const fingerprint = JSON.stringify({ action: 'transition', id: entrada.id, moveQty, proximaEtapa, acaoSaldo });
+    try {
+      await submitBucha('btn-save-transicao-bucha', async () => {
+        const eventKey = newEventKey('MOVE', fingerprint);
+        const snapshot = state.snapshot || await refreshEstoqueBuchas({ render: false });
+        await postBuchas(`/entries/${encodeURIComponent(entrada.id)}/transition`, { quantidade: moveQty, proximaEtapa, acaoSaldoRestante: acaoSaldo, eventKey }, { hrn_buchas_entradas: snapshot.versions?.hrn_buchas_entradas || 0 });
+        state.intents.delete(fingerprint);
+        await refreshEstoqueBuchas();
+        if (typeof showToast === 'function') showToast(`Lote ${entrada.codigoEntrada} transicionado para ${proximaEtapa}!`, 'success');
+        closeModalTransicaoLoteBucha();
+      });
+    } catch (error) {
+      if (error.status === 409) await refreshEstoqueBuchas().catch(() => {});
+      if (typeof showToast === 'function') showToast(error.message || 'Erro ao transicionar lote.', 'error');
+    }
   }
 
   // --- Modal Dar Baixa / Registrar Saída ---
   function openSaidaBucha(preselectSku = '') {
-    const saldos = DB.getBuchasSaldosConsolidados();
+    const saldos = (state.snapshot?.items || []).map(item => ({ ...item, qtdAcabada: item.estoqueFinal }));
     const selectSku = byId('saida-bucha-sku');
     if (selectSku) {
       selectSku.innerHTML = [
@@ -378,7 +469,7 @@
     byId('modal-saida-bucha')?.classList.add('hidden');
   }
 
-  function saveSaidaBucha() {
+  async function saveSaidaBucha() {
     const sku = byId('saida-bucha-sku')?.value;
     const qty = parseInt(byId('saida-bucha-qty')?.value, 10);
     const destinoObs = byId('saida-bucha-obs')?.value.trim() || 'Baixa de estoque';
@@ -392,21 +483,26 @@
       return;
     }
 
+    const fingerprint = JSON.stringify({ action: 'output', sku, qty, destinoObs });
     try {
-      DB.addBuchaSaida({ sku, quantidade: qty, destinoObs });
-      if (typeof showToast === 'function') showToast('Saída registrada e saldo abatido com sucesso!');
-    } catch (e) {
-      if (typeof showToast === 'function') showToast(e.message || 'Erro ao registrar saída.', 'error');
-      return;
+      await submitBucha('btn-save-saida-bucha', async () => {
+        const eventKey = newEventKey('OUTPUT', fingerprint);
+        const snapshot = state.snapshot || await refreshEstoqueBuchas({ render: false });
+        await postBuchas('/outputs', { sku, quantidade: qty, destinoObs, eventKey }, { hrn_buchas: snapshot.versions?.hrn_buchas || 0, hrn_buchas_entradas: snapshot.versions?.hrn_buchas_entradas || 0, hrn_buchas_saidas: snapshot.versions?.hrn_buchas_saidas || 0 });
+        state.intents.delete(fingerprint);
+        await refreshEstoqueBuchas();
+        if (typeof showToast === 'function') showToast('Saída registrada e saldo abatido com sucesso!', 'success');
+        closeModalSaidaBucha();
+      });
+    } catch (error) {
+      if (error.status === 409) await refreshEstoqueBuchas().catch(() => {});
+      if (typeof showToast === 'function') showToast(error.message || 'Erro ao registrar saída.', 'error');
     }
-
-    closeModalSaidaBucha();
-    renderEstoqueBuchas();
   }
 
   // --- Modal Histórico do Lote ---
   function openHistoricoLoteBucha(id) {
-    const entradas = DB.getBuchasEntradas();
+    const entradas = state.snapshot?.entries || [];
     const entrada = entradas.find(e => e.id === id);
     if (!entrada) return;
 
@@ -433,12 +529,14 @@
 
   // Exposição global
   window.renderEstoqueBuchas = renderEstoqueBuchas;
+  window.refreshEstoqueBuchas = refreshEstoqueBuchas;
   window.switchEstoqueBuchasTab = switchEstoqueBuchasTab;
   window.openNovaEntradaBucha = openNovaEntradaBucha;
   window.openTransicaoLoteBucha = openTransicaoLoteBucha;
   window.openSaidaBucha = openSaidaBucha;
   window.openHistoricoLoteBucha = openHistoricoLoteBucha;
   window.closeModalHistoricoLoteBucha = closeModalHistoricoLoteBucha;
+  if (window.__HRN_TEST__) window.__BuchasUiTest = { state, refreshEstoqueBuchas, saveNovaEntradaBucha, saveTransicaoLoteBucha, saveSaidaBucha };
 
   // Event Listeners DOM
   document.addEventListener('DOMContentLoaded', () => {

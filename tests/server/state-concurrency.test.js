@@ -58,28 +58,28 @@ function assertConflict(result, currentVersion) {
   assert.equal(result.reason.currentVersion, currentVersion);
 }
 
-test("duas atualizacoes simultaneas com a mesma versao confirmam somente uma", async () => {
-  const client = new AtomicStateClient([["hrn_ops", "[]", 1]]);
+test("duas atualizacoes simultaneas em chave generica permitida confirmam somente uma", async () => {
+  const client = new AtomicStateClient([["hrn_pedidos", "[]", 1]]);
   const results = await Promise.allSettled([
-    upsertStatePostgres(client, "hrn_ops", [{ id: "A" }], 1, "alice"),
-    upsertStatePostgres(client, "hrn_ops", [{ id: "B" }], 1, "bob")
+    upsertStatePostgres(client, "hrn_pedidos", [{ id: "A" }], 1, "alice"),
+    upsertStatePostgres(client, "hrn_pedidos", [{ id: "B" }], 1, "bob")
   ]);
   assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
   assertConflict(results.find(result => result.status === "rejected"), 2);
-  assert.equal(client.state.get("hrn_ops").version, 2);
+  assert.equal(client.state.get("hrn_pedidos").version, 2);
   assert.equal(client.revision, 1);
   assert.equal(client.audit.length, 1);
 });
 
-test("snapshots diferentes e expectedVersion desatualizada nao sobrescrevem o confirmado", async () => {
-  const client = new AtomicStateClient([["hrn_materiais", "[]", 4]]);
-  await upsertStatePostgres(client, "hrn_materiais", [{ id: "novo" }], 4, "alice");
+test("snapshots diferentes em chave generica permitida nao sobrescrevem o confirmado", async () => {
+  const client = new AtomicStateClient([["hrn_manutencoes", "[]", 4]]);
+  await upsertStatePostgres(client, "hrn_manutencoes", [{ id: "novo" }], 4, "alice");
   await assert.rejects(
-    upsertStatePostgres(client, "hrn_materiais", [{ id: "obsoleto" }], 4, "bob"),
+    upsertStatePostgres(client, "hrn_manutencoes", [{ id: "obsoleto" }], 4, "bob"),
     error => error.status === 409 && error.currentVersion === 5
   );
-  assert.match(client.state.get("hrn_materiais").value, /novo/);
-  assert.doesNotMatch(client.state.get("hrn_materiais").value, /obsoleto/);
+  assert.match(client.state.get("hrn_manutencoes").value, /novo/);
+  assert.doesNotMatch(client.state.get("hrn_manutencoes").value, /obsoleto/);
   assert.equal(client.revision, 1);
   assert.equal(client.audit.length, 1);
 });
@@ -97,10 +97,10 @@ test("insercao concorrente de chave inexistente aceita somente um criador", asyn
 });
 
 test("exclusao concorrente confirma uma vez e nao duplica revisao ou auditoria", async () => {
-  const client = new AtomicStateClient([["hrn_atividades", "[]", 3]]);
+  const client = new AtomicStateClient([["hrn_prod_comp_entradas", "[]", 3]]);
   const results = await Promise.allSettled([
-    deleteStatePostgres(client, "hrn_atividades", 3, "alice"),
-    deleteStatePostgres(client, "hrn_atividades", 3, "bob")
+    deleteStatePostgres(client, "hrn_prod_comp_entradas", 3, "alice"),
+    deleteStatePostgres(client, "hrn_prod_comp_entradas", 3, "bob")
   ]);
   assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
   assertConflict(results.find(result => result.status === "rejected"), 0);
@@ -111,7 +111,7 @@ test("exclusao concorrente confirma uma vez e nao duplica revisao ou auditoria",
 
 test("excluir chave inexistente na versao zero e idempotente", async () => {
   const client = new AtomicStateClient();
-  assert.deepEqual(await deleteStatePostgres(client, "hrn_inexistente", 0, "alice"), { revision: 0 });
+  assert.deepEqual(await deleteStatePostgres(client, "hrn_prod_comp_entradas", 0, "alice"), { revision: 0 });
   assert.equal(client.revision, 0);
   assert.equal(client.audit.length, 0);
 });

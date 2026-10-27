@@ -7,6 +7,7 @@ const buchasPath = path.resolve('public/Novas Planilhas/Buchas.xlsx');
 const catalogDataPath = path.resolve('public/js/catalogo_data.js');
 const generateCatalogScriptPath = path.resolve('scripts/generate-catalog-data.js');
 const newVersion = '2026-08-07';
+const originUidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // 1. Ler a planilha Buchas.xlsx
 const wbBuchas = XLSX.read(fs.readFileSync(buchasPath), { type: 'buffer' });
@@ -28,6 +29,14 @@ const catalogCode = fs.readFileSync(catalogDataPath, 'utf8');
 const context = vm.createContext({});
 vm.runInContext(`${catalogCode}\nglobalThis.data = CATALOGO_DATA;`, context);
 const catalogData = context.data;
+
+const originUids = catalogData.map((item) => String(item.origin_uid || '').trim().toLowerCase());
+if (originUids.some((originUid) => !originUidPattern.test(originUid))) {
+  throw new Error('O cat\u00e1logo atual cont\u00e9m Origin UID ausente ou inv\u00e1lido; a atualiza\u00e7\u00e3o foi interrompida.');
+}
+if (new Set(originUids).size !== originUids.length) {
+  throw new Error('O cat\u00e1logo atual cont\u00e9m Origin UID duplicado; a atualiza\u00e7\u00e3o foi interrompida.');
+}
 
 let matchedCount = 0;
 let emptyCount = 0;

@@ -1,0 +1,23 @@
+.ficha-master-identity { grid-column: 1 / -1; }
+.ficha-master-identity__heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.ficha-master-identity__heading h4 { margin-bottom:2px; }
+.ficha-master-identity__heading p, .ficha-master-identity__message, .ficha-master-identity__meta, .ficha-master-identity__technical, .ficha-master-identity__results p { margin:0; color:var(--text-muted); font-size:.78rem; line-height:1.45; }
+.ficha-master-identity__status { flex:0 0 auto; border:1px solid var(--border); border-radius:999px; padding:3px 8px; color:var(--text-secondary); font-size:.72rem; font-weight:700; }
+.ficha-master-identity__status[data-kind="success"] { color:var(--accent-green); border-color:rgba(74,222,128,.28); }
+.ficha-master-identity__status[data-kind="error"] { color:var(--accent-red); border-color:rgba(248,113,113,.28); }
+.ficha-master-identity__status[data-kind="warning"] { color:var(--accent-orange); }
+.ficha-master-identity__content { display:flex; flex-direction:column; gap:10px; }
+.ficha-master-identity__item, .ficha-master-identity__confirm { display:flex; flex-direction:column; gap:3px; }
+.ficha-master-identity__item strong, .ficha-master-identity__confirm strong { color:var(--text-primary); font-size:.86rem; }
+.ficha-master-identity__item span, .ficha-master-identity__confirm span { color:var(--text-secondary); font-size:.78rem; }
+.ficha-master-identity__actions { display:flex; flex-wrap:wrap; gap:8px; }
+.ficha-master-identity__unlink { color:var(--accent-red) !important; }
+.ficha-master-identity__technical { border-top:1px dashed var(--border); padding-top:8px; }
+.ficha-master-identity__technical code { color:var(--text-secondary); font-size:.72rem; }
+.ficha-master-identity__label { display:flex; flex-direction:column; gap:5px; color:var(--text-secondary); font-size:.78rem; font-weight:600; }
+.ficha-master-identity__results { display:flex; flex-direction:column; gap:6px; max-height:190px; overflow:auto; }
+.ficha-master-identity__result { display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:var(--radius); background:transparent; color:var(--text-primary); text-align:left; cursor:pointer; }
+.ficha-master-identity__result:hover { border-color:var(--accent-blue); background:var(--accent-blue-bg); }
+.ficha-master-identity__result span { color:var(--text-secondary); font-size:.76rem; }
+.ficha-master-identity__message--error { color:var(--accent-red) !important; }
+@media (max-width:700px) { .ficha-master-identity__heading { flex-direction:column; } }

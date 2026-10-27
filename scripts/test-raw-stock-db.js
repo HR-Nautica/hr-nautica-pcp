@@ -4,8 +4,7 @@ import {
   closeDatabase,
   getRawMaterialStock,
   getStateSnapshot,
-  mutateManualProductionOrder,
-  upsertState
+  mutateManualProductionOrder
 } from "../server/database.js";
 
 const actor = "QA_RAW_STOCK";
@@ -59,10 +58,7 @@ try {
   if (changedRaw && changedRaw.quantity !== 0) {
     await adjustRawMaterialStock(changedRaw.rawCode, 0, stockAfterTest.version, actor);
   }
-  const latest = await getStateSnapshot(0);
-  const cleanMovements = (latest.data.hrn_movimentos || []).filter(item => item.usuario !== actor);
-  if (cleanMovements.length !== (latest.data.hrn_movimentos || []).length) {
-    await upsertState("hrn_movimentos", cleanMovements, latest.versions.hrn_movimentos, "QA_CLEANUP");
-  }
+  // O ledger e a auditoria são históricos: este teste não os reescreve por
+  // endpoint genérico. Execute-o somente em banco descartável de integração.
   await closeDatabase();
 }

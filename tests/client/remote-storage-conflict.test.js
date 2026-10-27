@@ -52,6 +52,26 @@ test("HTTP 409 preserva servidor e alteracao local sem reenvio automatico", asyn
   assert.deepEqual(calls.map(call => call.method), ["PUT", "GET"]);
 });
 
+test("HTTP 403 de politica restaura o servidor sem entrar em modo offline ou manter retry", async () => {
+  const calls = [];
+  const { storage, warning } = harness(async (_url, options = {}) => {
+    calls.push(options.method || "GET");
+    if (calls.length === 1) return response(403, { code: "GENERIC_STATE_WRITE_FORBIDDEN", specificApi: "/api/production-ops" });
+    return response(200, { modified: true, revision: 8, data: { hrn_ops: [{ id: "servidor" }] }, versions: { hrn_ops: 2 } });
+  });
+  storage.online = true;
+  storage.serverStateLoaded = true;
+  storage.data.set("hrn_ops", [{ id: "base" }]);
+  storage.versions.set("hrn_ops", 1);
+  storage.setItem("hrn_ops", JSON.stringify([{ id: "local" }]));
+  await storage.writeQueues.get("hrn_ops");
+  assert.deepEqual(JSON.parse(JSON.stringify(storage.data.get("hrn_ops"))), [{ id: "servidor" }]);
+  assert.equal(storage.pendingWrites.has("hrn_ops"), false);
+  assert.equal(storage.online, true);
+  assert.match(warning.textContent, /production-ops/);
+  assert.deepEqual(calls, ["PUT", "GET"]);
+});
+
 test("fila nao envia snapshot posterior depois que a chave entra em conflito", async () => {
   const calls = [];
   const { storage } = harness(async (url, options = {}) => {

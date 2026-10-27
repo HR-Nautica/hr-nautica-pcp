@@ -20,11 +20,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "454e05b7-ee2d-47a3-9dd4-3c8312c77352",
+    "skuBucha": "HR BH 002",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "12",
-    "skuBucha": "HR BH 002"
+    "passo": "12"
   },
   {
     "nome": "HÉLICE HONDA 15 HP 9 1/4 X 10",
@@ -45,11 +46,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "77d93906-a2df-41f0-992e-460cde01007c",
+    "skuBucha": "HR BH 001",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10",
-    "skuBucha": "HR BH 001"
+    "passo": "10"
   },
   {
     "nome": "HÉLICE HIDEA 15 HP 9 1/4 X 11",
@@ -70,11 +72,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "432b9502-94d4-439c-989d-e77cceaaa597",
+    "skuBucha": "HR BH 001",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11",
-    "skuBucha": "HR BH 001"
+    "passo": "11"
   },
   {
     "nome": "HÉLICE HIDEA 20/25 HP 9 1/4 X 11 Geração 1",
@@ -95,11 +98,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "ef0d81af-58bb-48a0-8d26-c10c2f9daed4",
+    "skuBucha": "HR BH 002",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11",
-    "skuBucha": "HR BH 002"
+    "passo": "11"
   },
   {
     "nome": "HÉLICE J/E 15 HP 9 1/2 X 10",
@@ -120,11 +124,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (13/16 x 59) PARA HÉLICE J/E 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "639663b4-221e-490f-aef0-41ec38961402",
+    "skuBucha": "HR BH 011",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/2",
-    "passo": "10",
-    "skuBucha": "HR BH 011"
+    "passo": "10"
   },
   {
     "nome": "HÉLICE J/E 15 HP 9 X 11",
@@ -145,11 +150,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (13/16 x 59) PARA HÉLICE J/E 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "1e2b395b-cee1-475f-b012-58f6f830e7c6",
+    "skuBucha": "HR BH 011",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
-    "passo": "11",
-    "skuBucha": "HR BH 011"
+    "passo": "11"
   },
   {
     "nome": "HÉLICE J/E 25/35 HP 10 X 13 STD",
@@ -170,11 +176,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" x 73) PARA HÉLICE J/E 25 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "4795690e-d222-49df-a669-18cdb4f25466",
+    "skuBucha": "HR BH 012",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10",
-    "passo": "13",
-    "skuBucha": "HR BH 012"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE J/E 25/35 HP 10 X 15",
@@ -195,11 +202,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" x 73) PARA HÉLICE J/E 25 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "3fb8ce4b-b374-48a9-af06-993460b02f7b",
+    "skuBucha": "HR BH 012",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10",
-    "passo": "15",
-    "skuBucha": "HR BH 012"
+    "passo": "15"
   },
   {
     "nome": "HÉLICE MERCURY 6 /15 HP 9 X 10 1/2 USA",
@@ -220,11 +228,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (3/4 x 55) PARA HÉLICE MERCURY 15 HP USA",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "6e7f2399-c3da-4565-b0dc-9818a2e1e057",
+    "skuBucha": "HR BH 010",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
-    "passo": "10 1/2",
-    "skuBucha": "HR BH 010"
+    "passo": "10 1/2"
   },
   {
     "nome": "HÉLICE MERCURY 15 SUPER 9 1/4 X 9",
@@ -245,11 +254,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 80) PARA HÉLICE MERCURY 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N5 15 HP MERCURY",
     "skuCaixa": "HR CXA 013",
+    "origin_uid": "bb1884c7-04e1-4d9f-af89-b0499b79599c",
+    "skuBucha": "HR BH 008",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "9",
-    "skuBucha": "HR BH 008"
+    "passo": "9"
   },
   {
     "nome": "HÉLICE MERCURY 15 SUPER 9 1/4 X 10",
@@ -270,11 +280,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 80) PARA HÉLICE MERCURY 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N5 15 HP MERCURY",
     "skuCaixa": "HR CXA 013",
+    "origin_uid": "1c6b91e9-bf7c-4c09-b4df-769609ac01db",
+    "skuBucha": "HR BH 008",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10",
-    "skuBucha": "HR BH 008"
+    "passo": "10"
   },
   {
     "nome": "HÉLICE MERCURY 25/30 SEA-PRO 9 7/8 X 13",
@@ -295,11 +306,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 77) PARA HÉLICE MERCURY 25 HP (Parede Fina)",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "8c010ae6-347f-4548-acba-3aee35b4b90c",
+    "skuBucha": "HR BH 009",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "13",
-    "skuBucha": "HR BH 009"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE MERCURY 25/30 SEA-PRO 9 7/8 X 12",
@@ -320,11 +332,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 77) PARA HÉLICE MERCURY 25 HP (Parede Fina)",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "87f73ad3-2620-490a-ab22-253ccd3d344a",
+    "skuBucha": "HR BH 009",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "12",
-    "skuBucha": "HR BH 009"
+    "passo": "12"
   },
   {
     "nome": "HÉLICE MERCURY 40 SUPER 10 3/8 X 13",
@@ -345,11 +358,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "635e3a0f-2aa5-4bf0-8c52-15d5d017fba4",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13",
-    "skuBucha": "HR BH 003"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 1/4 X 17",
@@ -370,11 +384,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "6c371e5d-f900-43f2-8ddc-ca0e0d442e04",
+    "skuBucha": "HR BH 014",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17",
-    "skuBucha": "HR BH 014"
+    "passo": "17"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 1/4 X 17",
@@ -395,11 +410,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "f625ca77-a3f2-4410-b60b-690f4119d1ca",
+    "skuBucha": "HR BH 014",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17",
-    "skuBucha": "HR BH 014"
+    "passo": "17"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 X 19",
@@ -420,11 +436,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "395f2cb0-6766-4d9b-953e-1cd0232797d0",
+    "skuBucha": "HR BH 014",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
-    "passo": "19",
-    "skuBucha": "HR BH 014"
+    "passo": "19"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 X 19",
@@ -445,11 +462,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "d8856bb8-b3d2-4885-b2ee-885124c3240a",
+    "skuBucha": "HR BH 014",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
-    "passo": "19",
-    "skuBucha": "HR BH 014"
+    "passo": "19"
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 1/4 X 14",
@@ -470,11 +488,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "54a94dd4-91a3-469c-9a4c-606a04397238",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/4",
-    "passo": "14",
-    "skuBucha": "HR BH 003"
+    "passo": "14"
   },
   {
     "nome": "HÉLICE MERCURY 30/60 HP 10 3/8 X 13",
@@ -495,11 +514,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 84) PARA HÉLICE MERCURY 30/60 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "582f5688-f8ac-42e2-a4d6-941141d9d19a",
+    "skuBucha": "HR BH 017",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13",
-    "skuBucha": "HR BH 017"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE MERCURY 30/60 HP 10 3/8 X 13",
@@ -520,11 +540,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 84) PARA HÉLICE MERCURY 30/60 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "8a438081-62c7-4766-a1c3-8420e8be8a4e",
+    "skuBucha": "HR BH 017",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13",
-    "skuBucha": "HR BH 017"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE MERCURY 25/30 HP SEA-PRO 9.6  X 13",
@@ -545,11 +566,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 77) PARA HÉLICE MERCURY 25 HP (Parede Fina)",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "6fbcb2df-c560-4108-b1fc-6d07ed64fbb4",
+    "skuBucha": "HR BH 009",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9.6",
-    "passo": "13",
-    "skuBucha": "HR BH 009"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE MERCURY 25/30 HP SEA-PRO 9.9  X 13 MT1763",
@@ -570,11 +592,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 77) PARA HÉLICE MERCURY 25 HP (Parede Fina)",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "66f6a3b4-2472-4b3f-a32e-a3388cde2dd3",
+    "skuBucha": "HR BH 009",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9.9",
-    "passo": "13",
-    "skuBucha": "HR BH 009"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP 13 1/2 X 23",
@@ -595,11 +618,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "f92cec72-c2c8-4a30-bcde-5debb7aa30c1",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/2",
-    "passo": "23",
-    "skuBucha": "HR BH 004"
+    "passo": "23"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 3/4 X 15",
@@ -620,11 +644,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "f5df8c87-2a81-447d-bff7-07ca7a6bdbe6",
+    "skuBucha": "HR BH 014",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
-    "passo": "15",
-    "skuBucha": "HR BH 014"
+    "passo": "15"
   },
   {
     "nome": "HÉLICE MERCURY 75/125 HP 13 3/4 X 15",
@@ -645,11 +670,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/2 x 116,5) PARA HÉLICE MERCURY 75/125 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "d15ab98d-74de-44a2-9abf-171c7dc77acd",
+    "skuBucha": "HR BH 014",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
-    "passo": "15",
-    "skuBucha": "HR BH 014"
+    "passo": "15"
   },
   {
     "nome": "HÉLICE MERCURY 6 /15 HP 9 X 9",
@@ -670,11 +696,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (3/4 x 55) PARA HÉLICE MERCURY 15 HP USA",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "92af5e07-ea42-4fcf-8b24-63488130c28c",
+    "skuBucha": "HR BH 010",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9",
-    "passo": "9",
-    "skuBucha": "HR BH 010"
+    "passo": "9"
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP 14 1/2 X 17",
@@ -695,11 +722,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "1fd123d2-5d17-4cb4-9d68-951362410970",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
-    "passo": "17",
-    "skuBucha": "HR BH 004"
+    "passo": "17"
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP V6 14 1/2 X 19",
@@ -720,11 +748,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "cce14588-dc7b-4456-af93-7d36e3c264b1",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
-    "passo": "19",
-    "skuBucha": "HR BH 004"
+    "passo": "19"
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 1/2 X 13",
@@ -745,11 +774,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "bb9f5522-1b8a-44aa-bc33-7799bdda404d",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
-    "passo": "13",
-    "skuBucha": "HR BH 003"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 3/8 X 14",
@@ -770,11 +800,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "3eae3e6c-c9aa-4077-93a3-820452ade7a1",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "14",
-    "skuBucha": "HR BH 003"
+    "passo": "14"
   },
   {
     "nome": "HÉLICE MERCURY 15 SUPER 9 1/4 X 9 MAX TORK",
@@ -795,11 +826,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX15",
+    "origin_uid": "9a1baf88-4d7b-4a2e-a2a7-b2517bafdae1",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "9",
-    "skuBucha": ""
+    "passo": "9"
   },
   {
     "nome": "HÉLICE MERCURY 40 SUPER 10 3/8 X 13 MAX TORK",
@@ -820,11 +852,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX40",
+    "origin_uid": "58c06425-cfbe-4430-a2e5-e7d8090ee088",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13",
-    "skuBucha": ""
+    "passo": "13"
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP V6 14 1/2 X 19 MAX TORK",
@@ -845,11 +878,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX150",
+    "origin_uid": "bb25bf20-2bba-4adf-836b-f826ed929ad9",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
-    "passo": "19",
-    "skuBucha": ""
+    "passo": "19"
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 1/2 X 13 MAX TORK",
@@ -870,11 +904,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX40",
+    "origin_uid": "74290ec0-09a8-42f0-b54c-61b619aeee78",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
-    "passo": "13",
-    "skuBucha": ""
+    "passo": "13"
   },
   {
     "nome": "HÉLICE MERCURY 40/50 HP SUPER 10 3/8 X 14 MAX TORK",
@@ -895,11 +930,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX40",
+    "origin_uid": "cf450540-801f-488c-9628-cf8847523cdd",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "14",
-    "skuBucha": ""
+    "passo": "14"
   },
   {
     "nome": "HÉLICE MERCURY 150/250 HP 14 X 19",
@@ -920,11 +956,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "6205a50b-0771-4625-89ec-9588818ceaee",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14",
-    "passo": "19",
-    "skuBucha": "HR BH 004"
+    "passo": "19"
   },
   {
     "nome": "HÉLICE SUZUKI 15 HP 9 1/4 X 11",
@@ -945,11 +982,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (13/16 x 53,9) PARA HÉLICE SUZUKI 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "c0c313c6-5249-470b-8aaf-cd971529a187",
+    "skuBucha": "HR BH 005",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11",
-    "skuBucha": "HR BH 005"
+    "passo": "11"
   },
   {
     "nome": "HÉLICE SUZUKI 15 HP 9 1/4 X 10",
@@ -970,11 +1008,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (13/16 x 53,9) PARA HÉLICE SUZUKI 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "f7676bd4-464f-4fea-b6f6-2b36609bc0fb",
+    "skuBucha": "HR BH 005",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10",
-    "skuBucha": "HR BH 005"
+    "passo": "10"
   },
   {
     "nome": "HÉLICE SUZUKI 25/30 HP 10 1/4 X 13 STD",
@@ -995,11 +1034,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 82) PARA HÉLICE SUZUKI 25 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "2faef710-230e-4635-a4f5-1abb123c1ce5",
+    "skuBucha": "HR BH 006",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/4",
-    "passo": "13",
-    "skuBucha": "HR BH 006"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 1/2 X 13",
@@ -1020,11 +1060,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "f6da9c70-b37e-4507-a681-8284ba933940",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/2",
-    "passo": "13",
-    "skuBucha": "HR BH 003"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 3/8 X 14",
@@ -1045,11 +1086,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "ac3cb2ed-2565-4885-a95e-e2881da13e9b",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 3/8",
-    "passo": "14",
-    "skuBucha": "HR BH 003"
+    "passo": "14"
   },
   {
     "nome": "HÉLICE SUZUKI 75/85/115/140 HP 13 1/4 X 17",
@@ -1070,11 +1112,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "057933ab-5ab4-49e8-a16e-a38849fb5204",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17",
-    "skuBucha": "HR BH 004"
+    "passo": "17"
   },
   {
     "nome": "HÉLICE SUZUKI 75/85/115/140 HP 13 X 19",
@@ -1095,11 +1138,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "e19ab0f9-2bf5-4baf-8f35-ea56d9d20335",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
-    "passo": "19",
-    "skuBucha": "HR BH 004"
+    "passo": "19"
   },
   {
     "nome": "HÉLICE SUZUKI 25/30 HP 10 1/4 X 12",
@@ -1120,11 +1164,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 82) PARA HÉLICE SUZUKI 25 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "10b98938-51fb-4889-b9a0-bed9a9ed65a3",
+    "skuBucha": "HR BH 006",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/4",
-    "passo": "12",
-    "skuBucha": "HR BH 006"
+    "passo": "12"
   },
   {
     "nome": "HÉLICE SUZUKI DF 75/140 HP 14 X 19",
@@ -1145,11 +1190,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "d1f0da98-f2b2-41b1-8ecf-63938f794d91",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14",
-    "passo": "19",
-    "skuBucha": "HR BH 004"
+    "passo": "19"
   },
   {
     "nome": "HÉLICE SUZUKI DF 75/140 HP 13 1/4 X 17",
@@ -1170,11 +1216,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "471dd1d0-a235-4c86-ba32-7c5d71cbef23",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17",
-    "skuBucha": "HR BH 004"
+    "passo": "17"
   },
   {
     "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 1/4 X 15",
@@ -1195,11 +1242,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "4bb251f8-d597-4479-a388-c98ebeaab70f",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/4",
-    "passo": "15",
-    "skuBucha": "HR BH 003"
+    "passo": "15"
   },
   {
     "nome": "HÉLICE SUZUKI 75/85/115/140 HP 12 1/4 x 15",
@@ -1220,11 +1268,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "bc1c46d9-011b-4baa-9bfb-ab482dc39157",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "12 1/4",
-    "passo": "15",
-    "skuBucha": "HR BH 004"
+    "passo": "15"
   },
   {
     "nome": "HÉLICE SUZUKI 40/55/60/65 HP 11 1/2 X 11",
@@ -1245,11 +1294,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "5c9a751a-6061-44c1-b998-7f2d58748303",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/2",
-    "passo": "11",
-    "skuBucha": "HR BH 003"
+    "passo": "11"
   },
   {
     "nome": "HÉLICE SUZUKI F. 15 HP 9 1/4 X 11",
@@ -1270,11 +1320,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (13/16 x 53,9) PARA HÉLICE SUZUKI 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "15133eeb-a835-473d-bb87-0c39f94608aa",
+    "skuBucha": "HR BH 005",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11",
-    "skuBucha": "HR BH 005"
+    "passo": "11"
   },
   {
     "nome": "HÉLICE YAMAHA 4/5 HP 7 1/4 X 7 ESTRIADO",
@@ -1295,11 +1346,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" x 31) PARA HÉLICE YAMAHA 4/5 HP ESTRIADO",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "61c09161-1701-4057-941c-a0f2435893cb",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "7 1/4",
-    "passo": "7",
-    "skuBucha": ""
+    "passo": "7"
   },
   {
     "nome": "HÉLICE YAMAHA 4 / 5 HP 7 1/4 X 6 1/2 PINADO",
@@ -1320,11 +1372,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 31) PARA HÉLICE YAMAHA 4/5 HP PINADO",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "231ed0fc-54b0-4b78-9634-3d13e7db672e",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "7 1/4",
-    "passo": "6 1/2",
-    "skuBucha": ""
+    "passo": "6 1/2"
   },
   {
     "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 10 1/2",
@@ -1345,11 +1398,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3A 15 HP COM CODIGO HR HY 008",
     "skuCaixa": "HR CXA 003",
+    "origin_uid": "1dcc9daa-051b-455a-ad65-64edd4ceaaec",
+    "skuBucha": "HR BH 001",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10 1/2",
-    "skuBucha": "HR BH 001"
+    "passo": "10 1/2"
   },
   {
     "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 9",
@@ -1370,11 +1424,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "a4e04685-342f-439d-8ac9-7b8c145a13b1",
+    "skuBucha": "HR BH 001",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "9",
-    "skuBucha": "HR BH 001"
+    "passo": "9"
   },
   {
     "nome": "HELICE YAMAHA 15 HP 9 1/4 X 12",
@@ -1395,11 +1450,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "716005cc-8231-4e5d-9a0b-4be46a15235e",
+    "skuBucha": "HR BH 001",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "12",
-    "skuBucha": "HR BH 001"
+    "passo": "12"
   },
   {
     "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 11",
@@ -1420,11 +1476,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (3/4 x 78) PARA HÉLICE YAMAHA 15 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "0a9affc3-e260-4ea7-bd94-337a54b4b295",
+    "skuBucha": "HR BH 001",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "11",
-    "skuBucha": "HR BH 001"
+    "passo": "11"
   },
   {
     "nome": "HÉLICE YAMAHA 25/30 HP 9 7/8 X 13",
@@ -1445,11 +1502,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "0c3e4a9a-ef8f-4e47-866b-a456cfface78",
+    "skuBucha": "HR BH 002",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "13",
-    "skuBucha": "HR BH 002"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE YAMAHA 40 / 55 HP 11 1/8 X 13",
@@ -1470,11 +1528,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "fb5cc361-a43c-46cd-93ea-8dc973b298f2",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/8",
-    "passo": "13",
-    "skuBucha": "HR BH 003"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 1/8 X 12",
@@ -1495,11 +1554,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "2b0abdc0-7e8b-42ab-8588-d05287c33828",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/8",
-    "passo": "12",
-    "skuBucha": "HR BH 003"
+    "passo": "12"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 X 15",
@@ -1520,11 +1580,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "a573e056-a973-4e6b-a5f6-131ead265b83",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11",
-    "passo": "15",
-    "skuBucha": "HR BH 003"
+    "passo": "15"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 1/2 X 13",
@@ -1545,11 +1606,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "28a092a1-23aa-4a96-8d84-b709fb608ad2",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/2",
-    "passo": "13",
-    "skuBucha": "HR BH 003"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE YAMAHA 40 HP 3 CIL. 10 3/8 X 13",
@@ -1570,11 +1632,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "999eb6fc-a644-43d2-a4f1-facf816602f1",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13",
-    "skuBucha": "HR BH 003"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE YAMAHA 60 / 140 HP 13 3/4 X 15",
@@ -1595,11 +1658,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "33cbfacd-c5c5-4b54-840b-760876dd47b2",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
-    "passo": "15",
-    "skuBucha": "HR BH 004"
+    "passo": "15"
   },
   {
     "nome": "HÉLICE YAMAHA 60/140 HP 13 1/4 X 17",
@@ -1620,11 +1684,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "92d6f344-2bdd-4b91-822b-16ba5f23b3cc",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 1/4",
-    "passo": "17",
-    "skuBucha": "HR BH 004"
+    "passo": "17"
   },
   {
     "nome": "HÉLICE YAMAHA 60/140 HP 13 X 19",
@@ -1645,11 +1710,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "fea53988-796a-410e-83ed-4cc39332dd52",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13",
-    "passo": "19",
-    "skuBucha": "HR BH 004"
+    "passo": "19"
   },
   {
     "nome": "HÉLICE YAMAHA 60/140 HP 12 5/8 X 21",
@@ -1670,11 +1736,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "a690bdd9-ffaf-409a-8554-731010f88337",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "12 5/8",
-    "passo": "21",
-    "skuBucha": "HR BH 004"
+    "passo": "21"
   },
   {
     "nome": "HÉLICE YAMAHA 25/30 HP 9 7/8 X 12",
@@ -1695,11 +1762,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "12e872f7-9b42-47c5-9892-2af4d4a7be8a",
+    "skuBucha": "HR BH 002",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "12",
-    "skuBucha": "HR BH 002"
+    "passo": "12"
   },
   {
     "nome": "HÉLICE YAMAHA 40 HP 10 1/8 X 15 3 CIL",
@@ -1720,11 +1788,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "0bcdc6cf-0f92-48e1-bdbb-f53916c151a9",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/8",
-    "passo": "15",
-    "skuBucha": "HR BH 003"
+    "passo": "15"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 1/4 X 14",
@@ -1745,11 +1814,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "d8af6c61-2336-4d5e-aaef-a07ce76fb775",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/4",
-    "passo": "14",
-    "skuBucha": "HR BH 003"
+    "passo": "14"
   },
   {
     "nome": "HÉLICE YAMAHA 8 HP 8 1/2 X 8 1/2",
@@ -1770,11 +1840,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (3/4 x 70,5) PARA HÉLICE YAMAHA 8 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "a9e604c6-fa2c-4a71-977f-9406568f0f2a",
+    "skuBucha": "HR BH 007",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "8 1/2",
-    "passo": "8 1/2",
-    "skuBucha": "HR BH 007"
+    "passo": "8 1/2"
   },
   {
     "nome": "HÉLICE YAMAHA 150/250 HP 14 1/2 X 17",
@@ -1795,11 +1866,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "ce85ba85-04eb-4781-8b4a-bfb34377b756",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14 1/2",
-    "passo": "17",
-    "skuBucha": "HR BH 004"
+    "passo": "17"
   },
   {
     "nome": "HÉLICE YAMAHA 150/250 HP 14 X 19",
@@ -1820,11 +1892,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "778cb019-a8cf-484d-a9b5-d7952b3538cf",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "14",
-    "passo": "19",
-    "skuBucha": "HR BH 004"
+    "passo": "19"
   },
   {
     "nome": "HÉLICE YAMAHA 150/250 HP 13 3/4 x 21",
@@ -1845,11 +1918,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 94) PARA HÉLICE YAMAHA 60/140 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N2 60 HP",
     "skuCaixa": "HR CXA 001",
+    "origin_uid": "27b02732-7dff-4e30-a75a-e9aa664c9a75",
+    "skuBucha": "HR BH 004",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "13 3/4",
-    "passo": "21",
-    "skuBucha": "HR BH 004"
+    "passo": "21"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 13",
@@ -1870,11 +1944,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "94073f5f-d873-43f8-9ed8-b026ea430ddf",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13",
-    "skuBucha": "HR BH 003"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 1/2 X 13",
@@ -1895,11 +1970,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "f689778c-3bc8-4126-aa80-025f4b52f4bc",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
-    "passo": "13",
-    "skuBucha": "HR BH 003"
+    "passo": "13"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 14",
@@ -1920,11 +1996,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "8eba17bf-7008-4e21-89b0-eb849425ed22",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "14",
-    "skuBucha": "HR BH 003"
+    "passo": "14"
   },
   {
     "nome": "HÉLICE YAMAHA 25/30 HP 9 7/8 X 10 1/2",
@@ -1945,11 +2022,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (7/8 x 73,8) PARA HÉLICE YAMAHA 25 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N4 25 HP",
     "skuCaixa": "HR CXA 005",
+    "origin_uid": "8c6de5dd-6f2b-41b9-86f5-3addeac8a7c0",
+    "skuBucha": "HR BH 002",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 7/8",
-    "passo": "10 1/2",
-    "skuBucha": "HR BH 002"
+    "passo": "10 1/2"
   },
   {
     "nome": "HÉLICE YAMAHA 15 HP 9 1/4 X 10 1/2 MAX TORK",
@@ -1970,11 +2048,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX15",
+    "origin_uid": "f55b1bb3-ce1b-4729-af00-c8cb75550b63",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "9 1/4",
-    "passo": "10 1/2",
-    "skuBucha": ""
+    "passo": "10 1/2"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 11 1/4 X 14 MAX TORK",
@@ -1995,11 +2074,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX40",
+    "origin_uid": "c7668fe3-6b1f-4385-943d-8740ee76cac6",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 1/4",
-    "passo": "14",
-    "skuBucha": ""
+    "passo": "14"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 13 MAX TORK",
@@ -2020,11 +2100,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX40",
+    "origin_uid": "bd5ca012-cad4-455f-8f39-00b90e7f0f65",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "13",
-    "skuBucha": ""
+    "passo": "13"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 1/2 X 13 MAX TORK",
@@ -2045,11 +2126,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX40",
+    "origin_uid": "5936d20e-c087-44a0-b1b0-4b1007062406",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 1/2",
-    "passo": "13",
-    "skuBucha": ""
+    "passo": "13"
   },
   {
     "nome": "HÉLICE YAMAHA 40/55 HP 10 3/8 X 14 MAX TORK",
@@ -2070,11 +2152,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "N/A",
     "descricaoCaixa": "",
     "skuCaixa": "MAX40",
+    "origin_uid": "cd90e5b5-e816-42f3-b389-61e6be40b920",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "10 3/8",
-    "passo": "14",
-    "skuBucha": ""
+    "passo": "14"
   },
   {
     "nome": "HELICE JOHNSON / MERCURY 3.3 HP 7 1/2 X 6",
@@ -2095,11 +2178,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 50) PARA HÉLICE JOHNSON/MERCURY 3.3 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "ec139ac7-077e-4783-bb41-404e50cbe0b5",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "7 1/2",
-    "passo": "6",
-    "skuBucha": ""
+    "passo": "6"
   },
   {
     "nome": "HELICE JOHNSON / OMC 4 HP 8 X 7 1/2 CONTRA ROTANTE",
@@ -2120,11 +2204,12 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 3/8 x 50) PARA HÉLICE JOHNSON 4 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N3 15 HP",
     "skuCaixa": "HR CXA 004",
+    "origin_uid": "269e02de-dafa-43eb-9014-a26ea287a44d",
+    "skuBucha": "",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "8",
-    "passo": "7 1/2",
-    "skuBucha": ""
+    "passo": "7 1/2"
   },
   {
     "nome": "HELICE YAMAHA 40 HP 2T/ F60 4T 11 3/8 X 13",
@@ -2145,10 +2230,11 @@ const CATALOGO_DATA = [
     "modeloBucha": "BUCHA (1\" 1/8 x 71) PARA HÉLICE YAMAHA/SUZUKI 40 HP",
     "descricaoCaixa": "CAIXA PARDA HR NAUTICA N1 40 HP",
     "skuCaixa": "HR CXA 002",
+    "origin_uid": "7c71ca36-994e-42d3-8538-52875682db85",
+    "skuBucha": "HR BH 003",
     "pas": "3",
     "material": "Alumínio",
     "diametro": "11 3/8",
-    "passo": "13",
-    "skuBucha": "HR BH 003"
+    "passo": "13"
   }
 ];

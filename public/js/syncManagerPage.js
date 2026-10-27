@@ -120,37 +120,35 @@
       const arrayBuffer = await file.arrayBuffer();
       const wb = XLSX.read(arrayBuffer, { type: 'array' });
       const sheetNames = wb.SheetNames.map(s => s.trim());
-
-      // 1. Análise de Produção Hélices
-      try {
-        if (typeof processAnaliseExcel === 'function') {
-          const syncRes = await processAnaliseExcel(arrayBuffer);
-          analiseCount = (syncRes && syncRes.count) || (window.ANALISE_STATE?.coberturaData?.length) || 0;
-          analiseStatus = 'OK';
-          updateCardStatus('sync-badge-analise', 'sync-val-analise', 'sync-sub-analise', 'success', `${analiseCount} itens`, 'Estoques usinado/bruto reescritos com sucesso');
-        }
-      } catch (err) {
-        console.warn('[SyncCentral] Erro na Análise de Produção:', err.message);
-        updateCardStatus('sync-badge-analise', 'sync-val-analise', 'sync-sub-analise', 'error', 'Pendente', err.message);
+      if (typeof processAnaliseExcel !== 'function' || typeof earv_processPCPExcel !== 'function') {
+        throw new Error('Processadores obrigatorios da sincronizacao de estoque indisponiveis.');
       }
 
-      // 2. Estoque Componentes (Estoque Árvore / PCP)
-      try {
-        if (typeof earv_processPCPExcel === 'function') {
-          const earvRes = earv_processPCPExcel(arrayBuffer);
-          compCount = (earvRes && earvRes.estoque) || 0;
-          compStatus = 'OK';
-
-          if (typeof earv_processTreeExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('arvore') || s.toLowerCase().includes('estrutura'))) {
-            earv_processTreeExcel(arrayBuffer);
-          }
-
-          updateCardStatus('sync-badge-componentes', 'sync-val-componentes', 'sync-sub-componentes', 'success', `${compCount} SKUs`, 'Estoques e saídas previstas reescritas');
-        }
-      } catch (err) {
-        console.warn('[SyncCentral] Erro em Estoque Componentes:', err.message);
-        updateCardStatus('sync-badge-componentes', 'sync-val-componentes', 'sync-sub-componentes', 'error', 'Pendente', err.message);
+      // Fase 1: todos os módulos preparam e validam seus snapshots sem persistir.
+      const analisePlan = await processAnaliseExcel(arrayBuffer, { prepareOnly: true });
+      const componentPlan = await earv_processPCPExcel(arrayBuffer, { prepareOnly: true });
+      let treePlan = null;
+      if (typeof earv_processTreeExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('arvore') || s.toLowerCase().includes('estrutura'))) {
+        treePlan = await earv_processTreeExcel(arrayBuffer, { prepareOnly: true });
       }
+
+      // Fase 2: somente após a validação integral começam as gravações.
+      const syncRes = await analisePlan.commit();
+      analiseCount = (syncRes && syncRes.count) || analisePlan.count || 0;
+      const tracking = syncRes?.tracking;
+      const trackingFailed = tracking?.status === 'failed';
+      analiseStatus = trackingFailed ? 'PARTIAL' : 'OK';
+      updateCardStatus(
+        'sync-badge-analise', 'sync-val-analise', 'sync-sub-analise',
+        trackingFailed ? 'error' : 'success', `${analiseCount} itens`,
+        trackingFailed ? `Cobertura confirmada; rastreio pendente: ${tracking.error}` : 'Cobertura confirmada; rastreio conciliado quando presente'
+      );
+
+      const earvRes = await componentPlan.commit();
+      compCount = (earvRes && earvRes.estoque) || componentPlan.estoque || 0;
+      if (treePlan) await treePlan.commit();
+      compStatus = 'OK';
+      updateCardStatus('sync-badge-componentes', 'sync-val-componentes', 'sync-sub-componentes', 'success', `${compCount} SKUs`, 'Estoques e saídas previstas reescritas');
 
       // Dispara atualizações da UI em todas as abas afetadas
       if (typeof window.renderAnaliseTable === 'function') window.renderAnaliseTable();
@@ -160,7 +158,10 @@
 
       const now = new Date();
       const dateStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-      const overallStatus = (analiseStatus === 'OK' || compStatus === 'OK') ? 'OK' : 'ERROR';
+      if (!['OK', 'PARTIAL'].includes(analiseStatus) || compStatus !== 'OK') {
+        throw new Error('A planilha nao foi confirmada por todos os modulos de estoque.');
+      }
+      const overallStatus = analiseStatus === 'PARTIAL' ? 'PARTIAL' : 'OK';
 
       saveLastStockSyncLog({
         date: dateStr,
@@ -173,7 +174,7 @@
       });
 
       if (typeof showToast === 'function') {
-        showToast(`Estoques sincronizados e reescritos com sucesso!`, 'success');
+        showToast(overallStatus === 'PARTIAL' ? 'Cobertura confirmada, mas o rastreio não foi conciliado. Consulte o cartão de Análise.' : 'Sincronização concluída.', overallStatus === 'PARTIAL' ? 'warning' : 'success');
       }
     } catch (err) {
       console.error('[SyncCentral] Erro crítico ao processar planilha de estoque:', err);
@@ -316,41 +317,69 @@
       const arrayBuffer = await file.arrayBuffer();
       const wb = XLSX.read(arrayBuffer, { type: 'array' });
       const sheetNames = wb.SheetNames.map(s => s.trim());
+      const normalizedSheetHeaders = wb.SheetNames.map(name => {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '' });
+        return (rows[0] || []).map(header => String(header || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase());
+      });
+      const hasSupplierLayout = normalizedSheetHeaders.some(headers =>
+        headers.some(header => header === 'SKU' || header.includes('CODIGO SKU'))
+        && headers.some(header => header.includes('FORNECED'))
+      );
+      const hasFabricationLayout = normalizedSheetHeaders.some(headers =>
+        headers.some(header => header.includes('SKU KIT') || header.includes('SKU FABRICADO'))
+        && headers.some(header => header.includes('SKU COMPONENTE'))
+      );
 
       let updated = false;
       let viniCount = 0;
+      const plans = [];
 
       // 1. Necessidades PCP / Saídas V.I.N.I.
       const viniProc = window.processExcelWorkbook || (typeof processExcelWorkbook === 'function' ? processExcelWorkbook : null);
       if (viniProc) {
-        viniProc(arrayBuffer);
+        const viniResult = await viniProc(arrayBuffer, { prepareOnly: true });
+        plans.push({ label: 'Necessidades / Saídas', plan: viniResult });
         updated = true;
         viniSheets.push('Necessidades / Saídas');
-        viniCount = window.VINI_STATE?.necessidadeData?.length || 0;
+        viniCount = viniResult?.count || window.VINI_STATE?.necessidadeData?.length || 0;
+      } else {
+        throw new Error('Processador de planejamento V.I.N.I. indisponivel.');
       }
 
       // 2. Fornecedores
-      if (typeof processFornecedoresExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('forneced'))) {
-        processFornecedoresExcel(arrayBuffer);
+      if (typeof processFornecedoresExcel === 'function' && (sheetNames.some(s => s.toLowerCase().includes('forneced')) || hasSupplierLayout)) {
+        const supplierPlan = await processFornecedoresExcel(arrayBuffer, { prepareOnly: true });
+        plans.push({ label: 'Fornecedores', plan: supplierPlan });
         updated = true;
         viniSheets.push('Fornecedores');
       }
 
       // 3. Fabricação
-      if (typeof processFabriExcel === 'function' && sheetNames.some(s => s.toLowerCase().includes('fabri'))) {
-        processFabriExcel(arrayBuffer);
+      if (typeof processFabriExcel === 'function' && (sheetNames.some(s => s.toLowerCase().includes('fabri')) || hasFabricationLayout)) {
+        const fabricationPlan = await processFabriExcel(arrayBuffer, { prepareOnly: true });
+        plans.push({ label: 'Fabricação', plan: fabricationPlan });
         updated = true;
         viniSheets.push('Fabricação');
       }
 
       // 4. Saídas previstas em Componentes
       if (typeof earv_processSaidasPrevistasExcel === 'function') {
-        earv_processSaidasPrevistasExcel(arrayBuffer);
+        const outputsPlan = await earv_processSaidasPrevistasExcel(arrayBuffer, { prepareOnly: true });
+        plans.push({ label: 'Saídas Previstas', plan: outputsPlan });
         updated = true;
         viniSheets.push('Saídas Previstas');
       }
 
-      viniStatus = updated ? 'OK' : 'OK';
+      if (!updated) throw new Error('Nenhum conjunto de dados V.I.N.I. reconhecido.');
+      if (plans.some(({ plan }) => typeof plan?.commit !== 'function')) {
+        throw new Error('Um processador nao forneceu um snapshot validado para gravacao.');
+      }
+
+      // Persistência continua sequencial e pode confirmar parcialmente em falha de rede.
+      // A diferença é que nenhuma escrita começa antes de todas as abas serem válidas.
+      for (const { plan } of plans) await plan.commit();
+
+      viniStatus = 'OK';
       const sheetSummary = viniSheets.length ? viniSheets.join(', ') : 'Planilha de Saídas V.I.N.I.';
       const displayVal = viniCount > 0 ? `${viniCount} itens` : 'Atualizado';
 

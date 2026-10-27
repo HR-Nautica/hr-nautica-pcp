@@ -61,16 +61,19 @@ const RemoteStorage = {
     } catch (err) {
       console.warn("[BANCO] Nao foi possivel salvar no localStorage local:", err);
     }
-    if (unchanged) return;
+    if (unchanged) {
+      return this.writeQueues.get(key) || Promise.resolve(!this.pendingWrites.has(key));
+    }
     if (key.startsWith("hrn_") && key !== "hrn_sync_timestamp") {
       const pending = this.rememberPending(key, "PUT", value);
-      this.enqueue(key, () => this.persist(
+      return this.enqueue(key, () => this.persist(
         key,
         value,
         pending.writeId,
         this.expectedVersionForPending(pending)
       ));
     }
+    return Promise.resolve(true);
   },
   removeItem(key) {
     this.data.delete(key);
@@ -81,12 +84,13 @@ const RemoteStorage = {
     }
     if (key.startsWith("hrn_")) {
       const pending = this.rememberPending(key, "DELETE");
-      this.enqueue(key, () => this.persistDelete(
+      return this.enqueue(key, () => this.persistDelete(
         key,
         pending.writeId,
         this.expectedVersionForPending(pending)
       ));
     }
+    return Promise.resolve(true);
   },
   clear() {
     throw new Error("Limpeza total bloqueada para proteger o banco central.");
@@ -101,6 +105,19 @@ const RemoteStorage = {
     this.revision = Math.max(this.revision, Number(revision) || 0);
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (err) {
       console.warn("[BANCO] Nao foi possivel atualizar o cache local:", err);
+    }
+  },
+  restoreLocalView(key, value, { exists = true } = {}) {
+    if (exists) {
+      this.data.set(key, value);
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (error) {
+        console.warn("[BANCO] Nao foi possivel restaurar a visualizacao local:", error);
+      }
+    } else {
+      this.data.delete(key);
+      try { localStorage.removeItem(key); } catch (error) {
+        console.warn("[BANCO] Nao foi possivel limpar a visualizacao local:", error);
+      }
     }
   },
   rememberPending(key, method, value) {
@@ -266,8 +283,9 @@ const RemoteStorage = {
           pending.error = error?.message || "Falha de conexao";
           this.savePendingWrites();
         }
-        if (error?.code !== "WRITE_CONFLICT") this.setConnectionState(false);
+        if (!["WRITE_CONFLICT", "GENERIC_STATE_WRITE_FORBIDDEN"].includes(error?.code)) this.setConnectionState(false);
         console.error(`[BANCO] Falha ao gravar ${key}:`, error);
+        return false;
       })
       .finally(() => {
         if (this.writeQueues.get(key) === next) this.writeQueues.delete(key);
@@ -291,6 +309,10 @@ const RemoteStorage = {
       await this.handleConflict(key);
       throw this.conflictBlockedError();
     }
+    if (response.status === 403 && result.code === "GENERIC_STATE_WRITE_FORBIDDEN") {
+      await this.handlePolicyRejection(key, writeId, result);
+      throw this.policyRejectedError(result);
+    }
     if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
     const confirmedVersion = Number(result.version);
     this.versions.set(key, confirmedVersion);
@@ -298,6 +320,7 @@ const RemoteStorage = {
     this.revision = Number(result.revision);
     this.clearPending(key, writeId);
     this.showConfirmedState();
+    return true;
   },
   async persistDelete(key, writeId, expectedVersion) {
     if (this.conflicts.has(key)) throw this.conflictBlockedError();
@@ -315,12 +338,41 @@ const RemoteStorage = {
       await this.handleConflict(key);
       throw this.conflictBlockedError();
     }
+    if (response.status === 403 && result.code === "GENERIC_STATE_WRITE_FORBIDDEN") {
+      await this.handlePolicyRejection(key, writeId, result);
+      throw this.policyRejectedError(result);
+    }
     if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
     this.versions.delete(key);
     this.confirmedWriteVersions.set(writeId, 0);
     this.revision = Number(result.revision);
     this.clearPending(key, writeId);
     this.showConfirmedState();
+    return true;
+  },
+  policyRejectedError(result) {
+    const error = new Error(result?.error || "Escrita generica proibida.");
+    error.code = "GENERIC_STATE_WRITE_FORBIDDEN";
+    error.status = 403;
+    return error;
+  },
+  async handlePolicyRejection(key, writeId, result) {
+    this.clearPending(key, writeId);
+    await this.load(true, new Set([key]));
+    try {
+      if (this.data.has(key)) localStorage.setItem(key, JSON.stringify(this.data.get(key)));
+      else localStorage.removeItem(key);
+    } catch (error) {
+      console.warn("[BANCO] Nao foi possivel restaurar o cache confirmado:", error);
+    }
+    const warning = document.getElementById("central-server-warning");
+    if (warning) {
+      warning.textContent = result?.specificApi
+        ? `Alteracao rejeitada: ${key} exige ${result.specificApi}.`
+        : `Alteracao rejeitada pela politica de integridade: ${key}.`;
+      warning.style.display = "block";
+    }
+    if (typeof this.onUpdate === "function") this.onUpdate();
   },
   conflictBlockedError() {
     const error = new Error("Gravacao bloqueada por conflito pendente.");

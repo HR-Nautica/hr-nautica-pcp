@@ -58,8 +58,8 @@
     if (!Array.isArray(result?.orders)) return;
     if (typeof window.applyFundicaoServerState === 'function') {
       window.applyFundicaoServerState(result);
-    } else if (typeof DB !== 'undefined' && typeof DB.saveFundicoes === 'function') {
-      DB.saveFundicoes(result.orders);
+    } else if (typeof RemoteStorage !== 'undefined' && typeof RemoteStorage.applyServerState === 'function') {
+      RemoteStorage.applyServerState('hrn_fundicoes', result.orders, result.version, result.revision);
     }
   }
 
