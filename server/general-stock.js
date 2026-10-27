@@ -22,6 +22,11 @@ const known = (value) => value === null || value === undefined || value === "" |
 
 function record({ id, family, code, description, unit, sourceIdentifier, physicalStock = null, source, updatedAt = null, identityStatus = "confirmed", masterItemId = null, location = null, catalogStatus = "active", itemTypes = [], catalogSource = null, bom = [] }) {
   const physical = known(physicalStock);
+  const authorityMode = family === "helices" || family === "componentes" ? "sync" : "erp";
+  const sourceSwitchBlockers = [];
+  if (identityStatus !== "confirmed" || !text(code)) sourceSwitchBlockers.push("Identidade do item não reconciliada");
+  if (physical === null) sourceSwitchBlockers.push("Saldo físico atual desconhecido");
+  if (!masterItemId) sourceSwitchBlockers.push("Vínculo ao Item Mestre não verificado nesta consulta");
   return {
     id,
     family,
@@ -35,6 +40,8 @@ function record({ id, family, code, description, unit, sourceIdentifier, physica
     unit: text(unit) || "—",
     sourceIdentifier: text(sourceIdentifier) || null,
     masterItemId,
+    authorityMode,
+    sourceSwitchBlockers,
     physicalStock: physical,
     reservedStock: null,
     availableStock: null,
