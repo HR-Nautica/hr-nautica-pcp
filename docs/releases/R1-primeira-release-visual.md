@@ -24,14 +24,14 @@ As migrations V003–V005 fazem parte do pacote, mas não foram aplicadas ao ban
 
 - `npm.cmd run test:ci`: aprovado, 83 testes.
 - `npm.cmd run build`: aprovado.
-- Testes PostgreSQL descartáveis: não executados porque o Docker Desktop estava indisponível.
+- Testes PostgreSQL descartáveis: aprovados, 43 cenários em sete comandos direcionados, cobrindo migrations, catálogo mestre, API autenticada, vínculos de hélices, inventário, buchas e rastreio.
 - Produção, push, deploy e migrations operacionais: não executados.
 
 ## Publicação
 
 O fluxo oficial permanece GitHub Actions → teste → imagem Docker imutável por SHA → runner interno → validação de `/healthz` e `/release.json` → Caddy em `http://192.168.100.180:8444`.
 
-Antes da publicação, executar os testes PostgreSQL direcionados com Docker disponível, confirmar o estado das migrations no destino por procedimento somente leitura e obter autorização explícita para push/deploy.
+Antes da publicação, confirmar o estado das migrations no destino por procedimento somente leitura e obter autorização explícita para push/deploy.
 
 ## Rollback
 
