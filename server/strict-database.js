@@ -46,18 +46,20 @@ export async function validateStrictDatabase({
     if (!report.valid) {
       throw strictError("Histórico de migrations inválido.", "MIGRATION_HISTORY_INVALID");
     }
-    if (report.pending.length) {
-      throw strictError("Existem migrations pendentes.", "MIGRATIONS_PENDING");
-    }
     const baseline = report.recorded.find((item) => item.version === 1n);
     if (!baseline || baseline.status !== "applied") {
       throw strictError("Baseline V001 não está aplicada.", "BASELINE_NOT_APPLIED");
     }
-    return { strict: true, postgresMajor: 17, migrations: report.recorded.length };
+    return {
+      strict: true,
+      postgresMajor: 17,
+      migrations: report.recorded.length,
+      pending: report.pending.map((item) => Number(item.version))
+    };
   } catch (error) {
     if (error.code && [
       "DATABASE_VERSION_UNSUPPORTED", "MIGRATION_HISTORY_MISSING", "MIGRATION_HISTORY_INVALID",
-      "MIGRATIONS_PENDING", "BASELINE_NOT_APPLIED"
+      "BASELINE_NOT_APPLIED"
     ].includes(error.code)) throw error;
     if (error instanceof MigrationError) {
       throw strictError("Não foi possível validar o histórico local de migrations.", "MIGRATION_HISTORY_INVALID");

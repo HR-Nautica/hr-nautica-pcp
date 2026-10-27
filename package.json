@@ -41,7 +41,7 @@
     "proxy:test": "node --test tests/proxy/proxy-auth.test.js",
     "release:test": "node --test tests/server/release.test.js",
     "infra:test": "node --test tests/infra/deploy-config.test.js",
-    "state:test": "node --test tests/server/state-concurrency.test.js tests/server/state-write-policy.test.js tests/client/remote-storage-conflict.test.js tests/client/buchas-api-ui.test.js tests/client/analise-tracking-api-ui.test.js tests/client/bootstrap-write-safety.test.js tests/client/vini-planning.test.js tests/client/sync-prevalidation.test.js tests/server/domain-transaction-regression.test.js",
+    "state:test": "node --check server/migration-gate.js && node --test tests/server/state-concurrency.test.js tests/server/state-write-policy.test.js tests/server/migration-gate.test.js tests/client/remote-storage-conflict.test.js tests/client/buchas-api-ui.test.js tests/client/analise-tracking-api-ui.test.js tests/client/bootstrap-write-safety.test.js tests/client/vini-planning.test.js tests/client/sync-prevalidation.test.js tests/server/domain-transaction-regression.test.js",
     "test:ci": "npm run check && npm run state:test && npm run db:migrate:test && npm run api:strict:test && npm run auth:test && npm run health:test && npm run proxy:test && npm run release:test && npm run infra:test",
     "db:audit": "node scripts/audit-database.js",
     "db:compact-audit": "node scripts/compact-audit-log.js --apply",

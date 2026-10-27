@@ -11,6 +11,7 @@ import { createHealthHandler } from "./health.js";
 import { createReleaseGuard, normalizedReleaseSha } from "./release.js";
 import { sanitizeDatabaseError } from "./postgres-config.js";
 import { validateStrictDatabase } from "./strict-database.js";
+import { createMigrationGate } from "./migration-gate.js";
 import { createProxyAuthentication, validateProxySecret } from "./proxy-auth.js";
 import analysisTempRouter from "./routes/analysis-temp.js";
 import buchasRouter from "./routes/buchas.js";
@@ -29,6 +30,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const dist = path.join(root, "dist");
 const app = express();
+let strictDatabaseStatus = { strict: false, pending: [] };
+const requireMasterItemsSchema = createMigrationGate([3, 4], () => strictDatabaseStatus);
+const requireCatalogLinksSchema = createMigrationGate([3, 4, 5], () => strictDatabaseStatus);
 
 app.disable("x-powered-by");
 // A publicacao interna atual e HTTP. HSTS so e aceito sobre transporte seguro
@@ -68,8 +72,8 @@ app.use("/api/production-ops", productionOpsRouter);
 app.use("/api/production-tracking", productionTrackingRouter);
 app.use("/api/raw-stock", rawStockRouter);
 app.use("/api/inventory", inventoryRouter);
-app.use("/api/master-items", masterItemsRouter);
-app.use("/api/catalog-links", catalogLinksRouter);
+app.use("/api/master-items", requireMasterItemsSchema, masterItemsRouter);
+app.use("/api/catalog-links", requireCatalogLinksSchema, catalogLinksRouter);
 app.use("/api/buchas", buchasRouter);
 app.use("/api", integrationsRouter);
 app.use(express.static(dist, {
@@ -84,7 +88,7 @@ app.get("*splat", (_req, res) => {
 
 app.use((error, _req, res, _next) => {
   console.error("[API]", config.database.strictMode ? sanitizeDatabaseError(error) : error);
-  const dbError = ["IM002", "HY000", "08001", "DATABASE_CONFIG_MISSING", "SUPABASE_REST_ERROR"].includes(error.code) || /ODBC|Access|Supabase|database|banco/i.test(error.message || "");
+  const dbError = ["IM002", "HY000", "08001", "DATABASE_CONFIG_MISSING", "MIGRATIONS_PENDING", "SUPABASE_REST_ERROR"].includes(error.code) || /ODBC|Access|Supabase|database|banco/i.test(error.message || "");
   res.status(dbError ? 503 : 500).json({
     ok: false,
     error: dbError
@@ -94,7 +98,12 @@ app.use((error, _req, res, _next) => {
 });
 
 export async function startServer() {
-  if (config.database.strictMode) await validateStrictDatabase();
+  if (config.database.strictMode) {
+    strictDatabaseStatus = await validateStrictDatabase();
+    if (strictDatabaseStatus.pending.length) {
+      console.warn(`[STARTUP] Migrations pendentes: V${strictDatabaseStatus.pending.join(", V")}. Funcionalidades dependentes permanecem bloqueadas.`);
+    }
+  }
   validateProxySecret(config.proxySharedSecret);
   return await new Promise((resolve, reject) => {
     const server = app.listen(config.port, config.host, () => {
