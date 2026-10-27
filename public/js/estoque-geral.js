@@ -1,6 +1,6 @@
 "use strict";
 
-const ESTOQUE_GERAL = { items: [], summary: null, page: 1, pageSize: 25, sort: "code", direction: "asc", initialized: false };
+const ESTOQUE_GERAL = { items: [], issues: [], summary: null, page: 1, issuePage: 1, pageSize: 25, sort: "code", direction: "asc", initialized: false };
 const eg = (id) => document.getElementById(id);
 const egEscape = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const egNumber = (value) => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) ? new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(Number(value)) : "Não configurado";
@@ -42,6 +42,19 @@ function egRenderPagination(total) {
   root.innerHTML = `<span>Página ${ESTOQUE_GERAL.page} de ${pages}</span><div><button class="btn-secondary" type="button" data-eg-page="prev" ${ESTOQUE_GERAL.page === 1 ? "disabled" : ""}>Anterior</button><button class="btn-secondary" type="button" data-eg-page="next" ${ESTOQUE_GERAL.page === pages ? "disabled" : ""}>Próxima</button></div>`;
   root.querySelectorAll("button[data-eg-page]").forEach((button) => button.addEventListener("click", () => { ESTOQUE_GERAL.page += button.dataset.egPage === "next" ? 1 : -1; egRender(); }));
 }
+function egRenderIssues() {
+  const body = eg("estoque-geral-issue-body"); const pagination = eg("estoque-geral-issue-pagination");
+  if (!body || !pagination) return;
+  const query = String(eg("estoque-geral-issue-search")?.value || "").trim().toLocaleLowerCase("pt-BR");
+  const family = eg("estoque-geral-issue-family")?.value || "";
+  const type = eg("estoque-geral-issue-type")?.value || "";
+  const rows = ESTOQUE_GERAL.issues.filter(issue => (!family || issue.family === family) && (!type || issue.category === type) && (!query || `${issue.code} ${issue.detail} ${issue.familyLabel}`.toLocaleLowerCase("pt-BR").includes(query)));
+  const pages = Math.max(1, Math.ceil(rows.length / ESTOQUE_GERAL.pageSize)); ESTOQUE_GERAL.issuePage = Math.min(ESTOQUE_GERAL.issuePage, pages);
+  const start = (ESTOQUE_GERAL.issuePage - 1) * ESTOQUE_GERAL.pageSize;
+  body.innerHTML = rows.length ? rows.slice(start, start + ESTOQUE_GERAL.pageSize).map(issue => `<tr><td>${egEscape(issue.familyLabel)}</td><td class="estoque-geral-code">${egEscape(issue.code)}</td><td>${egEscape(issue.detail)}</td><td class="estoque-geral-number">${egNumber(issue.count)}</td></tr>`).join("") : '<tr><td colspan="4" class="empty-cell">Nenhuma pendência corresponde aos filtros.</td></tr>';
+  pagination.innerHTML = `<span>${rows.length} pendência(s) · página ${ESTOQUE_GERAL.issuePage} de ${pages}</span><div><button class="btn-secondary" type="button" data-eg-issue-page="prev" ${ESTOQUE_GERAL.issuePage === 1 ? "disabled" : ""}>Anterior</button><button class="btn-secondary" type="button" data-eg-issue-page="next" ${ESTOQUE_GERAL.issuePage === pages ? "disabled" : ""}>Próxima</button></div>`;
+  pagination.querySelectorAll("[data-eg-issue-page]").forEach(button => button.addEventListener("click", () => { ESTOQUE_GERAL.issuePage += button.dataset.egIssuePage === "next" ? 1 : -1; egRenderIssues(); }));
+}
 function egRender() {
   const tbody = eg("estoque-geral-body"); if (!tbody) return;
   const items = egFiltered(); const start = (ESTOQUE_GERAL.page - 1) * ESTOQUE_GERAL.pageSize; const pageItems = items.slice(start, start + ESTOQUE_GERAL.pageSize);
@@ -74,7 +87,8 @@ async function egLoad() {
   try {
     const response = await fetch("/api/estoque-geral", { cache: "no-store" }); const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || "Não foi possível carregar o Estoque Geral.");
-    ESTOQUE_GERAL.items = Array.isArray(payload.items) ? payload.items : []; ESTOQUE_GERAL.summary = payload.summary || {};
+    ESTOQUE_GERAL.items = Array.isArray(payload.items) ? payload.items : []; ESTOQUE_GERAL.issues = Array.isArray(payload.reconciliation) ? payload.reconciliation : []; ESTOQUE_GERAL.summary = payload.summary || {};
+    eg("estoque-geral-issue-count").textContent = ESTOQUE_GERAL.issues.length;
     eg("estoque-geral-total").textContent = payload.summary?.totalActive ?? "—";
     eg("estoque-geral-known").textContent = payload.summary?.physicalKnown ?? "—";
     eg("estoque-geral-zero").textContent = payload.summary?.physicalZero ?? "—";
@@ -83,7 +97,7 @@ async function egLoad() {
     const unmatchedTotal = Object.values(unmatched).reduce((sum, count) => sum + (Number(count) || 0), 0);
     const notice = eg("estoque-geral-notice");
     if (notice) notice.textContent = `Os catálogos definem os itens e seus vínculos técnicos. O saldo vem da fonte oficial de cada família. Reservado e disponível aguardam fonte configurada.${unmatchedTotal ? ` ${unmatchedTotal} posição(ões) de saldo sem cadastro correspondente permanecem fora desta lista e aguardam reconciliação.` : ""}`;
-    ESTOQUE_GERAL.page = 1; egRender(); if (state) state.textContent = "";
+    ESTOQUE_GERAL.page = 1; ESTOQUE_GERAL.issuePage = 1; egRender(); egRenderIssues(); if (state) state.textContent = "";
   } catch (error) {
     if (state) state.textContent = error.message; const body = eg("estoque-geral-body"); if (body) body.innerHTML = `<tr><td colspan="10" class="empty-cell">${egEscape(error.message)}</td></tr>`;
   }
@@ -94,6 +108,7 @@ function initEstoqueGeral() {
     ["estoque-geral-search", "estoque-geral-family", "estoque-geral-type", "estoque-geral-stock-status", "estoque-geral-source"].forEach((id) => eg(id)?.addEventListener(id === "estoque-geral-search" ? "input" : "change", () => { ESTOQUE_GERAL.page = 1; egRender(); }));
     eg("estoque-geral-clear")?.addEventListener("click", () => { ["estoque-geral-search", "estoque-geral-family", "estoque-geral-type", "estoque-geral-stock-status", "estoque-geral-source"].forEach((id) => { if (eg(id)) eg(id).value = ""; }); ESTOQUE_GERAL.page = 1; egRender(); });
     eg("estoque-geral-refresh")?.addEventListener("click", egLoad);
+    ["estoque-geral-issue-search", "estoque-geral-issue-family", "estoque-geral-issue-type"].forEach(id => eg(id)?.addEventListener(id === "estoque-geral-issue-search" ? "input" : "change", () => { ESTOQUE_GERAL.issuePage = 1; egRenderIssues(); }));
     document.querySelectorAll("[data-estoque-geral-sort]").forEach((button) => button.addEventListener("click", () => { const field = button.dataset.estoqueGeralSort; ESTOQUE_GERAL.direction = ESTOQUE_GERAL.sort === field && ESTOQUE_GERAL.direction === "asc" ? "desc" : "asc"; ESTOQUE_GERAL.sort = field; egRender(); }));
     ["estoque-geral-modal-close", "estoque-geral-modal-done"].forEach((id) => eg(id)?.addEventListener("click", egCloseDetail));
     eg("modal-estoque-geral")?.addEventListener("click", (event) => { if (event.target === event.currentTarget) egCloseDetail(); });

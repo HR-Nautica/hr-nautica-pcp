@@ -34,6 +34,7 @@ test("consolida as quatro famílias sem criar disponibilidade fictícia", () => 
   assert.deepEqual(result.items.find(item => item.code === "CMP-1").bom.map(line => [line.code, line.quantity, line.status]), [["CMP-2", 2, "linked"]]);
   assert.deepEqual(result.items.find(item => item.code === "CMP-2").bom.map(line => [line.code, line.quantity, line.status]), [["MAT-1", 0.5, "linked"]]);
   assert.equal(result.items.find(item => item.code === "MAT-1").typeLabel, "Material");
+  assert.equal(result.reconciliation.filter(issue => issue.category === "balance_pending").length, 2);
   assert.deepEqual(result.items.find(item => item.code === "HP-1").bom.map(line => line.status), ["linked", "linked", "linked"]);
 });
 
@@ -45,18 +46,22 @@ test("não transforma ausência de fonte em saldo zero e sinaliza duplicidade de
   const duplicated = result.items.filter(item => item.family === "helices");
   assert.equal(duplicated.every(item => item.identityStatus === "ambiguous" && item.physicalStock === null), true);
   assert.equal(duplicated.every(item => item.sourceSwitchBlockers.includes("Identidade do item não reconciliada") && item.sourceSwitchBlockers.includes("Saldo físico atual desconhecido")), true);
+  assert.equal(result.reconciliation.filter(issue => issue.category === "ambiguous_identity" && issue.code === "HP-1").length, 2);
   assert.equal(result.items.find(item => item.code === "CMP-2").stockStatus, "pending");
 });
 
 test("não promove linhas de saldo sem catálogo nem inventa quantidade de BOM", () => {
   const input = sample();
   input.analysisRows.push({ sku: "FORA-1", produto: "Só na planilha", estoqueFisico: 33 });
+  input.analysisRows.push({ sku: "FORA-1", produto: "Repetida", estoqueFisico: 7 });
   input.rawStock.items.push({ rawCode: "FORA-2", quantity: 9 });
   input.snapshot.data.hrn_modelos[0].skuCaixa = "CAIXA-SEM-CADASTRO";
   const result = buildGeneralStock(input);
   assert.equal(result.items.some(item => item.code === "FORA-1" || item.code === "FORA-2"), false);
-  assert.equal(result.summary.unmatchedSourceRows.helices, 1);
+  assert.equal(result.summary.unmatchedSourceRows.helices, 2);
   assert.equal(result.summary.unmatchedSourceRows.brutos, 1);
+  assert.equal(result.reconciliation.find(issue => issue.category === "source_without_catalog" && issue.code === "FORA-1").count, 2);
+  assert.equal(result.reconciliation.find(issue => issue.category === "relation_without_catalog" && issue.code === "HP-1").detail, "Caixa: CAIXA-SEM-CADASTRO (Componentes)");
   assert.equal(result.items.find(item => item.code === "HP-1").bom.find(line => line.role === "Caixa").status, "not_cataloged");
   assert.equal(result.items.find(item => item.code === "HP-1").bom.every(line => line.quantity === null), true);
 });
@@ -70,5 +75,6 @@ test("saldos internos com código duplicado aguardam reconciliação", () => {
     const item = result.items.find(row => row.family === family);
     assert.equal(item.identityStatus, "ambiguous");
     assert.equal(item.physicalStock, null);
+    assert.equal(result.reconciliation.some(issue => issue.family === family && issue.category === "ambiguous_identity"), true);
   }
 });

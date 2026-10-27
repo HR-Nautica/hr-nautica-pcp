@@ -28,7 +28,7 @@ Não publicar a seleção editável antes de os cinco pontos funcionarem. Até l
 ## Sequência proposta
 
 1. **Consulta consolidada (esta etapa).** Catálogos definem os itens, tipo e vínculos; fontes oficiais fornecem saldos. Validar contagens e relações com dados reais no 8444.
-2. **Reconciliação de cadastros.** Criar uma fila para códigos de planilha/ledger sem catálogo, duplicidades e vínculos técnicos sem destino. Definir responsáveis e decisões de cadastro antes de qualquer vínculo automático.
+2. **Reconciliação de cadastros (fila de consulta implementada).** O Estoque Geral lista códigos da fonte sem catálogo, identidades ambíguas, saldos pendentes e vínculos técnicos sem destino, com filtros e paginação. A resolução, a atribuição de responsável e o vínculo persistente ao Item Mestre continuam pendentes; nenhum cadastro ou saldo é alterado pela fila.
 3. **Cadastro mestre e BOM versionada.** Decidir identidade estável, unidade, quantidade por produto, alternativas e aprovação/vigência da BOM. Usar migrations V003–V005 apenas após revisão e autorização específica; separar relação técnica de linha de consumo. OPs existentes conservam estrutura histórica.
 4. **Fluxo por família.** Organizar navegação em Estoque Geral e Hélices, Brutos, Buchas, Componentes com Catálogo, Planejamento e OPs onde o processo já existir. Mover edição de cadastro para um fluxo único somente depois de mapear permissões, rotas e dependências das telas atuais.
 5. **Planejamento/execução integrados.** Consumir a BOM publicada para simulações e novas OPs. Definir antes o momento de reserva/consumo de bruto e bucha, estorno, parciais e deduplicação entre entradas previstas e OPs.
