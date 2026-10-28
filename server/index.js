@@ -25,6 +25,7 @@ import masterItemsRouter from "./routes/master-items.js";
 import catalogLinksRouter from "./routes/catalog-links.js";
 import productionOpsRouter from "./routes/production-ops.js";
 import productionTrackingRouter from "./routes/production-tracking.js";
+import productFoundationRouter from "./routes/product-foundation.js";
 import rawStockRouter from "./routes/raw-stock.js";
 import stateRouter from "./routes/state.js";
 
@@ -35,6 +36,7 @@ const app = express();
 let strictDatabaseStatus = { strict: false, pending: [] };
 const requireMasterItemsSchema = createMigrationGate([3, 4], () => strictDatabaseStatus);
 const requireCatalogLinksSchema = createMigrationGate([3, 4, 5], () => strictDatabaseStatus);
+const requireProductFoundationSchema = createMigrationGate([3, 4, 6], () => strictDatabaseStatus);
 
 app.disable("x-powered-by");
 // A publicacao interna atual e HTTP. HSTS so e aceito sobre transporte seguro
@@ -78,6 +80,7 @@ app.use("/api/raw-stock", rawStockRouter);
 app.use("/api/inventory", inventoryRouter);
 app.use("/api/master-items", requireMasterItemsSchema, masterItemsRouter);
 app.use("/api/catalog-links", requireCatalogLinksSchema, catalogLinksRouter);
+app.use("/api/product-foundation", requireProductFoundationSchema, productFoundationRouter);
 app.use("/api/buchas", buchasRouter);
 app.use("/api/catalog-export", catalogExportRouter);
 app.use("/api/estoque-geral", generalStockRouter);
