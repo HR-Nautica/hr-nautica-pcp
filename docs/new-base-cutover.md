@@ -18,6 +18,6 @@ O corte autorizado substitui a aplicacao de negocio antiga pelos modulos Produto
 
 ## Ativacao
 
-O workflow manual `Reset and activate new ERP base` exige a confirmacao literal `RESET-HR-NAUTICA`. Ele constroi uma imagem imutavel, executa V006/V007 dentro da rede do PostgreSQL e so entao publica e verifica o mesmo SHA em `/healthz` e `/release.json`.
+O workflow manual `Reset and activate new ERP base` exige a confirmacao literal `RESET-HR-NAUTICA`. Ele constroi uma imagem imutavel, executa V006/V007 dentro da rede do PostgreSQL usando exclusivamente `/etc/hr-nautica/production-migration.env` (conexao administrativa fora do Git) e so entao publica e verifica o mesmo SHA em `/healthz` e `/release.json`. A aplicacao continua usando o usuario restrito definido em `/etc/hr-nautica/production.env`.
 
 Depois do corte, o administrador importa `BOMs_normalizadas_unificadas.xlsx` pela tela Produtos. A importacao e transacional e idempotente: 577 produtos sao a base inicial; vinculos pendentes continuam fora da BOM ativa.

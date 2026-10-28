@@ -36,9 +36,10 @@ jobs:
         env:
           RELEASE_SHA: ${{ github.sha }}
         run: |
+          test -r /etc/hr-nautica/production-migration.env
           docker run --rm \
             --network supabase_default \
-            --env-file /etc/hr-nautica/production.env \
+            --env-file /etc/hr-nautica/production-migration.env \
             -e MIGRATION_OPERATOR="github-actions-reset:$RELEASE_SHA" \
             "hr-nautica-pcp:$RELEASE_SHA" \
             node scripts/db/migrations-cli.js migrate
