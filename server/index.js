@@ -13,30 +13,15 @@ import { sanitizeDatabaseError } from "./postgres-config.js";
 import { validateStrictDatabase } from "./strict-database.js";
 import { createMigrationGate } from "./migration-gate.js";
 import { createProxyAuthentication, validateProxySecret } from "./proxy-auth.js";
-import analysisTempRouter from "./routes/analysis-temp.js";
-import buchasRouter from "./routes/buchas.js";
-import catalogExportRouter from "./routes/catalog-export.js";
-import fundicaoOpsRouter from "./routes/fundicao-ops.js";
-import generalStockRouter from "./routes/general-stock.js";
-import heliceOpsRouter from "./routes/helice-ops.js";
-import integrationsRouter from "./routes/integrations.js";
-import inventoryRouter from "./routes/inventory.js";
-import masterItemsRouter from "./routes/master-items.js";
-import catalogLinksRouter from "./routes/catalog-links.js";
-import productionOpsRouter from "./routes/production-ops.js";
-import productionTrackingRouter from "./routes/production-tracking.js";
+import catalogRouter from "./routes/catalog.js";
 import productFoundationRouter from "./routes/product-foundation.js";
-import rawStockRouter from "./routes/raw-stock.js";
-import stateRouter from "./routes/state.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const dist = path.join(root, "dist");
 const app = express();
 let strictDatabaseStatus = { strict: false, pending: [] };
-const requireMasterItemsSchema = createMigrationGate([3, 4], () => strictDatabaseStatus);
-const requireCatalogLinksSchema = createMigrationGate([3, 4, 5], () => strictDatabaseStatus);
-const requireProductFoundationSchema = createMigrationGate([3, 4, 6], () => strictDatabaseStatus);
+const requireProductFoundationSchema = createMigrationGate([3, 4, 6, 7], () => strictDatabaseStatus);
 
 app.disable("x-powered-by");
 // A publicacao interna atual e HTTP. HSTS so e aceito sobre transporte seguro
@@ -70,21 +55,8 @@ app.get("/api/status", async (_req, res, next) => {
   }
 });
 
-app.use("/api/state", stateRouter);
-app.use("/api/analysis-temp", analysisTempRouter);
-app.use("/api/helice-ops", heliceOpsRouter);
-app.use("/api/fundicao-ops", fundicaoOpsRouter);
-app.use("/api/production-ops", productionOpsRouter);
-app.use("/api/production-tracking", productionTrackingRouter);
-app.use("/api/raw-stock", rawStockRouter);
-app.use("/api/inventory", inventoryRouter);
-app.use("/api/master-items", requireMasterItemsSchema, masterItemsRouter);
-app.use("/api/catalog-links", requireCatalogLinksSchema, catalogLinksRouter);
 app.use("/api/product-foundation", requireProductFoundationSchema, productFoundationRouter);
-app.use("/api/buchas", buchasRouter);
-app.use("/api/catalog-export", catalogExportRouter);
-app.use("/api/estoque-geral", generalStockRouter);
-app.use("/api", integrationsRouter);
+app.use("/api/catalog", requireProductFoundationSchema, catalogRouter);
 app.use(express.static(dist, {
   etag: true,
   maxAge: 0,
