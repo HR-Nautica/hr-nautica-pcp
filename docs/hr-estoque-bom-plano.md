@@ -11,6 +11,10 @@
 
 O Estoque Geral é uma projeção de consulta. As linhas de saldo sem cadastro não criam itens automaticamente. Códigos relacionados são ligados apenas por correspondência exata normalizada; relações não resolvidas ficam visíveis como pendência. Quantidades de bruto, bucha, caixa, tubo e latão permanecem não informadas enquanto o cadastro não contiver consumo por unidade.
 
+### Auditoria de contagens
+
+A árvore de componentes contém **linhas de estrutura**, que podem repetir o mesmo SKU em produtos diferentes. O Estoque Geral agrupa essas linhas por SKU; portanto, o número de linhas da árvore não é o número de componentes distintos. O snapshot Excel de estoque contém posições por SKU e pode incluir itens fora da árvore. Essas posições são sinalizadas como **ausentes da árvore importada**, sem concluir que não existe cadastro em outra origem. A resposta da API expõe `summary.sourceCounts` por família e distingue linhas do catálogo, SKUs únicos da árvore, itens listados e posições de estoque. A conferência com os números operacionais informados (74 hélices, 77 brutos, 15 buchas, 1298 componentes) ainda depende de comparar essas métricas com as fontes reais no ambiente autenticado; não alterar saldos ou criar cadastros automaticamente para forçar igualdade.
+
 ## Decisão posterior: fonte do saldo por item
 
 O operador quer escolher por item entre **Sincronizar Estoque** e **Gerenciado pelo ERP**, com efeito em todo o ERP e cópia do saldo físico vigente no momento da troca. Esta escolha substitui a autoridade fixa por família descrita na tabela acima somente depois de implementada a migração operacional. Uma checkbox isolada no Estoque Geral seria falsa: a importação, os planejadores, as OPs e as movimentações continuariam lendo ou gravando nas fontes antigas.

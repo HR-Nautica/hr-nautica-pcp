@@ -249,7 +249,7 @@ function reconciliationIssues({ snapshot, analysisRows, buchasStock, rawStock, i
       group.count += 1;
       unmatched.set(key, group);
     }
-    for (const { code, count } of unmatched.values()) add(family, code, "source_without_catalog", "Posição da fonte oficial sem cadastro correspondente", count);
+    for (const { code, count } of unmatched.values()) add(family, code, "source_without_catalog", family === "componentes" ? "SKU do snapshot de estoque ausente da árvore importada; cadastro não verificado" : "Posição da fonte oficial sem cadastro correspondente", count);
   }
   for (const item of items) {
     if (item.identityStatus !== "confirmed") add(item.family, item.code, "ambiguous_identity", "Identidade ambígua: conferir códigos duplicados ou descrições divergentes");
@@ -279,6 +279,15 @@ export function buildGeneralStock({ snapshot = { data: {} }, analysisRows = [], 
     brutos: (Array.isArray(rawStock?.items) ? rawStock.items : []).filter(row => !catalogCodes.brutos.has(normalize(row.rawCode))).length
   };
   const reconciliation = reconciliationIssues({ snapshot, analysisRows, buchasStock, rawStock, items, catalogCodes });
+  const componentTree = Array.isArray(snapshot.data?.hrn_estoque_arvore) ? snapshot.data.hrn_estoque_arvore : [];
+  const componentStockCodes = Object.keys(snapshot.data?.hrn_earv_estoque || {});
+  const countCodes = rows => new Set(rows.map(normalize).filter(Boolean)).size;
+  const sourceCounts = {
+    helices: { catalogRows: Array.isArray(snapshot.data?.hrn_modelos) ? snapshot.data.hrn_modelos.length : 0, listedItems: items.filter(item => item.family === "helices").length, stockRows: Array.isArray(analysisRows) ? analysisRows.length : 0 },
+    brutos: { catalogRows: Array.isArray(snapshot.data?.hrn_fundicao_catalog) ? snapshot.data.hrn_fundicao_catalog.length : 0, listedItems: items.filter(item => item.family === "brutos").length, stockRows: Array.isArray(rawStock?.items) ? rawStock.items.length : 0 },
+    buchas: { catalogRows: Array.isArray(buchasStock?.catalog) ? buchasStock.catalog.length : 0, listedItems: items.filter(item => item.family === "buchas").length, stockRows: Array.isArray(buchasStock?.items) ? buchasStock.items.length : 0 },
+    componentes: { catalogRows: componentTree.length, catalogCodes: countCodes(componentTree.map(row => row.SKU || row.sku)), listedItems: items.filter(item => item.family === "componentes").length, stockRows: componentStockCodes.length, stockCodes: countCodes(componentStockCodes) }
+  };
   return {
     items,
     reconciliation,
@@ -289,6 +298,7 @@ export function buildGeneralStock({ snapshot = { data: {} }, analysisRows = [], 
       balancePending: active.filter(item => item.physicalStock === null).length,
       availableConfigured: active.filter(item => item.availableStock !== null).length,
       unmatchedSourceRows,
+      sourceCounts,
       reconciliationIssues: reconciliation.length
     },
     sources: {
