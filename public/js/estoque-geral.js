@@ -95,8 +95,14 @@ async function egLoad() {
     eg("estoque-geral-pending").textContent = payload.summary?.balancePending ?? "—";
     const unmatched = payload.summary?.unmatchedSourceRows || {};
     const unmatchedTotal = Object.values(unmatched).reduce((sum, count) => sum + (Number(count) || 0), 0);
+    const counts = payload.summary?.sourceCounts || {};
+    const sourceCounts = eg("estoque-geral-source-counts");
+    if (sourceCounts) {
+      const familyCount = (label, key) => `${label}: ${counts[key]?.listedItems ?? "—"} na lista / ${counts[key]?.catalogRows ?? "—"} linhas no catálogo`;
+      sourceCounts.textContent = `${familyCount("Hélices", "helices")}; ${familyCount("Brutos", "brutos")}; ${familyCount("Buchas", "buchas")}. Componentes: ${counts.componentes?.listedItems ?? "—"} SKUs na lista / ${counts.componentes?.catalogRows ?? "—"} linhas na árvore (${counts.componentes?.catalogCodes ?? "—"} SKUs distintos) / ${counts.componentes?.stockRows ?? "—"} posições no snapshot de estoque. Linhas de árvore e posições de estoque não são cadastros distintos.`;
+    }
     const notice = eg("estoque-geral-notice");
-    if (notice) notice.textContent = `Os catálogos definem os itens e seus vínculos técnicos. O saldo vem da fonte oficial de cada família. Reservado e disponível aguardam fonte configurada.${unmatchedTotal ? ` ${unmatchedTotal} posição(ões) de saldo sem cadastro correspondente permanecem fora desta lista e aguardam reconciliação.` : ""}`;
+    if (notice) notice.textContent = `A lista agrupa códigos dos catálogos e da árvore. O saldo vem da fonte oficial de cada família. Reservado e disponível aguardam fonte configurada.${unmatchedTotal ? ` ${unmatchedTotal} posição(ões) de saldo não têm vínculo com esta lista; isso não comprova falta de cadastro.` : ""}`;
     ESTOQUE_GERAL.page = 1; ESTOQUE_GERAL.issuePage = 1; egRender(); egRenderIssues(); if (state) state.textContent = "";
   } catch (error) {
     if (state) state.textContent = error.message; const body = eg("estoque-geral-body"); if (body) body.innerHTML = `<tr><td colspan="10" class="empty-cell">${egEscape(error.message)}</td></tr>`;

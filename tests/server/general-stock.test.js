@@ -20,6 +20,7 @@ function sample() {
 test("consolida as quatro famílias sem criar disponibilidade fictícia", () => {
   const result = buildGeneralStock(sample());
   assert.equal(result.items.length, 6);
+  assert.deepEqual(result.summary.sourceCounts.componentes, { catalogRows: 3, catalogCodes: 3, listedItems: 3, stockRows: 1, stockCodes: 1 });
   assert.equal(result.items.every(item => item.availableStock === null && item.reservedStock === null), true);
   assert.equal(result.items.find(item => item.family === "helices").physicalStock, 8);
   assert.equal(result.items.find(item => item.family === "componentes").physicalStock, 4);
@@ -61,6 +62,9 @@ test("não promove linhas de saldo sem catálogo nem inventa quantidade de BOM",
   assert.equal(result.summary.unmatchedSourceRows.helices, 2);
   assert.equal(result.summary.unmatchedSourceRows.brutos, 1);
   assert.equal(result.reconciliation.find(issue => issue.category === "source_without_catalog" && issue.code === "FORA-1").count, 2);
+  input.snapshot.data.hrn_earv_estoque["FORA-COMP"] = 12;
+  const componentIssue = buildGeneralStock(input).reconciliation.find(issue => issue.family === "componentes" && issue.code === "FORA-COMP");
+  assert.match(componentIssue.detail, /ausente da árvore importada; cadastro não verificado/);
   assert.equal(result.reconciliation.find(issue => issue.category === "relation_without_catalog" && issue.code === "HP-1").detail, "Caixa: CAIXA-SEM-CADASTRO (Componentes)");
   assert.equal(result.items.find(item => item.code === "HP-1").bom.find(line => line.role === "Caixa").status, "not_cataloged");
   assert.equal(result.items.find(item => item.code === "HP-1").bom.every(line => line.quantity === null), true);
@@ -77,4 +81,13 @@ test("saldos internos com código duplicado aguardam reconciliação", () => {
     assert.equal(item.physicalStock, null);
     assert.equal(result.reconciliation.some(issue => issue.family === family && issue.category === "ambiguous_identity"), true);
   }
+});
+
+test("distingue linhas da árvore, SKUs únicos e posições do snapshot", () => {
+  const input = sample();
+  input.snapshot.data.hrn_estoque_arvore.push({ Posicao: "01", SKU: "CMP-2", Descricao: "Subcomponente", Quantidade: 1 });
+  input.snapshot.data.hrn_earv_estoque["FORA-DA-ARVORE"] = 0;
+  const result = buildGeneralStock(input);
+  assert.deepEqual(result.summary.sourceCounts.componentes, { catalogRows: 4, catalogCodes: 3, listedItems: 3, stockRows: 2, stockCodes: 2 });
+  assert.equal(result.summary.unmatchedSourceRows.componentes, 1);
 });
