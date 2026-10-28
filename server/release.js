@@ -5,11 +5,13 @@ export function normalizedReleaseSha(value) {
   return FULL_GIT_SHA.test(candidate) ? candidate : "development";
 }
 
-export function createReleaseGuard(configuredSha) {
+export function createReleaseGuard(configuredSha, { directDownloadPaths = [] } = {}) {
   const releaseSha = normalizedReleaseSha(configuredSha);
+  const downloads = new Set(directDownloadPaths);
   return function releaseGuard(req, res, next) {
     res.setHeader("X-HRN-Release-Sha", releaseSha);
     if (releaseSha === "development" || !req.path.startsWith("/api/")) return next();
+    if (req.method === "GET" && downloads.has(req.path)) return next();
 
     const clientSha = String(req.get("x-hrn-release-sha") || "").trim().toLowerCase();
     if (clientSha !== releaseSha) {
