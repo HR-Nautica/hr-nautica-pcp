@@ -15,6 +15,7 @@ import { createMigrationGate } from "./migration-gate.js";
 import { createProxyAuthentication, validateProxySecret } from "./proxy-auth.js";
 import analysisTempRouter from "./routes/analysis-temp.js";
 import buchasRouter from "./routes/buchas.js";
+import catalogExportRouter from "./routes/catalog-export.js";
 import fundicaoOpsRouter from "./routes/fundicao-ops.js";
 import generalStockRouter from "./routes/general-stock.js";
 import heliceOpsRouter from "./routes/helice-ops.js";
@@ -76,6 +77,7 @@ app.use("/api/inventory", inventoryRouter);
 app.use("/api/master-items", requireMasterItemsSchema, masterItemsRouter);
 app.use("/api/catalog-links", requireCatalogLinksSchema, catalogLinksRouter);
 app.use("/api/buchas", buchasRouter);
+app.use("/api/catalog-export", catalogExportRouter);
 app.use("/api/estoque-geral", generalStockRouter);
 app.use("/api", integrationsRouter);
 app.use(express.static(dist, {
