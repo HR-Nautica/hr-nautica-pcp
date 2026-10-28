@@ -7,10 +7,11 @@ import { createReleaseGuard, normalizedReleaseSha } from "../../server/release.j
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 
-async function serve(release = SHA) {
+async function serve(release = SHA, options = {}) {
   const app = express();
-  app.use(createReleaseGuard(release));
+  app.use(createReleaseGuard(release, options));
   app.get("/api/probe", (_req, res) => res.json({ ok: true }));
+  app.get("/api/catalog-export", (_req, res) => res.json({ ok: true }));
   app.get("/release.json", (_req, res) => res.json({ release }));
   const server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -44,4 +45,18 @@ test("desenvolvimento local nao exige cabecalho de release", async (t) => {
   t.after(() => target.server.close());
   const response = await fetch(`${target.origin}/api/probe`);
   assert.equal(response.status, 200);
+});
+
+test("download autenticado configurado aceita navegacao GET direta", async (t) => {
+  const target = await serve(SHA, { directDownloadPaths: ["/api/catalog-export"] });
+  t.after(() => target.server.close());
+
+  let response = await fetch(`${target.origin}/api/catalog-export`);
+  assert.equal(response.status, 200);
+
+  response = await fetch(`${target.origin}/api/catalog-export`, { method: "POST" });
+  assert.equal(response.status, 409);
+
+  response = await fetch(`${target.origin}/api/probe`);
+  assert.equal(response.status, 409);
 });

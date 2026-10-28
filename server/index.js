@@ -41,7 +41,9 @@ app.disable("x-powered-by");
 // e anunciaria uma politica incompatível com esse modo de operacao.
 app.use(helmet({ contentSecurityPolicy: false, strictTransportSecurity: false }));
 app.use(compression());
-app.use(createReleaseGuard(config.releaseSha));
+app.use(createReleaseGuard(config.releaseSha, {
+  directDownloadPaths: ["/api/catalog-export"]
+}));
 
 app.get("/healthz", createHealthHandler({ databaseHealth, releaseSha: config.releaseSha }));
 
