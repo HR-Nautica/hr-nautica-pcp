@@ -1,0 +1,52 @@
+name: Reset and activate new ERP base
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Digite RESET-HR-NAUTICA para confirmar a limpeza dos dados de negocio
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hr-nautica-production
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    if: inputs.confirmation == 'RESET-HR-NAUTICA'
+    runs-on: [self-hosted, linux, x64, hr-nautica-production]
+    environment: production
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+      - name: Build reset release image
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: docker build --pull --build-arg APP_COMMIT_SHA="$RELEASE_SHA" --label "org.opencontainers.image.revision=$RELEASE_SHA" --tag "hr-nautica-pcp:$RELEASE_SHA" .
+      - name: Apply controlled reset migrations
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          docker run --rm \
+            --network supabase_default \
+            --env-file /etc/hr-nautica/production.env \
+            -e MIGRATION_OPERATOR="github-actions-reset:$RELEASE_SHA" \
+            "hr-nautica-pcp:$RELEASE_SHA" \
+            node scripts/db/migrations-cli.js migrate
+      - name: Deploy and verify new base
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          ERP_ENV_FILE: /etc/hr-nautica/production.env
+          ERP_DEPLOY_STATE_DIR: /var/lib/hr-nautica-deploy
+          ERP_IMAGE_REPOSITORY: hr-nautica-pcp
+          ERP_HEALTHCHECK_URL: http://192.168.100.180:8444
+        run: bash scripts/deploy/deploy-production.sh "$RELEASE_SHA"
