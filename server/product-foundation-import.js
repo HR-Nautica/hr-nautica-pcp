@@ -54,14 +54,14 @@ function numericQuantity(value) {
   return Number.isFinite(number) ? number : null;
 }
 
-export function parseNormalizedProductWorkbook(buffer, { defaultUnit } = {}) {
+export function parseNormalizedProductWorkbook(buffer, { defaultUnit, productsOnly = false } = {}) {
   let workbook;
   try { workbook = XLSX.read(buffer, { type: "buffer", cellDates: true }); }
   catch { throw new ProductImportError("Arquivo Excel invalido ou corrompido."); }
 
   const rawItems = rowsFromSheet(workbook, "Cadastro Unificado", "ID_Item_Sistema");
-  const rawBom = rowsFromSheet(workbook, "BOM Unificada", "ID_Linha_BOM");
-  const rawAudit = rowsFromSheet(workbook, "Auditoria", "Nº");
+  const rawBom = productsOnly ? [] : rowsFromSheet(workbook, "BOM Unificada", "ID_Linha_BOM");
+  const rawAudit = productsOnly ? [] : rowsFromSheet(workbook, "Auditoria", "Nº");
   const issues = [];
   const auditIssues = rawAudit.map((row, index) => ({
     sheet: "Auditoria",
@@ -163,6 +163,7 @@ export function parseNormalizedProductWorkbook(buffer, { defaultUnit } = {}) {
   return {
     sourceSchema: SOURCE_SCHEMA,
     checksum,
+    productsOnly,
     items,
     bomLines,
     reviewIssues,
@@ -177,8 +178,8 @@ export function parseNormalizedProductWorkbook(buffer, { defaultUnit } = {}) {
   };
 }
 
-export async function importNormalizedProductWorkbook(buffer, { sourceName, actor, expectedChecksum, defaultUnit }) {
-  const parsed = parseNormalizedProductWorkbook(buffer, { defaultUnit });
+export async function importNormalizedProductWorkbook(buffer, { sourceName, actor, expectedChecksum, defaultUnit, productsOnly = false }) {
+  const parsed = parseNormalizedProductWorkbook(buffer, { defaultUnit, productsOnly });
   if(expectedChecksum!==undefined&&expectedChecksum!==parsed.checksum)throw new ProductImportError('Arquivo diferente da pré-validação.','PRODUCT_IMPORT_CHECKSUM_CONFLICT',409);
   const safeName = clean(sourceName);
   const safeActor = clean(actor);
@@ -254,4 +255,4 @@ async function inspectImport(client,parsed){
   const bom=(await client.query('SELECT parent_product_id,child_product_id,quantity,unit,link_status,source_line_id FROM public.product_bom_lines')).rows;
   return classifyImport(parsed,products,aliases,bom);
 }
-export async function preflightNormalizedProductWorkbook(buffer){const parsed=parseNormalizedProductWorkbook(buffer);return withConnection(async client=>({checksum:parsed.checksum,summary:parsed.summary,reviewIssues:parsed.reviewIssues,...await inspectImport(client,parsed)}));}
+export async function preflightNormalizedProductWorkbook(buffer,options={}){const parsed=parseNormalizedProductWorkbook(buffer,options);return withConnection(async client=>({checksum:parsed.checksum,summary:parsed.summary,reviewIssues:parsed.reviewIssues,...await inspectImport(client,parsed)}));}

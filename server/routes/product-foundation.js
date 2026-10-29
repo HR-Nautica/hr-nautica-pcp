@@ -27,7 +27,7 @@ router.use(adminOnly);
 
 router.post("/validate", async (req, res, next) => {
   try {
-    const result = await preflightNormalizedProductWorkbook(workbook(req));
+    const result = await preflightNormalizedProductWorkbook(workbook(req), { productsOnly:req.body?.productsOnly===true, defaultUnit:req.body?.defaultUnit==='UN'?'UN':undefined });
     return res.json({ ok: true, ...result });
   } catch (error) { return reply(error, res, next); }
 });
@@ -37,6 +37,8 @@ router.post("/import", async (req, res, next) => {
     const result = await importNormalizedProductWorkbook(workbook(req), {
       sourceName: String(req.body?.fileName || "BOMs_normalizadas_unificadas.xlsx"),
       expectedChecksum: String(req.body?.expectedChecksum||''),
+      productsOnly:req.body?.productsOnly===true,
+      defaultUnit:req.body?.defaultUnit==='UN'?'UN':undefined,
       actor: String(req.auth?.username || "").slice(0, 100)
     });
     return res.status(result.idempotent ? 200 : 201).json({ ok: true, ...result });

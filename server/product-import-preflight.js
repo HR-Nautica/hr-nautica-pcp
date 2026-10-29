@@ -9,7 +9,7 @@ export function classifyImport(parsed, products, aliases, bom) {
     let classification=primary.length?'existing':matches.length?'alias':'new';
     if(ids.size>1||(!item.aliasNamespace&&new Set(matches.map(a=>a.namespace)).size>1)||matches.some(a=>!products.some(p=>p.id===a.item_id)))classification='conflict';
     const target=products.find(p=>p.id===[...ids][0]);
-    if(target&&['description','unit','family','itemType','status'].some(field=>String(target[field==='itemType'?'item_type':field]??'')!==String(item[field]??'')))classification='conflict';
+    if(!parsed.productsOnly&&target&&['description','unit','family','itemType','status'].some(field=>String(target[field==='itemType'?'item_type':field]??'')!==String(item[field]??'')))classification='conflict';
     if(products.some(p=>loose(p.primary_sku)===loose(item.sku)&&p.primary_sku_normalized!==code))classification='conflict';
     if(classification==='conflict')issues.push({code:'IDENTITY_OR_DATA_CONFLICT',sku:item.sku});
     if(target)resolved.set(item.sourceId,target.id);
