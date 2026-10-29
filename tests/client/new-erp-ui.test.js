@@ -30,6 +30,10 @@ test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async
   assert.match(app, /Nenhum componente vinculado/);
   assert.match(app, /Nenhuma etapa disponível/);
   assert.match(app, /aria-selected/);
+  assert.match(app, /role="tablist"/);
+  assert.match(app, /ArrowLeft/);
+  assert.match(app, /setPageBusy/);
+  assert.match(app, /setPageError/);
   assert.doesNotMatch(app, /product-detail__hero/);
   assert.match(app, /routing-add/);
   assert.match(app, /Não informado/);
@@ -38,4 +42,15 @@ test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async
   assert.match(routes, /products\/:id\/routing/);
   assert.match(service, /product_routing_steps/);
   assert.match(service, /ROUTING_VERSION_CONFLICT/);
+});
+
+test("interface compartilhada possui feedback acessível e movimento reduzido", async () => {
+  const [html, css] = await Promise.all([
+    readFile(new URL("index.html", root), "utf8"),
+    readFile(new URL("public/css/table-fixes.css", root), "utf8")
+  ]);
+  assert.match(html, /role="status" aria-live="polite"/);
+  assert.match(html, /aria-labelledby="modal-title"/);
+  assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /button:focus-visible/);
 });
