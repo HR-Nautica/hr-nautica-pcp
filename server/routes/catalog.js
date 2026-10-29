@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addBomLine, CatalogError, createProduct, deleteBomLine, deleteStep, deleteSupplier, getProduct, listProducts, listSteps, listStock, listSuppliers, saveStep, saveSupplier, updateProduct } from "../product-catalog.js";
+import { addBomLine, CatalogError, createProduct, deactivateProduct, deleteBomLine, deleteStep, deleteSupplier, getProduct, listProducts, listSteps, listStock, listSuppliers, saveStep, saveSupplier, updateProduct } from "../product-catalog.js";
 
 const router=Router();
 const actor=req=>String(req.auth?.username||"").slice(0,100);
@@ -11,6 +11,7 @@ router.get("/products",async(req,res,next)=>{try{res.json({ok:true,...await list
 router.post("/products",async(req,res,next)=>{try{res.status(201).json({ok:true,product:await createProduct(req.body,actor(req))});}catch(e){reply(e,res,next);}});
 router.get("/products/:id",async(req,res,next)=>{try{res.json({ok:true,...await getProduct(req.params.id)});}catch(e){reply(e,res,next);}});
 router.put("/products/:id",async(req,res,next)=>{try{res.json({ok:true,product:await updateProduct(req.params.id,req.body,actor(req))});}catch(e){reply(e,res,next);}});
+router.delete("/products/:id",async(req,res,next)=>{try{res.json({ok:true,product:await deactivateProduct(req.params.id,req.body?.version,actor(req))});}catch(e){reply(e,res,next);}});
 router.post("/products/:id/bom",async(req,res,next)=>{try{res.status(201).json({ok:true,item:await addBomLine(req.params.id,req.body,actor(req))});}catch(e){reply(e,res,next);}});
 router.delete("/products/:id/bom/:lineId",async(req,res,next)=>{try{res.json({ok:true,item:await deleteBomLine(req.params.id,req.params.lineId)});}catch(e){reply(e,res,next);}});
 router.get("/suppliers",async(_req,res,next)=>{try{res.json({ok:true,items:await listSuppliers()});}catch(e){reply(e,res,next);}});

@@ -75,6 +75,16 @@ export async function updateProduct(productId, data, username) {
   }); } catch (error) { if (error?.code === "23505") fail("SKU já cadastrado.", "PRODUCT_SKU_CONFLICT", 409); throw error; }
 }
 
+export async function deactivateProduct(productId, expectedVersion, username) {
+  const expected=Number(expectedVersion);
+  if (!Number.isInteger(expected) || expected<1) fail("Versão inválida.");
+  return transaction(async client=>{
+    const result=(await client.query("UPDATE public.master_items SET status='inactive',version=version+1,updated_at=clock_timestamp(),updated_by=$3 WHERE id=$1 AND version=$2 RETURNING *",[id(productId),expected,actor(username)])).rows[0];
+    if(!result) fail("Produto não encontrado ou alterado por outro usuário.","PRODUCT_VERSION_CONFLICT",409);
+    return result;
+  });
+}
+
 export async function listSuppliers() { return withConnection(async client => (await client.query("SELECT * FROM public.product_suppliers ORDER BY legal_name")).rows); }
 export async function saveSupplier(data, username, supplierId) {
   const values=[text(data?.legalName,"razão social",300),text(data?.tradeName,"nome fantasia",300,true),text(data?.taxId,"documento",80,true),text(data?.email,"e-mail",200,true),text(data?.phone,"telefone",80,true),text(data?.notes,"observações",2000,true),actor(username)];
