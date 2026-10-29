@@ -54,7 +54,7 @@ function numericQuantity(value) {
   return Number.isFinite(number) ? number : null;
 }
 
-export function parseNormalizedProductWorkbook(buffer) {
+export function parseNormalizedProductWorkbook(buffer, { defaultUnit } = {}) {
   let workbook;
   try { workbook = XLSX.read(buffer, { type: "buffer", cellDates: true }); }
   catch { throw new ProductImportError("Arquivo Excel invalido ou corrompido."); }
@@ -87,7 +87,7 @@ export function parseNormalizedProductWorkbook(buffer) {
     const description = clean(row.descricao);
     const itemType = clean(row.tipo_item);
     const family = FAMILY_BY_TYPE.get(itemType.toLocaleLowerCase("pt-BR"));
-    const unit=clean(row.unidade||row.unidade_medida);
+    const unit=clean(row.unidade||row.unidade_medida||defaultUnit);
     const statusMap={ativo:'active',inativo:'inactive',active:'active',inactive:'inactive'};
     const status=statusMap[key(row.status_cadastro)];
     if(!unit||unit.length>32||/[\x00-\x1f]/.test(unit))issues.push({sheet:'Cadastro Unificado',row:index+1,code:'INVALID_OR_MISSING_UNIT',sku});
@@ -177,8 +177,8 @@ export function parseNormalizedProductWorkbook(buffer) {
   };
 }
 
-export async function importNormalizedProductWorkbook(buffer, { sourceName, actor, expectedChecksum }) {
-  const parsed = parseNormalizedProductWorkbook(buffer);
+export async function importNormalizedProductWorkbook(buffer, { sourceName, actor, expectedChecksum, defaultUnit }) {
+  const parsed = parseNormalizedProductWorkbook(buffer, { defaultUnit });
   if(expectedChecksum!==undefined&&expectedChecksum!==parsed.checksum)throw new ProductImportError('Arquivo diferente da pré-validação.','PRODUCT_IMPORT_CHECKSUM_CONFLICT',409);
   const safeName = clean(sourceName);
   const safeActor = clean(actor);
@@ -194,6 +194,7 @@ export async function importNormalizedProductWorkbook(buffer, { sourceName, acto
 
     const itemIds = new Map();
     let createdItems = 0;
+    const createdProductIds = new Set();
     for (const item of parsed.items) {
       const match=preflight.classifications.find(row=>row.sourceId===item.sourceId);
       if(match.productId){itemIds.set(item.sourceId,match.productId);continue;}
@@ -204,7 +205,7 @@ export async function importNormalizedProductWorkbook(buffer, { sourceName, acto
          ON CONFLICT (primary_sku_normalized) DO NOTHING RETURNING id`,
         [item.sku,item.family,item.description,item.unit,item.status,item.itemType,JSON.stringify(item.basicCharacteristics),item.tinyImportEnabled,JSON.stringify(item.sourceMetadata),safeActor]
       )).rows[0];
-      if (stored) createdItems += 1;
+      if (stored) { createdItems += 1; createdProductIds.add(stored.id); }
       else stored = (await client.query("SELECT id FROM public.master_items WHERE primary_sku_normalized=public.master_identifier_normalize($1)", [item.sku])).rows[0];
       if (!stored) throw new ProductImportError(`Falha ao reconciliar SKU ${item.sku}.`, "PRODUCT_IMPORT_CONFLICT", 409);
       itemIds.set(item.sourceId, stored.id);
@@ -216,6 +217,8 @@ export async function importNormalizedProductWorkbook(buffer, { sourceName, acto
 
     let createdBomLines = 0;
     for (const line of parsed.bomLines) {
+      // Existing products and their production structures are never changed by a catalog import.
+      if (!createdProductIds.has(itemIds.get(line.parentSourceId))) continue;
       const inserted = await client.query(
         `INSERT INTO public.product_bom_lines
           (parent_product_id,child_product_id,quantity,unit,level_code,link_status,source_line_id,source_payload,created_by,updated_by)
