@@ -1,0 +1,12 @@
+td.row-actions {
+  display: table-cell;
+  text-align: right;
+  white-space: nowrap;
+}
+
+td.row-actions > .icon-action,
+td.row-actions > .action-menu {
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: middle;
+}
