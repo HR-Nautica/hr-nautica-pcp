@@ -86,6 +86,25 @@ export async function deactivateProduct(productId, expectedVersion, username) {
   });
 }
 
+export async function setProductStatus(productId,status,expectedVersion,username){
+  if(!['active','inactive'].includes(status))fail('Status inválido.');
+  const expected=Number(expectedVersion);
+  if(!Number.isInteger(expected)||expected<1)fail('Versão inválida.');
+  return transaction(async client=>{
+    const product=(await client.query("UPDATE public.master_items SET status=$1,version=version+1,updated_at=clock_timestamp(),updated_by=$2 WHERE id=$3 AND version=$4 RETURNING *",[status,actor(username),id(productId),expected])).rows[0];
+    if(!product)fail('Produto não encontrado ou alterado por outro usuário.','PRODUCT_VERSION_CONFLICT',409);
+    return product;
+  });
+}
+
+// Call inside the same transaction as each future stock movement or production order.
+export async function requireActiveProduct(client,productId){
+  const product=(await client.query('SELECT id,status FROM public.master_items WHERE id=$1 FOR SHARE',[id(productId)])).rows[0];
+  if(!product)fail('Produto não encontrado.','PRODUCT_NOT_FOUND',404);
+  if(product.status!=='active')fail('Produto inativo: movimentações e ordens de produção não são permitidas.','PRODUCT_INACTIVE',409);
+  return product;
+}
+
 export async function listSuppliers() { return withConnection(async client => (await client.query("SELECT * FROM public.product_suppliers ORDER BY legal_name")).rows); }
 export async function saveSupplier(data, username, supplierId) {
   const values=[text(data?.legalName,"razão social",300),text(data?.tradeName,"nome fantasia",300,true),text(data?.taxId,"documento",80,true),text(data?.email,"e-mail",200,true),text(data?.phone,"telefone",80,true),text(data?.notes,"observações",2000,true),actor(username)];
