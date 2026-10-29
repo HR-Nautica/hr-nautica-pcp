@@ -17,3 +17,17 @@ test("cadastro possui características, Tiny, BOM e exclusão administrativa", a
   assert.match(app, /BOM do produto/);
   assert.match(app, /method:\"DELETE\"/);
 });
+
+test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async () => {
+  const [app, routes, service] = await Promise.all([
+    readFile(new URL("public/js/new-erp.js", root), "utf8"),
+    readFile(new URL("server/routes/catalog.js", root), "utf8"),
+    readFile(new URL("server/product-catalog.js", root), "utf8")
+  ]);
+  assert.match(app, /Dados gerais/);
+  assert.match(app, /Etapas de produção/);
+  assert.match(app, /request\("\/api\/catalog\/steps"\)/);
+  assert.match(routes, /products\/:id\/routing/);
+  assert.match(service, /product_routing_steps/);
+  assert.match(service, /ROUTING_VERSION_CONFLICT/);
+});

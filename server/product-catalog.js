@@ -114,3 +114,19 @@ export async function addBomLine(parentId, data, username) {
   catch(error){ if(error?.code==="23514") fail("Um produto não pode usar a si mesmo na BOM.","BOM_SELF_REFERENCE",409); throw error; }
 }
 export async function deleteBomLine(parentId,lineId){ return withConnection(async client=>(await client.query("DELETE FROM public.product_bom_lines WHERE id=$1 AND parent_product_id=$2 RETURNING id",[id(lineId,"linha da BOM"),id(parentId,"produto")])).rows[0]||fail("Linha da BOM não encontrada.","BOM_NOT_FOUND",404)); }
+
+export async function addRoutingStep(productId, data, username) {
+  const product=id(productId,"produto"),step=id(data?.productionStepId,"etapa");
+  const sequence=Number(data?.sequence); if(!Number.isInteger(sequence)||sequence<1) fail("Sequência inválida.");
+  const instructions=text(data?.instructions,"instruções",2000,true); const safeActor=actor(username);
+  const setup=data?.setupMinutes==null||data.setupMinutes===""?null:Number(data.setupMinutes);
+  const run=data?.runMinutes==null||data.runMinutes===""?null:Number(data.runMinutes);
+  if((setup!==null&&(!Number.isFinite(setup)||setup<0))||(run!==null&&(!Number.isFinite(run)||run<0))) fail("Tempos da etapa inválidos.");
+  try { return await withConnection(async client=>(await client.query(`INSERT INTO public.product_routing_steps(product_id,production_step_id,sequence,instructions,setup_minutes,run_minutes,created_by,updated_by) VALUES($1,$2,$3,$4,$5,$6,$7,$7) RETURNING *`,[product,step,sequence,instructions,setup,run,safeActor])).rows[0]); }
+  catch(error){ if(error?.code==="23505") fail("Já existe uma etapa nesta sequência.","ROUTING_SEQUENCE_CONFLICT",409); if(error?.code==="23503") fail("Produto ou etapa não encontrado.","ROUTING_REFERENCE_NOT_FOUND",404); throw error; }
+}
+
+export async function deleteRoutingStep(productId, routingId, expectedVersion) {
+  const expected=Number(expectedVersion); if(!Number.isInteger(expected)||expected<1) fail("Versão inválida.");
+  return withConnection(async client=>(await client.query("DELETE FROM public.product_routing_steps WHERE id=$1 AND product_id=$2 AND version=$3 RETURNING id",[id(routingId,"vínculo da etapa"),id(productId,"produto"),expected])).rows[0]||fail("Etapa do produto não encontrada ou alterada por outro usuário.","ROUTING_VERSION_CONFLICT",409));
+}
