@@ -32,7 +32,7 @@ function productInput(data) {
 }
 
 export async function listProducts({ query = "", page = 1, limit = 50 } = {}) {
-  const safePage = Math.max(1, Number(page) || 1); const safeLimit = Math.min(100, Math.max(1, Number(limit) || 50));
+  const safePage = Math.max(1, Number(page) || 1); const safeLimit = 1000;
   const search = `%${String(query).trim()}%`;
   return withConnection(async client => {
     const total = Number((await client.query("SELECT count(*)::int total FROM public.master_items WHERE primary_sku ILIKE $1 OR description ILIKE $1", [search])).rows[0].total);
@@ -104,7 +104,7 @@ export async function saveStep(data, username, stepId) {
 }
 export async function deleteStep(stepId) { try { return await withConnection(async client => (await client.query("DELETE FROM public.production_steps WHERE id=$1 RETURNING id", [id(stepId)])).rows[0] || fail("Etapa não encontrada.","STEP_NOT_FOUND",404)); } catch(error) { if(error?.code==="23503") fail("Etapa está vinculada a um produto.","STEP_IN_USE",409); throw error; } }
 
-export async function listStock({ query = "" } = {}) { const search=`%${String(query).trim()}%`; return withConnection(async client => (await client.query(`SELECT i.id,i.primary_sku,i.description,i.item_type,i.unit,i.tiny_import_enabled,s.physical_quantity,s.stock_authority,s.updated_at FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.status='active' AND (i.primary_sku ILIKE $1 OR i.description ILIKE $1) ORDER BY i.primary_sku_normalized LIMIT 500`,[search])).rows); }
+export async function listStock({ query = "" } = {}) { const search=`%${String(query).trim()}%`; return withConnection(async client => (await client.query(`SELECT i.id,i.primary_sku,i.description,i.item_type,i.unit,i.tiny_import_enabled,s.physical_quantity,s.stock_authority,s.updated_at FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.status='active' AND (i.primary_sku ILIKE $1 OR i.description ILIKE $1) ORDER BY i.primary_sku_normalized LIMIT 1000`,[search])).rows); }
 
 export async function addBomLine(parentId, data, username) {
   const parent=id(parentId,"produto pai"),child=id(data?.childProductId,"componente");
