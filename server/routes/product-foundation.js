@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { importNormalizedProductWorkbook, parseNormalizedProductWorkbook, ProductImportError } from "../product-foundation-import.js";
+import { importNormalizedProductWorkbook, preflightNormalizedProductWorkbook, ProductImportError } from "../product-foundation-import.js";
 
 const router = Router();
 
@@ -25,10 +25,10 @@ function reply(error, res, next) {
 
 router.use(adminOnly);
 
-router.post("/validate", (req, res, next) => {
+router.post("/validate", async (req, res, next) => {
   try {
-    const parsed = parseNormalizedProductWorkbook(workbook(req));
-    return res.json({ ok: true, checksum: parsed.checksum, summary: parsed.summary, reviewIssues: parsed.reviewIssues });
+    const result = await preflightNormalizedProductWorkbook(workbook(req), { productsOnly:req.body?.productsOnly===true, defaultUnit:req.body?.defaultUnit==='UN'?'UN':undefined });
+    return res.json({ ok: true, ...result });
   } catch (error) { return reply(error, res, next); }
 });
 
@@ -36,6 +36,9 @@ router.post("/import", async (req, res, next) => {
   try {
     const result = await importNormalizedProductWorkbook(workbook(req), {
       sourceName: String(req.body?.fileName || "BOMs_normalizadas_unificadas.xlsx"),
+      expectedChecksum: String(req.body?.expectedChecksum||''),
+      productsOnly:req.body?.productsOnly===true,
+      defaultUnit:req.body?.defaultUnit==='UN'?'UN':undefined,
       actor: String(req.auth?.username || "").slice(0, 100)
     });
     return res.status(result.idempotent ? 200 : 201).json({ ok: true, ...result });

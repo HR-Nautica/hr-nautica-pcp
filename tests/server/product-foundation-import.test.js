@@ -9,9 +9,9 @@ function workbook({ duplicateSku = false } = {}) {
   const items = [
     ["Cadastro de Itens Unificado"],
     [],
-    ["ID_Item_Sistema","SKU","Descrição","Tipo_Item","Fonte_Origem","IDs_Origem","Status_Cadastro"],
-    ["SKU:PAI","PAI","Produto pai","Produto acabado / componente","BOM Componentes","L1","ATIVO"],
-    ["SKU:FILHO",duplicateSku ? "PAI" : "FILHO","Componente filho","Componente","BOM Componentes","L2","ATIVO"]
+    ["ID_Item_Sistema","SKU","Descrição","Tipo_Item","Fonte_Origem","IDs_Origem","Status_Cadastro","Unidade"],
+    ["SKU:PAI","PAI","Produto pai","Produto acabado / componente","BOM Componentes","L1","ATIVO","UN"],
+    ["SKU:FILHO",duplicateSku ? "PAI" : "FILHO","Componente filho","Componente","BOM Componentes","L2","ATIVO","KG"]
   ];
   const bom = [
     ["BOM Unificada"],

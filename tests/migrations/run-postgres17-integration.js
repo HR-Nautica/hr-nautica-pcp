@@ -59,7 +59,9 @@ try {
     "--workdir", "/work",
     "--env", `MIGRATIONS_TEST_DATABASE_URL=postgresql://migration_test:${password}@${databaseContainer}:5432/migration_test`,
     "node:22-bookworm-slim",
-    "sh", "-lc", helicesMasterLinksHttpMode
+    "sh", "-lc", process.argv.includes('--product-import')
+      ? 'cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL="$MIGRATIONS_TEST_DATABASE_URL" DATABASE_SSL_MODE=disable node --test tests/integration/product-import-postgres17.test.js'
+      : helicesMasterLinksHttpMode
       ? `cp -R /source/server /source/scripts /source/tests /source/database /source/dist . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL="$MIGRATIONS_TEST_DATABASE_URL" DATABASE_SSL_MODE=disable PROXY_SHARED_SECRET=${proxySecret} MASTER_ITEM_TEST_USER=master_admin MASTER_ITEM_TEST_PASSWORD=Master-Test-Only-123 node --test tests/integration/helices-master-links-http-postgres17.integration.test.js`
       : helicesMasterLinksMode
       ? "cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL=\"$MIGRATIONS_TEST_DATABASE_URL\" DATABASE_SSL_MODE=disable node --test tests/integration/helices-master-links-postgres17.integration.test.js"

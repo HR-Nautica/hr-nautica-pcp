@@ -20,6 +20,7 @@ function id(value, name = "id") { const result = String(value || ""); if (!UUID.
 function actor(value) { return text(value, "usuário", 100); }
 function jsonObject(value) { return value && typeof value === "object" && !Array.isArray(value) ? value : {}; }
 function productInput(data) {
+  if(data?.status!==undefined&&!['active','inactive'].includes(data.status))fail('Status inválido.');
   const family = text(data?.family, "família", 32);
   const itemType = text(data?.itemType, "tipo", 64);
   if (!FAMILIES.has(family) || !TYPES.has(itemType)) fail("Família ou tipo inválido.");
