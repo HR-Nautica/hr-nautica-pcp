@@ -11,6 +11,8 @@ td.row-actions > .action-menu {
   vertical-align: middle;
 }
 
+.query-toolbar{display:grid;gap:12px;padding:14px;margin-bottom:16px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.query-top{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.query-top label{margin:0;flex:1 1 240px;font-size:12px}.query-top label:nth-child(2){flex:0 1 200px}.query-top>span{align-self:center;color:var(--muted);font-size:13px}.query-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.query-fields label{font-size:12px}.query-toolbar summary{cursor:pointer;color:var(--muted)}.query-active{display:flex;gap:8px;flex-wrap:wrap}.query-active:empty{display:none}.query-active button{font-size:12px;padding:6px 10px}
 /* Refinamentos compartilhados da base operacional. */
 main > header {
   min-height: 74px;

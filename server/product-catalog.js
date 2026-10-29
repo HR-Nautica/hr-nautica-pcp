@@ -36,7 +36,7 @@ export async function listProducts({ query = "", page = 1, limit = 50 } = {}) {
   const search = `%${String(query).trim()}%`;
   return withConnection(async client => {
     const total = Number((await client.query("SELECT count(*)::int total FROM public.master_items WHERE primary_sku ILIKE $1 OR description ILIKE $1", [search])).rows[0].total);
-    const items = (await client.query(`SELECT i.*,s.physical_quantity,s.stock_authority FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.primary_sku ILIKE $1 OR i.description ILIKE $1 ORDER BY i.primary_sku_normalized LIMIT $2 OFFSET $3`, [search,safeLimit,(safePage-1)*safeLimit])).rows;
+    const items = (await client.query(`SELECT i.*,s.physical_quantity,s.stock_authority,EXISTS(SELECT 1 FROM public.product_bom_lines b WHERE b.parent_product_id=i.id) AS has_bom,EXISTS(SELECT 1 FROM public.product_routing_steps r WHERE r.product_id=i.id) AS has_routing FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.primary_sku ILIKE $1 OR i.description ILIKE $1 ORDER BY i.primary_sku_normalized,i.id LIMIT $2 OFFSET $3`, [search,safeLimit,(safePage-1)*safeLimit])).rows;
     return { items, total, page: safePage, limit: safeLimit };
   });
 }
