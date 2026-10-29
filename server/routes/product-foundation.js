@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { importNormalizedProductWorkbook, parseNormalizedProductWorkbook, ProductImportError } from "../product-foundation-import.js";
+import { importNormalizedProductWorkbook, preflightNormalizedProductWorkbook, ProductImportError } from "../product-foundation-import.js";
 
 const router = Router();
 
@@ -25,10 +25,10 @@ function reply(error, res, next) {
 
 router.use(adminOnly);
 
-router.post("/validate", (req, res, next) => {
+router.post("/validate", async (req, res, next) => {
   try {
-    const parsed = parseNormalizedProductWorkbook(workbook(req));
-    return res.json({ ok: true, checksum: parsed.checksum, summary: parsed.summary, reviewIssues: parsed.reviewIssues });
+    const result = await preflightNormalizedProductWorkbook(workbook(req));
+    return res.json({ ok: true, ...result });
   } catch (error) { return reply(error, res, next); }
 });
 

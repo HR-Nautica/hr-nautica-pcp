@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import XLSX from "xlsx";
 
-import { transaction } from "./database.js";
+import { transaction, withConnection } from "./database.js";
+import { normalizeMasterSku, classifyImport } from './product-import-preflight.js';
 
 const SOURCE_SCHEMA = "normalized_bom_v1";
 const FAMILY_BY_TYPE = new Map([
@@ -26,7 +27,7 @@ export class ProductImportError extends Error {
 
 const clean = value => String(value ?? "").trim();
 const key = value => clean(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
-const normalizeSku = value => clean(value).toLocaleUpperCase("pt-BR").replace(/\s+/g, " ");
+const normalizeSku = normalizeMasterSku;
 const asObject = (headers, row) => Object.fromEntries(headers.map((header, index) => [key(header), row[index]]));
 
 function rowsFromSheet(workbook, sheetName, firstHeader) {
@@ -86,6 +87,11 @@ export function parseNormalizedProductWorkbook(buffer) {
     const description = clean(row.descricao);
     const itemType = clean(row.tipo_item);
     const family = FAMILY_BY_TYPE.get(itemType.toLocaleLowerCase("pt-BR"));
+    const unit=clean(row.unidade||row.unidade_medida);
+    const statusMap={ativo:'active',inativo:'inactive',active:'active',inactive:'inactive'};
+    const status=statusMap[key(row.status_cadastro)];
+    if(!unit||unit.length>32||/[\x00-\x1f]/.test(unit))issues.push({sheet:'Cadastro Unificado',row:index+1,code:'INVALID_OR_MISSING_UNIT',sku});
+    if(!status)issues.push({sheet:'Cadastro Unificado',row:index+1,code:'INVALID_STATUS',sku});
     const rowNumber = index + 1;
     if (!sourceId || !sku || !description || !family) issues.push({ sheet: "Cadastro Unificado", row: rowNumber, code: "INVALID_ITEM", sourceId, sku });
     if (sourceIds.has(sourceId)) issues.push({ sheet: "Cadastro Unificado", row: rowNumber, code: "DUPLICATE_SOURCE_ID", sourceId });
@@ -98,8 +104,9 @@ export function parseNormalizedProductWorkbook(buffer) {
       description,
       family,
       itemType,
-      unit: "UN",
-      status: key(row.status_cadastro) === "ativo" ? "active" : "inactive",
+      unit,
+      status,
+      aliasNamespace:clean(row.namespace_alias)||null,
       tinyImportEnabled: false,
       basicCharacteristics: {},
       sourceMetadata: {
@@ -180,10 +187,15 @@ export async function importNormalizedProductWorkbook(buffer, { sourceName, acto
     await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [`product_catalog_import:${parsed.checksum}`]);
     const prior = (await client.query("SELECT * FROM public.product_catalog_imports WHERE checksum=$1", [parsed.checksum])).rows[0];
     if (prior) return { import: prior, summary: prior.result, idempotent: true };
+    await client.query('LOCK TABLE public.master_items, public.item_aliases, public.product_bom_lines IN SHARE ROW EXCLUSIVE MODE');
+    const preflight=await inspectImport(client,parsed);
+    if(!preflight.canImport)throw new ProductImportError('Conflitos exigem revisão antes da importação.','PRODUCT_IMPORT_CONFLICT',409,preflight.issues);
 
     const itemIds = new Map();
     let createdItems = 0;
     for (const item of parsed.items) {
+      const match=preflight.classifications.find(row=>row.sourceId===item.sourceId);
+      if(match.productId){itemIds.set(item.sourceId,match.productId);continue;}
       let stored = (await client.query(
         `INSERT INTO public.master_items
           (primary_sku,family,description,unit,status,item_type,basic_characteristics,tiny_import_enabled,source_metadata,created_by,updated_by)
@@ -231,3 +243,11 @@ export async function importNormalizedProductWorkbook(buffer, { sourceName, acto
     return { import: imported, summary: result, idempotent: false };
   });
 }
+
+async function inspectImport(client,parsed){
+  const products=(await client.query('SELECT id,primary_sku,primary_sku_normalized,description,unit,family,item_type,status FROM public.master_items')).rows;
+  const aliases=(await client.query('SELECT item_id,namespace,normalized_code,status FROM public.item_aliases')).rows;
+  const bom=(await client.query('SELECT parent_product_id,child_product_id,quantity,unit,link_status,source_line_id FROM public.product_bom_lines')).rows;
+  return classifyImport(parsed,products,aliases,bom);
+}
+export async function preflightNormalizedProductWorkbook(buffer){const parsed=parseNormalizedProductWorkbook(buffer);return withConnection(async client=>({checksum:parsed.checksum,summary:parsed.summary,reviewIssues:parsed.reviewIssues,...await inspectImport(client,parsed)}));}
