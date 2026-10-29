@@ -8,6 +8,7 @@ test("nova interface expõe apenas os quatro módulos da base", async () => {
   const html = await readFile(new URL("index.html", root), "utf8");
   for (const page of ["Produtos", "Estoque Geral", "Etapas de Produção", "Fornecedores"]) assert.match(html, new RegExp(page));
   for (const legacy of ["V.I.N.I.", "Programação de Fundição", "OPs de Hélices"]) assert.doesNotMatch(html, new RegExp(legacy));
+  assert.match(html, /class="brand-logo" src="\/logo\.png"/);
 });
 
 test("cadastro possui características, Tiny, BOM e exclusão administrativa", async () => {
@@ -32,6 +33,7 @@ test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async
   assert.doesNotMatch(app, /product-detail__hero/);
   assert.match(app, /routing-add/);
   assert.match(app, /Não informado/);
+  assert.match(app, /class="routing-table"/);
   assert.match(app, /request\("\/api\/catalog\/steps"\)/);
   assert.match(routes, /products\/:id\/routing/);
   assert.match(service, /product_routing_steps/);
