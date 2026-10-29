@@ -30,6 +30,8 @@ test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async
   assert.match(app, /Nenhuma etapa disponível/);
   assert.match(app, /aria-selected/);
   assert.doesNotMatch(app, /product-detail__hero/);
+  assert.match(app, /routing-add/);
+  assert.match(app, /Não informado/);
   assert.match(app, /request\("\/api\/catalog\/steps"\)/);
   assert.match(routes, /products\/:id\/routing/);
   assert.match(service, /product_routing_steps/);
