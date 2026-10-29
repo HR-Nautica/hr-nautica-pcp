@@ -36,6 +36,7 @@ router.post("/import", async (req, res, next) => {
   try {
     const result = await importNormalizedProductWorkbook(workbook(req), {
       sourceName: String(req.body?.fileName || "BOMs_normalizadas_unificadas.xlsx"),
+      expectedChecksum: String(req.body?.expectedChecksum||''),
       actor: String(req.auth?.username || "").slice(0, 100)
     });
     return res.status(result.idempotent ? 200 : 201).json({ ok: true, ...result });

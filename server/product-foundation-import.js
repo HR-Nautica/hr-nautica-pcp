@@ -177,8 +177,9 @@ export function parseNormalizedProductWorkbook(buffer) {
   };
 }
 
-export async function importNormalizedProductWorkbook(buffer, { sourceName, actor }) {
+export async function importNormalizedProductWorkbook(buffer, { sourceName, actor, expectedChecksum }) {
   const parsed = parseNormalizedProductWorkbook(buffer);
+  if(expectedChecksum!==undefined&&expectedChecksum!==parsed.checksum)throw new ProductImportError('Arquivo diferente da pré-validação.','PRODUCT_IMPORT_CHECKSUM_CONFLICT',409);
   const safeName = clean(sourceName);
   const safeActor = clean(actor);
   if (!safeName || safeName.length > 300 || !safeActor || safeActor.length > 100) throw new ProductImportError("Nome da fonte ou usuario invalido.");
