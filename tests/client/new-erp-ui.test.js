@@ -30,6 +30,8 @@ test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async
   assert.match(app, /Nenhum componente vinculado/);
   assert.match(app, /Árvore da lista de materiais/);
   assert.match(app, /bom-tree-toggle/);
+  assert.match(app, /class="bom-product-link" data-product-id="\$\{escapeHtml\(line\.child_product_id\)\}"/);
+  assert.match(app, /showProductDetail\(button\.dataset\.productId,"general"\)/);
   assert.match(app, /Expandir tudo/);
   assert.match(app, /Importar etapas CO/);
   assert.match(app, /component-routing\/validate/);
