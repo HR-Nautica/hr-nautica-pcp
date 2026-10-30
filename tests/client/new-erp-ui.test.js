@@ -31,6 +31,8 @@ test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async
   assert.match(app, /Árvore da lista de materiais/);
   assert.match(app, /bom-tree-toggle/);
   assert.match(app, /Expandir tudo/);
+  assert.match(app, /Importar etapas CO/);
+  assert.match(app, /component-routing\/validate/);
   assert.match(service, /WITH RECURSIVE bom_tree/);
   assert.match(service, /tree\.depth<30/);
   assert.match(app, /Nenhuma etapa disponível/);
