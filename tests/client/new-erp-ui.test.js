@@ -28,6 +28,11 @@ test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async
   assert.match(app, /Dados gerais/);
   assert.match(app, /Etapas de produção/);
   assert.match(app, /Nenhum componente vinculado/);
+  assert.match(app, /Árvore da lista de materiais/);
+  assert.match(app, /bom-tree-toggle/);
+  assert.match(app, /Expandir tudo/);
+  assert.match(service, /WITH RECURSIVE bom_tree/);
+  assert.match(service, /tree\.depth<30/);
   assert.match(app, /Nenhuma etapa disponível/);
   assert.match(app, /aria-selected/);
   assert.match(app, /role="tablist"/);
