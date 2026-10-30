@@ -54,6 +54,31 @@ function numericQuantity(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function hierarchicalBomParents(rows) {
+  const stackByFamily = new Map();
+  const parentByIndex = new Map();
+  const ordered = rows.map((row, index) => ({ row, index })).sort((left, right) => {
+    const familyOrder = clean(left.row.chave_familia).localeCompare(clean(right.row.chave_familia));
+    if (familyOrder) return familyOrder;
+    const lineOrder = value => Number(clean(value).match(/-L(\d+)$/)?.[1] || Number.MAX_SAFE_INTEGER);
+    return lineOrder(left.row.chave_linha_origem) - lineOrder(right.row.chave_linha_origem) || left.index - right.index;
+  });
+
+  for (const { row, index } of ordered) {
+    const family = clean(row.chave_familia);
+    const level = Number.parseInt(clean(row.nivel), 10);
+    const stack = stackByFamily.get(family) || [];
+    const parentSourceId = level === 1 ? clean(row.id_pai) : stack[level - 2] || null;
+    parentByIndex.set(index, { parentSourceId, level, family });
+    if (Number.isInteger(level) && level > 0) {
+      stack.length = level - 1;
+      if (clean(row.id_filho)) stack[level - 1] = clean(row.id_filho);
+      stackByFamily.set(family, stack);
+    }
+  }
+  return parentByIndex;
+}
+
 export function parseNormalizedProductWorkbook(buffer, { defaultUnit, productsOnly = false } = {}) {
   let workbook;
   try { workbook = XLSX.read(buffer, { type: "buffer", cellDates: true }); }
@@ -118,9 +143,10 @@ export function parseNormalizedProductWorkbook(buffer, { defaultUnit, productsOn
     };
   });
 
+  const hierarchicalParents = hierarchicalBomParents(rawBom);
   const bomLines = rawBom.map((row, index) => {
     const sourceLineId = clean(row.id_linha_bom);
-    const parentSourceId = clean(row.id_pai);
+    const { parentSourceId, level, family } = hierarchicalParents.get(index) || {};
     const childSourceId = clean(row.id_filho);
     const linkStatus = normalizedStatus(row.status_vinculo);
     const quantity = numericQuantity(row.quantidade);
@@ -129,6 +155,9 @@ export function parseNormalizedProductWorkbook(buffer, { defaultUnit, productsOn
     if (unresolvedOptionalChild) {
       if (!auditedReferences.has(sourceLineId)) reviewIssues.push({ sheet: "BOM Unificada", row: rowNumber, code: "UNRESOLVED_BOM_CHILD", detail: `Linha ${sourceLineId} preservada para revisao: item filho ausente.`, sourcePayload: row });
       return null;
+    }
+    if (!Number.isInteger(level) || level < 1 || (level > 1 && (!parentSourceId || !family || !/-L\d+$/.test(clean(row.chave_linha_origem))))) {
+      issues.push({ sheet: "BOM Unificada", row: rowNumber, code: "INVALID_BOM_HIERARCHY", sourceLineId, level: row.nivel, familyKey: row.chave_familia });
     }
     if (!sourceLineId || !sourceIds.has(parentSourceId) || !sourceIds.has(childSourceId) || !linkStatus) {
       issues.push({ sheet: "BOM Unificada", row: rowNumber, code: "INVALID_BOM_IDENTITY", sourceLineId, parentSourceId, childSourceId });

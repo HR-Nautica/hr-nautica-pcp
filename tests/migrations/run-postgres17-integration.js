@@ -14,6 +14,7 @@ const baselineMode = process.argv.includes("--baseline");
 const strictApiMode = process.argv.includes("--strict-api");
 const itemMasterMode = process.argv.includes("--item-master");
 const productCatalogMode = process.argv.includes("--product-catalog");
+const bomHierarchyMode = process.argv.includes("--bom-hierarchy");
 const itemMasterHttpMode = process.argv.includes("--item-master-http");
 const inventoryMode = process.argv.includes("--inventory");
 const buchasMode = process.argv.includes("--buchas");
@@ -68,6 +69,8 @@ try {
       ? "cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL=\"$MIGRATIONS_TEST_DATABASE_URL\" DATABASE_SSL_MODE=disable node --test tests/integration/helices-master-links-postgres17.integration.test.js"
       : itemMasterHttpMode
       ? `cp -R /source/server /source/scripts /source/tests /source/database /source/dist . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL="$MIGRATIONS_TEST_DATABASE_URL" DATABASE_SSL_MODE=disable PROXY_SHARED_SECRET=${proxySecret} MASTER_ITEM_TEST_USER=master_admin MASTER_ITEM_TEST_PASSWORD=Master-Test-Only-123 node --test tests/integration/master-item-http-postgres17.integration.test.js`
+      : bomHierarchyMode
+      ? "cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL=\"$MIGRATIONS_TEST_DATABASE_URL\" DATABASE_SSL_MODE=disable node --test tests/integration/bom-hierarchy-postgres17.integration.test.js"
       : productCatalogMode
       ? "cp -R /source/server /source/scripts /source/tests /source/database . && cp /source/package.json /source/package-lock.json . && npm ci --ignore-scripts --no-audit --no-fund && DATABASE_STRICT_MODE=true DATABASE_URL=\"$MIGRATIONS_TEST_DATABASE_URL\" DATABASE_SSL_MODE=disable node --test tests/integration/product-catalog-postgres17.integration.test.js"
       : itemMasterMode

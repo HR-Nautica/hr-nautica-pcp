@@ -69,6 +69,16 @@ npm run db:migrate:test:integration
 O lock é mantido na mesma conexão durante toda a operação. Se outra execução já
 possuir o lock, o comando falha imediatamente.
 
+## Correção de hierarquia da BOM
+
+`V009__correct_nested_bom_parent_links.sql` corrige o pai salvo das linhas
+importadas de BOM nos níveis aninhados. A migration registra os vínculos
+anteriores em `product_bom_parent_repair_audit` e não altera quantidade,
+situação, unidade ou cadastro dos produtos. O deploy da aplicação não aplica
+migrations; siga o procedimento desta documentação somente no banco de destino
+após validar o backup e o dry-run. Consulte [bom-hierarchy-repair.md](../../docs/bom-hierarchy-repair.md)
+para o escopo e a reversão imediata.
+
 ## Estados e recuperação
 
 `schema_migrations.status` pode ser `running`, `applied` ou `failed`. Uma falha
