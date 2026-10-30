@@ -75,7 +75,7 @@ export async function createProduct(data, username) {
   const input = productInput(data); const safeActor = actor(username);
   try { return await transaction(async client => {
     const product = (await client.query(`INSERT INTO public.master_items (primary_sku,family,description,unit,status,item_type,basic_characteristics,tiny_import_enabled,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$9) RETURNING *`, [input.sku,input.family,input.description,input.unit,input.status,input.itemType,JSON.stringify(input.characteristics),input.tiny,safeActor])).rows[0];
-    await client.query("INSERT INTO public.product_stock_balances(product_id,stock_authority,updated_by) VALUES($1,$2,$3)", [product.id,input.tiny?"tiny_import":"erp",safeActor]);
+    await client.query("INSERT INTO public.product_stock_balances(product_id,stock_authority,updated_by) VALUES($1,'erp',$2)", [product.id,safeActor]);
     return product;
   }); } catch (error) { if (error?.code === "23505") fail("SKU já cadastrado.", "PRODUCT_SKU_CONFLICT", 409); throw error; }
 }
@@ -89,7 +89,6 @@ export async function updateProduct(productId, data, username) {
     const product = (await client.query(`UPDATE public.master_items SET primary_sku=$1,family=$2,description=$3,unit=$4,status=$5,item_type=$6,basic_characteristics=$7::jsonb,tiny_import_enabled=$8,version=version+1,updated_at=clock_timestamp(),updated_by=$9 WHERE id=$10 AND version=$11 RETURNING *`, [input.sku,input.family,input.description,input.unit,input.status,input.itemType,JSON.stringify(input.characteristics),input.tiny,safeActor,id(productId),expected])).rows[0];
     if (!product) fail("Produto foi alterado por outro usuário.", "PRODUCT_VERSION_CONFLICT", 409);
     if (product.primary_sku !== previous.primary_sku) await client.query(`INSERT INTO public.master_item_sku_history (item_id,old_primary_sku,old_primary_sku_normalized,new_primary_sku,new_primary_sku_normalized,old_version,new_version,actor) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, [product.id,previous.primary_sku,previous.primary_sku_normalized,product.primary_sku,product.primary_sku_normalized,previous.version,product.version,safeActor]);
-    await client.query("UPDATE public.product_stock_balances SET stock_authority=$1,version=version+1,updated_at=clock_timestamp(),updated_by=$2 WHERE product_id=$3", [input.tiny?"tiny_import":"erp",safeActor,product.id]);
     return product;
   }); } catch (error) { if (error?.code === "23505") fail("SKU já cadastrado.", "PRODUCT_SKU_CONFLICT", 409); throw error; }
 }
