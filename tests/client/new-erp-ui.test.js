@@ -14,9 +14,21 @@ test("nova interface expõe apenas os quatro módulos da base", async () => {
 test("cadastro possui características, Tiny, BOM e exclusão administrativa", async () => {
   const app = await readFile(new URL("public/js/new-erp.js", root), "utf8");
   assert.match(app, /Características básicas/);
-  assert.match(app, /Atualizado pela planilha Tiny/);
+  assert.match(app, /Pode ser atualizado pela planilha Tiny/);
   assert.match(app, /BOM do produto/);
   assert.match(app, /method:\"DELETE\"/);
+});
+
+test("flag Tiny é independente da origem oficial do saldo", async () => {
+  const [app, service] = await Promise.all([
+    readFile(new URL("public/js/new-erp.js", root), "utf8"),
+    readFile(new URL("server/product-catalog.js", root), "utf8")
+  ]);
+  assert.match(service, /tiny_import_enabled=\$8/);
+  assert.match(service, /VALUES\(\$1,'erp',\$2\)/);
+  assert.doesNotMatch(service, /input\.tiny\s*\?\s*"tiny_import"\s*:\s*"erp"/);
+  assert.match(app, /stock_authority==="tiny_import"/);
+  assert.match(app, /Atualização pela planilha Tiny/);
 });
 
 test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async () => {
