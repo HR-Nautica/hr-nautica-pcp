@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { transaction, withConnection } from "./database.js";
+import { buildBomTree } from "./bom-tree.js";
 
 const TYPES = new Set(["Produto acabado / componente", "Componente", "Hélice usinada", "Hélice bruta", "Bucha", "Caixa"]);
 const FAMILIES = new Set(["helices", "componentes", "buchas", "brutos"]);
@@ -46,10 +47,27 @@ export async function getProduct(productId) {
   return withConnection(async client => {
     const product = (await client.query("SELECT i.*,s.physical_quantity,s.stock_authority FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.id=$1", [id(productId)])).rows[0];
     if (!product) fail("Produto não encontrado.", "PRODUCT_NOT_FOUND", 404);
-    const bom = (await client.query("SELECT b.*,c.primary_sku child_sku,c.description child_description FROM public.product_bom_lines b JOIN public.master_items c ON c.id=b.child_product_id WHERE b.parent_product_id=$1 ORDER BY b.link_status,b.source_line_id", [productId])).rows;
+    const bomRows = (await client.query(`WITH RECURSIVE bom_tree AS (
+      SELECT b.*,1::int AS depth,ARRAY[$1::uuid,b.child_product_id]::uuid[] AS product_path,
+        ARRAY[COALESCE(b.source_payload->>'originLineKey',b.source_line_id)]::text[] AS sort_path
+      FROM public.product_bom_lines b WHERE b.parent_product_id=$1
+      UNION ALL
+      SELECT b.*,tree.depth+1,tree.product_path||b.child_product_id,
+        tree.sort_path||COALESCE(b.source_payload->>'originLineKey',b.source_line_id)
+      FROM bom_tree tree JOIN public.product_bom_lines b ON b.parent_product_id=tree.child_product_id
+      WHERE tree.depth<30 AND NOT b.child_product_id=ANY(tree.product_path)
+    )
+    SELECT tree.*,parent.primary_sku AS parent_sku,child.primary_sku AS child_sku,
+      child.description AS child_description
+    FROM bom_tree tree
+    JOIN public.master_items parent ON parent.id=tree.parent_product_id
+    JOIN public.master_items child ON child.id=tree.child_product_id
+    ORDER BY tree.sort_path`, [productId])).rows;
+    const bomTree = buildBomTree(bomRows, productId);
+    const bom = bomTree.map(({ children: _children, ...line }) => line);
     const routing = (await client.query("SELECT r.*,p.code,p.name FROM public.product_routing_steps r JOIN public.production_steps p ON p.id=r.production_step_id WHERE r.product_id=$1 ORDER BY r.sequence", [productId])).rows;
     const suppliers = (await client.query("SELECT l.*,s.legal_name,s.trade_name FROM public.product_supplier_links l JOIN public.product_suppliers s ON s.id=l.supplier_id WHERE l.product_id=$1 ORDER BY l.preferred DESC,s.legal_name", [productId])).rows;
-    return { product, bom, routing, suppliers };
+    return { product, bom, bomTree, bomLineCount: bomRows.length, routing, suppliers };
   });
 }
 
