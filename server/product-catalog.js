@@ -86,9 +86,22 @@ export async function updateProduct(productId, data, username) {
   try { return await transaction(async client => {
     const previous = (await client.query("SELECT * FROM public.master_items WHERE id=$1 FOR UPDATE", [id(productId)])).rows[0];
     if (!previous) fail("Produto não encontrado.", "PRODUCT_NOT_FOUND", 404);
-    const product = (await client.query(`UPDATE public.master_items SET primary_sku=$1,family=$2,description=$3,unit=$4,status=$5,item_type=$6,basic_characteristics=$7::jsonb,tiny_import_enabled=$8,version=version+1,updated_at=clock_timestamp(),updated_by=$9 WHERE id=$10 AND version=$11 RETURNING *`, [input.sku,input.family,input.description,input.unit,input.status,input.itemType,JSON.stringify(input.characteristics),input.tiny,safeActor,id(productId),expected])).rows[0];
+    if (Number(previous.version) !== expected) fail("Produto foi alterado por outro usuário.", "PRODUCT_VERSION_CONFLICT", 409);
+
+    const skuChanged = input.sku !== previous.primary_sku;
+    const nextVersion = Number(previous.version) + 1;
+    if (skuChanged) await client.query(`INSERT INTO public.master_item_sku_history (item_id,old_primary_sku,old_primary_sku_normalized,new_primary_sku,new_primary_sku_normalized,old_version,new_version,actor) VALUES($1,$2,$3,$4,public.master_identifier_normalize($4),$5,$6,$7)`, [previous.id,previous.primary_sku,previous.primary_sku_normalized,input.sku,previous.version,nextVersion,safeActor]);
+
+    // PostgreSQL's UPDATE OF trigger fires whenever primary_sku appears in SET,
+    // even when its value is unchanged. Omit the column unless the SKU changed.
+    const updateSql = skuChanged
+      ? `UPDATE public.master_items SET primary_sku=$1,family=$2,description=$3,unit=$4,status=$5,item_type=$6,basic_characteristics=$7::jsonb,tiny_import_enabled=$8,version=version+1,updated_at=clock_timestamp(),updated_by=$9 WHERE id=$10 AND version=$11 RETURNING *`
+      : `UPDATE public.master_items SET family=$1,description=$2,unit=$3,status=$4,item_type=$5,basic_characteristics=$6::jsonb,tiny_import_enabled=$7,version=version+1,updated_at=clock_timestamp(),updated_by=$8 WHERE id=$9 AND version=$10 RETURNING *`;
+    const updateValues = skuChanged
+      ? [input.sku,input.family,input.description,input.unit,input.status,input.itemType,JSON.stringify(input.characteristics),input.tiny,safeActor,id(productId),expected]
+      : [input.family,input.description,input.unit,input.status,input.itemType,JSON.stringify(input.characteristics),input.tiny,safeActor,id(productId),expected];
+    const product = (await client.query(updateSql, updateValues)).rows[0];
     if (!product) fail("Produto foi alterado por outro usuário.", "PRODUCT_VERSION_CONFLICT", 409);
-    if (product.primary_sku !== previous.primary_sku) await client.query(`INSERT INTO public.master_item_sku_history (item_id,old_primary_sku,old_primary_sku_normalized,new_primary_sku,new_primary_sku_normalized,old_version,new_version,actor) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, [product.id,previous.primary_sku,previous.primary_sku_normalized,product.primary_sku,product.primary_sku_normalized,previous.version,product.version,safeActor]);
     return product;
   }); } catch (error) { if (error?.code === "23505") fail("SKU já cadastrado.", "PRODUCT_SKU_CONFLICT", 409); throw error; }
 }
