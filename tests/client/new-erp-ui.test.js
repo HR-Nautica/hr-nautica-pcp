@@ -33,8 +33,11 @@ test("produto abre ficha com BOM e roteiro baseado em etapas cadastradas", async
   assert.match(app, /class="bom-product-link" data-product-id="\$\{escapeHtml\(line\.child_product_id\)\}"/);
   assert.match(app, /showProductDetail\(button\.dataset\.productId,"general"\)/);
   assert.match(app, /Expandir tudo/);
-  assert.match(app, /Importar etapas CO/);
-  assert.match(app, /component-routing\/validate/);
+  assert.doesNotMatch(app, /Importar etapas CO/);
+  assert.doesNotMatch(app, /query-import-routing/);
+  assert.match(app, /itens já existem e serão preservados/);
+  assert.match(app, /novos itens serão incluídos/);
+  assert.match(app, /novos itens incluídos/);
   assert.match(service, /WITH RECURSIVE bom_tree/);
   assert.match(service, /tree\.depth<30/);
   assert.match(app, /Nenhuma etapa disponível/);
