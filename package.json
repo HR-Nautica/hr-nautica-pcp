@@ -28,6 +28,7 @@
     "db:migrate:test:integration": "node tests/migrations/run-postgres17-integration.js",
     "db:baseline:test:integration": "node tests/migrations/run-postgres17-integration.js --baseline",
     "item-master:test:integration": "node tests/migrations/run-postgres17-integration.js --item-master",
+    "product-catalog:test:integration": "node tests/migrations/run-postgres17-integration.js --product-catalog",
     "item-master:http:test:integration": "node tests/migrations/run-postgres17-integration.js --item-master-http",
     "helices-master-links:http:test:integration": "node tests/migrations/run-postgres17-integration.js --helices-master-links-http",
     "inventory:test:integration": "node tests/migrations/run-postgres17-integration.js --inventory",
