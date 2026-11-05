@@ -1,6 +1,6 @@
 import XLSX from 'xlsx';
 import { createHash } from 'node:crypto';
-import { transaction } from './database.js';
+import { transaction, withConnection } from './database.js';
 import { CatalogError } from './product-catalog.js';
 export function parseTinyStock(buffer) {
   let workbook;
@@ -19,6 +19,9 @@ export function parseTinyStock(buffer) {
   if(!items.length)throw new CatalogError('Planilha sem itens.');
   return items;
 }
+export async function getLastTinyStockUpdate(){
+  return withConnection(async client=>(await client.query(`SELECT imported_by AS username,imported_at AS "updatedAt",source_name AS "fileName",item_count AS count FROM public.product_catalog_imports WHERE source_schema='tiny_stock_v1' AND status='completed' AND item_count>0 ORDER BY imported_at DESC,id DESC LIMIT 1`)).rows[0]||null);
+}
 export async function syncTinyStock(buffer,{actor,fileName,requestId,preview=false,expectedPlan}){
   if(!/^[0-9a-f]{32}$/i.test(String(requestId||'')))throw new CatalogError('Identificador de sincronização inválido.');
   const items=parseTinyStock(buffer);const fileChecksum=createHash('sha256').update(buffer).digest('hex');
@@ -26,8 +29,8 @@ export async function syncTinyStock(buffer,{actor,fileName,requestId,preview=fal
   return transaction(async client=>{
     await client.query("SELECT pg_advisory_xact_lock(hashtext('tiny-stock-sync'))");
     await client.query('LOCK TABLE public.master_items IN SHARE ROW EXCLUSIVE MODE');
-    const previous=(await client.query('SELECT result FROM public.product_catalog_imports WHERE checksum=$1',[checksum])).rows[0];
-    if(previous)return {...previous.result,idempotent:true};
+    const previous=(await client.query('SELECT result,imported_by,imported_at,source_name,item_count FROM public.product_catalog_imports WHERE checksum=$1',[checksum])).rows[0];
+    if(previous)return {...previous.result,idempotent:true,lastUpdate:{username:previous.imported_by,updatedAt:previous.imported_at,fileName:previous.source_name,count:previous.item_count}};
     const result={updated:0,disabled:0,inactive:0,unknown:[],changes:[],disabledItems:[],inactiveItems:[],checksum,fileChecksum,requestId};
     for(const item of items){
       const products=(await client.query('SELECT id,description,version,tiny_import_enabled,status FROM public.master_items WHERE primary_sku_normalized=public.master_identifier_normalize($1) FOR UPDATE',[item.sku])).rows;
@@ -46,7 +49,8 @@ export async function syncTinyStock(buffer,{actor,fileName,requestId,preview=fal
     for(const item of result.changes){
       await client.query(`INSERT INTO public.product_stock_balances(product_id,physical_quantity,stock_authority,source_position_at,updated_by) VALUES($1,$2,'tiny_import',clock_timestamp(),$3) ON CONFLICT(product_id) DO UPDATE SET physical_quantity=EXCLUDED.physical_quantity,stock_authority='tiny_import',source_position_at=EXCLUDED.source_position_at,version=product_stock_balances.version+1,updated_at=clock_timestamp(),updated_by=EXCLUDED.updated_by`,[item.productId,item.current,actor]);
     }
-    await client.query(`INSERT INTO public.product_catalog_imports(checksum,source_name,source_schema,status,item_count,bom_line_count,active_bom_line_count,pending_bom_line_count,imported_by,result) VALUES($1,$2,'tiny_stock_v1','completed',$3,0,0,0,$4,$5::jsonb)`,[checksum,String(fileName||'estoque-tiny.xlsx').slice(0,300),result.updated,actor,JSON.stringify(result)]);
+    const saved=await client.query(`INSERT INTO public.product_catalog_imports(checksum,source_name,source_schema,status,item_count,bom_line_count,active_bom_line_count,pending_bom_line_count,imported_by,result) VALUES($1,$2,'tiny_stock_v1','completed',$3,0,0,0,$4,$5::jsonb) RETURNING imported_at`,[checksum,String(fileName||'estoque-tiny.xlsx').slice(0,300),result.updated,actor,JSON.stringify(result)]);
+    if(result.updated>0)result.lastUpdate={username:actor,updatedAt:saved.rows[0].imported_at,fileName:String(fileName||'estoque-tiny.xlsx').slice(0,300),count:result.updated};
     return result;
   });
 }
