@@ -1,13 +1,21 @@
-# Colunas do Estoque Geral
+# Colunas do Estoque Geral — fontes e cálculos
 
-Regra solicitada pelo usuário em 05/11/2026:
+Definição atualizada pelo usuário em 05/11/2026:
 
-`Estoque 1 = Estoque físico - Saídas previstas (vendido)`.
+| Coluna | Fonte / regra |
+| --- | --- |
+| Entradas previstas (em Produção) | ERP: soma das quantidades das OPs abertas para o item, quando o novo fluxo de OPs for implementado. |
+| Saídas previstas (vendido) | Tiny, conforme seleção do produto. |
+| Estoque físico | Tiny, conforme seleção do produto; desmarcado preserva o controle interno. |
+| Estoque 1 | Estoque físico menos saídas previstas (vendido). |
+| Estoque virtual | Estoque físico menos saídas previstas (vendido) mais entradas previstas (em Produção). |
+| Saídas do período | Tiny, conforme seleção do produto. |
+| Média mensal | Tiny, conforme seleção do produto; não recalcular a média exportada. |
 
-Ordem visual: SKU, Produto, Entradas, Saídas previstas (vendido), Estoque físico, Estoque 1, Estoque virtual, Saídas do período, Média mensal, Fonte. Tipo e Unidade foram removidos da tabela, permanecendo no cadastro.
+SKU e Produto permanecem no início; Fonte identifica a origem do físico. Tipo e Unidade permanecem no cadastro, fora da tabela.
 
-A planilha Tiny fornece Entradas previstas (G), Saídas previstas (H), Estoque físico (I), Estoque virtual (J), Saídas do período (M) e Média mensal (N). Os cabeçalhos identificam as informações de planejamento; não se recalcula estoque virtual ou média mensal. Estoque 1 é calculado na visualização com os dois valores disponíveis, preservando negativos e sem gravar uma movimentação.
+Enquanto as novas OPs não estão implementadas, Entradas previstas fica vazia e produção contribui com zero para o virtual, conforme confirmação expressa do usuário. Não conectar ordens legadas por suposição. A futura implementação deverá definir as quantidades em aberto/fragmentadas sem dupla contagem e usar a fonte oficial de OPs do novo fluxo.
 
-A sincronização mantém a regra de produtos ativos com Tiny habilitado. Os valores de planejamento são persistidos junto às linhas de alterações do snapshot auditado, na mesma transação do saldo físico. A leitura usa somente o último snapshot confirmado por produto, nunca somando importações. Físico e métricas são consultados no mesmo snapshot SQL para impedir mistura durante uma sincronização concorrente.
+Entradas e Estoque virtual da planilha Tiny são ignorados, inclusive nos snapshots antigos; os campos deixam de ser selecionáveis no cadastro. As permissões legadas desses dois campos são desconsideradas. Campos externos ausentes não viram zero: sem físico ou vendido informado, Estoque 1 e virtual permanecem não informados. Negativos são preservados.
 
-Importações anteriores a esta etapa não contêm as informações adicionais: é necessário importar novamente o arquivo. Campo não fornecido significa não informado, nunca zero presumido. Se um snapshot posterior não fornecer o campo, a leitura não reutiliza métricas antigas.
+O snapshot auditado transacional guarda apenas as métricas externas. As colunas calculadas não geram movimentação nem alteram o físico. A leitura utiliza a última posição confirmada por produto, sem somar importações.

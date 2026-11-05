@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';import test from 'node:test';import {calculateStockPlanning} from '../../server/stock-planning.js';
+test('estoque virtual usa físico menos vendido mais produção do ERP',()=>{const item=calculateStockPlanning({physical_quantity:'10.00000000',expected_outgoing_quantity:4},5);assert.equal(item.stock_one_quantity,6);assert.equal(item.incoming_quantity,5);assert.equal(item.virtual_quantity,11);});
+test('ausência não vira zero e saldos negativos são preservados',()=>{assert.equal(calculateStockPlanning({physical_quantity:2,expected_outgoing_quantity:5},0).virtual_quantity,-3);assert.equal(calculateStockPlanning({physical_quantity:null,expected_outgoing_quantity:4},0).virtual_quantity,null);assert.equal(calculateStockPlanning({physical_quantity:10,expected_outgoing_quantity:4}).virtual_quantity,null);});
+import XLSX from 'xlsx';import {parseTinyStock} from '../../server/tiny-stock-sync.js';import {tinyImportFields} from '../../server/tiny-import-policy.js';
+test('Tiny ignora entradas e virtual, inclusive em permissões legadas',()=>{
+ const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([['Produto','Código (SKU)',null,null,null,null,'Entradas previstas','Saídas previstas','Estoque físico','Estoque virtual'],['Produto','SKU',null,null,null,null,999,4,10,999]]),'Sheet1');
+ const row=parseTinyStock(XLSX.write(book,{type:'buffer',bookType:'xlsx'}))[0];assert.equal(row.metrics.incoming_quantity,undefined);assert.equal(row.metrics.virtual_quantity,undefined);assert.equal(row.metrics.expected_outgoing_quantity,4);
+ assert.deepEqual(tinyImportFields({tiny_import_enabled:true,source_metadata:{tinyImportFields:['incoming_quantity','virtual_quantity','expected_outgoing_quantity']}}),['expected_outgoing_quantity']);
+});

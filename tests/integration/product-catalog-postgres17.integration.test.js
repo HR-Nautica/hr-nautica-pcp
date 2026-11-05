@@ -102,9 +102,9 @@ test('planejamento usa só o último snapshot confirmado por produto e não soma
  const options={actor:'tiny.test',fileName:'metrics.xlsx',requestId:'1'.repeat(32)};
  const first=planningWorkbook();await syncTinyStock(first,options);
  let item=(await listProducts({query:'METRICS'})).items[0];
- assert.equal((await listStock({query:'METRICS'}))[0].expected_outgoing_quantity,3);assert.equal(item.incoming_quantity,5);assert.equal(item.expected_outgoing_quantity,3);assert.equal(item.virtual_quantity,12);assert.equal(item.period_outgoing_quantity,20);assert.equal(item.monthly_average,2);
+ assert.equal((await listStock({query:'METRICS'}))[0].expected_outgoing_quantity,3);assert.equal(item.incoming_quantity,null);assert.equal(item.expected_outgoing_quantity,3);assert.equal(item.virtual_quantity,7);assert.equal(item.period_outgoing_quantity,20);assert.equal(item.monthly_average,2);
  await syncTinyStock(planningWorkbook({physical:4,outgoing:8,average:0}),{...options,requestId:'2'.repeat(32)});
- item=(await listProducts({query:'METRICS'})).items[0];assert.equal(Number(item.physical_quantity),4);assert.equal(item.expected_outgoing_quantity,8);assert.equal(item.monthly_average,0);
+ item=(await listProducts({query:'METRICS'})).items[0];assert.equal(Number(item.physical_quantity),4);assert.equal(item.expected_outgoing_quantity,8);assert.equal(item.monthly_average,0);assert.equal(item.virtual_quantity,-4);assert.equal(item.incoming_quantity,null);
  await syncTinyStock(planningWorkbook({outgoing:100}),{...options,requestId:'3'.repeat(32),preview:true});
  assert.equal((await listProducts({query:'METRICS'})).items[0].expected_outgoing_quantity,8);
  await syncTinyStock(stockWorkbook([['METRICS',7]]),{...options,requestId:'4'.repeat(32)});
