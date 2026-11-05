@@ -2,7 +2,8 @@ import XLSX from 'xlsx';
 import { createHash } from 'node:crypto';
 import { transaction, withConnection } from './database.js';
 import { CatalogError } from './product-catalog.js';
-import { TINY_STOCK_METRICS } from './tiny-stock-metrics.js';
+import { TINY_STOCK_METRICS, attachTinyStockMetrics } from './tiny-stock-metrics.js';
+import { tinyImportFields } from './tiny-import-policy.js';
 export function parseTinyStock(buffer) {
   let workbook;
   try { workbook=XLSX.read(buffer,{type:'buffer'}); } catch { throw new CatalogError('Planilha inválida.'); }
@@ -36,21 +37,26 @@ export async function syncTinyStock(buffer,{actor,fileName,requestId,preview=fal
     const previous=(await client.query('SELECT result,imported_by,imported_at,source_name,item_count FROM public.product_catalog_imports WHERE checksum=$1',[checksum])).rows[0];
     if(previous)return {...previous.result,idempotent:true,lastUpdate:{username:previous.imported_by,updatedAt:previous.imported_at,fileName:previous.source_name,count:previous.item_count}};
     const result={updated:0,disabled:0,inactive:0,unknown:[],changes:[],disabledItems:[],inactiveItems:[],checksum,fileChecksum,requestId};
+    const catalog=(await client.query('SELECT id,primary_sku_normalized,description,version,tiny_import_enabled,source_metadata,status FROM public.master_items WHERE primary_sku_normalized=ANY($1::text[]) ORDER BY id FOR UPDATE',[items.map(item=>item.sku.replace(/[a-z]/g,letter=>letter.toUpperCase()))])).rows;
+    await attachTinyStockMetrics(client,catalog);
+    const bySku=new Map(catalog.map(product=>[product.primary_sku_normalized,product]));
     for(const item of items){
-      const products=(await client.query('SELECT id,description,version,tiny_import_enabled,status FROM public.master_items WHERE primary_sku_normalized=public.master_identifier_normalize($1) FOR UPDATE',[item.sku])).rows;
-      if(products.length>1)throw new CatalogError(`SKU ambíguo: ${item.sku}.`);
-      const product=products[0];
+      const product=bySku.get(item.sku.replace(/[a-z]/g,letter=>letter.toUpperCase()));
       if(!product){result.unknown.push(item.sku);continue;}
       const detail={sku:item.sku,description:product.description};
       if(product.status!=='active'){result.inactive++;result.inactiveItems.push(detail);continue;}
-      if(!product.tiny_import_enabled){result.disabled++;result.disabledItems.push(detail);continue;}
+      const fields=tinyImportFields(product);
+      if(!fields.length){result.disabled++;result.disabledItems.push(detail);continue;}
       const old=(await client.query('SELECT physical_quantity,version FROM public.product_stock_balances WHERE product_id=$1 FOR UPDATE',[product.id])).rows[0];
-      result.changes.push({productId:product.id,sku:item.sku,description:product.description,productVersion:product.version,stockVersion:old?.version??null,previous:old?.physical_quantity??null,current:item.quantity,metrics:item.metrics??null});result.updated++;
+      const metrics=Object.fromEntries(TINY_STOCK_METRICS.map(([key])=>[key,fields.includes(key)?(item.metrics?.[key]??null):(product[key]??null)]));
+      if(Array.isArray(product.source_metadata?.tinyImportFields))for(const field of fields){if(field!=='physical_quantity'&&item.metrics?.[field]==null)throw new CatalogError(`SKU ${item.sku}: coluna Tiny selecionada ausente ou vazia (${field}). Nenhum dado foi alterado.`);}
+      result.changes.push({productId:product.id,sku:item.sku,description:product.description,productVersion:product.version,stockVersion:old?.version??null,previous:old?.physical_quantity??null,current:fields.includes('physical_quantity')?item.quantity:(old?.physical_quantity??null),fields,previousMetrics:Object.fromEntries(TINY_STOCK_METRICS.map(([key])=>[key,product[key]??null])),metrics});result.updated++;
     }
     result.planChecksum=createHash('sha256').update(JSON.stringify(result)).digest('hex');
     if(preview)return {...result,preview:true};
     if(expectedPlan&&expectedPlan!==result.planChecksum)throw new CatalogError('Os cadastros ou saldos mudaram. Analise a planilha novamente antes de confirmar.','TINY_PREVIEW_STALE',409);
     for(const item of result.changes){
+      if(!item.fields.includes('physical_quantity'))continue;
       await client.query(`INSERT INTO public.product_stock_balances(product_id,physical_quantity,stock_authority,source_position_at,updated_by) VALUES($1,$2,'tiny_import',clock_timestamp(),$3) ON CONFLICT(product_id) DO UPDATE SET physical_quantity=EXCLUDED.physical_quantity,stock_authority='tiny_import',source_position_at=EXCLUDED.source_position_at,version=product_stock_balances.version+1,updated_at=clock_timestamp(),updated_by=EXCLUDED.updated_by`,[item.productId,item.current,actor]);
     }
     const saved=await client.query(`INSERT INTO public.product_catalog_imports(checksum,source_name,source_schema,status,item_count,bom_line_count,active_bom_line_count,pending_bom_line_count,imported_by,result) VALUES($1,$2,'tiny_stock_v1','completed',$3,0,0,0,$4,$5::jsonb) RETURNING imported_at`,[checksum,String(fileName||'estoque-tiny.xlsx').slice(0,300),result.updated,actor,JSON.stringify(result)]);

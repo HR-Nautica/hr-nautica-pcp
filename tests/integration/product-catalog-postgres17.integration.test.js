@@ -112,3 +112,20 @@ test('planejamento usa só o último snapshot confirmado por produto e não soma
  await assert.rejects(syncTinyStock(planningWorkbook({outgoing:'inválido'}),{...options,requestId:'5'.repeat(32)}));
  assert.equal(Number((await listProducts({query:'METRICS'})).items[0].physical_quantity),7);
 });
+test('permissões Tiny por coluna preservam físico ERP e métricas desmarcadas',async()=>{
+ let product=await createProduct({sku:'METRICS',description:'Seleção Tiny',family:'componentes',itemType:'Componente',unit:'UN',tinyImportFields:['expected_outgoing_quantity']},'tiny.test');
+ assert.deepEqual(product.source_metadata.tinyImportFields,['expected_outgoing_quantity']);
+ await admin.query('UPDATE public.product_stock_balances SET physical_quantity=7 WHERE product_id=$1',[product.id]);
+ const options={actor:'tiny.test',fileName:'selecao.xlsx',requestId:'6'.repeat(32)};
+ const preview=await syncTinyStock(planningWorkbook({physical:100,outgoing:8}),{...options,preview:true});
+ assert.equal(Number(preview.changes[0].current),7);assert.deepEqual(preview.changes[0].fields,['expected_outgoing_quantity']);
+ await syncTinyStock(planningWorkbook({physical:100,outgoing:8}),{...options,expectedPlan:preview.planChecksum});
+ let item=(await listProducts({query:'METRICS'})).items[0];assert.equal(Number(item.physical_quantity),7);assert.equal(item.stock_authority,'erp');assert.equal(item.expected_outgoing_quantity,8);assert.equal(item.incoming_quantity,null);
+ product=await updateProduct(product.id,{sku:product.primary_sku,description:product.description,family:product.family,itemType:product.item_type,unit:product.unit,status:'active',version:product.version,tinyImportFields:['physical_quantity']},'tiny.test');
+ await syncTinyStock(planningWorkbook({physical:12,outgoing:33}),{...options,requestId:'7'.repeat(32)});
+ item=(await listProducts({query:'METRICS'})).items[0];assert.equal(Number(item.physical_quantity),12);assert.equal(item.expected_outgoing_quantity,8);assert.equal(item.stock_authority,'tiny_import');
+ product=await updateProduct(product.id,{sku:product.primary_sku,description:product.description,family:product.family,itemType:product.item_type,unit:product.unit,status:'active',version:product.version,tinyImportFields:[]},'tiny.test');
+ const skipped=await syncTinyStock(planningWorkbook({physical:99}),{...options,requestId:'8'.repeat(32)});assert.equal(skipped.disabled,1);assert.equal(skipped.updated,0);
+ item=(await listProducts({query:'METRICS'})).items[0];assert.equal(Number(item.physical_quantity),12);assert.equal(item.expected_outgoing_quantity,8);assert.deepEqual(item.source_metadata.tinyImportFields,[]);
+ await assert.rejects(createProduct({sku:'INVALID',description:'Inválido',family:'componentes',itemType:'Componente',tinyImportFields:['stock_one_quantity']},'tiny.test'));
+});
