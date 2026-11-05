@@ -2,6 +2,7 @@ import XLSX from 'xlsx';
 import { createHash } from 'node:crypto';
 import { transaction, withConnection } from './database.js';
 import { CatalogError } from './product-catalog.js';
+import { TINY_STOCK_METRICS } from './tiny-stock-metrics.js';
 export function parseTinyStock(buffer) {
   let workbook;
   try { workbook=XLSX.read(buffer,{type:'buffer'}); } catch { throw new CatalogError('Planilha inválida.'); }
@@ -9,12 +10,15 @@ export function parseTinyStock(buffer) {
   const candidates=sheets.filter(rows=>rows[0]?.[1]==='Código (SKU)'&&rows[0]?.[8]==='Estoque físico');
   if(candidates.length!==1)throw new CatalogError('Formato inválido: esperado SKU na coluna B e Estoque físico na coluna I.');
   const seen=new Set();const items=[];
+  const metricColumns=TINY_STOCK_METRICS.map(([key,header])=>[key,candidates[0][0].indexOf(header)]).filter(([,column])=>column>=0);
   for(const [index,row] of candidates[0].entries()){
     if(!index||row.every(value=>value===null||value===''))continue;
     const sku=String(row[1]??'').trim();const quantity=row[8];
     const key=sku.replace(/[a-z]/g,letter=>letter.toUpperCase());
     if(!sku||seen.has(key)||typeof quantity!=='number'||!Number.isFinite(quantity)||Math.abs(quantity)>=1e12)throw new CatalogError(`Linha ${index+1}: SKU ausente/duplicado ou estoque inválido. Nenhum saldo foi alterado.`);
-    seen.add(key);items.push({sku,quantity});
+    const metrics={};
+    for(const [field,column]of metricColumns){const value=row[column];if(value!==null&&value!==''&&(typeof value!=='number'||!Number.isFinite(value)||Math.abs(value)>=1e12))throw new CatalogError(`Linha ${index+1}: informação de planejamento inválida. Nenhum saldo foi alterado.`);metrics[field]=value===null||value===''?null:value;}
+    seen.add(key);items.push({sku,quantity,...(metricColumns.length?{metrics}:{})});
   }
   if(!items.length)throw new CatalogError('Planilha sem itens.');
   return items;
@@ -41,7 +45,7 @@ export async function syncTinyStock(buffer,{actor,fileName,requestId,preview=fal
       if(product.status!=='active'){result.inactive++;result.inactiveItems.push(detail);continue;}
       if(!product.tiny_import_enabled){result.disabled++;result.disabledItems.push(detail);continue;}
       const old=(await client.query('SELECT physical_quantity,version FROM public.product_stock_balances WHERE product_id=$1 FOR UPDATE',[product.id])).rows[0];
-      result.changes.push({productId:product.id,sku:item.sku,description:product.description,productVersion:product.version,stockVersion:old?.version??null,previous:old?.physical_quantity??null,current:item.quantity});result.updated++;
+      result.changes.push({productId:product.id,sku:item.sku,description:product.description,productVersion:product.version,stockVersion:old?.version??null,previous:old?.physical_quantity??null,current:item.quantity,metrics:item.metrics??null});result.updated++;
     }
     result.planChecksum=createHash('sha256').update(JSON.stringify(result)).digest('hex');
     if(preview)return {...result,preview:true};

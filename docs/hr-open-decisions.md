@@ -32,3 +32,10 @@ Nenhum item abaixo autoriza que o agente escolha a regra sem aprovação. Ao imp
 
 - Quem pode importar, editar catálogo, definir parâmetro de simulação global, aprovar ajuste e criar/cancelar OP.
 - **Status:** preservar permissões atuais até política aprovada.
+
+## D-006 — Análise, apontamento por etapa e fracionamento de OP
+
+- **Diretriz registrada em 05/11/2026:** abrir OP pela Análise, exibindo produto pai, BOM, estoque/disponibilidade por item e etapas concluídas/pendentes; registrar peças aprovadas para próxima etapa e separar as demais entre refugo e estoque temporário.
+- **Fracionamento solicitado:** subordens vinculadas à ordem original; exemplos `1` → `1.1` ou `1A` → `1B`.
+- **Status:** direção funcional aprovada pelo pedido do usuário; implementação ainda não iniciada. PENDENTES: padrão de numeração, gatilhos/destinos que geram subordem, liberação do temporário, fórmula de disponibilidade, permissões e eventos de movimentação. D-001 permanece aberta.
+- **Referência:** [Fluxo de Análise e Ordens de Produção](production-analysis-orders-flow.md).

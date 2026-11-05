@@ -126,3 +126,5 @@ button:disabled {
     transition-duration: .01ms !important;
   }
 }
+.stock-planning-table{min-width:1450px}.stock-planning-table th.stock-number{white-space:normal;min-width:110px;max-width:155px;line-height:1.45;text-align:right}.stock-planning-table td.stock-number{text-align:right;font-variant-numeric:tabular-nums}.stock-planning-table .product-name{min-width:260px;max-width:360px;white-space:normal}.stock-planning-table .product-sku{min-width:155px}.stock-planning-table td.is-unknown{color:var(--muted)}
+.stock-planning-table{table-layout:auto}.stock-planning-table th:nth-child(n){width:auto}
