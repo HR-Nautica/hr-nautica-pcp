@@ -70,3 +70,17 @@ test('Tiny substitui apenas saldo autorizado ativo e registra snapshot atomicame
  assert.equal(Number((await admin.query('SELECT physical_quantity FROM public.product_stock_balances WHERE product_id=$1',[products[0].id])).rows[0].physical_quantity),0);
  assert.throws(()=>parseTinyStock(stockWorkbook([['ATIVO',1],['ativo',2]])));
 });
+test('prévia Tiny não grava e confirmação rejeita alterações de saldo posteriores',async()=>{
+ const product=await createProduct({sku:'PREVIEW',description:'Prévia',family:'componentes',itemType:'Componente',unit:'UN',tinyImportEnabled:true},'tiny.test');
+ const buffer=stockWorkbook([['PREVIEW',15],['NOVO-SKU',1]]);const options={actor:'tiny.test',fileName:'preview.xlsx',requestId:'d'.repeat(32)};
+ const preview=await syncTinyStock(buffer,{...options,preview:true});
+ assert.equal(preview.preview,true);assert.equal(preview.updated,1);assert.equal(preview.changes[0].description,'Prévia');
+ assert.equal((await admin.query('SELECT count(*)::int AS count FROM public.product_catalog_imports')).rows[0].count,0);
+ assert.equal((await admin.query('SELECT physical_quantity FROM public.product_stock_balances WHERE product_id=$1',[product.id])).rows[0].physical_quantity,null);
+ await admin.query('UPDATE public.product_stock_balances SET physical_quantity=7,version=version+1 WHERE product_id=$1',[product.id]);
+ await assert.rejects(syncTinyStock(buffer,{...options,expectedPlan:preview.planChecksum}),error=>error.code==='TINY_PREVIEW_STALE');
+ assert.equal(Number((await admin.query('SELECT physical_quantity FROM public.product_stock_balances WHERE product_id=$1',[product.id])).rows[0].physical_quantity),7);
+ const refreshed=await syncTinyStock(buffer,{...options,preview:true});
+ const saved=await syncTinyStock(buffer,{...options,expectedPlan:refreshed.planChecksum});assert.equal(saved.updated,1);
+ assert.equal((await syncTinyStock(buffer,{...options,expectedPlan:refreshed.planChecksum})).idempotent,true);
+});
