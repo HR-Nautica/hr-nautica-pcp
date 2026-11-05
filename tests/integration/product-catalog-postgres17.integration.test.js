@@ -48,3 +48,25 @@ test("editar campos do produto sem trocar SKU nao exige historico, e trocar SKU 
   const history = (await admin.query("SELECT old_primary_sku,new_primary_sku,old_version,new_version,actor FROM public.master_item_sku_history WHERE item_id=$1", [initial.id])).rows[0];
   assert.deepEqual(history, { old_primary_sku: "SKU-INICIAL", new_primary_sku: "SKU-RENOMEADO", old_version: 2, new_version: 3, actor: "operador" });
 });
+import XLSX from 'xlsx';
+import { syncTinyStock, parseTinyStock } from '../../server/tiny-stock-sync.js';
+function stockWorkbook(rows){const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([['Produto','Código (SKU)',null,null,null,null,null,null,'Estoque físico'],...rows.map(([sku,quantity])=>['Produto',sku,null,null,null,null,null,null,quantity])]),'Sheet1');return XLSX.write(book,{type:'buffer',bookType:'xlsx'});}
+test('Tiny substitui apenas saldo autorizado ativo e registra snapshot atomicamente',async()=>{
+ const products=[];
+ for(const [sku,tiny,status] of [['ATIVO',true,'active'],['PROTEGIDO',false,'active'],['INATIVO',true,'inactive']]) products.push(await createProduct({sku,description:sku,family:'componentes',itemType:'Componente',unit:'UN',tinyImportEnabled:tiny,status},'tiny.test'));
+ await admin.query('UPDATE public.product_stock_balances SET physical_quantity=10');
+ const buffer=stockWorkbook([['ATIVO',-3],['PROTEGIDO',999],['INATIVO',999],['AUSENTE',1]]);
+ const options={actor:'tiny.test',fileName:'stock.xlsx',requestId:'a'.repeat(32)};
+ const result=await syncTinyStock(buffer,options);
+ assert.equal(result.updated,1);assert.equal(result.disabled,1);assert.equal(result.inactive,1);assert.deepEqual(result.unknown,['AUSENTE']);
+ const balances=(await admin.query('SELECT product_id,physical_quantity::float AS quantity,stock_authority FROM public.product_stock_balances')).rows;
+ assert.equal(balances.find(x=>x.product_id===products[0].id).quantity,-3);
+ assert.equal(balances.find(x=>x.product_id===products[1].id).quantity,10);
+ assert.equal(balances.find(x=>x.product_id===products[2].id).quantity,10);
+ assert.equal((await syncTinyStock(buffer,options)).idempotent,true);
+ await syncTinyStock(stockWorkbook([['ATIVO',0]]),{...options,requestId:'b'.repeat(32)});
+ assert.equal(Number((await admin.query('SELECT physical_quantity FROM public.product_stock_balances WHERE product_id=$1',[products[0].id])).rows[0].physical_quantity),0);
+ await assert.rejects(syncTinyStock(stockWorkbook([['ATIVO',25],['INVALIDO','oops']]),{...options,requestId:'c'.repeat(32)}));
+ assert.equal(Number((await admin.query('SELECT physical_quantity FROM public.product_stock_balances WHERE product_id=$1',[products[0].id])).rows[0].physical_quantity),0);
+ assert.throws(()=>parseTinyStock(stockWorkbook([['ATIVO',1],['ativo',2]])));
+});

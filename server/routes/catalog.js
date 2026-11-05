@@ -29,3 +29,9 @@ router.delete("/steps/:id",async(req,res,next)=>{try{res.json({ok:true,item:awai
 router.get("/stock",async(req,res,next)=>{try{res.json({ok:true,items:await listStock(req.query)});}catch(e){reply(e,res,next);}});
 
 export default router;
+import { syncTinyStock } from '../tiny-stock-sync.js';
+router.post('/stock/sync',async(req,res,next)=>{try{
+ const encoded=String(req.body?.fileBase64||'');
+ if(!encoded||encoded.length>20000000||!/^[A-Za-z0-9+/=]+$/.test(encoded))throw new CatalogError('Arquivo inválido ou maior que o limite permitido.');
+ res.json({ok:true,...await syncTinyStock(Buffer.from(encoded,'base64'),{actor:actor(req),fileName:req.body?.fileName,requestId:req.body?.requestId})});
+}catch(error){reply(error,res,next);}});
