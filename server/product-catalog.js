@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { transaction, withConnection } from "./database.js";
 import { buildBomTree } from "./bom-tree.js";
+import { attachTinyStockMetrics } from './tiny-stock-metrics.js';
 
 const TYPES = new Set(["Produto acabado / componente", "Componente", "Hélice usinada", "Hélice bruta", "Bucha", "Caixa"]);
 const FAMILIES = new Set(["helices", "componentes", "buchas", "brutos"]);
@@ -39,6 +40,7 @@ export async function listProducts({ query = "", page = 1, limit = 50 } = {}) {
   return withConnection(async client => {
     const total = Number((await client.query("SELECT count(*)::int total FROM public.master_items WHERE primary_sku ILIKE $1 OR description ILIKE $1", [search])).rows[0].total);
     const items = (await client.query(`SELECT i.*,s.physical_quantity,s.stock_authority,EXISTS(SELECT 1 FROM public.product_bom_lines b WHERE b.parent_product_id=i.id) AS has_bom,EXISTS(SELECT 1 FROM public.product_routing_steps r WHERE r.product_id=i.id) AS has_routing FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.primary_sku ILIKE $1 OR i.description ILIKE $1 ORDER BY i.primary_sku_normalized,i.id LIMIT $2 OFFSET $3`, [search,safeLimit,(safePage-1)*safeLimit])).rows;
+    await attachTinyStockMetrics(client,items);
     return { items, total, page: safePage, limit: safeLimit };
   });
 }
@@ -154,7 +156,7 @@ export async function saveStep(data, username, stepId) {
 }
 export async function deleteStep(stepId) { try { return await withConnection(async client => (await client.query("DELETE FROM public.production_steps WHERE id=$1 RETURNING id", [id(stepId)])).rows[0] || fail("Etapa não encontrada.","STEP_NOT_FOUND",404)); } catch(error) { if(error?.code==="23503") fail("Etapa está vinculada a um produto.","STEP_IN_USE",409); throw error; } }
 
-export async function listStock({ query = "" } = {}) { const search=`%${String(query).trim()}%`; return withConnection(async client => (await client.query(`SELECT i.id,i.primary_sku,i.description,i.item_type,i.unit,i.tiny_import_enabled,s.physical_quantity,s.stock_authority,s.updated_at FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.status='active' AND (i.primary_sku ILIKE $1 OR i.description ILIKE $1) ORDER BY i.primary_sku_normalized LIMIT 1000`,[search])).rows); }
+export async function listStock({ query = "" } = {}) { const search=`%${String(query).trim()}%`; return withConnection(async client => { const items=(await client.query(`SELECT i.id,i.primary_sku,i.description,i.item_type,i.unit,i.tiny_import_enabled,s.physical_quantity,s.stock_authority,s.updated_at FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.status='active' AND (i.primary_sku ILIKE $1 OR i.description ILIKE $1) ORDER BY i.primary_sku_normalized LIMIT 1000`,[search])).rows; return attachTinyStockMetrics(client,items); }); }
 
 export async function addBomLine(parentId, data, username) {
   const parent=id(parentId,"produto pai"),child=id(data?.childProductId,"componente");

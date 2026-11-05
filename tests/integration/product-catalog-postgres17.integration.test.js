@@ -95,3 +95,20 @@ test('histórico Tiny usa usuário e data persistidos e ignora prévias e import
  await syncTinyStock(stockWorkbook([['NAO-CADASTRADO',1]]),{...options,actor:'outro',requestId:'f'.repeat(32)});
  assert.equal((await getLastTinyStockUpdate()).username,'lucas');
 });
+import {listProducts,listStock} from '../../server/product-catalog.js';
+function planningWorkbook({physical=10,outgoing=3,incoming=5,virtual=12,period=20,average=2}={}){const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([['Produto','Código (SKU)',null,null,'Un',null,'Entradas previstas','Saídas previstas','Estoque físico','Estoque virtual',null,null,'Saídas do período','Média mensal'],['Produto','METRICS',null,null,'UN',null,incoming,outgoing,physical,virtual,null,null,period,average]]),'Sheet1');return XLSX.write(book,{type:'buffer',bookType:'xlsx'});}
+test('planejamento usa só o último snapshot confirmado por produto e não soma importações',async()=>{
+ await createProduct({sku:'METRICS',description:'Métricas',family:'componentes',itemType:'Componente',unit:'UN',tinyImportEnabled:true},'tiny.test');
+ const options={actor:'tiny.test',fileName:'metrics.xlsx',requestId:'1'.repeat(32)};
+ const first=planningWorkbook();await syncTinyStock(first,options);
+ let item=(await listProducts({query:'METRICS'})).items[0];
+ assert.equal((await listStock({query:'METRICS'}))[0].expected_outgoing_quantity,3);assert.equal(item.incoming_quantity,5);assert.equal(item.expected_outgoing_quantity,3);assert.equal(item.virtual_quantity,12);assert.equal(item.period_outgoing_quantity,20);assert.equal(item.monthly_average,2);
+ await syncTinyStock(planningWorkbook({physical:4,outgoing:8,average:0}),{...options,requestId:'2'.repeat(32)});
+ item=(await listProducts({query:'METRICS'})).items[0];assert.equal(Number(item.physical_quantity),4);assert.equal(item.expected_outgoing_quantity,8);assert.equal(item.monthly_average,0);
+ await syncTinyStock(planningWorkbook({outgoing:100}),{...options,requestId:'3'.repeat(32),preview:true});
+ assert.equal((await listProducts({query:'METRICS'})).items[0].expected_outgoing_quantity,8);
+ await syncTinyStock(stockWorkbook([['METRICS',7]]),{...options,requestId:'4'.repeat(32)});
+ item=(await listProducts({query:'METRICS'})).items[0];assert.equal(item.expected_outgoing_quantity,null);assert.equal(Number(item.physical_quantity),7);
+ await assert.rejects(syncTinyStock(planningWorkbook({outgoing:'inválido'}),{...options,requestId:'5'.repeat(32)}));
+ assert.equal(Number((await listProducts({query:'METRICS'})).items[0].physical_quantity),7);
+});
