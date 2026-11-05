@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { transaction, withConnection } from "./database.js";
 import { buildBomTree } from "./bom-tree.js";
 import { attachTinyStockMetrics } from './tiny-stock-metrics.js';
+import { TINY_IMPORT_FIELDS, tinyImportFields } from './tiny-import-policy.js';
 
 const TYPES = new Set(["Produto acabado / componente", "Componente", "Hélice usinada", "Hélice bruta", "Bucha", "Caixa"]);
 const FAMILIES = new Set(["helices", "componentes", "buchas", "brutos"]);
@@ -22,6 +23,7 @@ function id(value, name = "id") { const result = String(value || ""); if (!UUID.
 function actor(value) { return text(value, "usuário", 100); }
 function jsonObject(value) { return value && typeof value === "object" && !Array.isArray(value) ? value : {}; }
 function productInput(data) {
+  if(data?.tinyImportFields!==undefined&&(!Array.isArray(data.tinyImportFields)||data.tinyImportFields.some(key=>!TINY_IMPORT_FIELDS.includes(key))))fail('Colunas Tiny inválidas.');
   if(data?.status!==undefined&&!['active','inactive'].includes(data.status))fail('Status inválido.');
   const family = text(data?.family, "família", 32);
   const itemType = text(data?.itemType, "tipo", 64);
@@ -29,7 +31,7 @@ function productInput(data) {
   return {
     sku: text(data?.sku, "SKU", 120), description: text(data?.description, "descrição", 500),
     family, itemType, unit: text(data?.unit || "UN", "unidade", 32),
-    characteristics: jsonObject(data?.basicCharacteristics), tiny: Boolean(data?.tinyImportEnabled),
+    characteristics: jsonObject(data?.basicCharacteristics), tiny: data?.tinyImportFields!==undefined?data.tinyImportFields.length>0:Boolean(data?.tinyImportEnabled),tinyFields:data?.tinyImportFields===undefined?undefined:[...new Set(data.tinyImportFields)],
     status: data?.status === "inactive" ? "inactive" : "active"
   };
 }
@@ -78,6 +80,7 @@ export async function createProduct(data, username) {
   try { return await transaction(async client => {
     const product = (await client.query(`INSERT INTO public.master_items (primary_sku,family,description,unit,status,item_type,basic_characteristics,tiny_import_enabled,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$9) RETURNING *`, [input.sku,input.family,input.description,input.unit,input.status,input.itemType,JSON.stringify(input.characteristics),input.tiny,safeActor])).rows[0];
     await client.query("INSERT INTO public.product_stock_balances(product_id,stock_authority,updated_by) VALUES($1,'erp',$2)", [product.id,safeActor]);
+    if(input.tinyFields!==undefined){product.source_metadata=(await client.query("UPDATE public.master_items SET source_metadata=source_metadata||jsonb_build_object('tinyImportFields',$2::jsonb) WHERE id=$1 RETURNING source_metadata",[product.id,JSON.stringify(input.tinyFields)])).rows[0].source_metadata;}
     return product;
   }); } catch (error) { if (error?.code === "23505") fail("SKU já cadastrado.", "PRODUCT_SKU_CONFLICT", 409); throw error; }
 }
@@ -104,6 +107,8 @@ export async function updateProduct(productId, data, username) {
       : [input.family,input.description,input.unit,input.status,input.itemType,JSON.stringify(input.characteristics),input.tiny,safeActor,id(productId),expected];
     const product = (await client.query(updateSql, updateValues)).rows[0];
     if (!product) fail("Produto foi alterado por outro usuário.", "PRODUCT_VERSION_CONFLICT", 409);
+    const fields=input.tinyFields??(input.tiny!==previous.tiny_import_enabled?(input.tiny?[...TINY_IMPORT_FIELDS]:[]):tinyImportFields(previous));
+    product.source_metadata=(await client.query("UPDATE public.master_items SET source_metadata=source_metadata||jsonb_build_object('tinyImportFields',$2::jsonb) WHERE id=$1 RETURNING source_metadata",[product.id,JSON.stringify(fields)])).rows[0].source_metadata;
     return product;
   }); } catch (error) { if (error?.code === "23505") fail("SKU já cadastrado.", "PRODUCT_SKU_CONFLICT", 409); throw error; }
 }
@@ -156,7 +161,7 @@ export async function saveStep(data, username, stepId) {
 }
 export async function deleteStep(stepId) { try { return await withConnection(async client => (await client.query("DELETE FROM public.production_steps WHERE id=$1 RETURNING id", [id(stepId)])).rows[0] || fail("Etapa não encontrada.","STEP_NOT_FOUND",404)); } catch(error) { if(error?.code==="23503") fail("Etapa está vinculada a um produto.","STEP_IN_USE",409); throw error; } }
 
-export async function listStock({ query = "" } = {}) { const search=`%${String(query).trim()}%`; return withConnection(async client => { const items=(await client.query(`SELECT i.id,i.primary_sku,i.description,i.item_type,i.unit,i.tiny_import_enabled,s.physical_quantity,s.stock_authority,s.updated_at FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.status='active' AND (i.primary_sku ILIKE $1 OR i.description ILIKE $1) ORDER BY i.primary_sku_normalized LIMIT 1000`,[search])).rows; return attachTinyStockMetrics(client,items); }); }
+export async function listStock({ query = "" } = {}) { const search=`%${String(query).trim()}%`; return withConnection(async client => { const items=(await client.query(`SELECT i.id,i.primary_sku,i.description,i.item_type,i.unit,i.tiny_import_enabled,i.source_metadata,s.physical_quantity,s.stock_authority,s.updated_at FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.status='active' AND (i.primary_sku ILIKE $1 OR i.description ILIKE $1) ORDER BY i.primary_sku_normalized LIMIT 1000`,[search])).rows; return attachTinyStockMetrics(client,items); }); }
 
 export async function addBomLine(parentId, data, username) {
   const parent=id(parentId,"produto pai"),child=id(data?.childProductId,"componente");
