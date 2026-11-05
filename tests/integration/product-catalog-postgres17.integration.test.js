@@ -84,3 +84,14 @@ test('prévia Tiny não grava e confirmação rejeita alterações de saldo post
  const saved=await syncTinyStock(buffer,{...options,expectedPlan:refreshed.planChecksum});assert.equal(saved.updated,1);
  assert.equal((await syncTinyStock(buffer,{...options,expectedPlan:refreshed.planChecksum})).idempotent,true);
 });
+import {getLastTinyStockUpdate} from '../../server/tiny-stock-sync.js';
+test('histórico Tiny usa usuário e data persistidos e ignora prévias e importações sem atualização',async()=>{
+ assert.equal(await getLastTinyStockUpdate(),null);
+ await createProduct({sku:'HISTORY',description:'Histórico',family:'componentes',itemType:'Componente',unit:'UN',tinyImportEnabled:true},'lucas');
+ const buffer=stockWorkbook([['HISTORY',2]]);const options={actor:'lucas',fileName:'historico.xlsx',requestId:'e'.repeat(32)};
+ await syncTinyStock(buffer,{...options,preview:true});assert.equal(await getLastTinyStockUpdate(),null);
+ const result=await syncTinyStock(buffer,options);const history=await getLastTinyStockUpdate();
+ assert.equal(history.username,'lucas');assert.equal(history.fileName,'historico.xlsx');assert.equal(history.count,1);assert.equal(new Date(history.updatedAt).toISOString(),new Date(result.lastUpdate.updatedAt).toISOString());
+ await syncTinyStock(stockWorkbook([['NAO-CADASTRADO',1]]),{...options,actor:'outro',requestId:'f'.repeat(32)});
+ assert.equal((await getLastTinyStockUpdate()).username,'lucas');
+});
