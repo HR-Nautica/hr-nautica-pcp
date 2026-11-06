@@ -21,7 +21,11 @@
 .analysis-search>span,.analysis-hint,.analysis-formulas{font-size:13px;color:var(--muted);line-height:1.6;}
 .analysis-formulas{margin:12px 0;max-width:1050px;}
 .analysis-formulas summary{cursor:pointer;color:var(--text);}
-.helice-analysis-table{min-width:2300px;table-layout:auto;}
+.stock-table.helice-analysis-table{min-width:2300px;table-layout:auto;}
+.stock-table.helice-analysis-table th:nth-child(n){width:auto;}
+.stock-table.stock-physical-table{min-width:700px;table-layout:auto;}
+.stock-table.stock-physical-table th:nth-child(n){width:auto;}
+.stock-physical-table td.stock-number{text-align:right;font-variant-numeric:tabular-nums;}
 .helice-analysis-table th{white-space:normal;min-width:115px;max-width:170px;line-height:1.45;}
 .helice-analysis-table th .stock-sort{min-height:48px;}
 .helice-analysis-table th .stock-sort span:first-child{min-width:0;overflow-wrap:anywhere;}
