@@ -75,23 +75,55 @@
 @media(max-width:800px){.helice-analysis-table [data-column-key="description"],.helice-analysis-table td[data-column-key="general_priority"]{position:static;}.analysis-settings summary{flex-wrap:wrap;}.analysis-table-tools{flex-wrap:wrap;}.analysis-columns{margin-left:auto;}.helice-analysis-wrap{max-height:72vh;}}
 .analysis-product-title{display:flex;align-items:center;gap:8px;}
 .analysis-expand{display:grid;place-items:center;flex:0 0 28px;width:28px;height:30px;padding:0;background:transparent;border:1px solid var(--line);color:var(--accent);font-size:22px;line-height:1;}
-.helice-analysis-table .analysis-expansion-row>td{padding:16px;background:#0b1524;white-space:normal;}
-.analysis-expansion-content{position:sticky;left:0;width:min(1100px,calc(100vw - 350px));min-width:280px;}
+.helice-analysis-table .analysis-expansion-row>td{padding:20px;background:#0b1524;white-space:normal;}
+.analysis-expansion-content{position:sticky;left:0;width:min(1100px,calc(100vw - 390px));min-width:280px;}
 .analysis-expansion-content h3{margin:4px 0 12px;font-size:14px;}
 .analysis-expansion-content h3:not(:first-child){margin-top:24px;}
-.analysis-bom-stocks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:10px 0;}
-.analysis-bom-stocks>div{padding:10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);}
-.analysis-bom-stocks small{display:block;color:var(--muted);font-size:11px;line-height:1.5;}
-.analysis-bom-stocks strong{font-size:13px;margin:5px 0;font-variant-numeric:tabular-nums;}
 .analysis-bom-actions{display:flex;align-items:start;gap:16px;flex-wrap:wrap;margin:10px 0 16px;font-size:12px;}
 .analysis-bom-actions button{font-size:12px;padding:6px 9px;}
 .analysis-bom-actions summary{cursor:pointer;color:var(--muted);padding:5px 0;}
 .analysis-bom-actions ol{line-height:1.8;padding-left:22px;}
 .analysis-bom-actions small{color:var(--muted);}
-.analysis-bom-node{border-left:1px solid var(--line);padding:10px 0 0 14px;margin:10px 0;}
-.analysis-bom-node>summary{cursor:pointer;font-size:13px;line-height:1.5;}
-.analysis-bom-node>summary>strong{display:inline;font-weight:600;}
-.analysis-bom-node>summary>span{display:block;color:var(--muted);font-size:12px;margin:4px 0 0 16px;}
-.analysis-bom-children{padding-left:12px;}
 .analysis-structure-error{color:#ffb2b8;font-size:13px;white-space:normal;}
-@media(max-width:800px){.analysis-expansion-content{width:calc(100vw - 80px);}.analysis-bom-stocks{grid-template-columns:repeat(2,minmax(0,1fr));}.analysis-bom-children{padding-left:6px;}}
+.helice-analysis-table tr.analysis-expansion-row:hover>td{background:#0b1524;}
+.bom-detail-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px;}
+.bom-detail-heading h3{font-size:16px;margin:3px 0 0;}
+.bom-detail-heading h3:not(:first-child){margin:3px 0 0;}
+.bom-eyebrow{font-size:10px;letter-spacing:.1em;color:var(--muted);}
+.bom-root-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:9px;background:var(--panel);margin:12px 0;}
+.bom-root-summary>div{padding:12px 16px;border-right:1px solid var(--line);}
+.bom-root-summary>div:last-child{border:0;}
+.bom-root-summary>div>small{font-size:12px;color:var(--muted);display:block;margin-bottom:7px;}
+.bom-root-summary strong{font-size:16px;font-weight:600;line-height:1.5;}
+.bom-root-summary strong.bom-unknown{font-size:13px;font-weight:400;}
+.bom-source-inline{margin-left:5px;font-size:10px;padding:2px 5px;border-radius:4px;background:var(--panel2);}
+.bom-negative{color:#ffb2b8;}.bom-unknown{color:var(--muted);font-size:12px;font-weight:400;}
+.bom-root-summary strong small,.analysis-bom-node summary small:not(.bom-source):not(.bom-mobile-label){font-size:11px;color:var(--muted);font-weight:400;}
+.bom-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:24px;}
+.bom-section-heading h3{margin:0;font-size:14px;}.bom-section-heading>span{font-size:11px;color:var(--muted);}
+.bom-count{display:inline-grid;place-items:center;background:var(--panel2);color:var(--muted);font-size:11px;min-width:21px;padding:1px 5px;border-radius:5px;margin-left:5px;}
+.bom-detail-note{font-size:12px;color:var(--muted);margin:8px 0 14px;line-height:1.5;}
+.bom-comparison-head,.analysis-bom-node>summary{display:grid;grid-template-columns:minmax(200px,1fr) 110px 120px 130px;gap:12px;align-items:center;}
+.bom-comparison-head{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;}
+.bom-comparison-head>span:not(:first-child){text-align:right;}
+.analysis-bom-node{border-bottom:1px solid var(--line);margin:0;}
+.analysis-bom-node>summary{padding:12px;cursor:pointer;list-style:none;border-radius:5px;}
+.analysis-bom-node>summary::-webkit-details-marker{display:none;}
+.analysis-bom-node>summary:hover{background:var(--panel);}
+.analysis-bom-node[open]>summary{background:var(--panel);}
+.bom-item-name{display:flex;align-items:center;gap:9px;min-width:0;}
+.bom-item-name strong{display:block;font-size:13px;line-height:1.5;font-weight:600;}
+.bom-item-name small{display:block;margin-top:3px;line-height:1.4;}
+.bom-node-chevron{font-size:20px;color:var(--muted);transition:transform 150ms;}
+.analysis-bom-node[open]>summary .bom-node-chevron{transform:rotate(90deg);}
+.bom-qty,.bom-physical,.bom-balance{text-align:right;font-size:13px;font-variant-numeric:tabular-nums;}
+.bom-source{display:block;font-size:10px;color:var(--muted);margin-top:3px;}
+.bom-mobile-label{display:none;}
+.bom-node-detail{padding:0 12px 12px 36px;}
+.bom-production-note{font-size:12px;color:var(--muted);margin:8px 0;}
+.analysis-bom-children{border-left:1px solid var(--line);margin-top:14px;padding-left:12px;}
+.analysis-bom-actions{margin:8px 0 12px;align-items:center;}
+.analysis-bom-actions summary{font-size:12px;}
+.analysis-bom-actions li{padding:3px 0;}.analysis-bom-actions li>span{color:var(--muted);margin-right:8px;}
+@media(max-width:1100px){.bom-comparison-head,.analysis-bom-node>summary{grid-template-columns:minmax(140px,1fr) 80px 100px 110px;gap:8px;}.bom-root-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.bom-root-summary>div:nth-child(2){border-right:0;}.bom-root-summary>div:nth-child(-n+2){border-bottom:1px solid var(--line);}}
+@media(max-width:800px){.analysis-expansion-content{width:calc(100vw - 110px);min-width:0;}.bom-comparison-head{display:none;}.analysis-bom-node>summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}.bom-item-name{grid-column:1/-1;}.bom-mobile-label{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;}.bom-qty,.bom-physical,.bom-balance{text-align:left;}.bom-root-summary>div{padding:10px;}.bom-root-summary strong{font-size:14px;}.bom-section-heading{align-items:start;flex-direction:column;gap:4px;}.bom-node-detail{padding-left:12px;}.analysis-bom-children{padding-left:8px;}}
