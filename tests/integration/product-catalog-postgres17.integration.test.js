@@ -96,7 +96,7 @@ test('histórico Tiny usa usuário e data persistidos e ignora prévias e import
  assert.equal((await getLastTinyStockUpdate()).username,'lucas');
 });
 import {listProducts,listStock} from '../../server/product-catalog.js';
-function planningWorkbook({physical=10,outgoing=3,incoming=5,virtual=12,period=20,average=2}={}){const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([['Produto','Código (SKU)',null,null,'Un',null,'Entradas previstas','Saídas previstas','Estoque físico','Estoque virtual',null,null,'Saídas do período','Média mensal'],['Produto','METRICS',null,null,'UN',null,incoming,outgoing,physical,virtual,null,null,period,average]]),'Sheet1');return XLSX.write(book,{type:'buffer',bookType:'xlsx'});}
+function planningWorkbook({physical=10,outgoing=3,incoming=5,virtual=12,period=20,average=2}={}){const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([['Produto','Código (SKU)',null,null,'Un',null,'Entradas previstas','Saídas previstas','Estoque físico','Estoque virtual','Estoque mínimo',null,'Saídas do período','Média mensal'],['Produto','METRICS',null,null,'UN',null,incoming,outgoing,physical,virtual,period*3,null,999,average]]),'Sheet1');return XLSX.write(book,{type:'buffer',bookType:'xlsx'});}
 test('planejamento usa só o último snapshot confirmado por produto e não soma importações',async()=>{
  await createProduct({sku:'METRICS',description:'Métricas',family:'componentes',itemType:'Componente',unit:'UN',tinyImportEnabled:true},'tiny.test');
  const options={actor:'tiny.test',fileName:'metrics.xlsx',requestId:'1'.repeat(32)};

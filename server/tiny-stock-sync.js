@@ -18,7 +18,7 @@ export function parseTinyStock(buffer) {
     const key=sku.replace(/[a-z]/g,letter=>letter.toUpperCase());
     if(!sku||seen.has(key)||typeof quantity!=='number'||!Number.isFinite(quantity)||Math.abs(quantity)>=1e12)throw new CatalogError(`Linha ${index+1}: SKU ausente/duplicado ou estoque inválido. Nenhum saldo foi alterado.`);
     const metrics={};
-    for(const [field,column]of metricColumns){const value=row[column];if(value!==null&&value!==''&&(typeof value!=='number'||!Number.isFinite(value)||Math.abs(value)>=1e12))throw new CatalogError(`Linha ${index+1}: informação de planejamento inválida. Nenhum saldo foi alterado.`);metrics[field]=value===null||value===''?null:value;}
+    for(const [field,column]of metricColumns){const value=row[column];if(value!==null&&value!==''&&(typeof value!=='number'||!Number.isFinite(value)||Math.abs(value)>=1e12))throw new CatalogError(`Linha ${index+1}: informação de planejamento inválida. Nenhum saldo foi alterado.`);metrics[field]=value===null||value===''?null:(field==='period_outgoing_quantity'?value/3:value);if(field==='period_outgoing_quantity'){metrics.period_outgoing_rule='tiny_minimum_div3';metrics.period_minimum_source=value===null||value===''?null:value;}}
     seen.add(key);items.push({sku,quantity,...(metricColumns.length?{metrics}:{})});
   }
   if(!items.length)throw new CatalogError('Planilha sem itens.');
@@ -49,6 +49,8 @@ export async function syncTinyStock(buffer,{actor,fileName,requestId,preview=fal
       if(!fields.length){result.disabled++;result.disabledItems.push(detail);continue;}
       const old=(await client.query('SELECT physical_quantity,version FROM public.product_stock_balances WHERE product_id=$1 FOR UPDATE',[product.id])).rows[0];
       const metrics=Object.fromEntries(TINY_STOCK_METRICS.map(([key])=>[key,fields.includes(key)?(item.metrics?.[key]??null):(product[key]??null)]));
+      metrics.period_outgoing_rule=fields.includes('period_outgoing_quantity')?(item.metrics?.period_outgoing_rule??null):(product.period_outgoing_rule??null);
+      if(fields.includes('period_outgoing_quantity'))metrics.period_minimum_source=item.metrics?.period_minimum_source??null;
       if(Array.isArray(product.source_metadata?.tinyImportFields))for(const field of fields){if(field!=='physical_quantity'&&item.metrics?.[field]==null)throw new CatalogError(`SKU ${item.sku}: coluna Tiny selecionada ausente ou vazia (${field}). Nenhum dado foi alterado.`);}
       result.changes.push({productId:product.id,sku:item.sku,description:product.description,productVersion:product.version,stockVersion:old?.version??null,previous:old?.physical_quantity??null,current:fields.includes('physical_quantity')?item.quantity:(old?.physical_quantity??null),fields,previousMetrics:Object.fromEntries(TINY_STOCK_METRICS.map(([key])=>[key,product[key]??null])),metrics});result.updated++;
     }
