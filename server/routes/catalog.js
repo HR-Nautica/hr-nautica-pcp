@@ -3,11 +3,14 @@ import { addBomLine, addRoutingStep, CatalogError, createProduct, deactivateProd
 
 const router=Router();
 import {setProductStatus} from '../product-catalog.js';
+import { getHeliceAnalysis, saveCoverageParameters } from '../helice-analysis.js';
 const actor=req=>String(req.auth?.username||"").slice(0,100);
 const admin=(req,res,next)=>req.auth?.role==="admin"?next():res.status(403).json({ok:false,error:"Permissão de administrador obrigatória."});
 const reply=(error,res,next)=>error instanceof CatalogError?res.status(error.status).json({ok:false,code:error.code,error:error.message}):next(error);
 
 router.use(admin);
+router.get('/analysis/helices',async(_req,res,next)=>{try{res.json({ok:true,...await getHeliceAnalysis()});}catch(error){reply(error,res,next);}});
+router.put('/analysis/helices/parameters',async(req,res,next)=>{try{res.json({ok:true,...await saveCoverageParameters(req.body,actor(req))});}catch(error){reply(error,res,next);}});
 router.get("/products",async(req,res,next)=>{try{res.json({ok:true,...await listProducts(req.query)});}catch(e){reply(e,res,next);}});
 router.post("/products",async(req,res,next)=>{try{res.status(201).json({ok:true,product:await createProduct(req.body,actor(req))});}catch(e){reply(e,res,next);}});
 router.get("/products/:id",async(req,res,next)=>{try{res.json({ok:true,...await getProduct(req.params.id)});}catch(e){reply(e,res,next);}});
@@ -35,5 +38,5 @@ for(const preview of [true,false])router.post(preview?'/stock/preview':'/stock/s
  const encoded=String(req.body?.fileBase64||'');
  if(!encoded||encoded.length>20000000||!/^[A-Za-z0-9+/=]+$/.test(encoded))throw new CatalogError('Arquivo inválido ou maior que o limite permitido.');
  if(!preview&&!/^[0-9a-f]{64}$/.test(String(req.body?.expectedPlan||'')))throw new CatalogError('Analise a planilha antes de confirmar.');
- res.json({ok:true,...await syncTinyStock(Buffer.from(encoded,'base64'),{actor:actor(req),fileName:req.body?.fileName,requestId:req.body?.requestId,preview,expectedPlan:req.body?.expectedPlan})});
+ res.json({ok:true,...await syncTinyStock(Buffer.from(encoded,'base64'),{actor:actor(req),fileName:req.body?.fileName,requestId:req.body?.requestId,preview,expectedPlan:req.body?.expectedPlan,scope:req.body?.scope??'all'})});
 }catch(error){reply(error,res,next);}});
