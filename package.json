@@ -43,7 +43,7 @@
     "proxy:test": "node --test tests/proxy/proxy-auth.test.js",
     "release:test": "node --test tests/server/release.test.js",
     "infra:test": "node --test tests/infra/deploy-config.test.js",
-    "state:test": "node --check server/migration-gate.js && node --check server/component-routing-import.js && node --test tests/server/migration-gate.test.js tests/server/product-foundation-import.test.js tests/server/component-routing-import.test.js tests/server/bom-tree.test.js tests/server/stock-planning.test.js tests/server/helice-coverage.test.js tests/client/new-erp-ui.test.js tests/client/stock-column-sort.test.js",
+    "state:test": "node --check server/migration-gate.js && node --check server/component-routing-import.js && node --test tests/server/migration-gate.test.js tests/server/product-foundation-import.test.js tests/server/component-routing-import.test.js tests/server/bom-tree.test.js tests/server/stock-planning.test.js tests/server/helice-coverage.test.js tests/client/new-erp-ui.test.js tests/client/stock-column-sort.test.js tests/client/helice-table-view.test.js",
     "test:ci": "npm run check && npm run state:test && npm run db:migrate:test && npm run api:strict:test && npm run auth:test && npm run health:test && npm run proxy:test && npm run release:test && npm run infra:test",
     "db:audit": "node scripts/audit-database.js",
     "db:compact-audit": "node scripts/compact-audit-log.js --apply",
