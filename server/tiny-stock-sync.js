@@ -4,6 +4,7 @@ import { transaction, withConnection } from './database.js';
 import { CatalogError } from './product-catalog.js';
 import { TINY_STOCK_METRICS, attachTinyStockMetrics } from './tiny-stock-metrics.js';
 import { tinyImportFields } from './tiny-import-policy.js';
+import { TINY_SCOPES, productInTinyScope } from './tiny-stock-scope.js';
 export function parseTinyStock(buffer) {
   let workbook;
   try { workbook=XLSX.read(buffer,{type:'buffer'}); } catch { throw new CatalogError('Planilha inválida.'); }
@@ -27,22 +28,24 @@ export function parseTinyStock(buffer) {
 export async function getLastTinyStockUpdate(){
   return withConnection(async client=>(await client.query(`SELECT imported_by AS username,imported_at AS "updatedAt",source_name AS "fileName",item_count AS count FROM public.product_catalog_imports WHERE source_schema='tiny_stock_v1' AND status='completed' AND item_count>0 ORDER BY imported_at DESC,id DESC LIMIT 1`)).rows[0]||null);
 }
-export async function syncTinyStock(buffer,{actor,fileName,requestId,preview=false,expectedPlan}){
+export async function syncTinyStock(buffer,{actor,fileName,requestId,preview=false,expectedPlan,scope='all'}){
+  if(!TINY_SCOPES.includes(scope))throw new CatalogError('Família de sincronização inválida.');
   if(!/^[0-9a-f]{32}$/i.test(String(requestId||'')))throw new CatalogError('Identificador de sincronização inválido.');
   const items=parseTinyStock(buffer);const fileChecksum=createHash('sha256').update(buffer).digest('hex');
-  const checksum=createHash('sha256').update(requestId+fileChecksum).digest('hex');
+  const checksum=createHash('sha256').update(requestId+fileChecksum+(scope==='all'?'':':'+scope)).digest('hex');
   return transaction(async client=>{
     await client.query("SELECT pg_advisory_xact_lock(hashtext('tiny-stock-sync'))");
     await client.query('LOCK TABLE public.master_items IN SHARE ROW EXCLUSIVE MODE');
     const previous=(await client.query('SELECT result,imported_by,imported_at,source_name,item_count FROM public.product_catalog_imports WHERE checksum=$1',[checksum])).rows[0];
     if(previous)return {...previous.result,idempotent:true,lastUpdate:{username:previous.imported_by,updatedAt:previous.imported_at,fileName:previous.source_name,count:previous.item_count}};
-    const result={updated:0,disabled:0,inactive:0,unknown:[],changes:[],disabledItems:[],inactiveItems:[],checksum,fileChecksum,requestId};
-    const catalog=(await client.query('SELECT id,primary_sku_normalized,description,version,tiny_import_enabled,source_metadata,status FROM public.master_items WHERE primary_sku_normalized=ANY($1::text[]) ORDER BY id FOR UPDATE',[items.map(item=>item.sku.replace(/[a-z]/g,letter=>letter.toUpperCase()))])).rows;
+    const result={updated:0,disabled:0,inactive:0,unknown:[],changes:[],disabledItems:[],inactiveItems:[],checksum,fileChecksum,requestId,...(scope==='all'?{}:{scope,outOfScope:0})};
+    const catalog=(await client.query('SELECT id,primary_sku_normalized,description,version,tiny_import_enabled,source_metadata,status,item_type,family FROM public.master_items WHERE primary_sku_normalized=ANY($1::text[]) ORDER BY id FOR UPDATE',[items.map(item=>item.sku.replace(/[a-z]/g,letter=>letter.toUpperCase()))])).rows;
     await attachTinyStockMetrics(client,catalog);
     const bySku=new Map(catalog.map(product=>[product.primary_sku_normalized,product]));
     for(const item of items){
       const product=bySku.get(item.sku.replace(/[a-z]/g,letter=>letter.toUpperCase()));
       if(!product){result.unknown.push(item.sku);continue;}
+      if(!productInTinyScope(product,scope)){result.outOfScope++;continue;}
       const detail={sku:item.sku,description:product.description};
       if(product.status!=='active'){result.inactive++;result.inactiveItems.push(detail);continue;}
       const fields=tinyImportFields(product);

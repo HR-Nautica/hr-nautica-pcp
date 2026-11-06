@@ -23,6 +23,21 @@ before(async () => { admin = await connect(); });
 beforeEach(reset);
 after(async () => { await closeDatabase(); await admin.end(); });
 
+import {getHeliceAnalysis,saveCoverageParameters} from '../../server/helice-analysis.js';
+test('análise considera só hélices usinadas ativas e parâmetros persistem com conflito e auditoria',async()=>{
+  for(const [sku,itemType,family,status] of [['USINADA','Hélice usinada','helices','active'],['BRUTO','Hélice bruta','brutos','active'],['INATIVA','Hélice usinada','helices','inactive'],['COMP','Componente','componentes','active']])
+    await createProduct({sku,itemType,family,status,description:sku,unit:'UN'},'analysis.test');
+  const initial=await getHeliceAnalysis();
+  assert.deepEqual(initial.items.map(i=>i.primary_sku),['USINADA']);
+  assert.equal(initial.version,0);assert.equal(initial.items[0].physical_quantity,null);
+  const saved=await saveCoverageParameters({parameters:{targetMonths:4,averageFactor:1,productionMonths:3},version:0},'analysis.test');
+  assert.equal(saved.version,1);assert.equal((await getHeliceAnalysis()).parameters.targetMonths,4);
+  await assert.rejects(saveCoverageParameters({parameters:{targetMonths:2,averageFactor:1,productionMonths:3},version:0},'other'),e=>e.code==='COVERAGE_VERSION_CONFLICT');
+  const audit=await admin.query("SELECT actor,payload FROM public.audit_log WHERE state_key='hrn_helice_coverage_v1'");
+  assert.equal(audit.rows.length,1);assert.equal(audit.rows[0].actor,'analysis.test');
+  assert.equal(JSON.parse(audit.rows[0].payload).parameters.targetMonths,4);
+});
+
 test("editar campos do produto sem trocar SKU nao exige historico, e trocar SKU registra historico", async () => {
   const initial = await createProduct({
     sku: "SKU-INICIAL", family: "componentes", description: "Componente",
@@ -51,6 +66,21 @@ test("editar campos do produto sem trocar SKU nao exige historico, e trocar SKU 
 import XLSX from 'xlsx';
 import { syncTinyStock, parseTinyStock } from '../../server/tiny-stock-sync.js';
 function stockWorkbook(rows){const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([['Produto','Código (SKU)',null,null,null,null,null,null,'Estoque físico'],...rows.map(([sku,quantity])=>['Produto',sku,null,null,null,null,null,null,quantity])]),'Sheet1');return XLSX.write(book,{type:'buffer',bookType:'xlsx'});}
+
+test('sincronização pela análise não altera outras famílias e prévia obsoleta não grava',async()=>{
+  for(const [sku,itemType,family] of [['USINADA','Hélice usinada','helices'],['BRUTO','Hélice bruta','brutos']])
+    await createProduct({sku,itemType,family,description:sku,unit:'UN',tinyImportFields:['physical_quantity']},'analysis.test');
+  await admin.query('UPDATE public.product_stock_balances SET physical_quantity=10');
+  const file=stockWorkbook([['USINADA',20],['BRUTO',999]]),options={actor:'analysis.test',fileName:'tiny.xlsx',requestId:'b'.repeat(32),scope:'helices'};
+  const preview=await syncTinyStock(file,{...options,preview:true});
+  assert.equal(preview.updated,1);assert.equal(preview.outOfScope,1);
+  await assert.rejects(syncTinyStock(file,{...options,scope:'all',expectedPlan:preview.planChecksum}),e=>e.code==='TINY_PREVIEW_STALE');
+  const saved=await syncTinyStock(file,{...options,expectedPlan:preview.planChecksum});
+  assert.equal(saved.updated,1);
+  const stocks=(await admin.query('SELECT i.primary_sku,s.physical_quantity::float quantity FROM public.master_items i JOIN public.product_stock_balances s ON s.product_id=i.id ORDER BY i.primary_sku')).rows;
+  assert.deepEqual(stocks,[{primary_sku:'BRUTO',quantity:10},{primary_sku:'USINADA',quantity:20}]);
+  assert.equal((await syncTinyStock(file,{...options,expectedPlan:preview.planChecksum})).idempotent,true);
+});
 test('Tiny substitui apenas saldo autorizado ativo e registra snapshot atomicamente',async()=>{
  const products=[];
  for(const [sku,tiny,status] of [['ATIVO',true,'active'],['PROTEGIDO',false,'active'],['INATIVO',true,'inactive']]) products.push(await createProduct({sku,description:sku,family:'componentes',itemType:'Componente',unit:'UN',tinyImportEnabled:tiny,status},'tiny.test'));

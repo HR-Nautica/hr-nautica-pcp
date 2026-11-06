@@ -11,3 +11,24 @@
 .stock-table th .stock-sort:hover,.stock-table th[aria-sort="ascending"] .stock-sort,.stock-table th[aria-sort="descending"] .stock-sort{color:var(--hr-accent,#34a3ff);}
 .stock-table th .stock-sort:focus-visible{outline:2px solid var(--hr-accent,#34a3ff);outline-offset:4px;}
 .stock-sort-arrow{flex-shrink:0;font-size:14px;letter-spacing:0;}
+
+.analysis-controls{padding:16px;margin-bottom:16px;}
+#coverage-parameters{display:flex;align-items:end;gap:12px;flex-wrap:wrap;}
+#coverage-parameters label{flex:1 1 160px;margin:0;max-width:240px;}
+#coverage-parameters button{min-height:42px;}
+.analysis-search{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-top:12px;}
+.analysis-search label{flex:1;max-width:600px;margin:0;}
+.analysis-search>span,.analysis-hint,.analysis-formulas{font-size:13px;color:var(--muted);line-height:1.6;}
+.analysis-formulas{margin:12px 0;max-width:1050px;}
+.analysis-formulas summary{cursor:pointer;color:var(--text);}
+.helice-analysis-table{min-width:2300px;table-layout:auto;}
+.helice-analysis-table th{white-space:normal;min-width:115px;max-width:170px;line-height:1.45;}
+.helice-analysis-table th .stock-sort{min-height:48px;}
+.helice-analysis-table th .stock-sort span:first-child{min-width:0;overflow-wrap:anywhere;}
+.helice-analysis-table td.stock-number{text-align:right;font-variant-numeric:tabular-nums;}
+.helice-analysis-table th:nth-child(2),.helice-analysis-table td:nth-child(2){min-width:280px;max-width:340px;white-space:normal;}
+.helice-analysis-table .is-unknown{color:var(--muted);}
+.analysis-product-link{display:block;background:transparent;border:0;padding:0;color:var(--text);font:inherit;font-weight:600;text-align:left;white-space:normal;}
+.analysis-product-link:hover{color:var(--accent);text-decoration:underline;}
+.analysis-product-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;}
+@media(max-width:600px){#coverage-parameters label{max-width:none;flex-basis:100%;}#coverage-parameters button{width:100%;}.analysis-search{align-items:stretch;flex-direction:column;gap:8px;}}
