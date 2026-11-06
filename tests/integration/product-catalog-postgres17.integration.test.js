@@ -23,8 +23,61 @@ before(async () => { admin = await connect(); });
 beforeEach(reset);
 after(async () => { await closeDatabase(); await admin.end(); });
 
-import {getHeliceAnalysis,getHeliceStructure,saveCoverageParameters} from '../../server/helice-analysis.js';
+import {getHeliceAnalysis,getHeliceStructure,saveCoverageParameters,previewHeliceOrder,openHeliceOrder,listHeliceOrders} from '../../server/helice-analysis.js';
 import {addBomLine} from '../../server/product-catalog.js';
+
+async function orderFixture(){
+  const product=await createProduct({sku:'HE',description:'Hélice teste',itemType:'Hélice usinada',family:'helices',unit:'UN',tinyImportFields:['physical_quantity','expected_outgoing_quantity','monthly_average']},'test');
+  const raw=await createProduct({sku:'BR',description:'Bruto teste',itemType:'Hélice bruta',family:'brutos',unit:'UN'},'test');
+  const bushing=await createProduct({sku:'BU',description:'Bucha teste',itemType:'Bucha',family:'buchas',unit:'UN'},'test');
+  await addBomLine(product.id,{childProductId:raw.id,quantity:2,unit:'UN'},'test');
+  await addBomLine(product.id,{childProductId:bushing.id,quantity:1,unit:'UN'},'test');
+  await admin.query('UPDATE public.product_stock_balances SET physical_quantity=10 WHERE product_id=$1',[raw.id]);
+  await admin.query('UPDATE public.product_stock_balances SET physical_quantity=25 WHERE product_id=$1',[bushing.id]);
+  const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([['Produto','Código (SKU)',null,null,null,null,null,'Saídas previstas','Estoque físico','Média mensal'],['Hélice','HE',null,null,null,null,null,16,6,5]]),'Tiny');
+  await syncTinyStock(XLSX.write(book,{type:'buffer',bookType:'xlsx'}),{actor:'test',fileName:'tiny.xlsx',requestId:'1'.repeat(32)});
+  return {product,raw,bushing};
+}
+test('nova OP consome apenas bruto uma vez e atualiza produção prevista sem creditar hélice',async()=>{
+  const {product,raw,bushing}=await orderFixture(),preview=await previewHeliceOrder(product.id,3);
+  await admin.query("INSERT INTO public.helice_production_orders(source_key,source_file,source_sheet,source_row,description,sku,quantity) VALUES('old','old.xlsx','Old',1,'Antiga','HE',999)");
+  assert.equal(preview.canOpen,true);assert.equal(Number(preview.raws[0].required),6);
+  assert.equal((await listHeliceOrders()).length,0);
+  const input={quantity:3,requestId:'a'.repeat(32),expectedPlan:preview.planToken};
+  const opened=await openHeliceOrder(product.id,input,'operador');assert.equal(opened.order.number,'OPH-000001');
+  const again=await openHeliceOrder(product.id,input,'operador');assert.equal(again.idempotent,true);assert.equal(again.order.id,opened.order.id);
+  const stocks=(await admin.query('SELECT product_id,physical_quantity::float quantity FROM public.product_stock_balances')).rows;
+  assert.equal(stocks.find(row=>row.product_id===raw.id).quantity,4);assert.equal(stocks.find(row=>row.product_id===bushing.id).quantity,25);assert.equal(stocks.find(row=>row.product_id===product.id).quantity,6);
+  const analysis=(await getHeliceAnalysis()).items[0];assert.equal(analysis.incoming_quantity,3);assert.equal(analysis.virtual_quantity,-7);assert.equal(analysis.open_orders.length,1);
+  const structure=await getHeliceStructure(product.id);assert.equal(structure.product.open_orders[0].id,opened.order.id);
+  assert.equal(Number(structure.bomTree.find(node=>node.item.id===raw.id).item.physical_quantity),4);
+  assert.equal((await admin.query("SELECT count(*)::int total FROM public.audit_log WHERE action='OPEN_OP'")).rows[0].total,1);
+  await syncTinyStock(XLSX.write((()=>{const b=XLSX.utils.book_new();XLSX.utils.book_append_sheet(b,XLSX.utils.aoa_to_sheet([['Produto','Código (SKU)',null,null,null,null,null,'Saídas previstas','Estoque físico','Média mensal'],['Hélice','HE',null,null,null,null,null,16,6,5]]),'Tiny');return b;})(),{type:'buffer',bookType:'xlsx'}),{actor:'test',fileName:'tiny.xlsx',requestId:'2'.repeat(32)});
+  assert.equal((await getHeliceAnalysis()).items[0].incoming_quantity,3);
+});
+test('falta de bruto, produto inativo e prévia obsoleta bloqueiam OP sem baixa parcial',async()=>{
+  const {product,raw}=await orderFixture();
+  const shortage=await previewHeliceOrder(product.id,6);assert.equal(shortage.canOpen,false);assert.match(shortage.issues.join(' '),/falta/);
+  await assert.rejects(openHeliceOrder(product.id,{quantity:6,requestId:'b'.repeat(32),expectedPlan:shortage.planToken},'test'),error=>error.code==='RAW_STOCK_UNAVAILABLE');
+  const preview=await previewHeliceOrder(product.id,3);await admin.query('UPDATE public.product_stock_balances SET physical_quantity=9,version=version+1 WHERE product_id=$1',[raw.id]);
+  await assert.rejects(openHeliceOrder(product.id,{quantity:3,requestId:'c'.repeat(32),expectedPlan:preview.planToken},'test'),error=>error.code==='OP_PREVIEW_STALE');
+  await admin.query("UPDATE public.master_items SET status='inactive',version=version+1 WHERE id=$1",[product.id]);
+  await assert.rejects(previewHeliceOrder(product.id,3),error=>error.code==='PRODUCT_INACTIVE');
+  assert.equal((await listHeliceOrders()).length,0);assert.equal(Number((await admin.query('SELECT physical_quantity FROM public.product_stock_balances WHERE product_id=$1',[raw.id])).rows[0].physical_quantity),9);
+});
+test('duas aberturas concorrentes não consomem o mesmo saldo',async()=>{
+  const {product,raw}=await orderFixture(),preview=await previewHeliceOrder(product.id,3);
+  const results=await Promise.allSettled(['d','e'].map(letter=>openHeliceOrder(product.id,{quantity:3,requestId:letter.repeat(32),expectedPlan:preview.planToken},letter)));
+  assert.equal(results.filter(result=>result.status==='fulfilled').length,1);assert.equal((await listHeliceOrders()).length,1);
+  assert.equal(Number((await admin.query('SELECT physical_quantity FROM public.product_stock_balances WHERE product_id=$1',[raw.id])).rows[0].physical_quantity),4);
+});
+test('falha na auditoria reverte ordem, contador e baixa de bruto juntos',async()=>{
+  const {product,raw}=await orderFixture(),preview=await previewHeliceOrder(product.id,3);
+  await admin.query("ALTER TABLE public.audit_log ADD CONSTRAINT reject_new_op CHECK(action<>'OPEN_OP')");
+  await assert.rejects(openHeliceOrder(product.id,{quantity:3,requestId:'f'.repeat(32),expectedPlan:preview.planToken},'test'));
+  assert.equal((await listHeliceOrders()).length,0);assert.equal(Number((await admin.query('SELECT physical_quantity FROM public.product_stock_balances WHERE product_id=$1',[raw.id])).rows[0].physical_quantity),10);
+  assert.equal((await admin.query("SELECT count(*)::int total FROM public.app_state WHERE key='hrn_helice_order_counter_v1'")).rows[0].total,0);
+});
 test('expansão da hélice lê estoques por ID e preserva a hierarquia real sem criar entradas',async()=>{
   const root=await createProduct({sku:'HE',description:'Hélice',itemType:'Hélice usinada',family:'helices',unit:'UN'},'test');
   const raw=await createProduct({sku:'BR',description:'Bruto',itemType:'Hélice bruta',family:'brutos',unit:'UN'},'test');
@@ -37,7 +90,7 @@ test('expansão da hélice lê estoques por ID e preserva a hierarquia real sem 
   assert.equal(result.bomTree.length,1);const node=result.bomTree[0];assert.equal(node.item.id,raw.id);
   assert.equal(Number(node.item.physical_quantity),7);assert.equal(node.item.stock_one_quantity,null);
   assert.equal(node.children[0].item.id,material.id);assert.equal(Number(node.children[0].quantity),2);
-  assert.equal(node.item.incoming_quantity,null);assert.deepEqual(node.item.open_orders,[]);assert.equal(result.ordersAvailable,false);
+  assert.equal(node.item.incoming_quantity,null);assert.deepEqual(node.item.open_orders,[]);assert.equal(result.ordersAvailable,true);
   assert.equal((await admin.query('SELECT count(*)::int total FROM public.product_catalog_imports')).rows[0].total,0);
   await assert.rejects(getHeliceStructure(raw.id),error=>error.code==='ANALYSIS_PRODUCT_INVALID');
 });

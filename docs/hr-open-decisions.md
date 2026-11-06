@@ -8,13 +8,13 @@ Nenhum item abaixo autoriza que o agente escolha a regra sem aprovação. Ao imp
 - **Nova intenção expressa:** “Criar OP é só pra acompanhar a produção.”
 - **Opções de negócio:** (A) consumo ao criar; (B) reserva ao criar + consumo ao iniciar; (C) consumo ao iniciar sem reserva; (D) movimento manual apontado na execução.
 - **Critérios para decidir:** quando o estoque deixa fisicamente o almoxarifado, se reserva existe, o que acontece em cancelamento, edição, parcial e falta de insumo.
-- **Status:** PENDENTE; preservar produção atual até instrução explícita.
+- **Decisão para o novo fluxo, 06/11/2026:** consumir somente hélices brutas diretamente vinculadas na BOM ao abrir a OP. Não consumir buchas. Sem bruto ou saldo insuficiente: bloquear e informar a falta. Baixa e abertura precisam ser atômicas e idempotentes. Fluxo legado permanece isolado; regras de execução, estorno e cancelamento serão definidas nas próximas etapas.
 
 ## D-002 — Entradas previstas do Excel versus OPs ativas
 
 - A planilha de necessidade pode conter `Entradas previstas`; o V.I.N.I. também considera OPs ativas.
 - É necessário determinar se representam o mesmo fornecimento, itens diferentes ou períodos distintos.
-- **Status:** PENDENTE; evitar dupla contagem e não substituir uma pela outra por suposição.
+- **Novo fluxo:** entradas previstas são a soma das novas OPs abertas por ID do produto; entradas Tiny e OPs legadas ficam excluídas. Importar Tiny não apaga OP nem duplica produção. Fluxos legados mantêm suas regras até migração explícita.
 
 ## D-003 — Parâmetros de planejamento
 
