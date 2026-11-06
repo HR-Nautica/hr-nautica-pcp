@@ -3,13 +3,14 @@ import { addBomLine, addRoutingStep, CatalogError, createProduct, deactivateProd
 
 const router=Router();
 import {setProductStatus} from '../product-catalog.js';
-import { getHeliceAnalysis, saveCoverageParameters } from '../helice-analysis.js';
+import { getHeliceAnalysis, getHeliceStructure, saveCoverageParameters } from '../helice-analysis.js';
 const actor=req=>String(req.auth?.username||"").slice(0,100);
 const admin=(req,res,next)=>req.auth?.role==="admin"?next():res.status(403).json({ok:false,error:"Permissão de administrador obrigatória."});
 const reply=(error,res,next)=>error instanceof CatalogError?res.status(error.status).json({ok:false,code:error.code,error:error.message}):next(error);
 
 router.use(admin);
 router.get('/analysis/helices',async(_req,res,next)=>{try{res.json({ok:true,...await getHeliceAnalysis()});}catch(error){reply(error,res,next);}});
+router.get('/analysis/helices/:id/structure',async(req,res,next)=>{try{res.json({ok:true,...await getHeliceStructure(req.params.id)});}catch(error){reply(error,res,next);}});
 router.put('/analysis/helices/parameters',async(req,res,next)=>{try{res.json({ok:true,...await saveCoverageParameters(req.body,actor(req))});}catch(error){reply(error,res,next);}});
 router.get("/products",async(req,res,next)=>{try{res.json({ok:true,...await listProducts(req.query)});}catch(e){reply(e,res,next);}});
 router.post("/products",async(req,res,next)=>{try{res.status(201).json({ok:true,product:await createProduct(req.body,actor(req))});}catch(e){reply(e,res,next);}});

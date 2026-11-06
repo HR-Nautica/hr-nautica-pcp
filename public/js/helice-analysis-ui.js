@@ -2,7 +2,19 @@
 function installAnalysisSync(page) {
   const scopes = { 'analysis-helice': 'helices', 'analysis-brutos': 'brutos', 'analysis-buchas': 'buchas', 'analysis-componentes': 'componentes' };
   $('page-actions').innerHTML = '<button class="secondary" id="analysis-sync">Sincronizar Tiny</button>';
-  $('analysis-sync').onclick = () => renderStockSync({ scope: scopes[page], returnPage: page });
+  $('analysis-sync').onclick = () => {
+    if(page!=='analysis-helice')return renderStockSync({scope:scopes[page],returnPage:page});
+    document.querySelectorAll('nav button[data-page]').forEach(button=>button.classList.toggle('active',button.dataset.page==='sync'));
+    document.querySelectorAll('.nav-category').forEach(category=>{const open=category.getAttribute('aria-controls')==='nav-suprimentos';category.setAttribute('aria-expanded',String(open));$(category.getAttribute('aria-controls')).hidden=!open;});
+    render();
+  };
+}
+
+function analysisStructureMarkup(payload,quantity) {
+  const stock=item=>`<div class="analysis-bom-stocks"><div><small>Estoque físico</small><strong>${quantity(item.physical_quantity)} ${escapeHtml(item.unit)}</strong><small>Fonte: ${item.stock_authority==='tiny_import'?'Tiny':'ERP'}</small></div><div><small>Saldo após vendido</small><strong>${quantity(item.stock_one_quantity)} ${escapeHtml(item.unit)}</strong><small>Físico − vendido; não inclui reservas</small></div><div><small>Entradas em produção</small><strong>${item.incoming_quantity==null?'—':quantity(item.incoming_quantity)}</strong><small>Somente novas OPs</small></div><div><small>OPs abertas · Etapa atual</small><strong>—</strong><small>Novas OPs ainda não cadastradas</small></div></div>`;
+  const itemMarkup=item=>`${item.status==='inactive'?'<span class="badge warn">Produto inativo</span>':''}${stock(item)}<div class="analysis-bom-actions"><button class="secondary" data-structure-product="${escapeHtml(item.id)}">Abrir ficha do produto</button><details><summary>Roteiro cadastrado (${item.routing.length})</summary>${item.routing.length?`<ol>${item.routing.map(step=>`<li>${escapeHtml(step.code)} — ${escapeHtml(step.name)}</li>`).join('')}</ol>`:'<p>Nenhuma etapa cadastrada.</p>'}<small>Roteiro de fabricação; não representa etapas já executadas.</small></details></div>`;
+  const nodes=items=>items.map(node=>`<details class="analysis-bom-node" open><summary><strong>${escapeHtml(node.item.primary_sku)} — ${escapeHtml(node.item.description)}</strong><span>${node.quantity==null?'Quantidade da BOM pendente':`${quantity(node.quantity)} ${escapeHtml(node.unit)} por unidade do pai`}</span></summary>${itemMarkup(node.item)}${node.children.length?`<div class="analysis-bom-children">${nodes(node.children)}</div>`:''}</details>`).join('');
+  return `<div class="analysis-expansion-content"><h3>Produto analisado · ${escapeHtml(payload.product.primary_sku)}</h3>${itemMarkup(payload.product)}<h3>Estrutura de materiais (BOM)</h3><p class="analysis-hint">Estoque é a posição do item, não uma quantidade reservada para esta hélice. Expanda os componentes para consultar seus dados.</p>${payload.bomTree.length?nodes(payload.bomTree):'<p class="analysis-hint">Nenhum componente vinculado à BOM deste produto.</p>'}</div>`;
 }
 
 async function renderHeliceAnalysis() {
@@ -21,6 +33,7 @@ async function renderHeliceAnalysis() {
   let visible = HeliceTableView.visibleColumns(labels.map(([,key])=>key),params.get('helice_columns'));
   let statusFilter='all';
   const statuses=new Map(data.items.map(item=>[item.id,HeliceTableView.stockStatus(item,data.parameters.targetMonths)]));
+  const expanded=new Set(),structures=new Map();
   const persistColumns=()=>{const url=new URL(location.href);url.searchParams.set('helice_columns',visible.join(','));history.replaceState(null,'',url);};
   let sort = params.get('helice_sort') || 'general_priority', descending = params.get('helice_desc') === '1';
   if (!labels.some(([, key]) => key === sort)) sort = 'general_priority';
@@ -57,17 +70,29 @@ async function renderHeliceAnalysis() {
     table.style.width=columns.reduce((sum,[,key])=>sum+(widths[key]||132),0)+'px';table.style.minWidth='100%';
     table.querySelector('thead tr').innerHTML = columns.map(([label, key]) => `<th data-column-key="${key}" style="width:${widths[key]||132}px" aria-sort="${sort === key ? (descending ? 'descending' : 'ascending') : 'none'}"><button class="stock-sort" data-analysis-sort="${key}"><span>${escapeHtml(label)}</span><span aria-hidden="true">${sort === key ? (descending ? '↓' : '↑') : '↕'}</span></button></th>`).join('');
     table.querySelector('tbody').innerHTML = items.map(item => `<tr class="analysis-row analysis-row--${statuses.get(item.id).tone}">${columns.map(([, key]) => {
-      if (key === 'description') return `<td class="analysis-product" data-column-key="description"><button class="analysis-product-link" data-analysis-product="${item.id}">${escapeHtml(item.description)}</button><div class="analysis-product-meta">${!visible.includes('primary_sku')?`<span class="analysis-sku">${escapeHtml(item.primary_sku)}</span>`:''}<span class="analysis-stock-state analysis-stock-state--${statuses.get(item.id).tone}">${statuses.get(item.id).label}</span></div></td>`;
+      if (key === 'description') return `<td class="analysis-product" data-column-key="description"><div class="analysis-product-title"><button type="button" class="analysis-expand" data-expand-product="${item.id}" aria-expanded="${expanded.has(item.id)}" aria-controls="structure-${item.id}" aria-label="${expanded.has(item.id)?'Recolher':'Expandir'} BOM de ${escapeHtml(item.primary_sku)}">${expanded.has(item.id)?'⌄':'›'}</button><button class="analysis-product-link" data-analysis-product="${item.id}">${escapeHtml(item.description)}</button></div><div class="analysis-product-meta">${!visible.includes('primary_sku')?`<span class="analysis-sku">${escapeHtml(item.primary_sku)}</span>`:''}<span class="analysis-stock-state analysis-stock-state--${statuses.get(item.id).tone}">${statuses.get(item.id).label}</span></div></td>`;
       if (key === 'primary_sku' || key === 'raw_code') return `<td>${escapeHtml(item[key] || 'Não vinculado')}</td>`;
       if (key === 'incoming_quantity' && item[key] == null) return '<td class="stock-number"></td>';
       return `<td data-column-key="${key}" class="stock-number ${['physical_quantity','stock_one_quantity','virtual_quantity'].includes(key)&&item[key]!=null&&Number(item[key])<0?'analysis-negative':''} ${item[key] == null ? 'is-unknown' : ''}">${key === 'general_priority' ? (item[key] ?? '—') : quantity(item[key])}</td>`;
-    }).join('')}</tr>`).join('') || `<tr><td colspan="${columns.length}" class="empty">Nenhuma hélice corresponde à busca e à situação selecionadas.</td></tr>`;
+    }).join('')}</tr>${expanded.has(item.id)?`<tr class="analysis-expansion-row"><td colspan="${columns.length}"><div id="structure-${item.id}" data-structure-host="${item.id}" aria-live="polite">${structures.get(item.id)?.error?`<div class="analysis-structure-error" role="alert">${escapeHtml(structures.get(item.id).error)} <button class="secondary" data-retry-structure="${item.id}">Tentar novamente</button></div>`:structures.get(item.id)?.data?analysisStructureMarkup(structures.get(item.id).data,quantity):'<p role="status">Consultando BOM e estoque dos itens…</p>'}</div></td></tr>`:''}`).join('') || `<tr><td colspan="${columns.length}" class="empty">Nenhuma hélice corresponde à busca e à situação selecionadas.</td></tr>`;
     table.querySelectorAll('[data-analysis-sort]').forEach(button => button.onclick = () => {
       const key = button.dataset.analysisSort; descending = sort === key ? !descending : false; sort = key;
       const url = new URL(location.href); url.searchParams.set('helice_sort', sort); url.searchParams.set('helice_desc', descending ? '1' : '0'); history.replaceState(null, '', url);
       refresh(); table.querySelector(`[data-analysis-sort="${key}"]`).focus();
     });
     table.querySelectorAll('[data-analysis-product]').forEach(button => button.onclick = () => showProductDetail(button.dataset.analysisProduct));
+    const loadStructure=async id=>{
+      structures.set(id,{loading:true});refresh();
+      try{const result=await request(`/api/catalog/analysis/helices/${id}/structure`);structures.set(id,{data:result});}
+      catch(error){structures.set(id,{error:error.message});}
+      if(table.isConnected){const focused=document.activeElement?.dataset.expandProduct;refresh();if(focused)table.querySelector(`[data-expand-product="${focused}"]`)?.focus();}
+    };
+    table.querySelectorAll('[data-expand-product]').forEach(button=>button.onclick=()=>{
+      const id=button.dataset.expandProduct;if(expanded.has(id)){expanded.delete(id);refresh();}else{expanded.add(id);if(!structures.has(id))loadStructure(id);else refresh();}
+      table.querySelector(`[data-expand-product="${id}"]`)?.focus();
+    });
+    table.querySelectorAll('[data-retry-structure]').forEach(button=>button.onclick=()=>loadStructure(button.dataset.retryStructure));
+    table.querySelectorAll('[data-structure-product]').forEach(button=>button.onclick=()=>showProductDetail(button.dataset.structureProduct));
   };
   $('helice-search').oninput = refresh;
   tools.querySelectorAll('[data-column]').forEach(input=>input.onchange=()=>{visible=HeliceTableView.visibleColumns(labels.map(([,key])=>key),[...tools.querySelectorAll('[data-column]:checked')].map(control=>control.dataset.column).join(','));persistColumns();refresh();});

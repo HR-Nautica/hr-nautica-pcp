@@ -23,7 +23,24 @@ before(async () => { admin = await connect(); });
 beforeEach(reset);
 after(async () => { await closeDatabase(); await admin.end(); });
 
-import {getHeliceAnalysis,saveCoverageParameters} from '../../server/helice-analysis.js';
+import {getHeliceAnalysis,getHeliceStructure,saveCoverageParameters} from '../../server/helice-analysis.js';
+import {addBomLine} from '../../server/product-catalog.js';
+test('expansão da hélice lê estoques por ID e preserva a hierarquia real sem criar entradas',async()=>{
+  const root=await createProduct({sku:'HE',description:'Hélice',itemType:'Hélice usinada',family:'helices',unit:'UN'},'test');
+  const raw=await createProduct({sku:'BR',description:'Bruto',itemType:'Hélice bruta',family:'brutos',unit:'UN'},'test');
+  const material=await createProduct({sku:'MAT',description:'Material',itemType:'Componente',family:'componentes',unit:'UN'},'test');
+  await addBomLine(root.id,{childProductId:raw.id,quantity:1,unit:'UN'},'test');
+  await addBomLine(raw.id,{childProductId:material.id,quantity:2,unit:'UN'},'test');
+  await admin.query('UPDATE public.product_stock_balances SET physical_quantity=7 WHERE product_id=$1',[raw.id]);
+  const result=await getHeliceStructure(root.id);
+  assert.equal(result.product.id,root.id);assert.equal(result.product.physical_quantity,null);
+  assert.equal(result.bomTree.length,1);const node=result.bomTree[0];assert.equal(node.item.id,raw.id);
+  assert.equal(Number(node.item.physical_quantity),7);assert.equal(node.item.stock_one_quantity,null);
+  assert.equal(node.children[0].item.id,material.id);assert.equal(Number(node.children[0].quantity),2);
+  assert.equal(node.item.incoming_quantity,null);assert.deepEqual(node.item.open_orders,[]);assert.equal(result.ordersAvailable,false);
+  assert.equal((await admin.query('SELECT count(*)::int total FROM public.product_catalog_imports')).rows[0].total,0);
+  await assert.rejects(getHeliceStructure(raw.id),error=>error.code==='ANALYSIS_PRODUCT_INVALID');
+});
 test('análise considera só hélices usinadas ativas e parâmetros persistem com conflito e auditoria',async()=>{
   for(const [sku,itemType,family,status] of [['USINADA','Hélice usinada','helices','active'],['BRUTO','Hélice bruta','brutos','active'],['INATIVA','Hélice usinada','helices','inactive'],['COMP','Componente','componentes','active']])
     await createProduct({sku,itemType,family,status,description:sku,unit:'UN'},'analysis.test');
