@@ -1,5 +1,5 @@
 import { transaction, withConnection } from './database.js';
-import { CatalogError } from './product-catalog.js';
+import { CatalogError, getProduct } from './product-catalog.js';
 import { attachTinyStockMetrics } from './tiny-stock-metrics.js';
 import { COVERAGE_DEFAULTS, calculateHeliceCoverage, rankHeliceCoverage } from './helice-coverage.js';
 
@@ -48,5 +48,25 @@ export async function getHeliceAnalysis() {
       WHERE i.status='active' AND i.item_type='Hélice usinada' ORDER BY i.primary_sku_normalized,i.id`)).rows;
     await attachTinyStockMetrics(client, items);
     return { ...settings, ordersAvailable: false, items: rankHeliceCoverage(items.map(item => calculateHeliceCoverage({ ...item, open_orders: [] }, settings.parameters))) };
+  });
+}
+
+export async function getHeliceStructure(productId) {
+  const detail = await getProduct(productId);
+  if (detail.product.item_type !== 'Hélice usinada' || detail.product.status !== 'active')
+    throw new CatalogError('A análise exige uma hélice usinada ativa.', 'ANALYSIS_PRODUCT_INVALID', 404);
+  const ids = new Set([detail.product.id]);
+  const collect = nodes => { for (const node of nodes) { ids.add(node.child_product_id); collect(node.children); } };
+  collect(detail.bomTree);
+  return withConnection(async client => {
+    const products = (await client.query(`SELECT i.id,i.primary_sku,i.description,i.item_type,i.status,i.unit,s.physical_quantity,s.stock_authority
+      FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.id=ANY($1::uuid[])`, [[...ids]])).rows;
+    await attachTinyStockMetrics(client, products);
+    const routing = (await client.query(`SELECT r.product_id,r.sequence,p.code,p.name FROM public.product_routing_steps r
+      JOIN public.production_steps p ON p.id=r.production_step_id WHERE r.product_id=ANY($1::uuid[]) ORDER BY r.product_id,r.sequence`, [[...ids]])).rows;
+    const byId = new Map(products.map(product => [product.id, { ...product, open_orders: [], orders_available: false,
+      routing: routing.filter(step => step.product_id === product.id) }]));
+    const enrich = nodes => nodes.map(node => ({ ...node, item: byId.get(node.child_product_id), children: enrich(node.children) }));
+    return { product: byId.get(detail.product.id), bomTree: enrich(detail.bomTree), ordersAvailable: false };
   });
 }
