@@ -13,6 +13,6 @@ test('máximo histórico usa Estoque mínimo dividido por 3, nunca a posição J
 });
 import {attachTinyStockMetrics} from '../../server/tiny-stock-metrics.js';
 test('valor antigo de saídas do período não é exibido como máximo histórico',async()=>{
- const items=[{id:'legacy',physical_quantity:10}];const client={query:async()=>({rows:[{product_id:'legacy',physical_quantity:'10',stock_authority:'tiny_import',metrics:{period_outgoing_quantity:888,expected_outgoing_quantity:4,monthly_average:2}}]})};
+ const items=[{id:'legacy',physical_quantity:10}];const client={query:async(sql)=>({rows:sql.includes("key LIKE 'hrn_helice_order_v1:%'")?[]:[{product_id:'legacy',physical_quantity:'10',stock_authority:'tiny_import',metrics:{period_outgoing_quantity:888,expected_outgoing_quantity:4,monthly_average:2}}]})};
  await attachTinyStockMetrics(client,items);assert.equal(items[0].period_outgoing_quantity,null);assert.equal(items[0].monthly_average,2);assert.equal(items[0].virtual_quantity,6);
 });

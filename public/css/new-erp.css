@@ -89,6 +89,25 @@
 .bom-detail-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px;}
 .bom-detail-heading h3{font-size:16px;margin:3px 0 0;}
 .bom-detail-heading h3:not(:first-child){margin:3px 0 0;}
+.analysis-priority-cell{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.analysis-priority-cell>span{font-variant-numeric:tabular-nums;}
+.helice-analysis-table .analysis-op-action{position:sticky;right:0;z-index:2;text-align:center;border-left:1px solid var(--line);}
+.helice-analysis-table th.analysis-op-action{z-index:4;}
+.analysis-op-action button{font-size:12px;padding:8px 12px;white-space:nowrap;}
+.analysis-production-hint{font-size:11px;color:#b7d7ff;}
+.order-suggestion{padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);}
+.order-raw-preview{min-width:500px;font-size:13px;margin-top:14px;}
+.order-raw-preview th,.order-raw-preview td{padding:10px;}
+.order-ready{color:#8bd7b9;font-size:13px;}.order-blocked{color:#ffb2b8;font-size:13px;line-height:1.6;padding-left:20px;}
+.helice-order-links{display:grid;gap:6px;margin:10px 0;}
+.helice-order-links>div{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:7px;font-size:12px;background:var(--panel);}
+.helice-order-links>div>span:last-child{color:var(--muted);}
+.helice-orders-table{min-width:1000px;}
+.helice-orders-table td:nth-child(2){white-space:normal;min-width:250px;max-width:360px;}
+.helice-orders-table td>small{display:block;margin-top:6px;color:var(--muted);font-size:12px;}
+.helice-orders-table summary{cursor:pointer;font-size:12px;}
+.helice-orders-table details{max-width:400px;white-space:normal;font-size:12px;line-height:1.6;}
+@media(max-width:800px){.helice-analysis-table td.analysis-op-action{position:static;}.helice-analysis-table th.analysis-op-action{right:auto;}}
 .bom-eyebrow{font-size:10px;letter-spacing:.1em;color:var(--muted);}
 .bom-root-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:9px;background:var(--panel);margin:12px 0;}
 .bom-root-summary>div{padding:12px 16px;border-right:1px solid var(--line);}
