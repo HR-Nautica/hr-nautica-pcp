@@ -174,9 +174,12 @@ function showHeliceOrder(order, group, showList, openOrder) {
       <div><small>Etapa ${order.completed_stage_count + 1} de ${order.routing.length} · ${waiting ? 'Lote em espera' : 'Etapa atual'}</small>
         <h3>${escapeHtml(stage.name)}</h3><strong>${helicePieces(order.remaining_quantity)} peças neste lote</strong></div>
       <div><small>Depois desta etapa</small><strong>${escapeHtml(order.routing[order.completed_stage_count + 1]?.name ?? 'Conclusão do lote')}</strong></div>
-      <a href="#op-route" class="op-route-link">Ver todas as etapas</a>
+      <div class="op-current-actions">
+        <a href="#op-route" class="op-route-link">Ver todas as etapas</a>
+        ${canReport || waiting ? `<button type="button" id="op-open-execution" aria-haspopup="dialog">${waiting ? 'Liberar lote' : 'Registrar etapa'}</button>` : ''}
+      </div>
     </section>` : ''}
-    ${canReport || waiting ? heliceExecutionForm(order) : order.status === 'open' ?
+    ${canReport || waiting ? heliceExecutionForm(order, stage) : order.status === 'open' ?
       '<p class="card op-panel">Esta OP foi aberta sem roteiro cadastrado. A execução requer uma ordem com roteiro.</p>' : ''}
     <section class="card op-panel" id="op-route" tabindex="-1"><h3>Etapas deste lote</h3>
       ${order.routing.length ? `<ol class="op-stages">${order.routing.map((step, index) => {
@@ -255,10 +258,15 @@ async function loadHeliceOrderMaterials(bom, productId) {
   }
 }
 
-function heliceExecutionForm(order) {
+function heliceExecutionForm(order, stage) {
   const waiting = order.status === 'waiting';
-  return `<form id="op-execution" class="card op-panel">
-    <h3>${waiting ? 'Liberar lote em espera' : 'Registrar resultado da etapa'}</h3>
+  return `<dialog id="op-execution-dialog" aria-labelledby="op-execution-title" aria-describedby="op-execution-context">
+  <form id="op-execution" class="op-panel">
+    <h2 id="op-execution-title" tabindex="-1" autofocus>${waiting ? 'Liberar lote em espera' : 'Registrar etapa'}</h2>
+    <p id="op-execution-context" class="op-execution-context">
+      <strong>${escapeHtml(stage.name)}</strong>
+      <span>${escapeHtml(order.number)} · ${helicePieces(order.remaining_quantity)} peças</span>
+    </p>
     <p>${waiting ? `Local de espera: ${escapeHtml(order.waiting_location)}` :
       'Informe quantas peças tiveram refugo ou ficaram em espera. As aprovadas são calculadas na hora.'}</p>
     ${waiting ? '<p class="analysis-hint">O lote volta para esta mesma etapa ao ser liberado.</p>' : `<div class="op-fields">
@@ -268,15 +276,23 @@ function heliceExecutionForm(order) {
     </div><label id="op-location" hidden>Local do estoque temporário<input name="location" maxlength="100"></label>
     <p class="analysis-hint" id="op-allocation" role="status"></p>`}
     <label>Observação (opcional)<input name="notes" maxlength="500"></label>
-    <div class="op-detail-bar"><span id="op-execution-status" role="status"></span><button type="submit">${waiting ? 'Liberar para produção' : 'Registrar etapa'}</button></div>
-  </form>`;
+    <p id="op-execution-status" role="status"></p>
+    <div class="op-execution-actions">
+      <button type="button" class="secondary" id="op-cancel-execution">Cancelar</button>
+      <button type="submit">${waiting ? 'Confirmar liberação' : 'Confirmar registro'}</button>
+    </div>
+  </form></dialog>`;
 }
 
 function bindHeliceExecution(order) {
-  const form = $('op-execution'), status = $('op-execution-status'), button = form.querySelector('button');
+  const form = $('op-execution'), status = $('op-execution-status'), button = form.querySelector('[type="submit"]');
+  const dialog = $('op-execution-dialog'), cancel = $('op-cancel-execution');
   const waiting = order.status === 'waiting', label = button.textContent;
   const fields = [...form.querySelectorAll('input')];
   let draft, busy = false;
+  $('op-open-execution').onclick = () => dialog.showModal();
+  cancel.onclick = () => dialog.close();
+  dialog.oncancel = event => { if (busy) event.preventDefault(); };
   const counts = () => ['approved', 'scrap', 'waiting'].map(key => form.elements.namedItem(key).valueAsNumber);
   const update = () => {
     if (waiting) return;
@@ -309,6 +325,7 @@ function bindHeliceExecution(order) {
       }
     }
     busy = button.disabled = true;
+    cancel.disabled = true;
     fields.forEach(field => { field.disabled = true; });
     status.textContent = 'Registrando…';
     try {
@@ -335,6 +352,7 @@ function bindHeliceExecution(order) {
       }
     } finally {
       busy = false;
+      cancel.disabled = false;
     }
   };
 }

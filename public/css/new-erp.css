@@ -392,3 +392,26 @@
   .op-lots li { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .op-lots li button { justify-self: start; }
 }
+
+.op-current-actions, .op-execution-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+#op-execution-dialog {
+  max-height: calc(100dvh - 24px);
+}
+#op-execution { padding: clamp(16px, 4vw, 28px); }
+.op-execution-context {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  background: var(--panel2);
+  border-radius: 8px;
+}
+.op-execution-context span { color: var(--muted); }
+#op-execution-status:empty { display: none; }
+#op-execution-status { overflow-wrap: anywhere; }
+.op-execution-actions button, .op-current-actions button { min-height: 44px; }
