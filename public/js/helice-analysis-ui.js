@@ -18,6 +18,42 @@ function analysisStructureMarkup(payload,quantity) {
   return `<div class="analysis-expansion-content"><div class="bom-detail-heading"><div><span class="bom-eyebrow">ESTRUTURA E PRODUÇÃO</span><h3>${escapeHtml(root.primary_sku)}</h3></div><span class="badge">Hélice usinada</span></div><div class="bom-root-summary"><div><small>Estoque físico <span class="bom-source-inline">${root.stock_authority==='tiny_import'?'Tiny':'ERP'}</span></small><strong>${amount(root.physical_quantity,root.unit)}</strong></div><div><small>Saldo após vendido</small><strong>${amount(root.stock_one_quantity,root.unit)}</strong></div><div><small>Entradas em produção</small><strong>${root.incoming_quantity==null?'—':amount(root.incoming_quantity,root.unit)}</strong></div><div><small>OPs abertas · Etapa atual</small><strong class="bom-unknown">${root.open_orders.length?root.open_orders.length+' aberta(s)':'Sem OP aberta'}</strong></div></div>${routing(root)}${heliceOrderSummary(root.open_orders)}<div class="bom-section-heading"><h3>Lista de materiais <span class="bom-count">${payload.bomTree.length}</span></h3><span>Quantidades por unidade do pai</span></div><p class="bom-detail-note">Saldo após vendido = físico − vendido; não inclui reservas. Dados ausentes permanecem não informados.</p>${payload.bomTree.length?`<div class="bom-comparison-head" aria-hidden="true"><span>Componente</span><span>Qtd. / pai</span><span>Estoque físico</span><span>Após vendido</span></div>${nodes(payload.bomTree)}`:'<p class="analysis-hint">Nenhum componente vinculado à BOM.</p>'}</div>`;
 }
 
+function coverageSettingsMarkup(parameters) {
+  const fields = [
+    { name: 'targetMonths', label: 'Meta de estoque', unit: 'meses', max: 120, help: 'Define a cobertura desejada e o cálculo de entrada em estoque.' },
+    { name: 'averageFactor', label: 'Fator da média', unit: '×', max: 100, help: 'Multiplica a média mensal importada do Tiny.' },
+    { name: 'productionMonths', label: 'Horizonte de produção', unit: 'meses', max: 120, help: 'Define o período usado para sugerir a quantidade da OP.' }
+  ];
+
+  return `<details class="card analysis-settings">
+    <summary>
+      <span class="analysis-settings-title">Parâmetros de cálculo</span>
+      <span class="analysis-settings-values">${fields.map(({name, label, unit}) =>
+        `<span>${label} <strong>${Number(parameters[name]).toLocaleString('pt-BR', {maximumFractionDigits: 20})} ${unit}</strong></span>`
+      ).join('')}</span>
+      <span class="analysis-settings-toggle" aria-hidden="true"></span>
+    </summary>
+    <form id="coverage-parameters">
+      <div class="analysis-settings-fields">${fields.map(({name, label, unit, max, help}) => `
+        <label for="coverage-${name}">
+          <span>${label}</span>
+          <span class="analysis-settings-input">
+            <input id="coverage-${name}" name="${name}" type="number" min="0.01" max="${max}" step="any" required
+              value="${parameters[name]}" aria-describedby="coverage-help-${name}">
+            <span aria-hidden="true">${unit}</span>
+          </span>
+          <small id="coverage-help-${name}">${help}</small>
+        </label>`
+      ).join('')}</div>
+      <div class="analysis-settings-footer">
+        <p class="analysis-hint">Os parâmetros salvos valem para todos os usuários.</p>
+        <button type="submit">Salvar e recalcular</button>
+      </div>
+      <p id="coverage-save-status" role="status" aria-live="polite"></p>
+    </form>
+  </details>`;
+}
+
 async function renderHeliceAnalysis() {
   const data = await request('/api/catalog/analysis/helices');
   if (document.querySelector('nav button.active')?.dataset.page !== 'analysis-helice') return;
@@ -40,9 +76,8 @@ async function renderHeliceAnalysis() {
   if (!labels.some(([, key]) => key === sort)) sort = 'general_priority';
   const quantity = value => value === null || value === undefined ? 'Não informado' : Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   for (const item of data.items) item.raw_code = [...new Set(item.raw_products.map(raw => raw.sku))].join(' / ');
-  $('content').innerHTML = `<section class="card analysis-controls"><form id="coverage-parameters"><label>Entrar estoque (meses)<input name="targetMonths" type="number" min="0.01" max="120" step="any" required value="${data.parameters.targetMonths}"></label><label>Fator correção média<input name="averageFactor" type="number" min="0.01" max="100" step="any" required value="${data.parameters.averageFactor}"></label><label>Produção (meses)<input name="productionMonths" type="number" min="0.01" max="120" step="any" required value="${data.parameters.productionMonths}"></label><button>Salvar parâmetros e recalcular</button></form><div class="analysis-search"><label>Buscar hélices<input id="helice-search" type="search" placeholder="Produto, SKU ou código bruto"></label><span id="helice-count" role="status"></span></div><p class="analysis-hint">Prioridade automática: menor Prio2 primeiro, desempate por SKU. Parâmetros compartilhados por todos os usuários.</p><p id="coverage-save-status" role="status" aria-live="polite"></p></section><details class="analysis-formulas"><summary>Como os cálculos funcionam</summary><p>Estoque 1 = físico − vendido. Virtual = Estoque 1 + produção em aberto. Média = média Tiny × fator. Cobertura = virtual ÷ média (média zero: 6, conforme a planilha). Colocar OP sugere a falta para o horizonte de produção, arredondada para cima em dezenas. Entrar estoque = máximo entre zero e (média × meses de estoque − Estoque 1).</p><p>Prio2: Estoque 1 negativo → −1; senão, média menor que 2 → 5; demais → Estoque 1 ÷ média, truncado em uma casa. A exceção de descrição “max.” da planilha retorna zero. Dados ausentes não são convertidos em saldo zero.</p></details><p class="analysis-hint">${data.ordersAvailable ? 'Entradas previstas somam as OPs abertas. A abertura consome somente os brutos da BOM.' : 'Entradas previstas aguardam as novas OPs de hélices. Até lá, a projeção considera produção zero.'} “Colocar OP” é uma sugestão. Use “Abrir OP” para conferir o bruto e confirmar a quantidade.</p><div class="card table-wrap helice-analysis-wrap" tabindex="0" role="region" aria-label="Análise de Hélices; role horizontalmente para ver todas as colunas"><table class="stock-table helice-analysis-table"><thead><tr></tr></thead><tbody></tbody></table></div>`;
+  $('content').innerHTML = `${coverageSettingsMarkup(data.parameters)}<section class="card analysis-controls"><div class="analysis-search"><label>Buscar hélices<input id="helice-search" type="search" placeholder="Produto, SKU ou código bruto"></label><span id="helice-count" role="status"></span></div><p class="analysis-hint">Prioridade automática: menor Prio2 primeiro, desempate por SKU.</p></section><details class="analysis-formulas"><summary>Como os cálculos funcionam</summary><p>Estoque 1 = físico − vendido. Virtual = Estoque 1 + produção em aberto. Média = média Tiny × fator. Cobertura = virtual ÷ média (média zero: 6, conforme a planilha). Colocar OP sugere a falta para o horizonte de produção, arredondada para cima em dezenas. Entrar estoque = máximo entre zero e (média × meses de estoque − Estoque 1).</p><p>Prio2: Estoque 1 negativo → −1; senão, média menor que 2 → 5; demais → Estoque 1 ÷ média, truncado em uma casa. A exceção de descrição “max.” da planilha retorna zero. Dados ausentes não são convertidos em saldo zero.</p></details><p class="analysis-hint">${data.ordersAvailable ? 'Entradas previstas somam as OPs abertas. A abertura consome somente os brutos da BOM.' : 'Entradas previstas aguardam as novas OPs de hélices. Até lá, a projeção considera produção zero.'} “Colocar OP” é uma sugestão. Use “Abrir OP” para conferir o bruto e confirmar a quantidade.</p><div class="card table-wrap helice-analysis-wrap" tabindex="0" role="region" aria-label="Análise de Hélices; role horizontalmente para ver todas as colunas"><table class="stock-table helice-analysis-table"><thead><tr></tr></thead><tbody></tbody></table></div>`;
   const table = $('content').querySelector('.helice-analysis-table');
-  const parameterForm=$('coverage-parameters'),settings=document.createElement('details');settings.className='analysis-settings';settings.innerHTML=`<summary>Parâmetros de cálculo <span>Meta: ${data.parameters.targetMonths} meses · Produção: ${data.parameters.productionMonths} meses</span></summary>`;parameterForm.before(settings);settings.append(parameterForm);
   const tools=document.createElement('section');tools.className='analysis-table-tools';
   tools.setAttribute('aria-label','Visualização da análise');
   tools.innerHTML=`<div class="analysis-status-filters" id="analysis-status-filters"></div><details class="analysis-columns"><summary>Colunas <span id="analysis-column-count"></span></summary><div class="analysis-column-panel"><div class="analysis-view-presets"><button type="button" class="secondary" id="analysis-essential">Essenciais</button><button type="button" class="secondary" id="analysis-all">Todas</button></div><p>Prioridade e Produto permanecem visíveis.</p><div class="analysis-column-options">${labels.map(([label,key])=>`<label><input type="checkbox" data-column="${key}" ${visible.includes(key)?'checked':''} ${['general_priority','description'].includes(key)?'disabled':''}><span>${escapeHtml(label)}</span></label>`).join('')}</div></div></details>`;
