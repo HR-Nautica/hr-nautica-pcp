@@ -13,9 +13,11 @@ export async function attachHeliceOrders(client, items) {
   if(!items.length)return items;
   const orders=await readHeliceOrders(client,items.map(item=>item.id));
   for(const item of items){
-    item.open_orders=orders.filter(order=>order.product_id===item.id&&order.status==='open');
-    const pending=item.open_orders.reduce((sum,order)=>sum+order.remaining_quantity,0);
-    calculateStockPlanning(item,pending);item.incoming_quantity=item.open_orders.length?pending:null;
+    item.open_orders = orders.filter(order => order.product_id === item.id && ['open', 'waiting'].includes(order.status));
+    const running = item.open_orders.filter(order => order.status === 'open');
+    const pending = running.reduce((sum, order) => sum + order.remaining_quantity, 0);
+    calculateStockPlanning(item, pending);
+    item.incoming_quantity = running.length ? pending : null;
   }
   return items;
 }

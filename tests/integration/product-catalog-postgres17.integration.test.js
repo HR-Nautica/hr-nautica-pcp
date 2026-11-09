@@ -6,6 +6,8 @@ import { migrate } from "../../scripts/db/migration-runner.js";
 import { closeDatabase } from "../../server/database.js";
 import { createProduct, updateProduct } from "../../server/product-catalog.js";
 import { exportStockInventory, importStockInventory } from '../../server/stock-inventory.js';
+import { executeHeliceOrder } from '../../server/helice-order-execution.js';
+import { addRoutingStep, saveStep } from '../../server/product-catalog.js';
 
 const connectionString = process.env.MIGRATIONS_TEST_DATABASE_URL;
 if (!connectionString) throw new Error("MIGRATIONS_TEST_DATABASE_URL obrigatoria.");
@@ -39,6 +41,48 @@ async function orderFixture(){
   await syncTinyStock(XLSX.write(book,{type:'buffer',bookType:'xlsx'}),{actor:'test',fileName:'tiny.xlsx',requestId:'1'.repeat(32)});
   return {product,raw,bushing};
 }
+test('apontamento divide o lote, controla previsão e mantém estoque físico', async () => {
+  const { product, raw } = await orderFixture();
+  for (const [index, name] of ['Usinagem', 'Inspeção'].entries()) {
+    const step = await saveStep({ code: 'HU-' + index, name }, 'teste');
+    await addRoutingStep(product.id, { productionStepId: step.id, sequence: index + 1 }, 'teste');
+  }
+  const stock = async id => (await admin.query(
+    'SELECT physical_quantity FROM public.product_stock_balances WHERE product_id=$1', [id]
+  )).rows[0].physical_quantity;
+  const incoming = async () => (await getHeliceAnalysis()).items.find(item => item.id === product.id).incoming_quantity;
+  const preview = await previewHeliceOrder(product.id, 5);
+  const { order } = await openHeliceOrder(product.id, {
+    quantity: 5, requestId: '2'.repeat(32), expectedPlan: preview.planToken
+  }, 'teste');
+  const split = { action: 'report', requestId: '3'.repeat(32), version: 1, approved: 2, scrap: 1, waiting: 2, location: 'Bancada A' };
+  await assert.rejects(executeHeliceOrder(order.id, { ...split, approved: 1 }, 'teste'), /Distribua/);
+  const [first, second] = await Promise.all([
+    executeHeliceOrder(order.id, split, 'teste'),
+    executeHeliceOrder(order.id, split, 'teste')
+  ]);
+  const applied = first.child ? first : second;
+  const { child } = applied;
+  assert.equal((first.child ? second : first).idempotent, true);
+  assert.equal(child.number, order.number + '.1');
+  assert.equal(child.parent_id, order.id);
+  assert.equal(child.status, 'waiting');
+  assert.equal(applied.order.current_stage.name, 'Inspeção');
+  assert.equal(await incoming(), 2);
+  await assert.rejects(executeHeliceOrder(order.id, { ...split, requestId: '4'.repeat(32) }, 'teste'), { code: 'ORDER_STALE' });
+  const { order: released } = await executeHeliceOrder(child.id, { action: 'release', requestId: '5'.repeat(32), version: 1 }, 'teste');
+  assert.equal(released.current_stage.name, 'Usinagem');
+  assert.equal(await incoming(), 4);
+  const report = { action: 'report', version: 2, approved: 2, scrap: 0, waiting: 0 };
+  const { order: finished } = await executeHeliceOrder(order.id, { ...report, requestId: '6'.repeat(32) }, 'teste');
+  assert.equal(finished.status, 'completed');
+  assert.equal(finished.finished_quantity, 2);
+  assert.equal(await incoming(), 2);
+  assert.equal(Number(await stock(product.id)), 6);
+  assert.equal(Number(await stock(raw.id)), 0);
+  assert.equal((await listHeliceOrders()).length, 2);
+  assert.equal((await admin.query("SELECT count(*)::int AS total FROM public.audit_log WHERE action='SPLIT_OP'")).rows[0].total, 1);
+});
 test('inventário confirma ajustes em lote, preserva Tiny e rejeita saldo concorrente', async () => {
   const { product, raw, bushing } = await orderFixture();
   const original = await exportStockInventory();
