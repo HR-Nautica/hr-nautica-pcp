@@ -5,6 +5,7 @@ import path from "node:path";
 import { migrate } from "../../scripts/db/migration-runner.js";
 import { closeDatabase } from "../../server/database.js";
 import { createProduct, updateProduct } from "../../server/product-catalog.js";
+import { exportStockInventory, importStockInventory } from '../../server/stock-inventory.js';
 
 const connectionString = process.env.MIGRATIONS_TEST_DATABASE_URL;
 if (!connectionString) throw new Error("MIGRATIONS_TEST_DATABASE_URL obrigatoria.");
@@ -38,6 +39,36 @@ async function orderFixture(){
   await syncTinyStock(XLSX.write(book,{type:'buffer',bookType:'xlsx'}),{actor:'test',fileName:'tiny.xlsx',requestId:'1'.repeat(32)});
   return {product,raw,bushing};
 }
+test('inventário confirma ajustes em lote, preserva Tiny e rejeita saldo concorrente', async () => {
+  const { product, raw, bushing } = await orderFixture();
+  const original = await exportStockInventory();
+  const count = values => {
+    const workbook = XLSX.read(original, { type: 'buffer' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    rows.forEach(([sku], index) => {
+      if (Object.hasOwn(values, sku)) XLSX.utils.sheet_add_aoa(sheet, [[values[sku]]], { origin: 'F' + (index + 1) });
+    });
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  };
+  const options = { actor: 'operador', fileName: 'contagem.xlsx' };
+  const file = count({ BR: 0, HE: 8.25 });
+  const preview = await importStockInventory(file, { ...options, preview: true });
+  assert.equal(preview.changes.length, 2);
+  const apply = { ...options, expectedPlan: preview.planChecksum };
+  await importStockInventory(file, apply);
+  await importStockInventory(file, apply);
+  const stock = async id => (await admin.query('SELECT * FROM public.product_stock_balances WHERE product_id=$1', [id])).rows[0];
+  assert.equal(Number((await stock(raw.id)).physical_quantity), 0);
+  assert.equal(Number((await stock(product.id)).physical_quantity), 8.25);
+  assert.equal((await stock(product.id)).stock_authority, 'tiny_import');
+  const stale = count({ BR: 4, BU: 17 });
+  const stalePreview = await importStockInventory(stale, { ...options, preview: true });
+  assert.equal(stalePreview.issues.length, 1);
+  await assert.rejects(importStockInventory(stale, { ...options, expectedPlan: stalePreview.planChecksum }), { status: 409 });
+  assert.equal(Number((await stock(bushing.id)).physical_quantity), 25);
+  assert.equal((await admin.query("SELECT count(*) FROM public.product_catalog_imports WHERE source_schema='stock_inventory_v1'")).rows[0].count, '1');
+});
 test('nova OP consome apenas bruto uma vez e atualiza produção prevista sem creditar hélice',async()=>{
   const {product,raw,bushing}=await orderFixture(),preview=await previewHeliceOrder(product.id,3);
   await admin.query("INSERT INTO public.helice_production_orders(source_key,source_file,source_sheet,source_row,description,sku,quantity) VALUES('old','old.xlsx','Old',1,'Antiga','HE',999)");

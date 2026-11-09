@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { exportStockInventory, importStockInventory } from '../stock-inventory.js';
 import { addBomLine, addRoutingStep, CatalogError, createProduct, deactivateProduct, deleteBomLine, deleteRoutingStep, deleteStep, deleteSupplier, getProduct, listProducts, listSteps, listStock, listSuppliers, saveStep, saveSupplier, updateProduct } from "../product-catalog.js";
 
 const router=Router();
@@ -34,6 +35,30 @@ router.post("/steps",async(req,res,next)=>{try{res.status(201).json({ok:true,ite
 router.put("/steps/:id",async(req,res,next)=>{try{res.json({ok:true,item:await saveStep(req.body,actor(req),req.params.id)});}catch(e){reply(e,res,next);}});
 router.delete("/steps/:id",async(req,res,next)=>{try{res.json({ok:true,item:await deleteStep(req.params.id)});}catch(e){reply(e,res,next);}});
 router.get("/stock",async(req,res,next)=>{try{res.json({ok:true,items:await listStock(req.query)});}catch(e){reply(e,res,next);}});
+router.get('/stock/inventory/export', async (_req, res, next) => {
+  try {
+    const workbook = await exportStockInventory();
+    res.set('Cache-Control', 'no-store').attachment('inventario-estoque.xlsx').send(workbook);
+  } catch (error) { reply(error, res, next); }
+});
+
+for (const preview of [true, false]) {
+  router.post(preview ? '/stock/inventory/preview' : '/stock/inventory/apply', async (req, res, next) => {
+    try {
+      const { fileBase64, fileName, expectedPlan } = req.body ?? {};
+      if (typeof fileBase64 !== 'string' || fileBase64.length > 20000000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(fileBase64)) {
+        throw new CatalogError('Arquivo inválido ou maior que 15 MB.');
+      }
+      if (!preview && !/^[0-9a-f]{64}$/.test(String(expectedPlan ?? ''))) {
+        throw new CatalogError('Analise a planilha antes de confirmar.');
+      }
+      const result = await importStockInventory(Buffer.from(fileBase64, 'base64'), {
+        actor: actor(req), fileName, preview, expectedPlan
+      });
+      res.json({ ok: true, ...result });
+    } catch (error) { reply(error, res, next); }
+  });
+}
 
 export default router;
 import { syncTinyStock, getLastTinyStockUpdate } from '../tiny-stock-sync.js';

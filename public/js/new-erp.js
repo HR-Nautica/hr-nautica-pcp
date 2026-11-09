@@ -68,7 +68,129 @@ async function renderStock(){
  $("page-actions").innerHTML="";
  $("content").innerHTML=`<section class="stock-summary" aria-label="Resumo do estoque"><div class="stock-stat"><small>Produtos ativos</small><strong>${data.items.length}</strong></div><div class="stock-stat"><small>Saldo conhecido</small><strong>${known}</strong></div><div class="stock-stat"><small>Aguardando saldo</small><strong>${data.items.length-known}</strong></div></section><div class="card table-wrap stock-table-wrap" tabindex="0" role="region" aria-label="Estoque dos produtos; role horizontalmente para ver todas as colunas"><table class="stock-table stock-physical-table"><thead><tr>${header("SKU","sku")}${header("Produto","description")}${columns.map(([label,key])=>header(label,key,true)).join("")}${header("Fonte","stock_authority")}</tr></thead><tbody>${data.items.map(item=>`<tr><td class="product-sku"><strong>${escapeHtml(item.primary_sku)}</strong></td><td class="product-name"><strong>${escapeHtml(item.description)}</strong></td>${columns.map(([,key])=>`<td class="stock-number ${key?'stock-value '+(item[key]===null?'is-unknown':''):'is-unknown'}">${key==="incoming_quantity"&&item[key]==null?"":value(item[key])}</td>`).join("")}<td><span class="badge">${item.stock_authority==="tiny_import"?"Tiny":"ERP"}</span></td></tr>`).join("")||'<tr><td colspan="4"><div class="compact-empty"><strong>Nenhum produto no estoque</strong><p>Os itens cadastrados aparecerão aqui.</p></div></td></tr>'}</tbody></table></div>`;
 }
-const baseRenderStock=renderStock;renderStock=async()=>{await baseRenderStock();installQueryControls("stock",queryViews.stock);};
+const baseRenderStock=renderStock;renderStock=async()=>{
+  await baseRenderStock();
+  installQueryControls("stock",queryViews.stock);
+  installStockInventoryActions();
+};
+
+function installStockInventoryActions() {
+  $("page-actions").innerHTML = `<details class="action-menu stock-inventory-menu">
+    <summary aria-label="Mais ações de estoque" title="Mais ações de estoque">•••</summary>
+    <div><button type="button" id="inventory-export">Exportar planilha de estoque</button>
+    <button type="button" id="inventory-import">Importar contagem de estoque</button></div>
+  </details>`;
+  const menu = $("page-actions").querySelector("details");
+  $("inventory-export").onclick = async () => {
+    menu.open = false;
+    try {
+      const response = await fetch("/api/catalog/stock/inventory/export");
+      if (!response.ok) throw new Error("Não foi possível exportar o estoque.");
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "inventario-estoque.xlsx";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) { notify(error.message, true); }
+  };
+  $("inventory-import").onclick = () => {
+    menu.open = false;
+    openStockInventory();
+  };
+  menu.addEventListener("focusout", event => {
+    if (!menu.contains(event.relatedTarget)) menu.open = false;
+  });
+  menu.addEventListener("keydown", event => {
+    if (event.key === "Escape" && menu.open) {
+      menu.open = false;
+      menu.querySelector("summary").focus();
+    }
+  });
+}
+
+function openStockInventory() {
+  openModal("Importar contagem de estoque", "INVENTÁRIO", `
+    <p>Use a planilha exportada pelo Estoque Geral. Preencha a coluna <strong>Contagem</strong> para os produtos que deseja ajustar. Deixe em branco para manter o saldo, ou informe 0 para zerar.</p>
+    <label>Planilha de inventário<input id="inventory-file" type="file" accept=".xlsx"></label>
+    <p id="inventory-status" role="status" aria-live="polite"></p>
+    <div id="inventory-review"></div>`, () => {});
+  const modal = $("modal"), save = $("modal-save"), input = $("inventory-file");
+  const status = $("inventory-status"), review = $("inventory-review");
+  const cancelButtons = [...modal.querySelectorAll('button[value="cancel"]')];
+  const preventClose = event => event.preventDefault();
+  const quantity = value => value == null ? "Não informado" :
+    Number(value).toLocaleString("pt-BR", { maximumFractionDigits: 8 });
+  let draft, plan;
+  save.textContent = "Confirmar ajuste";
+  save.disabled = true;
+  modal.addEventListener("close", () => {
+    save.textContent = "Salvar";
+    save.disabled = false;
+  }, { once: true });
+
+  input.onchange = async () => {
+    draft = plan = null;
+    save.disabled = true;
+    review.innerHTML = "";
+    const file = input.files[0];
+    if (!file) return;
+    input.disabled = true;
+    status.textContent = "Conferindo a planilha…";
+    try {
+      if (file.size > 15000000) throw new Error("O arquivo excede 15 MB.");
+      const fileBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1]);
+        reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
+        reader.readAsDataURL(file);
+      });
+      draft = { fileBase64, fileName: file.name };
+      plan = await request("/api/catalog/stock/inventory/preview", {
+        method: "POST", body: JSON.stringify(draft)
+      });
+      if (!modal.open || !input.isConnected) return;
+      status.textContent = `${plan.changes.length} ajustes, ${plan.unchanged} sem mudança e ${plan.issues.length} pendências.`;
+      review.innerHTML = `
+        ${plan.issues.length ? `<p>Resolva as pendências antes de confirmar. Para itens com saldo alterado, exporte uma planilha nova e confira a contagem.</p>
+          <ul>${plan.issues.map(issue => `<li><strong>${escapeHtml(issue.sku)}</strong> · ${escapeHtml(issue.reason)}</li>`).join("")}</ul>` : ""}
+        ${plan.changes.length ? `<div class="table-wrap inventory-preview" tabindex="0" role="region" aria-label="Prévia dos ajustes">
+          <table><thead><tr><th>Produto</th><th>Saldo atual</th><th>Contagem</th></tr></thead><tbody>
+          ${plan.changes.map(item => `<tr><td><strong>${escapeHtml(item.sku)}</strong><br>${escapeHtml(item.description)}</td>
+            <td>${quantity(item.previous)}</td><td>${quantity(item.current)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
+      save.disabled = !!plan.issues.length || !plan.changes.length;
+    } catch (error) {
+      status.textContent = error.message;
+    } finally {
+      input.disabled = false;
+      input.value = "";
+    }
+  };
+
+  save.onclick = async event => {
+    event.preventDefault();
+    if (!plan || save.disabled) return;
+    save.disabled = input.disabled = true;
+    cancelButtons.forEach(button => { button.disabled = true; });
+    modal.addEventListener("cancel", preventClose);
+    status.textContent = "Aplicando os ajustes…";
+    try {
+      const saved = await request("/api/catalog/stock/inventory/apply", {
+        method: "POST", body: JSON.stringify({ ...draft, expectedPlan: plan.planChecksum })
+      });
+      modal.close();
+      await render();
+      notify(`${saved.changes.length} saldos atualizados pelo inventário.`);
+    } catch (error) {
+      status.textContent = error.message;
+      save.disabled = error.status === 409;
+    } finally {
+      input.disabled = false;
+      cancelButtons.forEach(button => { button.disabled = false; });
+      modal.removeEventListener("cancel", preventClose);
+    }
+  };
+}
 function editResource(kind,item){const supplier=kind==="suppliers";const body=supplier?`<div class="grid"><label class="wide">Razão social<input name="legalName" value="${escapeHtml(item?.legal_name||"")}" required></label><label>Nome fantasia<input name="tradeName" value="${escapeHtml(item?.trade_name||"")}"></label><label>Documento<input name="taxId" value="${escapeHtml(item?.tax_id||"")}"></label><label>E-mail<input name="email" value="${escapeHtml(item?.email||"")}"></label><label>Telefone<input name="phone" value="${escapeHtml(item?.phone||"")}"></label><label class="wide">Observações<textarea name="notes">${escapeHtml(item?.notes||"")}</textarea></label></div>`:`<div class="grid"><label>Código<input name="code" value="${escapeHtml(item?.code||"")}" required></label><label>Nome<input name="name" value="${escapeHtml(item?.name||"")}" required></label><label class="wide">Descrição<textarea name="description">${escapeHtml(item?.description||"")}</textarea></label></div>`;openModal(item?"Editar cadastro":supplier?"Novo fornecedor":"Nova etapa",supplier?"FORNECEDOR":"PRODUÇÃO",body,form=>request(`/api/catalog/${kind}${item?`/${item.id}`:""}`,{method:item?"PUT":"POST",body:JSON.stringify(Object.fromEntries(form))}));}
 async function renderResources(kind){const supplier=kind==="suppliers",data=await request(`/api/catalog/${kind}`);$("page-actions").innerHTML=`<button id="new-resource">${supplier?"Novo fornecedor":"Nova etapa"}</button>`;$("content").innerHTML=`<div class="card table-wrap"><table><thead><tr>${supplier?"<th>Razão social</th><th>Nome fantasia</th><th>Documento</th><th>Contato</th>":"<th>Código</th><th>Etapa</th><th>Descrição</th>"}<th></th></tr></thead><tbody>${data.items.map(item=>`<tr>${supplier?`<td><strong>${escapeHtml(item.legal_name)}</strong></td><td>${escapeHtml(item.trade_name)}</td><td>${escapeHtml(item.tax_id)}</td><td>${escapeHtml(item.email||item.phone)}</td>`:`<td><strong>${escapeHtml(item.code)}</strong></td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.description)}</td>`}<td class="actions"><button class="secondary edit" data-id="${item.id}">Editar</button><button class="danger delete" data-id="${item.id}">Excluir</button></td></tr>`).join("")||'<tr><td colspan="5" class="empty">Nenhum cadastro.</td></tr>'}</tbody></table></div>`;$("new-resource").onclick=()=>editResource(kind);document.querySelectorAll(".edit").forEach(button=>button.onclick=()=>editResource(kind,data.items.find(item=>item.id===button.dataset.id)));document.querySelectorAll(".delete").forEach(button=>button.onclick=async()=>{if(!confirm("Excluir este cadastro?"))return;try{await request(`/api/catalog/${kind}/${button.dataset.id}`,{method:"DELETE"});await render();notify("Cadastro excluído.");}catch(error){notify(error.message,true);}});}
 async function showProductDetail(productId,activeTab="general"){
