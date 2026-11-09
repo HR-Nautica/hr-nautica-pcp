@@ -310,3 +310,20 @@
 #helice-op-bom button[hidden] {
   display: none;
 }
+
+.op-approved { color: #83e1ab; }
+.op-scrap { color: #ff9da6; }
+.op-waiting { color: #f6ce78; }
+.op-fields input {
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.op-stage-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.op-stage-audit {
+  color: var(--muted);
+  font-size: 13px;
+}
