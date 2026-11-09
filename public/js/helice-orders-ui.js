@@ -123,7 +123,7 @@ function showHeliceOrder(order, items, showList) {
         <div><small>Quantidade do lote</small><strong>${helicePieces(order.quantity)}</strong></div>
         <div><small>${order.status === 'completed' ? 'Concluídas' : waiting ? 'Em estoque temporário' : 'Na etapa'}</small>
           <strong>${helicePieces(order.status === 'completed' ? order.finished_quantity : order.remaining_quantity)}</strong></div>
-        <div><small>Refugo neste lote</small><strong>${helicePieces([...reports.values()].reduce((total, event) => total + event.scrap, 0))}</strong></div>
+        <div><small>Refugo neste lote</small><strong class="op-scrap">${helicePieces([...reports.values()].reduce((total, event) => total + event.scrap, 0))}</strong></div>
       </div>
     </section>
     ${canReport || waiting ? heliceExecutionForm(order, stage) : order.status === 'open' ?
@@ -136,7 +136,12 @@ function showHeliceOrder(order, items, showList) {
           order.status === 'completed' ? 'Não executada' : index === order.completed_stage_count ? (waiting ? 'Em espera' : 'Etapa atual') : 'Pendente';
         return `<li><div><strong>${escapeHtml(step.name)}</strong><small>${escapeHtml(step.code)}</small></div>
           <span class="badge ${done ? 'ok' : ''}">${label}</span>
-          ${event ? `<p>${helicePieces(event.approved)} aprovadas · ${helicePieces(event.scrap)} em refugo · ${helicePieces(event.waiting)} em espera</p>` : ''}
+          ${event ? `<p class="op-stage-counts">
+            <span class="op-approved">${helicePieces(event.approved)} aprovadas</span>
+            <span class="op-scrap">${helicePieces(event.scrap)} em refugo</span>
+            <span class="op-waiting">${helicePieces(event.waiting)} em espera</span>
+          </p><p class="op-stage-audit">${event.approved ? 'Aprovado por' : 'Apontado por'} <strong>${escapeHtml(event.actor)}</strong>
+            · <time datetime="${escapeHtml(event.at)}">${escapeHtml(heliceOrderDate(event.at))}</time></p>` : ''}
           ${!done && step.instructions ? `<p>${escapeHtml(step.instructions)}</p>` : ''}</li>`;
       }).join('')}</ol>` : '<p>Nenhuma etapa no roteiro.</p>'}
     </section>
@@ -199,9 +204,9 @@ function heliceExecutionForm(order, stage) {
     <p><strong>${escapeHtml(stage.name)}</strong> · ${helicePieces(order.remaining_quantity)} peças
       ${waiting ? `· ${escapeHtml(order.waiting_location)}` : ''}</p>
     ${waiting ? '<p class="analysis-hint">O lote volta para esta mesma etapa ao ser liberado.</p>' : `<div class="op-fields">
-      <label>Aprovadas<input type="number" name="approved" min="0" max="${order.remaining_quantity}" step="1" value="${order.remaining_quantity}" required></label>
-      <label>Refugo<input type="number" name="scrap" min="0" max="${order.remaining_quantity}" step="1" value="0" required></label>
-      <label>Em espera<input type="number" name="waiting" min="0" max="${order.remaining_quantity}" step="1" value="0" required></label>
+      <label class="op-approved">Aprovadas · cálculo automático<input type="number" name="approved" value="${order.remaining_quantity}" readonly></label>
+      <label class="op-scrap">Refugo<input type="number" name="scrap" min="0" max="${order.remaining_quantity}" step="1" value="0" required></label>
+      <label class="op-waiting">Em espera<input type="number" name="waiting" min="0" max="${order.remaining_quantity}" step="1" value="0" required></label>
     </div><label id="op-location" hidden>Local do estoque temporário<input name="location" maxlength="100"></label>
     <p class="analysis-hint" id="op-allocation" role="status"></p>`}
     <label>Observação (opcional)<input name="notes" maxlength="500"></label>
@@ -217,13 +222,19 @@ function bindHeliceExecution(order) {
   const counts = () => ['approved', 'scrap', 'waiting'].map(key => form.elements.namedItem(key).valueAsNumber);
   const update = () => {
     if (waiting) return;
-    const parts = counts();
-    const allocated = parts.reduce((total, value) => total + value, 0);
+    const [, scrap, pending] = counts();
+    const remainder = order.remaining_quantity - scrap - pending;
+    const valid = [scrap, pending].every(value => Number.isSafeInteger(value) && value >= 0) && remainder >= 0;
+    form.elements.namedItem('approved').value = valid ? remainder : '';
     const location = form.elements.namedItem('location');
-    $('op-location').hidden = !(parts[2] > 0);
-    location.required = parts[2] > 0;
-    button.disabled = allocated !== order.remaining_quantity;
-    $('op-allocation').textContent = `${helicePieces(Number.isFinite(allocated) ? allocated : 0)} de ${helicePieces(order.remaining_quantity)} peças distribuídas.`;
+    $('op-location').hidden = !(pending > 0);
+    location.required = pending > 0;
+    button.disabled = !valid;
+    const allocation = $('op-allocation');
+    allocation.classList.toggle('op-scrap', !valid);
+    allocation.textContent = valid
+      ? `${helicePieces(order.remaining_quantity)} peças distribuídas.`
+      : `Informe quantidades inteiras. Refugo e espera, somados, não podem exceder ${helicePieces(order.remaining_quantity)} peças.`;
   };
   form.oninput = update;
   update();
