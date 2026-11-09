@@ -27,7 +27,7 @@ function coverageSettingsMarkup(parameters) {
 
   return `<details class="card analysis-settings">
     <summary>
-      <span class="analysis-settings-title">Parâmetros de cálculo</span>
+      <span class="analysis-settings-heading"><span class="analysis-settings-title">Parâmetros de cálculo</span><span class="analysis-settings-subtitle">Cobertura, demanda e sugestão de OP</span></span>
       <span class="analysis-settings-values">${fields.map(({name, label, unit}) =>
         `<span>${label} <strong>${Number(parameters[name]).toLocaleString('pt-BR', {maximumFractionDigits: 20})} ${unit}</strong></span>`
       ).join('')}</span>
@@ -37,12 +37,12 @@ function coverageSettingsMarkup(parameters) {
       <div class="analysis-settings-fields">${fields.map(({name, label, unit, max, help}) => `
         <label for="coverage-${name}">
           <span>${label}</span>
+          <small id="coverage-help-${name}">${help}</small>
           <span class="analysis-settings-input">
             <input id="coverage-${name}" name="${name}" type="number" min="0.01" max="${max}" step="any" required
               value="${parameters[name]}" aria-describedby="coverage-help-${name}">
             <span aria-hidden="true">${unit}</span>
           </span>
-          <small id="coverage-help-${name}">${help}</small>
         </label>`
       ).join('')}</div>
       <div class="analysis-settings-footer">
@@ -76,7 +76,7 @@ async function renderHeliceAnalysis() {
   if (!labels.some(([, key]) => key === sort)) sort = 'general_priority';
   const quantity = value => value === null || value === undefined ? 'Não informado' : Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   for (const item of data.items) item.raw_code = [...new Set(item.raw_products.map(raw => raw.sku))].join(' / ');
-  $('content').innerHTML = `${coverageSettingsMarkup(data.parameters)}<section class="card analysis-controls"><div class="analysis-search"><label>Buscar hélices<input id="helice-search" type="search" placeholder="Produto, SKU ou código bruto"></label><span id="helice-count" role="status"></span></div><p class="analysis-hint">Prioridade automática: menor Prio2 primeiro, desempate por SKU.</p></section><details class="analysis-formulas"><summary>Como os cálculos funcionam</summary><p>Estoque 1 = físico − vendido. Virtual = Estoque 1 + produção em aberto. Média = média Tiny × fator. Cobertura = virtual ÷ média (média zero: 6, conforme a planilha). Colocar OP sugere a falta para o horizonte de produção, arredondada para cima em dezenas. Entrar estoque = máximo entre zero e (média × meses de estoque − Estoque 1).</p><p>Prio2: Estoque 1 negativo → −1; senão, média menor que 2 → 5; demais → Estoque 1 ÷ média, truncado em uma casa. A exceção de descrição “max.” da planilha retorna zero. Dados ausentes não são convertidos em saldo zero.</p></details><p class="analysis-hint">${data.ordersAvailable ? 'Entradas previstas somam as OPs abertas. A abertura consome somente os brutos da BOM.' : 'Entradas previstas aguardam as novas OPs de hélices. Até lá, a projeção considera produção zero.'} “Colocar OP” é uma sugestão. Use “Abrir OP” para conferir o bruto e confirmar a quantidade.</p><div class="card table-wrap helice-analysis-wrap" tabindex="0" role="region" aria-label="Análise de Hélices; role horizontalmente para ver todas as colunas"><table class="stock-table helice-analysis-table"><thead><tr></tr></thead><tbody></tbody></table></div>`;
+  $('content').innerHTML = `${coverageSettingsMarkup(data.parameters)}<section class="card analysis-controls"><div class="analysis-search"><label><span>Buscar hélices</span><input id="helice-search" type="search" placeholder="Produto, SKU ou código bruto"></label><span id="helice-count" role="status"></span></div></section><details class="analysis-formulas"><summary>Como os cálculos funcionam</summary><p>A prioridade começa pelo menor Prio2 e usa o SKU como desempate.</p><p>Estoque 1 = físico − vendido. Virtual = Estoque 1 + produção em aberto. Média = média Tiny × fator. Cobertura = virtual ÷ média (média zero: 6, conforme a planilha). Colocar OP sugere a falta para o horizonte de produção, arredondada para cima em dezenas. Entrar estoque = máximo entre zero e (média × meses de estoque − Estoque 1).</p><p>Prio2: Estoque 1 negativo → −1; senão, média menor que 2 → 5; demais → Estoque 1 ÷ média, truncado em uma casa. A exceção de descrição “max.” da planilha retorna zero. Dados ausentes não são convertidos em saldo zero.</p></details><p class="analysis-hint">${data.ordersAvailable ? 'Entradas previstas somam as OPs abertas. A abertura consome somente os brutos da BOM.' : 'Entradas previstas aguardam as novas OPs de hélices. Até lá, a projeção considera produção zero.'} “Colocar OP” é uma sugestão. Use “Abrir OP” para conferir o bruto e confirmar a quantidade.</p><div class="card table-wrap helice-analysis-wrap" tabindex="0" role="region" aria-label="Análise de Hélices; role horizontalmente para ver todas as colunas"><table class="stock-table helice-analysis-table"><thead><tr></tr></thead><tbody></tbody></table></div>`;
   const table = $('content').querySelector('.helice-analysis-table');
   const tools=document.createElement('section');tools.className='analysis-table-tools';
   tools.setAttribute('aria-label','Visualização da análise');
