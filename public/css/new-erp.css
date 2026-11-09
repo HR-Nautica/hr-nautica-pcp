@@ -327,3 +327,68 @@
   color: var(--muted);
   font-size: 13px;
 }
+
+.op-family-heading h2 { font-size: 20px; margin: 4px 0 16px; }
+.op-family-heading small, .op-current small, .op-lots li small {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+}
+.op-family-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+}
+.op-family-totals > div {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel2);
+}
+.op-family-totals dt { font-size: 14px; }
+.op-family-totals dd {
+  margin: 4px 0 0;
+  font-size: 23px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.op-lots { margin-top: 12px; }
+.op-lots summary { cursor: pointer; padding: 9px 0; font-weight: 700; }
+.op-lots ul { margin: 0; padding: 0; list-style: none; }
+.op-lots li {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(110px, .7fr) minmax(150px, 1.5fr) auto;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+}
+.op-lots li small { margin: 3px 0; }
+.op-current {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  border-inline-start: 4px solid var(--accent);
+}
+.op-current > div:first-child { flex: 1 1 220px; }
+.op-current h3 { margin: 4px 0; font-size: 22px; }
+.op-route-link { color: var(--accent); padding: 8px 0; }
+.op-stages li { padding-inline: 12px; }
+.op-stage-current { background: var(--panel2); border-inline-start: 4px solid var(--accent); }
+.op-stage-name { display: flex; align-items: center; gap: 10px; }
+.op-stage-number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-weight: 700;
+}
+.op-stages .op-stage-counts, .op-stages .op-stage-audit { padding-inline-start: 42px; }
+@media (max-width: 720px) {
+  .op-lots li { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .op-lots li button { justify-self: start; }
+}

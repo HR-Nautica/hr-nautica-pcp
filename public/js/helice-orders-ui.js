@@ -66,50 +66,98 @@ const helicePieces = value => Number(value).toLocaleString('pt-BR', { maximumFra
 const heliceOrderDate = value => new Date(value).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 const heliceOrderBadge = order => `<span class="badge ${order.status === 'waiting' ? 'warn' : order.status === 'completed' ? 'ok' : ''}">${heliceOrderStatuses[order.status]}</span>`;
 
+function groupHeliceOrders(items) {
+  const children = new Map();
+  const ids = new Set(items.map(item => item.id));
+  for (const item of items) {
+    if (!children.has(item.parent_id)) children.set(item.parent_id, []);
+    children.get(item.parent_id).push(item);
+  }
+  return items.filter(item => !ids.has(item.parent_id)).map(root => {
+    const lots = [root];
+    for (const lot of lots) lots.push(...(children.get(lot.id) ?? []));
+    const totals = { open: 0, waiting: 0, completed: 0, scrap: 0 };
+    for (const lot of lots) {
+      totals[lot.status] += lot.status === 'completed' ? (lot.finished_quantity ?? 0) : lot.remaining_quantity;
+      for (const event of lot.events ?? []) {
+        if (event.action === 'report') totals.scrap += event.scrap;
+      }
+    }
+    return { root, lots, totals };
+  });
+}
+
+function heliceOrderTotals({ root, totals }) {
+  const metrics = [
+    ['Quantidade inicial da OP', root.quantity, ''],
+    ['Em produção', totals.open, ''],
+    ['Em espera', totals.waiting, 'op-waiting'],
+    ['Concluídas', totals.completed, 'op-approved'],
+    ['Refugo', totals.scrap, 'op-scrap']
+  ];
+  return `<dl class="op-family-totals">${metrics.map(([label, quantity, color]) =>
+    `<div><dt>${label}</dt><dd class="${color}">${helicePieces(quantity)}</dd></div>`).join('')}</dl>`;
+}
+
 async function renderHeliceOrders(selectedId) {
   const { items } = await request('/api/catalog/orders/helices');
   if (document.querySelector('nav button.active')?.dataset.page !== 'orders-helices') return;
   const host = $('content');
+  const groups = groupHeliceOrders(items);
   $('page-actions').innerHTML = '<button class="secondary" id="orders-to-analysis">Analisar hélices</button>';
   $('orders-to-analysis').onclick = () => navigateErpPage('analysis-helice');
+  let search = '', status = '';
   const showList = () => {
     host.innerHTML = `<section class="query-toolbar op-filters"><div class="query-top">
       <label>Buscar ordem<input id="op-search" type="search" placeholder="Número, produto ou SKU"></label>
-      <label>Situação<select id="op-status"><option value="">Todas</option>${Object.entries(heliceOrderStatuses).map(([key, label]) =>
+      <label>Situação do lote<select id="op-status"><option value="">Todas</option>${Object.entries(heliceOrderStatuses).map(([key, label]) =>
         `<option value="${key}">${label}</option>`).join('')}</select></label><span id="op-count" role="status"></span></div></section>
-      <div class="card table-wrap"><table class="helice-orders-table"><thead><tr>
-        <th>OP / lote</th><th>Produto</th><th>Quantidade do lote</th><th>Situação / etapa</th><th><span class="sr-only">Ações</span></th>
-      </tr></thead><tbody id="op-rows"></tbody></table></div>`;
+      <div id="op-rows" class="op-detail"></div>`;
+    $('op-search').value = search;
+    $('op-status').value = status;
     const paint = () => {
-      const search = $('op-search').value.trim().toLocaleLowerCase('pt-BR');
-      const status = $('op-status').value;
-      const filtered = items.filter(order => (!status || order.status === status) &&
-        [order.number, order.sku, order.description].some(value => value.toLocaleLowerCase('pt-BR').includes(search)));
-      $('op-count').textContent = `${filtered.length} de ${items.length} ordens e lotes`;
-      $('op-rows').innerHTML = filtered.map(order => `<tr>
-        <td><strong>${escapeHtml(order.number)}</strong>${order.parent_number ? `<small>Origem ${escapeHtml(order.parent_number)}</small>` : ''}</td>
-        <td><strong>${escapeHtml(order.description)}</strong><small>${escapeHtml(order.sku)}</small></td>
-        <td>${helicePieces(order.quantity)} ${escapeHtml(order.unit)}</td>
-        <td>${heliceOrderBadge(order)}<small>${escapeHtml(order.status === 'completed' ? `${helicePieces(order.finished_quantity)} concluídas` : heliceOrderStage(order))}</small></td>
-        <td><button class="secondary" data-op-view="${order.id}">Acompanhar</button></td>
-      </tr>`).join('') || '<tr><td colspan="5" class="empty">Nenhuma ordem encontrada.</td></tr>';
+      search = $('op-search').value;
+      status = $('op-status').value;
+      const term = search.trim().toLocaleLowerCase('pt-BR');
+      const filtered = groups.filter(({ lots }) => lots.some(lot =>
+        (!status || lot.status === status) &&
+        [lot.number, lot.sku, lot.description].some(value => value.toLocaleLowerCase('pt-BR').includes(term))));
+      $('op-count').textContent = `${filtered.length} de ${groups.length} ordens`;
+      $('op-rows').innerHTML = filtered.map(group => {
+        const { root, lots } = group;
+        return `<section class="card op-panel op-family">
+          <div class="op-family-heading"><div><small>${escapeHtml(root.number)} · ${escapeHtml(root.sku)}</small>
+          <h2>${escapeHtml(root.description)}</h2></div></div>
+          ${heliceOrderTotals(group)}
+          <details class="op-lots" open><summary>Lotes desta OP (${lots.length})</summary>
+          <ul>${lots.map(lot => `<li>
+            <div><strong>${escapeHtml(lot.number)}</strong><small>${lot.parent_number ? 'Separado de ' + escapeHtml(lot.parent_number) : 'Lote principal'}</small></div>
+            <div><strong>${helicePieces(lot.status === 'completed' ? lot.finished_quantity ?? 0 : lot.remaining_quantity)} peças</strong><small>${heliceOrderStatuses[lot.status]}</small></div>
+            <div><small>${lot.status === 'completed' ? 'Situação' : 'Etapa atual'}</small><strong>${escapeHtml(lot.status === 'completed' ? 'Lote encerrado' : heliceOrderStage(lot))}</strong></div>
+            <button class="secondary" data-op-view="${lot.id}" aria-label="Acompanhar ${escapeHtml(lot.number)}">Acompanhar</button>
+          </li>`).join('')}</ul></details>
+        </section>`;
+      }).join('') || '<p class="card op-panel">Nenhuma ordem encontrada.</p>';
       host.querySelectorAll('[data-op-view]').forEach(button => {
-        button.onclick = () => showHeliceOrder(items.find(order => order.id === button.dataset.opView), items, showList);
+        button.onclick = () => openOrder(button.dataset.opView);
       });
     };
     $('op-search').oninput = paint;
     $('op-status').onchange = paint;
     paint();
   };
-  const selected = items.find(order => order.id === selectedId);
-  if (selected) showHeliceOrder(selected, items, showList);
+  const openOrder = id => {
+    const group = groups.find(entry => entry.lots.some(lot => lot.id === id));
+    if (group) showHeliceOrder(group.lots.find(lot => lot.id === id), group, showList, openOrder);
+    else showList();
+  };
+  if (selectedId) openOrder(selectedId);
   else showList();
 }
-
-function showHeliceOrder(order, items, showList) {
+function showHeliceOrder(order, group, showList, openOrder) {
   const events = order.events ?? [];
   const reports = new Map(events.filter(event => event.action === 'report').map(event => [event.stage_index, event]));
-  const related = items.filter(item => item.id === order.parent_id || item.parent_id === order.id);
+  const related = group.lots.filter(item => item.id !== order.id);
   const stage = order.routing[order.completed_stage_count];
   const canReport = order.status === 'open' && stage;
   const waiting = order.status === 'waiting';
@@ -119,22 +167,26 @@ function showHeliceOrder(order, items, showList) {
     <section class="card op-panel"><small class="bom-eyebrow">${escapeHtml(order.number)} · ${escapeHtml(order.sku)}</small>
       <h2>${escapeHtml(order.description)}</h2>
       <p class="analysis-hint">Abertura por ${escapeHtml(order.created_by)} · ${escapeHtml(heliceOrderDate(order.created_at))}</p>
-      <div class="op-metrics">
-        <div><small>Quantidade do lote</small><strong>${helicePieces(order.quantity)}</strong></div>
-        <div><small>${order.status === 'completed' ? 'Concluídas' : waiting ? 'Em estoque temporário' : 'Na etapa'}</small>
-          <strong>${helicePieces(order.status === 'completed' ? order.finished_quantity : order.remaining_quantity)}</strong></div>
-        <div><small>Refugo neste lote</small><strong class="op-scrap">${helicePieces([...reports.values()].reduce((total, event) => total + event.scrap, 0))}</strong></div>
-      </div>
+      <h3>Resumo da OP ${escapeHtml(group.root.number)}</h3>
+      ${heliceOrderTotals(group)}
     </section>
-    ${canReport || waiting ? heliceExecutionForm(order, stage) : order.status === 'open' ?
+    ${stage && order.status !== 'completed' ? `<section class="card op-panel op-current">
+      <div><small>Etapa ${order.completed_stage_count + 1} de ${order.routing.length} · ${waiting ? 'Lote em espera' : 'Etapa atual'}</small>
+        <h3>${escapeHtml(stage.name)}</h3><strong>${helicePieces(order.remaining_quantity)} peças neste lote</strong></div>
+      <div><small>Depois desta etapa</small><strong>${escapeHtml(order.routing[order.completed_stage_count + 1]?.name ?? 'Conclusão do lote')}</strong></div>
+      <a href="#op-route" class="op-route-link">Ver todas as etapas</a>
+    </section>` : ''}
+    ${canReport || waiting ? heliceExecutionForm(order) : order.status === 'open' ?
       '<p class="card op-panel">Esta OP foi aberta sem roteiro cadastrado. A execução requer uma ordem com roteiro.</p>' : ''}
-    <section class="card op-panel"><h3>Roteiro da ordem</h3>
+    <section class="card op-panel" id="op-route" tabindex="-1"><h3>Etapas deste lote</h3>
       ${order.routing.length ? `<ol class="op-stages">${order.routing.map((step, index) => {
         const event = reports.get(index);
         const done = index < order.completed_stage_count;
         const label = done ? (event ? 'Apontada' : 'Cumprida no lote de origem') :
           order.status === 'completed' ? 'Não executada' : index === order.completed_stage_count ? (waiting ? 'Em espera' : 'Etapa atual') : 'Pendente';
-        return `<li><div><strong>${escapeHtml(step.name)}</strong><small>${escapeHtml(step.code)}</small></div>
+        const current = index === order.completed_stage_count && order.status !== 'completed';
+        return `<li class="${current ? 'op-stage-current' : ''}" ${current ? 'aria-current="step"' : ''}><div class="op-stage-name"><span class="op-stage-number">${index + 1}</span>
+          <div><strong>${escapeHtml(step.name)}</strong><small>${escapeHtml(step.code)}</small></div></div>
           <span class="badge ${done ? 'ok' : ''}">${label}</span>
           ${event ? `<p class="op-stage-counts">
             <span class="op-approved">${helicePieces(event.approved)} aprovadas</span>
@@ -147,7 +199,7 @@ function showHeliceOrder(order, items, showList) {
     </section>
     ${related.length ? `<section class="card op-panel"><h3>Lotes vinculados</h3>
       <ul class="op-history">${related.map(item => `<li><button class="secondary" data-op-related="${item.id}">${escapeHtml(item.number)}</button>
-        ${item.id === order.parent_id ? 'Lote de origem' : helicePieces(item.quantity) + ' peças'} · ${heliceOrderBadge(item)}
+        ${item.id === order.parent_id ? 'Lote de origem · ' : ''}${helicePieces(item.status === 'completed' ? item.finished_quantity ?? 0 : item.remaining_quantity)} peças · ${heliceOrderBadge(item)}
         ${item.waiting_location ? ` · ${escapeHtml(item.waiting_location)}` : ''}</li>`).join('')}</ul></section>` : ''}
     <section class="card op-panel"><h3>Materiais e histórico</h3>
       <details id="op-materials"><summary>Consultar BOM e estoque atual</summary><div id="op-bom" role="status"></div></details>
@@ -163,8 +215,14 @@ function showHeliceOrder(order, items, showList) {
     </section>
   </article>`;
   $('op-back').onclick = showList;
+  const routeLink = host.querySelector('.op-route-link');
+  if (routeLink) routeLink.onclick = event => {
+    event.preventDefault();
+    $('op-route').focus();
+    $('op-route').scrollIntoView({ block: 'start' });
+  };
   host.querySelectorAll('[data-op-related]').forEach(button => {
-    button.onclick = () => showHeliceOrder(items.find(item => item.id === button.dataset.opRelated), items, showList);
+    button.onclick = () => openOrder(button.dataset.opRelated);
   });
   const materials = $('op-materials'), bom = $('op-bom');
   materials.ontoggle = () => {
@@ -197,12 +255,12 @@ async function loadHeliceOrderMaterials(bom, productId) {
   }
 }
 
-function heliceExecutionForm(order, stage) {
+function heliceExecutionForm(order) {
   const waiting = order.status === 'waiting';
   return `<form id="op-execution" class="card op-panel">
-    <h3>${waiting ? 'Liberar lote em espera' : 'Apontar etapa atual'}</h3>
-    <p><strong>${escapeHtml(stage.name)}</strong> · ${helicePieces(order.remaining_quantity)} peças
-      ${waiting ? `· ${escapeHtml(order.waiting_location)}` : ''}</p>
+    <h3>${waiting ? 'Liberar lote em espera' : 'Registrar resultado da etapa'}</h3>
+    <p>${waiting ? `Local de espera: ${escapeHtml(order.waiting_location)}` :
+      'Informe quantas peças tiveram refugo ou ficaram em espera. As aprovadas são calculadas na hora.'}</p>
     ${waiting ? '<p class="analysis-hint">O lote volta para esta mesma etapa ao ser liberado.</p>' : `<div class="op-fields">
       <label class="op-approved">Aprovadas · cálculo automático<input type="number" name="approved" value="${order.remaining_quantity}" readonly></label>
       <label class="op-scrap">Refugo<input type="number" name="scrap" min="0" max="${order.remaining_quantity}" step="1" value="0" required></label>
