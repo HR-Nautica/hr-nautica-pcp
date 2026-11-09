@@ -185,3 +185,34 @@
 .bom-overview .bom-root-summary{background:var(--panel2);}
 .bom-overview>.analysis-bom-actions{margin-bottom:0;}
 .bom-materials>.analysis-bom-node>summary:hover,.bom-materials>.analysis-bom-node[open]>summary{background:var(--panel2);}
+
+.stock-inventory-menu > div {
+  width: 226px;
+  max-width: calc(100vw - 44px);
+}
+.stock-inventory-menu button {
+  font-size: 13px;
+}
+.inventory-preview {
+  max-height: 38vh;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.inventory-preview table {
+  min-width: 0;
+}
+.inventory-preview th {
+  position: sticky;
+  top: 0;
+  background: var(--panel2);
+}
+.inventory-preview td:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (max-width: 800px) {
+  .stock-inventory-menu > div {
+    left: 0;
+    right: auto;
+  }
+}
