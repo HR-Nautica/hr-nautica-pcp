@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { executeHeliceOrder } from '../helice-order-execution.js';
 import { exportStockInventory, importStockInventory } from '../stock-inventory.js';
 import { addBomLine, addRoutingStep, CatalogError, createProduct, deactivateProduct, deleteBomLine, deleteRoutingStep, deleteStep, deleteSupplier, getProduct, listProducts, listSteps, listStock, listSuppliers, saveStep, saveSupplier, updateProduct } from "../product-catalog.js";
 
@@ -11,6 +12,11 @@ const reply=(error,res,next)=>error instanceof CatalogError?res.status(error.sta
 
 router.use(admin);
 router.get('/orders/helices',async(_req,res,next)=>{try{res.json({ok:true,items:await listHeliceOrders()});}catch(error){reply(error,res,next);}});
+router.post('/orders/helices/:id/execution', async (req, res, next) => {
+  try {
+    res.json({ ok: true, ...await executeHeliceOrder(req.params.id, req.body, actor(req)) });
+  } catch (error) { reply(error, res, next); }
+});
 router.post('/orders/helices/:id/preview',async(req,res,next)=>{try{res.json({ok:true,...await previewHeliceOrder(req.params.id,req.body?.quantity)});}catch(error){reply(error,res,next);}});
 router.post('/orders/helices/:id',async(req,res,next)=>{try{res.status(201).json({ok:true,...await openHeliceOrder(req.params.id,req.body,actor(req))});}catch(error){reply(error,res,next);}});
 router.get('/analysis/helices',async(_req,res,next)=>{try{res.json({ok:true,...await getHeliceAnalysis()});}catch(error){reply(error,res,next);}});

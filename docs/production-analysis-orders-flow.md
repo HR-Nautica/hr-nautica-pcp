@@ -38,3 +38,11 @@ Registro da orientação do usuário em 05/11/2026. Este documento define o comp
 Preservar os cadastros, BOMs, roteiros e fontes de estoque vigentes. Quantidades físicas, disponíveis, em processamento e temporárias devem ser identificadas separadamente. Fracionamentos e apontamentos precisam de transação, idempotência, controle de concorrência e auditoria; não podem duplicar peças ou apagar o histórico da ordem original.
 
 Consultar também `docs/hr-open-decisions.md`, em especial D-001 e D-006. Este registro não resolve implicitamente decisões antigas sobre consumo ou reservas.
+
+## Execução de hélices
+
+- O administrador aponta toda a quantidade da etapa entre aprovadas, refugo e espera. As aprovadas seguem à etapa seguinte. Se a etapa for a última, são registradas como concluídas.
+- A espera exige um local e gera um lote filho com numeração hierárquica, como `OPH-000001.1`. A liberação retoma a mesma etapa. O refugo é registrado no apontamento.
+- Apenas peças dos lotes em produção entram na previsão. A quantidade aguardando fica visível no lote e volta à previsão após liberação.
+- O acompanhamento usa o roteiro registrado na abertura da ordem. A BOM e os saldos são os atuais do cadastro e o saldo após vendido é apresentado como referência antes de reservas.
+- Os apontamentos são versionados e auditados. O consumo de bruto ocorre na abertura da OP e a execução da hélice não movimenta o físico. As demais famílias e os fluxos de correção, cancelamento e estorno continuam fora desta implementação.

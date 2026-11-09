@@ -14,10 +14,14 @@ const analysisChevron = "<svg class=\"analysis-chevron\" width=\"16\" height=\"1
 
 function analysisStructureMarkup(payload,quantity) {
   const amount=(value,unit)=>value==null?'<span class="bom-unknown">Não informado</span>':`<span class="${Number(value)<0?'bom-negative':''}">${quantity(value)} <small>${escapeHtml(unit||'')}</small></span>`;
+  const source = item => {
+    const name = item.stock_authority === 'tiny_import' ? 'Tiny' : 'ERP';
+    return item.source_position_at ? `${name} · ${escapeHtml(heliceOrderDate(item.source_position_at))}` : name;
+  };
   const routing=item=>`<div class="analysis-bom-actions"><button class="secondary" data-structure-product="${escapeHtml(item.id)}">Abrir ficha</button><details><summary>Roteiro cadastrado <span class="bom-count">${item.routing.length}</span></summary>${item.routing.length?`<ol>${item.routing.map(step=>`<li><span>${escapeHtml(step.code)}</span> ${escapeHtml(step.name)}</li>`).join('')}</ol>`:'<p>Nenhuma etapa cadastrada.</p>'}<small>Roteiro previsto; não indica execução de uma OP.</small></details></div>`;
   const root=payload.product;
-  const nodes=items=>items.map(node=>`<details class="analysis-bom-node"><summary><span class="bom-item-name"><span class="bom-node-chevron">${analysisChevron}</span><span><strong>${escapeHtml(node.item.description)}</strong><small>${escapeHtml(node.item.primary_sku)}${node.item.status==='inactive'?' · Inativo':''}${node.children.length?` · ${node.children.length} subitens`:''}</small></span></span><span class="bom-qty"><small class="bom-mobile-label">Qtd. / pai</small>${node.quantity==null?'<span class="bom-unknown">Pendente</span>':amount(node.quantity,node.unit)}</span><span class="bom-physical"><small class="bom-mobile-label">Físico</small>${amount(node.item.physical_quantity,node.item.unit)}<small class="bom-source">${node.item.stock_authority==='tiny_import'?'Tiny':'ERP'}</small></span><span class="bom-balance"><small class="bom-mobile-label">Após vendido</small>${amount(node.item.stock_one_quantity,node.item.unit)}</span></summary><div class="bom-node-detail">${routing(node.item)}${heliceOrderSummary(node.item.open_orders)}${node.children.length?`<div class="analysis-bom-children">${nodes(node.children)}</div>`:''}</div></details>`).join('');
-  const stockSource = root.stock_authority === 'tiny_import' ? 'Tiny' : 'ERP';
+  const nodes=items=>items.map(node=>`<details class="analysis-bom-node"><summary><span class="bom-item-name"><span class="bom-node-chevron">${analysisChevron}</span><span><strong>${escapeHtml(node.item.description)}</strong><small>${escapeHtml(node.item.primary_sku)}${node.item.status==='inactive'?' · Inativo':''}${node.children.length?` · ${node.children.length} subitens`:''}</small></span></span><span class="bom-qty"><small class="bom-mobile-label">Qtd. / pai</small>${node.quantity==null?'<span class="bom-unknown">Pendente</span>':amount(node.quantity,node.unit)}</span><span class="bom-physical"><small class="bom-mobile-label">Físico</small>${amount(node.item.physical_quantity,node.item.unit)}<small class="bom-source">${source(node.item)}</small></span><span class="bom-balance"><small class="bom-mobile-label">Após vendido</small>${amount(node.item.stock_one_quantity,node.item.unit)}</span></summary><div class="bom-node-detail">${routing(node.item)}${heliceOrderSummary(node.item.open_orders)}${node.children.length?`<div class="analysis-bom-children">${nodes(node.children)}</div>`:''}</div></details>`).join('');
+  const stockSource = source(root);
   const orderCount = root.open_orders.length;
   const materialCount = payload.bomTree.length;
   return `<div class="analysis-expansion-content">
@@ -161,6 +165,7 @@ async function renderHeliceAnalysis() {
     });
     table.querySelectorAll('[data-retry-structure]').forEach(button=>button.onclick=()=>loadStructure(button.dataset.retryStructure));
     table.querySelectorAll('[data-structure-product]').forEach(button=>button.onclick=()=>showProductDetail(button.dataset.structureProduct));
+    table.querySelectorAll('[data-structure-order]').forEach(button=>button.onclick=()=>navigateErpPage('orders-helices', button.dataset.structureOrder));
   };
   $('helice-search').oninput = refresh;
   tools.querySelectorAll('[data-column]').forEach(input=>input.onchange=()=>{visible=HeliceTableView.visibleColumns(labels.map(([,key])=>key),[...tools.querySelectorAll('[data-column]:checked')].map(control=>control.dataset.column).join(','));persistColumns();refresh();});

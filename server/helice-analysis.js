@@ -61,7 +61,7 @@ export async function getHeliceStructure(productId) {
   const collect = nodes => { for (const node of nodes) { ids.add(node.child_product_id); collect(node.children); } };
   collect(detail.bomTree);
   return withConnection(async client => {
-    const products = (await client.query(`SELECT i.id,i.primary_sku,i.description,i.item_type,i.status,i.unit,s.physical_quantity,s.stock_authority
+    const products = (await client.query(`SELECT i.id,i.primary_sku,i.description,i.item_type,i.status,i.unit,s.physical_quantity,s.stock_authority,s.source_position_at
       FROM public.master_items i LEFT JOIN public.product_stock_balances s ON s.product_id=i.id WHERE i.id=ANY($1::uuid[])`, [[...ids]])).rows;
     await attachTinyStockMetrics(client, products);
     const routing = (await client.query(`SELECT r.product_id,r.sequence,p.code,p.name FROM public.product_routing_steps r
