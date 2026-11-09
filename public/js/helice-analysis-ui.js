@@ -15,7 +15,35 @@ function analysisStructureMarkup(payload,quantity) {
   const routing=item=>`<div class="analysis-bom-actions"><button class="secondary" data-structure-product="${escapeHtml(item.id)}">Abrir ficha</button><details><summary>Roteiro cadastrado <span class="bom-count">${item.routing.length}</span></summary>${item.routing.length?`<ol>${item.routing.map(step=>`<li><span>${escapeHtml(step.code)}</span> ${escapeHtml(step.name)}</li>`).join('')}</ol>`:'<p>Nenhuma etapa cadastrada.</p>'}<small>Roteiro previsto; não indica execução de uma OP.</small></details></div>`;
   const root=payload.product;
   const nodes=items=>items.map(node=>`<details class="analysis-bom-node"><summary><span class="bom-item-name"><span class="bom-node-chevron" aria-hidden="true">›</span><span><strong>${escapeHtml(node.item.description)}</strong><small>${escapeHtml(node.item.primary_sku)}${node.item.status==='inactive'?' · Inativo':''}${node.children.length?` · ${node.children.length} subitens`:''}</small></span></span><span class="bom-qty"><small class="bom-mobile-label">Qtd. / pai</small>${node.quantity==null?'<span class="bom-unknown">Pendente</span>':amount(node.quantity,node.unit)}</span><span class="bom-physical"><small class="bom-mobile-label">Físico</small>${amount(node.item.physical_quantity,node.item.unit)}<small class="bom-source">${node.item.stock_authority==='tiny_import'?'Tiny':'ERP'}</small></span><span class="bom-balance"><small class="bom-mobile-label">Após vendido</small>${amount(node.item.stock_one_quantity,node.item.unit)}</span></summary><div class="bom-node-detail">${routing(node.item)}${heliceOrderSummary(node.item.open_orders)}${node.children.length?`<div class="analysis-bom-children">${nodes(node.children)}</div>`:''}</div></details>`).join('');
-  return `<div class="analysis-expansion-content"><div class="bom-detail-heading"><div><span class="bom-eyebrow">ESTRUTURA E PRODUÇÃO</span><h3>${escapeHtml(root.primary_sku)}</h3></div><span class="badge">Hélice usinada</span></div><div class="bom-root-summary"><div><small>Estoque físico <span class="bom-source-inline">${root.stock_authority==='tiny_import'?'Tiny':'ERP'}</span></small><strong>${amount(root.physical_quantity,root.unit)}</strong></div><div><small>Saldo após vendido</small><strong>${amount(root.stock_one_quantity,root.unit)}</strong></div><div><small>Entradas em produção</small><strong>${root.incoming_quantity==null?'—':amount(root.incoming_quantity,root.unit)}</strong></div><div><small>OPs abertas · Etapa atual</small><strong class="bom-unknown">${root.open_orders.length?root.open_orders.length+' aberta(s)':'Sem OP aberta'}</strong></div></div>${routing(root)}${heliceOrderSummary(root.open_orders)}<div class="bom-section-heading"><h3>Lista de materiais <span class="bom-count">${payload.bomTree.length}</span></h3><span>Quantidades por unidade do pai</span></div><p class="bom-detail-note">Saldo após vendido = físico − vendido; não inclui reservas. Dados ausentes permanecem não informados.</p>${payload.bomTree.length?`<div class="bom-comparison-head" aria-hidden="true"><span>Componente</span><span>Qtd. / pai</span><span>Estoque físico</span><span>Após vendido</span></div>${nodes(payload.bomTree)}`:'<p class="analysis-hint">Nenhum componente vinculado à BOM.</p>'}</div>`;
+  const stockSource = root.stock_authority === 'tiny_import' ? 'Tiny' : 'ERP';
+  const orderCount = root.open_orders.length;
+  const materialCount = payload.bomTree.length;
+  return `<div class="analysis-expansion-content">
+    <section class="bom-overview" aria-label="Resumo da hélice">
+      <div class="bom-detail-heading">
+        <div><span class="bom-eyebrow">${escapeHtml(root.primary_sku)} · Hélice usinada</span>
+        <h3>${escapeHtml(root.description || root.primary_sku)}</h3></div>
+      </div>
+      <div class="bom-root-summary">
+        <div><small>Estoque físico <span class="bom-source-inline">${stockSource}</span></small><strong>${amount(root.physical_quantity,root.unit)}</strong></div>
+        <div><small>Saldo após vendido</small><strong>${amount(root.stock_one_quantity,root.unit)}</strong></div>
+        <div><small>Entradas em produção</small><strong>${root.incoming_quantity==null?'—':amount(root.incoming_quantity,root.unit)}</strong></div>
+        <div><small>Ordens abertas</small><strong>${orderCount}</strong></div>
+      </div>
+      ${routing(root)}
+      ${orderCount ? heliceOrderSummary(root.open_orders) : ''}
+    </section>
+    <section class="bom-materials" aria-label="Lista de materiais">
+      <div class="bom-section-heading">
+        <h3>Lista de materiais <span class="bom-count">${materialCount}</span></h3>
+        <span>Quantidades por unidade do pai</span>
+      </div>
+      ${materialCount ? `<div class="bom-comparison-head" aria-hidden="true">
+        <span>Componente</span><span>Qtd. / pai</span><span>Estoque físico</span><span>Após vendido</span>
+      </div>${nodes(payload.bomTree)}` : '<p class="bom-empty-materials">Nenhum componente vinculado à BOM.</p>'}
+      <p class="bom-detail-note">Saldo após vendido considera a diferença entre o estoque físico e o vendido, antes das reservas.</p>
+    </section>
+  </div>`;
 }
 
 function coverageSettingsMarkup(parameters) {
