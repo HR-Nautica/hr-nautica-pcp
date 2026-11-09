@@ -72,9 +72,10 @@
 .analysis-product-title{display:flex;align-items:center;gap:8px;}
 .analysis-expand{display:grid;place-items:center;flex:0 0 28px;width:28px;height:30px;padding:0;background:transparent;border:1px solid var(--line);color:var(--accent);font-size:22px;line-height:1;}
 .helice-analysis-table .analysis-expansion-row>td{padding:20px;background:#0b1524;white-space:normal;}
-.analysis-expansion-content{position:sticky;left:0;width:min(1100px,calc(100vw - 390px));min-width:280px;}
+.helice-analysis-wrap{container:helice-detail / inline-size;}
+.analysis-expansion-content{position:sticky;left:20px;width:calc(100cqw - 40px);display:grid;gap:12px;overflow-wrap:anywhere;}
 .analysis-expansion-content h3{margin:4px 0 12px;font-size:14px;}
-.analysis-expansion-content h3:not(:first-child){margin-top:24px;}
+
 .analysis-bom-actions{display:flex;align-items:start;gap:16px;flex-wrap:wrap;margin:10px 0 16px;font-size:12px;}
 .analysis-bom-actions button{font-size:12px;padding:6px 9px;}
 .analysis-bom-actions summary{cursor:pointer;color:var(--muted);padding:5px 0;}
@@ -114,15 +115,15 @@
 .bom-source-inline{margin-left:5px;font-size:10px;padding:2px 5px;border-radius:4px;background:var(--panel2);}
 .bom-negative{color:#ffb2b8;}.bom-unknown{color:var(--muted);font-size:12px;font-weight:400;}
 .bom-root-summary strong small,.analysis-bom-node summary small:not(.bom-source):not(.bom-mobile-label){font-size:11px;color:var(--muted);font-weight:400;}
-.bom-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:24px;}
+.bom-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;}
 .bom-section-heading h3{margin:0;font-size:14px;}.bom-section-heading>span{font-size:11px;color:var(--muted);}
 .bom-count{display:inline-grid;place-items:center;background:var(--panel2);color:var(--muted);font-size:11px;min-width:21px;padding:1px 5px;border-radius:5px;margin-left:5px;}
-.bom-detail-note{font-size:12px;color:var(--muted);margin:8px 0 14px;line-height:1.5;}
+.bom-detail-note,.bom-empty-materials{font-size:12px;color:var(--muted);margin:0;padding:10px 16px;line-height:1.5;}
 .bom-comparison-head,.analysis-bom-node>summary{display:grid;grid-template-columns:minmax(200px,1fr) 110px 120px 130px;gap:12px;align-items:center;}
-.bom-comparison-head{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;}
+.bom-comparison-head{padding:9px 16px;border-block:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;}
 .bom-comparison-head>span:not(:first-child){text-align:right;}
 .analysis-bom-node{border-bottom:1px solid var(--line);margin:0;}
-.analysis-bom-node>summary{padding:12px;cursor:pointer;list-style:none;border-radius:5px;}
+.analysis-bom-node>summary{padding:10px 16px;cursor:pointer;list-style:none;border-radius:5px;}
 .analysis-bom-node>summary::-webkit-details-marker{display:none;}
 .analysis-bom-node>summary:hover{background:var(--panel);}
 .analysis-bom-node[open]>summary{background:var(--panel);}
@@ -140,8 +141,8 @@
 .analysis-bom-actions{margin:8px 0 12px;align-items:center;}
 .analysis-bom-actions summary{font-size:12px;}
 .analysis-bom-actions li{padding:3px 0;}.analysis-bom-actions li>span{color:var(--muted);margin-right:8px;}
-@media(max-width:1100px){.bom-comparison-head,.analysis-bom-node>summary{grid-template-columns:minmax(140px,1fr) 80px 100px 110px;gap:8px;}.bom-root-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.bom-root-summary>div:nth-child(2){border-right:0;}.bom-root-summary>div:nth-child(-n+2){border-bottom:1px solid var(--line);}}
-@media(max-width:800px){.analysis-expansion-content{width:calc(100vw - 110px);min-width:0;}.bom-comparison-head{display:none;}.analysis-bom-node>summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}.bom-item-name{grid-column:1/-1;}.bom-mobile-label{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;}.bom-qty,.bom-physical,.bom-balance{text-align:left;}.bom-root-summary>div{padding:10px;}.bom-root-summary strong{font-size:14px;}.bom-section-heading{align-items:start;flex-direction:column;gap:4px;}.bom-node-detail{padding-left:12px;}.analysis-bom-children{padding-left:8px;}}
+@container helice-detail (max-width: 900px){.bom-comparison-head,.analysis-bom-node>summary{grid-template-columns:minmax(140px,1fr) 80px 100px 110px;gap:8px;}.bom-root-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.bom-root-summary>div:nth-child(2){border-right:0;}.bom-root-summary>div:nth-child(-n+2){border-bottom:1px solid var(--line);}}
+@container helice-detail (max-width: 600px){.helice-analysis-table .analysis-expansion-row>td{padding:12px;}.analysis-expansion-content{left:12px;width:calc(100cqw - 24px);}.bom-comparison-head{display:none;}.analysis-bom-node>summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}.bom-item-name{grid-column:1/-1;}.bom-mobile-label{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;}.bom-qty,.bom-physical,.bom-balance{text-align:left;}.bom-root-summary>div{padding:10px;}.bom-root-summary strong{font-size:14px;}.bom-section-heading{align-items:start;flex-direction:column;gap:4px;}.bom-node-detail{padding-left:12px;}.analysis-bom-children{padding-left:8px;}}
 
 .analysis-settings{margin-bottom:12px}
 .analysis-settings-heading{display:grid;gap:3px;margin-right:auto}
@@ -169,3 +170,10 @@
 #coverage-save-status:empty{display:none}
 @media(max-width:800px){.analysis-settings-values{order:3;width:100%;margin-left:0}.analysis-settings-toggle{margin-left:auto}}
 @media(max-width:600px){.analysis-search label{align-items:stretch;flex-direction:column;gap:6px}.analysis-settings-fields{grid-template-columns:1fr}.analysis-settings-footer{align-items:stretch;flex-direction:column}}
+
+.bom-overview,.bom-materials{background:var(--panel);border:1px solid var(--line);border-radius:10px;}
+.bom-overview{padding:14px 16px;}
+.bom-overview .bom-detail-heading{margin-bottom:12px;}
+.bom-overview .bom-root-summary{background:var(--panel2);}
+.bom-overview>.analysis-bom-actions{margin-bottom:0;}
+.bom-materials>.analysis-bom-node>summary:hover,.bom-materials>.analysis-bom-node[open]>summary{background:var(--panel2);}
